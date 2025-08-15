@@ -58,6 +58,6 @@
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.17"
   },
-  "homepage": "https://thekingezekielacademy.github.io/-king-ezekiel-academy",
+  "homepage": ".",
   "proxy": "http://localhost:5000"
 }
