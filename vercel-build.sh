@@ -11,48 +11,6 @@ fi
 
 echo "✅ client directory found"
 
-# Check if public directory exists and has proper files
-if [ ! -d "client/public" ]; then
-    echo "📁 Creating public directory..."
-    mkdir -p client/public
-    
-    # Create basic favicon.ico (empty file for now)
-    echo "📄 Creating favicon.ico..."
-    touch client/public/favicon.ico
-    
-    # Create basic manifest.json
-    echo "📄 Creating manifest.json..."
-    cat > client/public/manifest.json << 'EOF'
-{
-  "short_name": "King Ezekiel Academy",
-  "name": "King Ezekiel Academy - Modern Educational Platform",
-  "icons": [
-    {
-      "src": "favicon.ico",
-      "sizes": "64x64 32x32 24x24 16x16",
-      "type": "image/x-icon"
-    }
-  ],
-  "start_url": "./",
-  "display": "standalone",
-  "theme_color": "#000000",
-  "background_color": "#ffffff"
-}
-EOF
-
-    # Create robots.txt
-    echo "📄 Creating robots.txt..."
-    cat > client/public/robots.txt << 'EOF'
-# https://www.robotstxt.org/robotstxt.html
-User-agent: *
-Disallow:
-EOF
-
-    echo "✅ Public directory created with basic files"
-else
-    echo "✅ client/public directory found"
-fi
-
 # Set environment variables explicitly for the build
 echo "🔧 Setting environment variables for build..."
 export REACT_APP_SUPABASE_URL="https://evqerkqiquwxqlizdqmg.supabase.co"
