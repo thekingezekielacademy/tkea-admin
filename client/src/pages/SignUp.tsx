@@ -321,6 +321,20 @@ const SignUp: React.FC = () => {
                   )}
                 </button>
               </div>
+              
+              {/* Password Match Validation */}
+              {formData.confirmPassword && formData.password !== formData.confirmPassword && (
+                <div className="mt-2 text-xs text-red-600 flex items-center">
+                  <span className="mr-1">⚠</span>
+                  Passwords do not match
+                </div>
+              )}
+              {formData.confirmPassword && formData.password === formData.confirmPassword && formData.password && (
+                <div className="mt-2 text-xs text-green-600 flex items-center">
+                  <span className="mr-1">✓</span>
+                  Passwords match
+                </div>
+              )}
             </div>
 
             {/* Terms and Conditions Checkbox */}
