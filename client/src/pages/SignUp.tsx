@@ -77,17 +77,17 @@ const SignUp: React.FC = () => {
 
     try {
       setLoading(true);
-      secureLog('Attempting signup with:', { email: formData.email, name: formData.name });
+      secureLog(`Attempting signup with: ${formData.email}, ${formData.name}`);
       
       const { user, session, error } = await signUp(formData.email, formData.password, formData.name);
       
-      secureLog('Signup result:', { user, session, error });
+              secureLog(`Signup result: user=${user?.id || 'None'}, session=${!!session}, error=${error?.message || 'None'}`);
       
       if (error) {
         secureError('Signup error:', error);
         setError(error.message || 'Failed to create account');
       } else if (user) {
-        secureLog('Signup successful, user created:', user);
+        secureLog(`Signup successful, user created: ${user?.id || 'None'}`);
         
         // Check if email confirmation is required
         if (user.email_confirmed_at) {

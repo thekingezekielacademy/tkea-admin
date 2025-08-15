@@ -16,7 +16,7 @@ const SignIn: React.FC = () => {
 
   // Redirect to dashboard if user is already signed in
   useEffect(() => {
-    secureLog('useEffect triggered - user:', user, 'authLoading:', authLoading);
+    secureLog(`useEffect triggered - user: ${user?.id || 'None'}, authLoading: ${authLoading}`);
     if (user && !authLoading) {
       secureLog('User authenticated, redirecting to dashboard');
       // Small delay to ensure profile is fully loaded
