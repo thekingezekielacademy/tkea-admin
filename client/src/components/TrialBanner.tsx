@@ -40,7 +40,7 @@ const TrialBanner: React.FC<TrialBannerProps> = ({ trialStatus, onSubscribe }) =
     } else if (trialStatus.daysRemaining <= 3) {
       return `Your free trial expires in ${trialStatus.daysRemaining} days. Subscribe now to keep learning!`;
     } else {
-      return `You have ${trialStatus.daysRemaining} days left in your free trial.`;
+      return `You have ${trialStatus.daysRemaining} days left in your ${trialStatus.totalDays}-day free trial.`;
     }
   };
 

@@ -5,6 +5,7 @@ export interface TrialStatus {
   startDate: string;
   endDate: string;
   daysRemaining: number;
+  totalDays: number;
   isExpired: boolean;
 }
 
@@ -19,7 +20,13 @@ export class TrialManager {
     try {
       const startDate = new Date();
       const endDate = new Date();
+      
+      // Set start date to beginning of today
+      startDate.setHours(0, 0, 0, 0);
+      
+      // Set end date to end of the 7th day (23:59:59)
       endDate.setDate(startDate.getDate() + this.TRIAL_DURATION_DAYS);
+      endDate.setHours(23, 59, 59, 999);
 
       const trialData = {
         user_id: userId,
@@ -48,6 +55,7 @@ export class TrialManager {
         startDate: startDate.toISOString(),
         endDate: endDate.toISOString(),
         daysRemaining: this.TRIAL_DURATION_DAYS,
+        totalDays: this.TRIAL_DURATION_DAYS,
         isExpired: false
       };
 
@@ -108,6 +116,7 @@ export class TrialManager {
         startDate: '',
         endDate: '',
         daysRemaining: 0,
+        totalDays: 0,
         isExpired: true
       };
 
@@ -120,6 +129,7 @@ export class TrialManager {
         startDate: '',
         endDate: '',
         daysRemaining: 0,
+        totalDays: 0,
         isExpired: true
       };
     }
@@ -143,17 +153,40 @@ export class TrialManager {
    */
   private static calculateTrialStatus(startDate: string, endDate: string): TrialStatus {
     const now = new Date();
+    const start = new Date(startDate);
     const end = new Date(endDate);
     
     const isExpired = now > end;
-    const timeDiff = end.getTime() - now.getTime();
-    const daysRemaining = Math.max(0, Math.floor(timeDiff / (1000 * 60 * 60 * 24)));
+    
+    // Calculate days remaining more intuitively
+    // If today is the start date, show full trial duration
+    // If we're in the middle, show remaining days
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Start of today
+    
+    const startOfTrial = new Date(start);
+    startOfTrial.setHours(0, 0, 0, 0); // Start of trial day
+    
+    let daysRemaining: number;
+    
+    if (today.getTime() === startOfTrial.getTime()) {
+      // Today is the first day of trial, show full duration
+      daysRemaining = this.TRIAL_DURATION_DAYS;
+    } else {
+      // Calculate remaining days including partial days
+      const timeDiff = end.getTime() - now.getTime();
+      const remainingDays = timeDiff / (1000 * 60 * 60 * 24);
+      
+      // Round up to include partial days (e.g., if 6.8 days left, show 7)
+      daysRemaining = Math.max(0, Math.ceil(remainingDays));
+    }
     
     return {
       isActive: !isExpired,
       startDate,
       endDate,
       daysRemaining,
+      totalDays: this.TRIAL_DURATION_DAYS,
       isExpired
     };
   }
@@ -274,14 +307,20 @@ export class TrialManager {
       // Initialize a fresh trial
       const startDate = new Date();
       const endDate = new Date();
+      
+      // Set start date to beginning of today
+      startDate.setHours(0, 0, 0, 0);
+      
+      // Set end date to end of the 7th day (23:59:59)
       endDate.setDate(startDate.getDate() + this.TRIAL_DURATION_DAYS);
-      endDate.setHours(23, 59, 59, 999); // End of day
+      endDate.setHours(23, 59, 59, 999);
       
       const newTrialStatus: TrialStatus = {
         isActive: true,
         startDate: startDate.toISOString(),
         endDate: endDate.toISOString(),
         daysRemaining: this.TRIAL_DURATION_DAYS,
+        totalDays: this.TRIAL_DURATION_DAYS,
         isExpired: false
       };
       
