@@ -348,20 +348,41 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const signIn = async (email: string, password: string) => {
-    secureLog('signIn called with email:', email);
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    secureLog('signIn result:', { user: data.user?.id, session: !!data.session, error });
-    
-    // If sign in is successful, the profile will be fetched automatically
-    // and admin status will be detected in the fetchProfile function
-    if (data.user && !error) {
-      secureLog('✅ Sign in successful! Checking for admin privileges...');
+    try {
+      secureLog('signIn called with email:', email);
+      
+      // Test Supabase connection first
+      const { data: testData, error: testError } = await supabase.auth.getSession();
+      if (testError) {
+        secureError('❌ Supabase connection test failed before signin:', testError.message);
+        return { user: null, session: null, error: testError };
+      }
+      
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      
+      secureLog('signIn result:', { user: data.user?.id, session: !!data.session, error: error?.message });
+      
+      // If sign in is successful, the profile will be fetched automatically
+      // and admin status will be detected in the fetchProfile function
+      if (data.user && !error) {
+        secureLog('✅ Sign in successful! Checking for admin privileges...');
+      }
+      
+      return { user: data.user, session: data.session, error };
+    } catch (catchError) {
+      secureError('❌ Unexpected error during signin:', catchError);
+      return { 
+        user: null, 
+        session: null, 
+        error: { 
+          message: catchError instanceof Error ? catchError.message : 'Unknown error occurred',
+          name: 'SignInError'
+        } 
+      };
     }
-    
-    return { user: data.user, session: data.session, error };
   };
 
   const signOut = async () => {

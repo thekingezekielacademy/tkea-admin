@@ -20,7 +20,8 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     persistSession: true,
     storageKey: 'supabase-auth',
     autoRefreshToken: true,
-    detectSessionInUrl: true
+    detectSessionInUrl: true,
+    flowType: 'pkce'
   },
   global: {
     headers: {
@@ -31,7 +32,21 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     params: {
       eventsPerSecond: 10
     }
+  },
+  db: {
+    schema: 'public'
   }
 })
 
 secureLog('✅ Supabase client initialized successfully')
+
+// Test connection
+supabase.auth.getSession().then(({ data, error }) => {
+  if (error) {
+    secureError('❌ Supabase connection test failed:', error.message)
+  } else {
+    secureLog('✅ Supabase connection test successful')
+  }
+}).catch((error) => {
+  secureError('❌ Supabase connection test error:', error.message)
+})
