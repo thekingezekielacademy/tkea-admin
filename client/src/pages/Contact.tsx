@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { FaEnvelope, FaPhone, FaMapMarkerAlt, FaClock, FaFacebook, FaTwitter, FaInstagram, FaLinkedin } from 'react-icons/fa';
+import { secureLog } from '../utils/secureLogger';
 
 const Contact: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -20,7 +21,7 @@ const Contact: React.FC = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     // Handle form submission here
-    console.log('Form submitted:', formData);
+    secureLog('Form submitted:', formData);
     alert('Thank you for your message! We will get back to you soon.');
     setFormData({
       name: '',

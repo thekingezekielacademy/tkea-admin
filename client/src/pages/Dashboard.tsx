@@ -17,6 +17,7 @@ import {
   FaArrowRight,
   FaUser
 } from 'react-icons/fa';
+import { secureLog, secureError, criticalLog } from '../utils/secureLogger';
 
 interface Course {
   id: string;
@@ -110,15 +111,15 @@ const Dashboard: React.FC = () => {
       
       if (!subError && subData) {
         setSubActive(true);
-        console.log('✅ Found active subscription in database');
+        secureLog('✅ Found active subscription in database');
       } else {
         // Fallback to secure storage
         const secureSubActive = secureStorage.isSubscriptionActive();
         setSubActive(secureSubActive);
-        console.log('Using secure storage subscription status:', secureSubActive);
+        secureLog('Using secure storage subscription status:', secureSubActive);
       }
     } catch (error) {
-      console.log('Database not available, using secure storage fallback');
+      secureLog('Database not available, using secure storage fallback');
       const secureSubActive = secureStorage.isSubscriptionActive();
       setSubActive(secureSubActive);
     }
@@ -148,10 +149,10 @@ const Dashboard: React.FC = () => {
           };
           
           setTrialStatus(updatedTrialStatus);
-          console.log('✅ Found trial status in localStorage:', updatedTrialStatus);
+          secureLog('✅ Found trial status in localStorage:', updatedTrialStatus);
           return;
         } catch (parseError) {
-          console.log('Failed to parse localStorage trial data');
+          secureLog('Failed to parse localStorage trial data');
         }
       }
       
@@ -185,7 +186,7 @@ const Dashboard: React.FC = () => {
         // Save to localStorage
         localStorage.setItem('user_trial_status', JSON.stringify(newTrialStatus));
         setTrialStatus(newTrialStatus);
-        console.log('✅ Initialized trial for new user:', newTrialStatus);
+        secureLog('✅ Initialized trial for new user:', newTrialStatus);
       } else {
         // User is older than 7 days, no trial
         setTrialStatus({
@@ -195,7 +196,7 @@ const Dashboard: React.FC = () => {
           daysRemaining: 0,
           isExpired: true
         });
-        console.log('User is older than 7 days, no trial available');
+        secureLog('User is older than 7 days, no trial available');
       }
       
       // Try database query as well (for when table exists)
@@ -222,13 +223,13 @@ const Dashboard: React.FC = () => {
           };
           
           setTrialStatus(dbTrialStatus);
-          console.log('✅ Found trial status in database:', dbTrialStatus);
+          secureLog('✅ Found trial status in database:', dbTrialStatus);
         }
       } catch (dbError) {
-        console.log('Database table user_trials not available yet');
+        secureLog('Database table user_trials not available yet');
       }
     } catch (error) {
-      console.error('Error in fetchTrialStatus:', error);
+      secureError('Error in fetchTrialStatus:', error);
       // Set default no trial status
       setTrialStatus({
         isActive: false,
@@ -250,7 +251,7 @@ const Dashboard: React.FC = () => {
       // Refresh session to handle JWT expiration
       const { error: sessionError } = await supabase.auth.refreshSession();
       if (sessionError) {
-        console.error('Session refresh error:', sessionError);
+        secureError('Session refresh error:', sessionError);
         return;
       }
 
@@ -263,7 +264,7 @@ const Dashboard: React.FC = () => {
           .single();
 
         if (error) {
-          console.log('XP/streak columns not available yet, using default values');
+          secureLog('XP/streak columns not available yet, using default values');
           // Use default values when XP system isn't set up yet
           setUserStats({
             xp: 0,
@@ -299,7 +300,7 @@ const Dashboard: React.FC = () => {
           class_ranking: ranking
         });
       } catch (error) {
-        console.log('XP system not available yet, using default values');
+        secureLog('XP system not available yet, using default values');
         // Use default values when XP system isn't set up yet
         setUserStats({
           xp: 0,
@@ -312,7 +313,7 @@ const Dashboard: React.FC = () => {
       }
 
     } catch (error) {
-      console.error('Error in fetchUserStats:', error);
+      secureError('Error in fetchUserStats:', error);
     } finally {
       setIsLoading(false);
     }
@@ -330,7 +331,7 @@ const Dashboard: React.FC = () => {
       // Refresh session to handle JWT expiration
       const { error: sessionError } = await supabase.auth.refreshSession();
       if (sessionError) {
-        console.error('Session refresh error:', sessionError);
+        secureError('Session refresh error:', sessionError);
         return;
       }
 
@@ -347,9 +348,9 @@ const Dashboard: React.FC = () => {
 
         if (!enrolledError && enrolledData) {
           enrolledCourses = enrolledData;
-          console.log('✅ Found enrolled courses in database:', enrolledCourses);
+          secureLog('✅ Found enrolled courses in database:', enrolledCourses);
         } else {
-          console.log('Database query failed, trying localStorage fallback...');
+          secureLog('Database query failed, trying localStorage fallback...');
           
           // Fallback to localStorage
           try {
@@ -370,15 +371,15 @@ const Dashboard: React.FC = () => {
                 last_accessed: recentTimestamp,
                 is_completed: isCompleted
               }];
-              console.log('✅ Found recent course activity in localStorage:', enrolledCourses);
+              secureLog('✅ Found recent course activity in localStorage:', enrolledCourses);
             }
             }
           } catch (localStorageError) {
-            console.log('Could not check localStorage for recent courses');
+            secureLog('Could not check localStorage for recent courses');
           }
         }
       } catch (error) {
-        console.log('Database query error, using localStorage fallback');
+        secureLog('Database query error, using localStorage fallback');
         // Use localStorage fallback
         try {
           const recentCourseId = localStorage.getItem('recent_course_id');
@@ -398,11 +399,11 @@ const Dashboard: React.FC = () => {
               last_accessed: recentTimestamp,
               is_completed: isCompleted
             }];
-            console.log('✅ Using localStorage fallback for course data');
+            secureLog('✅ Using localStorage fallback for course data');
           }
           }
         } catch (localStorageError) {
-          console.log('Could not use localStorage fallback');
+          secureLog('Could not use localStorage fallback');
         }
       }
 
@@ -418,7 +419,7 @@ const Dashboard: React.FC = () => {
             .eq('user_id', user.id)
             .eq('course_id', mostRecent.course_id);
         } catch (updateError) {
-          console.log('Could not update last_accessed timestamp');
+          secureLog('Could not update last_accessed timestamp');
         }
         
         // Fetch course details
@@ -429,7 +430,7 @@ const Dashboard: React.FC = () => {
           .single();
 
         if (courseError) {
-          console.error('Error fetching course data:', courseError);
+          secureError('Error fetching course data:', courseError);
           return;
         }
         
@@ -510,12 +511,12 @@ const Dashboard: React.FC = () => {
                   } : null);
                 }
               } catch (fetchError) {
-                console.log('Could not fetch course details for localStorage course');
+                secureLog('Could not fetch course details for localStorage course');
               }
             }
           }
         } catch (localStorageError) {
-          console.log('Could not check localStorage for recent courses');
+          secureLog('Could not check localStorage for recent courses');
         }
       }
 
@@ -534,7 +535,7 @@ const Dashboard: React.FC = () => {
         .limit(6);
 
       if (coursesError) {
-        console.error('Error fetching courses:', coursesError);
+        secureError('Error fetching courses:', coursesError);
         return;
       }
 
@@ -559,7 +560,7 @@ const Dashboard: React.FC = () => {
       setRecommendedCourses(recommended);
 
     } catch (error) {
-      console.error('Error in fetchCourseData:', error);
+      secureError('Error in fetchCourseData:', error);
     } finally {
       setIsLoadingCourses(false);
     }

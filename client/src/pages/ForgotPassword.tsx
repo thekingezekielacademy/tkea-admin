@@ -1,7 +1,9 @@
 import React, { useState, useMemo } from 'react';
-import { Link } from 'react-router-dom';
-import { FaEnvelope, FaArrowLeft } from 'react-icons/fa';
+import { Link, useNavigate } from 'react-router-dom';
+import { FaEnvelope, FaArrowLeft, FaCheckCircle, FaExclamationTriangle } from 'react-icons/fa';
 import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../lib/supabase';
+import { secureLog, secureError } from '../utils/secureLogger';
 
 const ForgotPassword: React.FC = () => {
   const { resetPassword } = useAuth();
@@ -49,20 +51,20 @@ const ForgotPassword: React.FC = () => {
     setLoading(true);
 
     try {
-      console.log('Attempting to reset password for:', email);
+      secureLog('Attempting to reset password for:', email);
       
       const { error } = await resetPassword(email);
 
       if (error) {
-        console.error('Password reset error:', error);
+        secureError('Password reset error:', error);
         setError(error.message || 'Failed to send reset email');
       } else {
-        console.log('Password reset email sent successfully');
+        secureLog('Password reset email sent successfully');
         setSuccess('Password reset email sent! Please check your inbox.');
         setEmail('');
       }
     } catch (err) {
-      console.error('Unexpected error during password reset:', err);
+      secureError('Unexpected error during password reset:', err);
       setError('An unexpected error occurred. Please try again.');
     } finally {
       setLoading(false);

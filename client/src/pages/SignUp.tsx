@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { secureLog, secureError } from '../utils/secureLogger';
 
 const SignUp: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -76,17 +77,17 @@ const SignUp: React.FC = () => {
 
     try {
       setLoading(true);
-      console.log('Attempting signup with:', { email: formData.email, name: formData.name });
+      secureLog('Attempting signup with:', { email: formData.email, name: formData.name });
       
       const { user, session, error } = await signUp(formData.email, formData.password, formData.name);
       
-      console.log('Signup result:', { user, session, error });
+      secureLog('Signup result:', { user, session, error });
       
       if (error) {
-        console.error('Signup error:', error);
+        secureError('Signup error:', error);
         setError(error.message || 'Failed to create account');
       } else if (user) {
-        console.log('Signup successful, user created:', user);
+        secureLog('Signup successful, user created:', user);
         
         // Check if email confirmation is required
         if (user.email_confirmed_at) {
@@ -101,7 +102,7 @@ const SignUp: React.FC = () => {
         setError('Account created but no user returned');
       }
     } catch (err) {
-      console.error('Signup exception:', err);
+      secureError('Signup exception:', err);
       setError(err instanceof Error ? err.message : 'Failed to create an account');
     } finally {
       setLoading(false);

@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode, useRe
 import { User, Session, AuthError, PostgrestError } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import TrialManager from '../utils/trialManager';
+import { secureLog, secureError, criticalLog } from '../utils/secureLogger';
 
 interface UserProfile {
   id: string;
@@ -58,7 +59,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Debounced fetchProfile to prevent multiple rapid calls
   const fetchProfile = useCallback(async (userId?: string) => {
     if (isFetchingRef.current) {
-      console.log('fetchProfile already in progress, skipping');
+      secureLog('fetchProfile already in progress, skipping');
       return;
     }
     
@@ -66,32 +67,32 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setLoading(true);
     
     try {
-      console.log('fetchProfile called');
+      secureLog('fetchProfile called');
       
       let userToUse = userId;
       
       // If no userId provided, try to get it from the current session
       if (!userToUse) {
-        console.log('No userId provided, checking current session...');
+        secureLog('No userId provided, checking current session...');
         try {
           const { data: { session } } = await supabase.auth.getSession();
           userToUse = session?.user?.id;
-          console.log('Session user ID:', userToUse);
+          secureLog('Session user ID:', userToUse);
         } catch (sessionError) {
-          console.error('Error getting session:', sessionError);
+          secureError('Error getting session:', sessionError);
           setLoading(false);
           return;
         }
       }
       
       if (!userToUse) {
-        console.log('No user ID available');
+        secureLog('No user ID available');
         setLoading(false);
         return;
       }
       
-      console.log('Using user ID:', userToUse);
-      console.log('About to query profiles table...');
+      secureLog('Using user ID:', userToUse);
+      secureLog('About to query profiles table...');
       
       const { data, error } = await supabase
         .from('profiles')
@@ -99,19 +100,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         .eq('id', userToUse)
         .single();
 
-      console.log('Query result:', { data, error });
+      secureLog('Query result:', { data, error });
 
       if (error) {
-        console.error('Error fetching profile:', error);
-        console.error('Error details:', { code: error.code, message: error.message, details: error.details });
+        secureError('Error fetching profile:', error);
+        secureError('Error details:', { code: error.code, message: error.message, details: error.details });
         
         // Handle JWT expired error
         if (error.code === 'PGRST303' || error.message?.includes('JWT expired')) {
-          console.log('JWT expired, attempting to refresh session...');
+          secureLog('JWT expired, attempting to refresh session...');
           try {
             const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
             if (refreshError) {
-              console.error('Failed to refresh session:', refreshError);
+              secureError('Failed to refresh session:', refreshError);
               // If refresh fails, sign out the user
               await supabase.auth.signOut();
               setUser(null);
@@ -120,7 +121,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               return;
             }
             if (refreshData.session) {
-              console.log('Session refreshed successfully, retrying profile fetch...');
+              secureLog('Session refreshed successfully, retrying profile fetch...');
               // Retry the profile fetch with the new session
               setTimeout(() => {
                 if (isFetchingRef.current) {
@@ -131,7 +132,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               return;
             }
           } catch (refreshError) {
-            console.error('Error during session refresh:', refreshError);
+            secureError('Error during session refresh:', refreshError);
             // If refresh fails, sign out the user
             await supabase.auth.signOut();
             setUser(null);
@@ -143,7 +144,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         
         // Handle network connectivity issues
         if (error.message?.includes('Failed to fetch') || error.message?.includes('ERR_NAME_NOT_RESOLVED')) {
-          console.log('Network connectivity issue detected, will retry in 5 seconds...');
+          secureLog('Network connectivity issue detected, will retry in 5 seconds...');
           setTimeout(() => {
             if (isFetchingRef.current) {
               isFetchingRef.current = false;
@@ -156,15 +157,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         // Don't clear the user state on database errors
         // Just log the error and keep the existing user data if available
         if (error.code === 'PGRST116') {
-          console.log('Profile not found, this might be a new user');
+          secureLog('Profile not found, this might be a new user');
         } else {
-          console.log('Database error, but keeping user logged in');
+          secureLog('Database error, but keeping user logged in');
         }
         setLoading(false);
         return;
       }
 
-      console.log('Profile data fetched:', data);
+      secureLog('Profile data fetched:', data);
       setUser(data);
       
       // Check if user is admin
@@ -172,16 +173,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setIsAdmin(userIsAdmin);
       
       if (userIsAdmin) {
-        console.log('🎉 User is ADMIN! Granting admin privileges...');
+        secureLog('🎉 User is ADMIN! Granting admin privileges...');
       } else {
-        console.log('User role:', data.role);
+        secureLog('User role:', data.role);
       }
       
       setLoading(false);
       setAuthLoading(false);
     } catch (error) {
-      console.error('Error fetching profile:', error);
-      console.error('Full error object:', error);
+      secureError('Error fetching profile:', error);
+      secureError('Full error object:', error);
       // Don't clear user state on errors, just set loading to false
       setLoading(false);
       setAuthLoading(false);
@@ -196,7 +197,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
     
     if (isFetchingRef.current) {
-      console.log('fetchProfile already in progress, skipping');
+      secureLog('fetchProfile already in progress, skipping');
       return;
     }
     
@@ -209,7 +210,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // Initial session check - only run once
     const checkSession = async () => {
       if (hasInitializedRef.current) {
-        console.log('Already initialized, skipping initial session check');
+        secureLog('Already initialized, skipping initial session check');
         return;
       }
       
@@ -217,10 +218,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        console.log('Initial session check:', session?.user?.id);
+        secureLog('Initial session check:', session?.user?.id);
         
         if (session?.user && !user) {
-          console.log('Initial session found, fetching profile...');
+          secureLog('Initial session found, fetching profile...');
           
           // Check if session is about to expire (within 5 minutes)
           const expiresAt = session.expires_at;
@@ -228,31 +229,31 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           const timeUntilExpiry = expiresAt - now;
           
           if (timeUntilExpiry < 300) { // 5 minutes = 300 seconds
-            console.log('Session expiring soon, refreshing...');
+            secureLog('Session expiring soon, refreshing...');
             try {
               const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
               if (refreshError) {
-                console.error('Failed to refresh session:', refreshError);
+                secureError('Failed to refresh session:', refreshError);
               } else if (refreshData.session) {
-                console.log('Session refreshed proactively');
+                secureLog('Session refreshed proactively');
               }
             } catch (refreshError) {
-              console.error('Error during proactive session refresh:', refreshError);
+              secureError('Error during proactive session refresh:', refreshError);
             }
           }
           
           debouncedFetchProfile(session.user.id);
         } else if (session?.user && user) {
-          console.log('Initial session found, but user data already exists, skipping profile fetch');
+          secureLog('Initial session found, but user data already exists, skipping profile fetch');
           setLoading(false);
           setAuthLoading(false);
         } else {
-          console.log('No initial session found');
+          secureLog('No initial session found');
           setLoading(false);
           setAuthLoading(false);
         }
       } catch (error) {
-        console.error('Error checking initial session:', error);
+        secureError('Error checking initial session:', error);
         setLoading(false);
         setAuthLoading(false);
       }
@@ -263,23 +264,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('Auth state change:', event, session?.user?.id);
+        secureLog('Auth state change:', event, session?.user?.id);
         
         if (event === 'SIGNED_IN') {
           if (session?.user && !isFetchingRef.current && !user) {
-            console.log('User signed in, fetching profile...');
+            secureLog('User signed in, fetching profile...');
             debouncedFetchProfile(session.user.id);
           }
         } else if (event === 'TOKEN_REFRESHED') {
           // Only fetch profile on token refresh if we don't have user data yet
           if (session?.user && !isFetchingRef.current && !user) {
-            console.log('Token refreshed, fetching profile...');
+            secureLog('Token refreshed, fetching profile...');
             debouncedFetchProfile(session.user.id);
           } else {
-            console.log('Token refreshed, but user data already exists, skipping profile fetch');
+            secureLog('Token refreshed, but user data already exists, skipping profile fetch');
           }
         } else if (event === 'SIGNED_OUT') {
-          console.log('User signed out, clearing state');
+          secureLog('User signed out, clearing state');
           setUser(null);
           setIsAdmin(false);
           setLoading(false);
@@ -328,16 +329,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       });
 
       if (profileError) {
-        console.error('Error creating profile:', profileError);
+        secureError('Error creating profile:', profileError);
       } else {
-        console.log('Profile created successfully');
+        secureLog('Profile created successfully');
         
         // Initialize 7-day free trial for new user
         try {
           await TrialManager.initializeTrial(data.user.id);
-          console.log('✅ 7-day free trial initialized for new user');
+          secureLog('✅ 7-day free trial initialized for new user');
         } catch (trialError) {
-          console.error('Failed to initialize trial:', trialError);
+          secureError('Failed to initialize trial:', trialError);
           // Don't fail signup if trial initialization fails
         }
       }
@@ -347,17 +348,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const signIn = async (email: string, password: string) => {
-    console.log('signIn called with email:', email);
+    secureLog('signIn called with email:', email);
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
-    console.log('signIn result:', { user: data.user?.id, session: !!data.session, error });
+    secureLog('signIn result:', { user: data.user?.id, session: !!data.session, error });
     
     // If sign in is successful, the profile will be fetched automatically
     // and admin status will be detected in the fetchProfile function
     if (data.user && !error) {
-      console.log('✅ Sign in successful! Checking for admin privileges...');
+      secureLog('✅ Sign in successful! Checking for admin privileges...');
     }
     
     return { user: data.user, session: data.session, error };

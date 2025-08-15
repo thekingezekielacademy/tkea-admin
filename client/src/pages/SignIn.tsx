@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { secureLog, secureError } from '../utils/secureLogger';
 
 const SignIn: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -15,9 +16,9 @@ const SignIn: React.FC = () => {
 
   // Redirect to dashboard if user is already signed in
   useEffect(() => {
-    console.log('useEffect triggered - user:', user, 'authLoading:', authLoading);
+    secureLog('useEffect triggered - user:', user, 'authLoading:', authLoading);
     if (user && !authLoading) {
-      console.log('User authenticated, redirecting to dashboard');
+      secureLog('User authenticated, redirecting to dashboard');
       // Small delay to ensure profile is fully loaded
       setTimeout(() => {
         navigate('/dashboard');
@@ -44,21 +45,21 @@ const SignIn: React.FC = () => {
 
     try {
       setLoading(true);
-      console.log('Attempting sign in with:', formData.email);
+      secureLog('Attempting sign in with:', formData.email);
       
       const { error } = await signIn(formData.email, formData.password);
       
       if (error) {
-        console.error('Sign in error:', error);
+        secureError('Sign in error:', error);
         setError(error.message);
         setLoading(false);
       } else {
-        console.log('Sign in successful, waiting for profile fetch...');
+        secureLog('Sign in successful, waiting for profile fetch...');
         // Don't set loading to false here - let the useEffect handle the redirect
         // The loading state will be managed by the auth context
       }
     } catch (err) {
-      console.error('Sign in exception:', err);
+      secureError('Sign in exception:', err);
       setError('Failed to sign in');
       setLoading(false);
     }

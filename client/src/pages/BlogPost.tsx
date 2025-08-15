@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { FaArrowLeft, FaShare, FaClock, FaUser, FaTags, FaFolder, FaCalendar, FaEye, FaCopy, FaCheck, FaTwitter, FaFacebook, FaLinkedin, FaWhatsapp } from 'react-icons/fa';
 import { supabase } from '../lib/supabase';
+import DOMPurify from 'dompurify';
+import { secureLog, secureError } from '../utils/secureLogger';
 
 interface BlogPostData {
   id: string;
@@ -53,7 +55,7 @@ const BlogPost: React.FC = () => {
         throw postError;
       }
 
-      console.log('Blog post data:', posts);
+      secureLog('Blog post data:', posts);
       setBlogPost(posts);
       
       // Increment view count (only if view_count field exists)
@@ -64,13 +66,13 @@ const BlogPost: React.FC = () => {
             .update({ view_count: (posts.view_count || 0) + 1 })
             .eq('id', posts.id);
         } catch (error) {
-          console.log('Could not update view count:', error);
+          secureError('Could not update view count:', error);
         }
       }
       
       setLoading(false);
     } catch (error) {
-      console.error('Error fetching blog post:', error);
+      secureError('Error fetching blog post:', error);
       setError('Failed to load blog post');
       setLoading(false);
     }
@@ -83,7 +85,7 @@ const BlogPost: React.FC = () => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
-      console.error('Failed to copy link:', err);
+      secureError('Failed to copy link:', err);
     }
   };
 
@@ -259,7 +261,7 @@ const BlogPost: React.FC = () => {
             {/* Content */}
             <div className="prose prose-lg max-w-none mb-8">
               <div
-                dangerouslySetInnerHTML={{ __html: blogPost.content }}
+                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(blogPost.content) }}
                 className="text-gray-800 leading-relaxed"
               />
             </div>

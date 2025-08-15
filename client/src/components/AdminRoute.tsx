@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { secureLog } from '../utils/secureLogger';
 
 interface AdminRouteProps {
   children: React.ReactNode;
@@ -19,7 +20,7 @@ const AdminRoute: React.FC<AdminRouteProps> = ({ children }) => {
 
     // If not loading, user is authenticated, but not admin, silently redirect to dashboard
     if (!loading && user && !isAdmin) {
-      console.log('🔒 Non-admin user attempted to access admin route, silently redirecting to dashboard');
+      secureLog('🔒 Non-admin user attempted to access admin route, silently redirecting to dashboard');
       navigate('/dashboard', { 
         replace: true,
         state: { redirectedFrom: window.location.pathname }
