@@ -36,6 +36,7 @@ A modern educational platform built with React and Node.js, featuring comprehens
 │   └── index.js         # Server entry point
 ├── supabase/             # Database migrations and functions
 └── index.html            # Landing page
+
 ```
 
 ## 🚀 Getting Started
@@ -140,4 +141,15 @@ This project is licensed under the MIT License.
 
 ## 📞 Support
 
-For support and questions, please contact the development team or create an issue in the repository. 
+For support and questions, please contact the development team or create an issue in the repository.
+
+## 🚀 Deployment Status
+
+- ✅ **Local Development**: Running on localhost:3000 & localhost:5000
+- ✅ **GitHub Pages**: Deployed at https://thekingezekielacademy.github.io/-king-ezekiel-academy
+- 🔄 **Vercel**: Configuration ready, awaiting deployment
+- 📋 **Namecheap**: Deployment guide prepared
+
+## About
+
+ Modern educational platform built with React, TypeScript, and Supabase 
