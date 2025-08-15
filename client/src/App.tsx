@@ -34,7 +34,7 @@ import './App.css';
 function App() {
   return (
     <AuthProvider>
-      <Router basename={process.env.PUBLIC_URL}>
+      <Router>
         <div className="App">
           <Navbar />
           <NetworkStatus />
