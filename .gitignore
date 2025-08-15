@@ -198,3 +198,4 @@ config/local.json
 
 # Supabase local development
 .supabase/
+.vercel

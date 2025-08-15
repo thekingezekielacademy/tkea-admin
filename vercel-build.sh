@@ -1,11 +1,7 @@
 #!/bin/bash
 
-echo "🚀 Starting Vercel build process..."
-
-# Check current directory
-echo "📁 Current directory: $(pwd)"
-echo "📁 Contents:"
-ls -la
+echo "🚀 Starting Vercel Build Process..."
+echo "=================================="
 
 # Check if client directory exists
 if [ ! -d "client" ]; then
@@ -81,15 +77,20 @@ fi
 
 # Copy public folder to src
 echo "📁 Copying public folder to src..."
-cp -r client/public client/src/
+cp -r client/public client/src
 
 # Verify copy
 echo "✅ Public folder copied. Checking src contents:"
 ls -la client/src/ | grep -E "(index\.html|favicon|manifest)"
 
+# Set environment variables explicitly for the build
+echo "🔧 Setting environment variables for build..."
+export REACT_APP_SUPABASE_URL="https://evqerkqiquwxqlizdqmg.supabase.co"
+export REACT_APP_SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV2cWVya3FpcXV3eHFsaXpkcW1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ2NzE0NTUsImV4cCI6MjA3MDI0NzQ1NX0.0hoqOOvJzRFX6zskur2HixoIW2XfAP0fMBwTMGcd7kw"
+
 # Build the React app
 echo "🔨 Building React app..."
-cd client
-npm run build
+cd client && npm run build
+cd ..
 
-echo "🎉 Build process completed!"
+echo "✅ Build completed!"
