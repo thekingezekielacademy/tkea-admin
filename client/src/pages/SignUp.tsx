@@ -109,7 +109,7 @@ const SignUp: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8 mt-16 sm:mt-20">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         {/* User Icon */}
         <div className="flex justify-center">

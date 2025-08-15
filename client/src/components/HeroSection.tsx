@@ -5,7 +5,7 @@ import { FaPlay, FaArrowRight, FaUsers, FaGraduationCap, FaStar, FaRocket, FaShi
 const HeroSection: React.FC = () => {
   const [showVideo, setShowVideo] = useState(false);
   return (
-    <section className="relative bg-gradient-to-br from-white via-primary-50 to-secondary-50 text-primary-900 overflow-hidden">
+    <section className="relative bg-gradient-to-br from-white via-primary-50 to-secondary-50 text-primary-900 overflow-hidden mt-16 sm:mt-20">
       {/* Animated Background Elements */}
       <div className="absolute inset-0">
         <div className="absolute top-10 sm:top-20 left-5 sm:left-10 w-48 h-48 sm:w-72 sm:h-72 bg-primary-100 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse-slow"></div>

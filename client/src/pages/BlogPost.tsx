@@ -192,7 +192,7 @@ const BlogPost: React.FC = () => {
               <div className="flex flex-wrap items-center gap-4 sm:gap-6 text-sm text-gray-600 mb-6">
                 <div className="flex items-center">
                   <FaUser className="w-4 h-4 mr-2" />
-                  <span>Admin</span>
+                  <span>King Ezekiel Academy</span>
                 </div>
                 <div className="flex items-center">
                   <FaCalendar className="w-4 h-4 mr-2" />
