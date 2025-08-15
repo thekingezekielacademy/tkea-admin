@@ -11,38 +11,16 @@ fi
 
 echo "✅ client directory found"
 
-# Create public directory if it doesn't exist
+# Check if public directory exists and has proper files
 if [ ! -d "client/public" ]; then
     echo "📁 Creating public directory..."
     mkdir -p client/public
     
-    # Create basic index.html
-    echo "📄 Creating index.html..."
-    cat > client/public/index.html << 'EOF'
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#000000" />
-    <meta name="description" content="King Ezekiel Academy - Modern Educational Platform" />
-    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
-    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
-    <title>King Ezekiel Academy</title>
-  </head>
-  <body>
-    <noscript>You need to enable JavaScript to run this app.</noscript>
-    <div id="root"></div>
-  </body>
-</html>
-EOF
-
-    # Create favicon.ico (empty file for now)
+    # Create basic favicon.ico (empty file for now)
     echo "📄 Creating favicon.ico..."
     touch client/public/favicon.ico
     
-    # Create manifest.json
+    # Create basic manifest.json
     echo "📄 Creating manifest.json..."
     cat > client/public/manifest.json << 'EOF'
 {
@@ -74,14 +52,6 @@ EOF
 else
     echo "✅ client/public directory found"
 fi
-
-# Copy public folder to src
-echo "📁 Copying public folder to src..."
-cp -r client/public client/src
-
-# Verify copy
-echo "✅ Public folder copied. Checking src contents:"
-ls -la client/src/ | grep -E "(index\.html|favicon|manifest)"
 
 # Set environment variables explicitly for the build
 echo "🔧 Setting environment variables for build..."
