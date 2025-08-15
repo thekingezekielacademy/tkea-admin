@@ -11,7 +11,7 @@ const Navbar: React.FC = () => {
   // Set up the onSignOut callback to navigate to home
   useEffect(() => {
     setOnSignOut(() => () => {
-      window.location.href = '/-king-ezekiel-academy';
+      window.location.href = '/';
     });
     
     // Cleanup function
@@ -41,7 +41,7 @@ const Navbar: React.FC = () => {
       // Navigation is now handled by the onSignOut callback
     } catch (error) {
       // Fallback navigation in case of error
-      window.location.href = '/-king-ezekiel-academy';
+      window.location.href = '/';
     }
   };
 
