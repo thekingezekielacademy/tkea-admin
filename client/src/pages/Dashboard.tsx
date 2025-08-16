@@ -80,6 +80,7 @@ const Dashboard: React.FC = () => {
     startDate: '',
     endDate: '',
     daysRemaining: 0,
+    totalDays: 0,
     isExpired: true
   });
   const [isLoading, setIsLoading] = useState(true);
@@ -180,6 +181,7 @@ const Dashboard: React.FC = () => {
           startDate: startDate.toISOString(),
           endDate: endDate.toISOString(),
           daysRemaining,
+          totalDays: 7,
           isExpired: daysRemaining <= 0
         };
         
@@ -194,6 +196,7 @@ const Dashboard: React.FC = () => {
           startDate: '',
           endDate: '',
           daysRemaining: 0,
+          totalDays: 0,
           isExpired: true
         });
         secureLog('User is older than 7 days, no trial available');
@@ -219,6 +222,7 @@ const Dashboard: React.FC = () => {
             startDate: trialData.start_date,
             endDate: trialData.end_date,
             daysRemaining,
+            totalDays: 7,
             isExpired: daysRemaining <= 0
           };
           
@@ -236,6 +240,7 @@ const Dashboard: React.FC = () => {
         startDate: '',
         endDate: '',
         daysRemaining: 0,
+        totalDays: 0,
         isExpired: true
       });
     }

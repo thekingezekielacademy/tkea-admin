@@ -374,13 +374,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       return { user: data.user, session: data.session, error };
     } catch (catchError) {
       secureError('❌ Unexpected error during signin:', catchError);
+      // Return null for error since we can't create a proper AuthError
       return { 
         user: null, 
         session: null, 
-        error: { 
-          message: catchError instanceof Error ? catchError.message : 'Unknown error occurred',
-          name: 'SignInError'
-        } 
+        error: null
       };
     }
   };
