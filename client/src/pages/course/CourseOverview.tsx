@@ -75,7 +75,7 @@ const CourseOverview: React.FC = () => {
   // Fetch course data on mount
   useEffect(() => {
     fetchCourse();
-  }, [id, user?.id]);
+  }, [id]);
 
   // Fetch user progress for this course
   useEffect(() => {
