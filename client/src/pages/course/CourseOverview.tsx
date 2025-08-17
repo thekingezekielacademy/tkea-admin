@@ -14,65 +14,66 @@ const CourseOverview: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [userProgress, setUserProgress] = useState<number>(0);
 
-  // Fetch course data
-  useEffect(() => {
-    const fetchCourse = async () => {
-      if (!id) return;
+  // Fetch course data function
+  const fetchCourse = async () => {
+    if (!id) return;
+    
+    try {
+      setLoading(true);
+      setError(null);
       
-      try {
-        setLoading(true);
-        setError(null);
+      // For non-authenticated users, we can still fetch course data for viewing
+      // Only require authentication for actual course access
+      if (!user) {
+        console.log('👤 Guest user viewing course - allowing read-only access');
+      } else {
+        // First, refresh the session to ensure we have a valid token
+        const { data: sessionData, error: sessionError } = await supabase.auth.refreshSession();
         
-        // For non-authenticated users, we can still fetch course data for viewing
-        // Only require authentication for actual course access
-        if (!user) {
-          console.log('👤 Guest user viewing course - allowing read-only access');
-        } else {
-          // First, refresh the session to ensure we have a valid token
-          const { data: sessionData, error: sessionError } = await supabase.auth.refreshSession();
-          
-          if (sessionError) {
-            console.log('⚠️ Session refresh failed, trying to get current session:', sessionError);
-            const { data: currentSession } = await supabase.auth.getSession();
-            if (!currentSession.session) {
-              console.log('⚠️ No valid session for authenticated user');
-            }
+        if (sessionError) {
+          console.log('⚠️ Session refresh failed, trying to get current session:', sessionError);
+          const { data: currentSession } = await supabase.auth.getSession();
+          if (!currentSession.session) {
+            console.log('⚠️ No valid session for authenticated user');
           }
         }
-        
-        const { data, error: fetchError } = await supabase
-          .from('courses')
-          .select(`
-            *,
-            course_videos (
-              id,
-              name,
-              duration,
-              order_index
-            )
-          `)
-          .eq('id', id)
-          .single();
-        
-        if (fetchError) {
-          console.error('❌ Error fetching course:', fetchError);
-          throw fetchError;
-        }
-        
-        if (data) {
-          console.log('✅ Course data received:', data);
-          setCourse(data);
-        } else {
-          setError('Course not found');
-        }
-      } catch (err) {
-        console.error('❌ Error fetching course:', err);
-        setError(`Failed to load course: ${err instanceof Error ? err.message : 'Unknown error'}`);
-      } finally {
-        setLoading(false);
       }
-    };
+      
+      const { data, error: fetchError } = await supabase
+        .from('courses')
+        .select(`
+          *,
+          course_videos (
+            id,
+            name,
+            duration,
+            order_index
+          )
+        `)
+        .eq('id', id)
+        .single();
+      
+      if (fetchError) {
+        console.error('❌ Error fetching course:', fetchError);
+        throw fetchError;
+      }
+      
+      if (data) {
+        console.log('✅ Course data received:', data);
+        setCourse(data);
+      } else {
+        setError('Course not found');
+      }
+    } catch (err) {
+      console.error('❌ Error fetching course:', err);
+      setError(`Failed to load course: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  // Fetch course data on mount
+  useEffect(() => {
     fetchCourse();
   }, [id]);
 
@@ -230,7 +231,11 @@ const CourseOverview: React.FC = () => {
             <p className="text-red-700 font-medium mb-3">{error}</p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <button 
-                onClick={() => window.location.reload()}
+                onClick={() => {
+                  setError(null);
+                  setLoading(true);
+                  fetchCourse();
+                }}
                 className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
               >
                 Try Again

@@ -17,87 +17,86 @@ const LessonPlayer: React.FC = () => {
   const [currentLessonIndex, setCurrentLessonIndex] = useState(0);
   const [completedLessons, setCompletedLessons] = useState<Set<string>>(new Set());
 
-  // Fetch course and lesson data
-  useEffect(() => {
-    const fetchCourseAndLesson = async () => {
-      if (!id || !lessonId) return;
+  // Fetch course and lesson data function
+  const fetchCourseAndLesson = async () => {
+    if (!id || !lessonId) return;
+    
+    try {
+      setLoading(true);
+      setError(null);
       
-      try {
-        setLoading(true);
-        setError(null);
-        
-        // First, refresh the session to ensure we have a valid token
-        const { error: sessionError } = await supabase.auth.refreshSession();
-        
-        if (sessionError) {
-          console.log('⚠️ Session refresh failed, trying to get current session:', sessionError);
-          const { data: currentSession } = await supabase.auth.getSession();
-          if (!currentSession.session) {
-            setError('Authentication required. Please sign in again.');
-            setLoading(false);
-            return;
-          }
+      // First, refresh the session to ensure we have a valid token
+      const { error: sessionError } = await supabase.auth.refreshSession();
+      
+      if (sessionError) {
+        console.log('⚠️ Session refresh failed, trying to get current session:', sessionError);
+        const { data: currentSession } = await supabase.auth.getSession();
+        if (!currentSession.session) {
+          setError('Authentication required. Please sign in again.');
+          setLoading(false);
+          return;
         }
+      }
 
-        // Try database operations first, then fall back to localStorage
-        if (user?.id) {
-          try {
-            // Try to auto-enroll user in course
-            const { error: enrollError } = await supabase
-              .from('user_courses')
-              .upsert({
-                user_id: user.id,
-                course_id: id,
-                progress: 0,
-                completed_lessons: 0,
-                last_accessed: new Date().toISOString()
-              }, {
-                onConflict: 'user_id,course_id'
-              });
-
-            if (!enrollError) {
-              console.log('✅ User auto-enrolled in course via database');
-            } else {
-              console.log('Database enrollment failed, using localStorage fallback');
-            }
-          } catch (error) {
-            console.log('Database operation failed, using localStorage fallback');
-          }
-        }
-
-        // Always store in localStorage as backup
+      // Try database operations first, then fall back to localStorage
+      if (user?.id) {
         try {
-          localStorage.setItem('recent_course_id', id);
-          localStorage.setItem('recent_course_progress', '0'); // Start at 0%
-          localStorage.setItem('recent_course_timestamp', new Date().toISOString());
-          console.log('✅ Course activity stored in localStorage');
-        } catch (localStorageError) {
-          console.log('Could not store course activity in localStorage');
+          // Try to auto-enroll user in course
+          const { error: enrollError } = await supabase
+            .from('user_courses')
+            .upsert({
+              user_id: user.id,
+              course_id: id,
+              progress: 0,
+              completed_lessons: 0,
+              last_accessed: new Date().toISOString()
+            }, {
+              onConflict: 'user_id,course_id'
+            });
+
+          if (!enrollError) {
+            console.log('✅ User auto-enrolled in course via database');
+          } else {
+            console.log('Database enrollment failed, using localStorage fallback');
+          }
+        } catch (error) {
+          console.log('Database operation failed, using localStorage fallback');
         }
-        
-        // Fetch course with all videos
-        const { data: courseData, error: courseError } = await supabase
-          .from('courses')
-          .select(`
-            *,
-            course_videos (
-              id,
-              name,
-              duration,
-              link,
-              order_index
-            )
-          `)
-          .eq('id', id)
-          .single();
-        
-        if (courseError) {
-          console.error('❌ Error fetching course:', courseError);
-          throw courseError;
-        }
-        
-        if (courseData) {
-          console.log('✅ Course data received:', courseData);
+      }
+
+      // Always store in localStorage as backup
+      try {
+        localStorage.setItem('recent_course_id', id);
+        localStorage.setItem('recent_course_progress', '0'); // Start at 0%
+        localStorage.setItem('recent_course_timestamp', new Date().toISOString());
+        console.log('✅ Course activity stored in localStorage');
+      } catch (localStorageError) {
+        console.log('Could not store course activity in localStorage');
+      }
+      
+      // Fetch course with all videos
+      const { data: courseData, error: courseError } = await supabase
+        .from('courses')
+        .select(`
+          *,
+          course_videos (
+            id,
+            name,
+            duration,
+            link,
+            order_index
+          )
+        `)
+        .eq('id', id)
+        .single();
+      
+      if (courseError) {
+        console.error('❌ Error fetching course:', courseError);
+        throw courseError;
+      }
+      
+      if (courseData) {
+        console.log('✅ Course data received:', courseData);
           setCourse(courseData);
           
           // Find the current lesson by lessonId
@@ -133,6 +132,8 @@ const LessonPlayer: React.FC = () => {
       }
     };
 
+  // Fetch course and lesson data on mount
+  useEffect(() => {
     fetchCourseAndLesson();
   }, [id, lessonId, user?.id]);
 
@@ -336,7 +337,11 @@ const LessonPlayer: React.FC = () => {
             <p className="text-red-700 font-medium mb-3">{error}</p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <button 
-                onClick={() => window.location.reload()}
+                onClick={() => {
+                  setError(null);
+                  setLoading(true);
+                  fetchCourseAndLesson();
+                }}
                 className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
               >
                 Try Again

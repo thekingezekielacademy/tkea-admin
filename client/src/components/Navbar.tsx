@@ -11,6 +11,7 @@ const Navbar: React.FC = () => {
   // Set up the onSignOut callback to navigate to home
   useEffect(() => {
     setOnSignOut(() => () => {
+      // Use window.location.href for sign out to ensure complete session cleanup
       window.location.href = '/';
     });
     
