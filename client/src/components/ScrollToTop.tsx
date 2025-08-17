@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 
+// Enhanced ScrollToTop component for mobile and desktop navigation
 const ScrollToTop: React.FC = () => {
   const { pathname } = useLocation();
 
