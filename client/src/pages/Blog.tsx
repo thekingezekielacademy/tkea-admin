@@ -30,10 +30,6 @@ const Blog: React.FC = () => {
   const [hasMore, setHasMore] = useState(true);
   const postsPerPage = 9;
 
-  useEffect(() => {
-    fetchBlogPosts();
-  }, [currentPage, selectedCategory, selectedTag]);
-
   const fetchBlogPosts = async () => {
     try {
       setLoading(true);
@@ -163,6 +159,11 @@ const Blog: React.FC = () => {
     });
     return Array.from(tags);
   };
+
+  // Fetch blog posts when dependencies change
+  useEffect(() => {
+    fetchBlogPosts();
+  }, [currentPage, selectedCategory, selectedTag]);
 
   const filteredPosts = blogPosts.filter(post => {
     if (searchTerm) {
