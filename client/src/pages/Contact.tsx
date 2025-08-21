@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { FaEnvelope, FaPhone, FaMapMarkerAlt, FaClock, FaFacebook, FaTwitter, FaInstagram, FaLinkedin } from 'react-icons/fa';
+import { FaEnvelope, FaPhone, FaMapMarkerAlt, FaClock, FaFacebook, FaTwitter, FaInstagram, FaLinkedin, FaSpinner } from 'react-icons/fa';
 import { secureLog } from '../utils/secureLogger';
+import { contactService } from '../services/contactService';
 
 const Contact: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -10,6 +11,9 @@ const Contact: React.FC = () => {
     subject: '',
     message: ''
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [submitMessage, setSubmitMessage] = useState('');
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData({
@@ -18,18 +22,46 @@ const Contact: React.FC = () => {
     });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle form submission here
-    secureLog('Form submitted:', formData);
-    alert('Thank you for your message! We will get back to you soon.');
-    setFormData({
-      name: '',
-      email: '',
-      phone: '',
-      subject: '',
-      message: ''
-    });
+    setIsSubmitting(true);
+    setSubmitStatus('idle');
+    setSubmitMessage('');
+
+    try {
+      secureLog('Form submitted:', formData);
+      
+      // Try to submit via API first
+      let response;
+      try {
+        response = await contactService.submitContactForm(formData);
+      } catch (apiError) {
+        console.log('API failed, trying email fallback:', apiError);
+        // Fallback to email service if API fails
+        response = await contactService.submitViaEmail(formData);
+      }
+
+      if (response.success) {
+        setSubmitStatus('success');
+        setSubmitMessage(response.message);
+        setFormData({
+          name: '',
+          email: '',
+          phone: '',
+          subject: '',
+          message: ''
+        });
+      } else {
+        setSubmitStatus('error');
+        setSubmitMessage(response.message || 'Failed to send message. Please try again.');
+      }
+    } catch (error) {
+      console.error('Contact form error:', error);
+      setSubmitStatus('error');
+      setSubmitMessage('An error occurred. Please try again later.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -58,9 +90,8 @@ const Contact: React.FC = () => {
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-1">Address</h3>
                   <p className="text-gray-600">
-                    123 Education Street<br />
-                    Learning City, LC 12345<br />
-                    United States
+                    Lagos, Nigeria<br />
+                    West Africa
                   </p>
                 </div>
               </div>
@@ -71,8 +102,8 @@ const Contact: React.FC = () => {
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-1">Phone</h3>
-                  <p className="text-gray-600">+1 (555) 123-4567</p>
-                  <p className="text-gray-600">+1 (555) 123-4568</p>
+                  <p className="text-gray-600">+234 (0) 123 456 7890</p>
+                  <p className="text-gray-600">+234 (0) 987 654 3210</p>
                 </div>
               </div>
 
@@ -216,11 +247,36 @@ const Contact: React.FC = () => {
                 ></textarea>
               </div>
 
+              {/* Status Messages */}
+              {submitStatus === 'success' && (
+                <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                  <p className="text-green-800 font-medium">{submitMessage}</p>
+                </div>
+              )}
+              
+              {submitStatus === 'error' && (
+                <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-red-800 font-medium">{submitMessage}</p>
+                </div>
+              )}
+
               <button
                 type="submit"
-                className="w-full bg-primary-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-primary-700 transition-colors duration-200"
+                disabled={isSubmitting}
+                className={`w-full py-3 px-6 rounded-lg font-semibold transition-colors duration-200 ${
+                  isSubmitting 
+                    ? 'bg-gray-400 cursor-not-allowed' 
+                    : 'bg-primary-600 text-white hover:bg-primary-700'
+                }`}
               >
-                Send Message
+                {isSubmitting ? (
+                  <span className="flex items-center justify-center">
+                    <FaSpinner className="animate-spin mr-2 h-4 w-4" />
+                    Sending Message...
+                  </span>
+                ) : (
+                  'Send Message'
+                )}
               </button>
             </form>
           </div>
@@ -233,7 +289,7 @@ const Contact: React.FC = () => {
             <div className="text-center">
               <FaMapMarkerAlt className="h-16 w-16 text-gray-400 mx-auto mb-4" />
               <p className="text-gray-500 text-lg">Interactive Map Coming Soon</p>
-              <p className="text-gray-400">123 Education Street, Learning City, LC 12345</p>
+              <p className="text-gray-400">Lagos, Nigeria</p>
             </div>
           </div>
         </div>
