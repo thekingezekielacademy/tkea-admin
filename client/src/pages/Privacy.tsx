@@ -2,10 +2,6 @@ import React from 'react';
 import { FaShieldAlt, FaUserLock, FaEye, FaTrash, FaEnvelope, FaPhone, FaMapMarkerAlt } from 'react-icons/fa';
 
 const Privacy: React.FC = () => {
-  const scrollToTop = () => {
-    window.scrollTo(0, 0);
-  };
-
   return (
     <div className="min-h-screen bg-white pt-20">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -82,8 +78,8 @@ const Privacy: React.FC = () => {
             <div className="space-y-4 text-primary-700">
               <p>We use industry-standard security measures to protect your personal information.</p>
               <p>Access to your data is limited to authorized staff and service providers.</p>
-              <p className="text-amber-600 font-medium">
-                ⚠️ Please note that no method of electronic storage or transmission over the internet is 100% secure.
+              <p className="text-primary-600 font-medium">
+                While we implement industry-standard security measures, no electronic system is completely immune to all security risks.
               </p>
             </div>
           </div>

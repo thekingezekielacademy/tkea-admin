@@ -1,11 +1,7 @@
 import React from 'react';
-import { FaFileContract, FaCheck, FaTimes, FaExclamationTriangle, FaGraduationCap, FaCreditCard, FaUserShield, FaEnvelope, FaPhone, FaMapMarkerAlt } from 'react-icons/fa';
+import { FaFileContract, FaCheck, FaTimes, FaGraduationCap, FaCreditCard, FaEnvelope, FaPhone, FaMapMarkerAlt } from 'react-icons/fa';
 
 const Terms: React.FC = () => {
-  const scrollToTop = () => {
-    window.scrollTo(0, 0);
-  };
-
   return (
     <div className="min-h-screen bg-white pt-20">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
