@@ -58,7 +58,7 @@ const Navbar: React.FC = () => {
           {/* Logo and User Info (Left Side) */}
           <div className="flex items-center space-x-8">
             <Link to="/" onClick={scrollToTop} className="flex items-center">
-              <Logo size="lg" />
+              <Logo size="xl" />
             </Link>
             
             {/* User Name and Icon (when signed in) */}

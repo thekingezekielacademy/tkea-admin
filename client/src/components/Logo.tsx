@@ -1,20 +1,21 @@
 import React from 'react';
 
 interface LogoProps {
-  size?: 'sm' | 'md' | 'lg' | 'xl';
+  size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl';
   showText?: boolean;
   className?: string;
 }
 
-const Logo: React.FC<LogoProps> = ({ size = 'md', showText = true, className = '' }) => {
+const Logo: React.FC<LogoProps> = ({ size = 'md', showText = false, className = '' }) => {
   const sizeMap = {
-    sm: { logo: 24, text: 'text-sm' },
-    md: { logo: 32, text: 'text-base' },
-    lg: { logo: 48, text: 'text-lg' },
-    xl: { logo: 64, text: 'text-xl' }
+    sm: { logo: 24 },
+    md: { logo: 32 },
+    lg: { logo: 48 },
+    xl: { logo: 64 },
+    '2xl': { logo: 80 }
   };
 
-  const { logo: logoSize, text: textSize } = sizeMap[size];
+  const { logo: logoSize } = sizeMap[size];
 
   return (
     <div className={`flex items-center space-x-3 ${className}`}>
@@ -55,14 +56,7 @@ const Logo: React.FC<LogoProps> = ({ size = 'md', showText = true, className = '
         </svg>
       </div>
       
-      {/* Academy Name */}
-      {showText && (
-        <div className={`flex flex-col font-bold text-blue-900 ${textSize} leading-tight`}>
-          <span>The King</span>
-          <span>Ezekiel</span>
-          <span>Academy</span>
-        </div>
-      )}
+
     </div>
   );
 };

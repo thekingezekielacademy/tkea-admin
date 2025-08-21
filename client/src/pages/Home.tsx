@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import HeroSection from '../components/HeroSection';
-import { FaStar, FaClock, FaUsers, FaLaptopCode, FaChartBar, FaPalette, FaGlobe, FaCheck, FaRocket, FaAward, FaHeart, FaArrowRight } from 'react-icons/fa';
+import { FaStar, FaClock, FaUsers, FaChartBar, FaPalette, FaCheck, FaRocket, FaAward, FaHeart, FaArrowRight } from 'react-icons/fa';
 import Logo from '../components/Logo';
 
 const Home: React.FC = () => {

@@ -15,7 +15,7 @@ const Footer: React.FC = () => {
           {/* Brand Section */}
           <div className="col-span-1 md:col-span-2">
             <div className="mb-6">
-              <Logo size="xl" />
+              <Logo size="2xl" />
             </div>
             <p className="text-primary-600 mb-8 max-w-md leading-relaxed">
               Empowering students worldwide with quality education and digital skills training. 
