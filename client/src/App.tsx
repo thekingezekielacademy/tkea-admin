@@ -30,6 +30,8 @@ import LessonPlayer from './pages/course/LessonPlayer';
 import CourseComplete from './pages/course/CourseComplete';
 import Blog from './pages/Blog';
 import BlogPost from './pages/BlogPost';
+import Privacy from './pages/Privacy';
+import Terms from './pages/Terms';
 import './App.css';
 
 function App() {
@@ -48,6 +50,8 @@ function App() {
           <Route path="/blog/:slug" element={<BlogPost />} />
               <Route path="/about" element={<About />} />
               <Route path="/contact" element={<Contact />} />
+              <Route path="/privacy" element={<Privacy />} />
+              <Route path="/terms" element={<Terms />} />
               <Route path="/signin" element={<SignIn />} />
               <Route path="/signup" element={<SignUp />} />
               <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
