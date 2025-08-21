@@ -15,7 +15,7 @@ const Privacy: React.FC = () => {
             Privacy Policy
           </h1>
           <p className="text-lg text-primary-600">
-            Effective Date: January 1, 2024
+            Effective Date: January 1, 2025
           </p>
         </div>
 

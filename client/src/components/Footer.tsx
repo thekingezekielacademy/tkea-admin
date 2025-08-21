@@ -96,7 +96,7 @@ const Footer: React.FC = () => {
         <div className="border-t border-primary-200 mt-12 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <p className="text-primary-600 text-sm">
-              © 2024 King Ezekiel Academy. All rights reserved.
+              © 2025 King Ezekiel Academy. All rights reserved.
             </p>
             <div className="flex space-x-8 mt-4 md:mt-0">
               <Link to="/privacy" onClick={scrollToTop} className="text-primary-600 hover:text-primary-700 text-sm transition-colors duration-200">
