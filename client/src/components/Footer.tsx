@@ -3,6 +3,10 @@ import { Link } from 'react-router-dom';
 import { FaGraduationCap, FaFacebook, FaTwitter, FaInstagram, FaLinkedin, FaEnvelope, FaPhone, FaMapMarkerAlt } from 'react-icons/fa';
 
 const Footer: React.FC = () => {
+  const scrollToTop = () => {
+    window.scrollTo(0, 0);
+  };
+
   return (
     <footer className="bg-gradient-to-br from-primary-50 to-secondary-50 text-primary-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
@@ -40,22 +44,22 @@ const Footer: React.FC = () => {
             <h3 className="text-lg font-semibold text-primary-900 mb-6">Quick Links</h3>
             <ul className="space-y-4">
               <li>
-                <Link to="/" className="text-primary-600 hover:text-primary-700 transition-colors duration-200 flex items-center">
+                <Link to="/" onClick={scrollToTop} className="text-primary-600 hover:text-primary-700 transition-colors duration-200 flex items-center">
                   Home
                 </Link>
               </li>
               <li>
-                <Link to="/courses" className="text-primary-600 hover:text-primary-700 transition-colors duration-200 flex items-center">
+                <Link to="/courses" onClick={scrollToTop} className="text-primary-600 hover:text-primary-700 transition-colors duration-200 flex items-center">
                   Courses
                 </Link>
               </li>
               <li>
-                <Link to="/about" className="text-primary-600 hover:text-primary-700 transition-colors duration-200 flex items-center">
+                <Link to="/about" onClick={scrollToTop} className="text-primary-600 hover:text-primary-700 transition-colors duration-200 flex items-center">
                   About Us
                 </Link>
               </li>
               <li>
-                <Link to="/contact" className="text-primary-600 hover:text-primary-700 transition-colors duration-200 flex items-center">
+                <Link to="/contact" onClick={scrollToTop} className="text-primary-600 hover:text-primary-700 transition-colors duration-200 flex items-center">
                   Contact
                 </Link>
               </li>
@@ -95,10 +99,10 @@ const Footer: React.FC = () => {
               © 2024 King Ezekiel Academy. All rights reserved.
             </p>
             <div className="flex space-x-8 mt-4 md:mt-0">
-              <Link to="/privacy" className="text-primary-600 hover:text-primary-700 text-sm transition-colors duration-200">
+              <Link to="/privacy" onClick={scrollToTop} className="text-primary-600 hover:text-primary-700 text-sm transition-colors duration-200">
                 Privacy Policy
               </Link>
-              <Link to="/terms" className="text-primary-600 hover:text-primary-700 text-sm transition-colors duration-200">
+              <Link to="/terms" onClick={scrollToTop} className="text-primary-600 hover:text-primary-700 text-sm transition-colors duration-200">
                 Terms of Service
               </Link>
             </div>

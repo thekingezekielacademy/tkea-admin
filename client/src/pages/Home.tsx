@@ -74,12 +74,16 @@ const Home: React.FC = () => {
                 No commitment, cancel anytime. Join thousands of satisfied students.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center items-center">
-                <button className="group bg-gradient-to-r from-primary-700 to-primary-900 text-white font-bold py-3 sm:py-4 px-6 sm:px-8 rounded-xl text-base sm:text-lg transition-all duration-300 transform hover:scale-105 shadow-soft hover:shadow-glow">
+                <Link 
+                  to="/profile" 
+                  className="group bg-gradient-to-r from-primary-700 to-primary-900 text-white font-bold py-3 sm:py-4 px-6 sm:px-8 rounded-xl text-base sm:text-lg transition-all duration-300 transform hover:scale-105 shadow-soft hover:shadow-glow inline-flex items-center"
+                >
                   <span className="mr-2">Subscribe Now — only ₦2,500/month</span>
                   <FaArrowRight className="inline h-4 w-4 sm:h-5 sm:w-5 group-hover:translate-x-1 transition-transform duration-200" />
-                </button>
+                </Link>
                 <Link 
                   to="/courses" 
+                  onClick={() => window.scrollTo(0, 0)}
                   className="text-primary-600 hover:text-primary-700 font-semibold text-base sm:text-lg transition-colors duration-200 flex items-center"
                 >
                   Browse All Courses
@@ -220,7 +224,7 @@ const Home: React.FC = () => {
               <p className="text-primary-600 mb-4 sm:mb-6 leading-relaxed text-sm sm:text-base">
                 Master the latest technologies and programming languages to build innovative solutions.
               </p>
-              <Link to="/courses" className="inline-flex items-center text-primary-600 hover:text-primary-700 font-semibold group-hover:translate-x-1 transition-transform duration-200 text-sm sm:text-base">
+              <Link to="/courses" onClick={() => window.scrollTo(0, 0)} className="inline-flex items-center text-primary-600 hover:text-primary-700 font-semibold group-hover:translate-x-1 transition-transform duration-200 text-sm sm:text-base">
                 Explore Courses
                 <FaArrowRight className="ml-2 h-3 w-3 sm:h-4 sm:w-4" />
               </Link>
@@ -234,7 +238,7 @@ const Home: React.FC = () => {
               <p className="text-primary-600 mb-4 sm:mb-6 leading-relaxed text-sm sm:text-base">
                 Develop essential business skills and leadership qualities for career advancement.
               </p>
-              <Link to="/courses" className="inline-flex items-center text-primary-600 hover:text-primary-700 font-semibold group-hover:translate-x-1 transition-transform duration-200">
+              <Link to="/courses" onClick={() => window.scrollTo(0, 0)} className="inline-flex items-center text-primary-600 hover:text-primary-700 font-semibold group-hover:translate-x-1 transition-transform duration-200">
                 Explore Courses
                 <FaArrowRight className="ml-2 h-4 w-4" />
               </Link>
@@ -248,7 +252,7 @@ const Home: React.FC = () => {
               <p className="text-primary-600 mb-4 sm:mb-6 leading-relaxed text-sm sm:text-base">
                 Unleash your creativity with courses in design, multimedia, and artistic expression.
               </p>
-              <Link to="/courses" className="inline-flex items-center text-primary-600 hover:text-primary-700 font-semibold group-hover:translate-x-1 transition-transform duration-200">
+              <Link to="/courses" onClick={() => window.scrollTo(0, 0)} className="inline-flex items-center text-primary-600 hover:text-primary-700 font-semibold group-hover:translate-x-1 transition-transform duration-200">
                 Explore Courses
                 <FaArrowRight className="ml-2 h-4 w-4" />
               </Link>
@@ -262,7 +266,7 @@ const Home: React.FC = () => {
               <p className="text-primary-600 mb-4 sm:mb-6 leading-relaxed text-sm sm:text-base">
                 Expand your worldview with courses on international relations and global perspectives.
               </p>
-              <Link to="/courses" className="inline-flex items-center text-primary-600 hover:text-primary-700 font-semibold group-hover:translate-x-1 transition-transform duration-200">
+              <Link to="/courses" onClick={() => window.scrollTo(0, 0)} className="inline-flex items-center text-primary-600 hover:text-primary-700 font-semibold group-hover:translate-x-1 transition-transform duration-200">
                 Explore Courses
                 <FaArrowRight className="ml-2 h-4 w-4" />
               </Link>

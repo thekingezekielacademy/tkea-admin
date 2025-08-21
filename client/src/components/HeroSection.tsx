@@ -4,6 +4,11 @@ import { FaPlay, FaArrowRight, FaUsers, FaGraduationCap, FaStar, FaRocket, FaShi
 
 const HeroSection: React.FC = () => {
   const [showVideo, setShowVideo] = useState(false);
+  
+  const scrollToTop = () => {
+    window.scrollTo(0, 0);
+  };
+  
   return (
     <section className="relative bg-gradient-to-br from-white via-primary-50 to-secondary-50 text-primary-900 overflow-hidden mt-16 sm:mt-20">
       {/* Animated Background Elements */}
@@ -39,6 +44,7 @@ const HeroSection: React.FC = () => {
             <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center lg:justify-start mb-8 sm:mb-12">
               <Link
                 to="/courses"
+                onClick={scrollToTop}
                 className="group inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 bg-primary-900 text-white font-semibold rounded-xl shadow-soft hover:shadow-glow transition-all duration-300 transform hover:scale-105 text-base sm:text-lg"
               >
                 <span className="mr-2">Start Learning Now</span>

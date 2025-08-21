@@ -8,6 +8,10 @@ const Navbar: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
 
+  const scrollToTop = () => {
+    window.scrollTo(0, 0);
+  };
+
   // Set up the onSignOut callback to navigate to home
   useEffect(() => {
     setOnSignOut(() => () => {
@@ -52,7 +56,7 @@ const Navbar: React.FC = () => {
         <div className="flex justify-between h-16">
           {/* Logo and User Info (Left Side) */}
           <div className="flex items-center space-x-8">
-            <Link to="/" className="flex items-center space-x-2">
+            <Link to="/" onClick={scrollToTop} className="flex items-center space-x-2">
               <FaGraduationCap className="h-8 w-8 text-primary-500" />
               <span className="text-xl font-bold text-secondary-900">King Ezekiel Academy</span>
             </Link>
@@ -61,6 +65,7 @@ const Navbar: React.FC = () => {
             {user && (
               <Link 
                 to="/profile"
+                onClick={scrollToTop}
                 className="flex items-center space-x-2 px-3 py-1 bg-primary-50 rounded-lg border border-primary-200 hover:bg-primary-100 hover:border-primary-300 transition-all duration-200 cursor-pointer group"
                 title="Click to view profile"
               >
@@ -81,6 +86,7 @@ const Navbar: React.FC = () => {
               <Link
                 key={item.name}
                 to={item.path}
+                onClick={scrollToTop}
                 className={`text-sm font-medium transition-colors duration-200 ${
                   isActive(item.path)
                     ? 'text-primary-500 border-b-2 border-primary-500'
@@ -94,6 +100,7 @@ const Navbar: React.FC = () => {
             {user && (
               <Link
                 to="/dashboard"
+                onClick={scrollToTop}
                 className={`text-sm font-medium transition-colors duration-200 ${
                   isActive('/dashboard')
                     ? 'text-primary-500 border-b-2 border-primary-500'
@@ -123,6 +130,7 @@ const Navbar: React.FC = () => {
                 <Link
                   key={item.name}
                   to={item.path}
+                  onClick={scrollToTop}
                   className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
                     item.name === 'Sign Up'
                       ? 'bg-primary-900 text-white hover:bg-primary-800 shadow-md hover:shadow-lg transform hover:scale-105 font-semibold'
@@ -160,7 +168,10 @@ const Navbar: React.FC = () => {
                     ? 'text-primary-500 bg-primary-50'
                     : 'text-secondary-700 hover:text-primary-500 hover:bg-gray-50'
                 }`}
-                onClick={() => setIsMobileMenuOpen(false)}
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  scrollToTop();
+                }}
               >
                 {item.name}
               </Link>
@@ -173,7 +184,10 @@ const Navbar: React.FC = () => {
                     ? 'text-primary-500 bg-primary-50'
                     : 'text-secondary-700 hover:text-primary-500 hover:bg-gray-50'
                 }`}
-                onClick={() => setIsMobileMenuOpen(false)}
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  scrollToTop();
+                }}
               >
                 Dashboard
               </Link>
@@ -186,7 +200,10 @@ const Navbar: React.FC = () => {
                   <Link 
                     to="/profile"
                     className="block px-3 py-2 text-sm text-primary-700 bg-primary-50 rounded-md hover:bg-primary-100 transition-all duration-200"
-                    onClick={() => setIsMobileMenuOpen(false)}
+                    onClick={() => {
+                      setIsMobileMenuOpen(false);
+                      scrollToTop();
+                    }}
                   >
                     <div className="flex items-center space-x-2">
                       <FaUser className="text-primary-500" />
@@ -215,7 +232,10 @@ const Navbar: React.FC = () => {
                         ? 'bg-primary-900 text-white hover:bg-primary-800 shadow-md hover:shadow-lg transform hover:scale-105 font-semibold'
                         : 'text-secondary-700 hover:text-primary-500'
                     }`}
-                    onClick={() => setIsMobileMenuOpen(false)}
+                    onClick={() => {
+                      setIsMobileMenuOpen(false);
+                      scrollToTop();
+                    }}
                   >
                     {item.name}
                   </Link>
