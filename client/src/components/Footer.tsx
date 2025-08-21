@@ -1,7 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { FaFacebook, FaTwitter, FaInstagram, FaLinkedin, FaEnvelope, FaPhone, FaMapMarkerAlt } from 'react-icons/fa';
-import Logo from './Logo';
+import { FaGraduationCap, FaFacebook, FaTwitter, FaInstagram, FaLinkedin, FaEnvelope, FaPhone, FaMapMarkerAlt } from 'react-icons/fa';
 
 const Footer: React.FC = () => {
   const scrollToTop = () => {
@@ -14,8 +13,11 @@ const Footer: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
           {/* Brand Section */}
           <div className="col-span-1 md:col-span-2">
-            <div className="mb-6">
-              <Logo size="2xl" />
+            <div className="flex items-center space-x-3 mb-6">
+              <div className="w-12 h-12 bg-gradient-to-br from-primary-100 to-primary-200 rounded-2xl flex items-center justify-center">
+                <FaGraduationCap className="h-6 w-6 text-primary-600" />
+              </div>
+              <span className="text-2xl font-bold text-primary-900">King Ezekiel Academy</span>
             </div>
             <p className="text-primary-600 mb-8 max-w-md leading-relaxed">
               Empowering students worldwide with quality education and digital skills training. 

@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { FaBars, FaTimes, FaUser, FaSignOutAlt } from 'react-icons/fa';
+import { FaGraduationCap, FaBars, FaTimes, FaUser, FaSignOutAlt } from 'react-icons/fa';
 import { useAuth } from '../contexts/AuthContext';
-import Logo from './Logo';
 
 const Navbar: React.FC = () => {
   const { user, signOut, setOnSignOut } = useAuth();
@@ -57,8 +56,9 @@ const Navbar: React.FC = () => {
         <div className="flex justify-between h-16">
           {/* Logo and User Info (Left Side) */}
           <div className="flex items-center space-x-8">
-            <Link to="/" onClick={scrollToTop} className="flex items-center">
-              <Logo size="xl" />
+            <Link to="/" onClick={scrollToTop} className="flex items-center space-x-2">
+              <FaGraduationCap className="h-8 w-8 text-primary-500" />
+              <span className="text-xl font-bold text-secondary-900">King Ezekiel Academy</span>
             </Link>
             
             {/* User Name and Icon (when signed in) */}

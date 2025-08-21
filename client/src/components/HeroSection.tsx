@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FaPlay, FaArrowRight, FaUsers, FaStar, FaRocket, FaShieldAlt, FaClock, FaTimes } from 'react-icons/fa';
-import Logo from './Logo';
+import { FaPlay, FaArrowRight, FaUsers, FaGraduationCap, FaStar, FaRocket, FaShieldAlt, FaClock, FaTimes } from 'react-icons/fa';
 
 const HeroSection: React.FC = () => {
   const [showVideo, setShowVideo] = useState(false);
@@ -83,7 +82,7 @@ const HeroSection: React.FC = () => {
               <div className="text-center group">
                 <div className="flex items-center justify-center mb-2 sm:mb-3">
                   <div className="w-10 h-10 sm:w-12 sm:h-12 bg-primary-100 rounded-xl flex items-center justify-center group-hover:bg-primary-200 transition-colors duration-200">
-                    <Logo size="sm" showText={false} />
+                    <FaGraduationCap className="h-5 w-5 sm:h-6 sm:w-6 text-primary-600" />
                   </div>
                 </div>
                 <div className="text-lg sm:text-2xl font-bold text-primary-900">25+</div>
@@ -101,7 +100,7 @@ const HeroSection: React.FC = () => {
               <div className="text-center group">
                 <div className="flex items-center justify-center mb-2 sm:mb-3">
                   <div className="w-10 h-10 sm:w-12 sm:h-12 bg-primary-100 rounded-xl flex items-center justify-center group-hover:bg-primary-200 transition-colors duration-200">
-                    <Logo size="sm" showText={false} />
+                    <FaGraduationCap className="h-5 w-5 sm:h-6 sm:w-6 text-primary-600" />
                   </div>
                 </div>
                 <div className="text-lg sm:text-2xl font-bold text-primary-900">₦2,500</div>
@@ -115,9 +114,9 @@ const HeroSection: React.FC = () => {
             <div className="relative z-10">
               <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-soft border border-primary-100">
                                   <div className="text-center">
-                                  <div className="w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-primary-100 to-primary-200 rounded-2xl flex items-center justify-center mx-auto mb-4 sm:mb-6 animate-float">
-                <Logo size="sm" showText={false} />
-              </div>
+                    <div className="w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-primary-100 to-primary-200 rounded-2xl flex items-center justify-center mx-auto mb-4 sm:mb-6 animate-float">
+                      <FaGraduationCap className="h-10 w-10 sm:h-12 sm:w-12 text-primary-600" />
+                    </div>
                     <h3 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4 text-primary-900">Digital Skills Learning</h3>
                     <p className="text-primary-800 mb-6 sm:mb-8 leading-relaxed font-medium text-sm sm:text-base">
                       Master the most in-demand digital skills with our comprehensive, industry-aligned courses
