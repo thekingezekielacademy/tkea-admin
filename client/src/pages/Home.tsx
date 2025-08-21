@@ -260,11 +260,11 @@ const Home: React.FC = () => {
 
             <div className="bg-white rounded-3xl shadow-soft p-6 sm:p-8 hover:shadow-glow transition-all duration-300 border border-primary-100 group">
               <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-primary-100 to-primary-200 rounded-2xl flex items-center justify-center mb-6 sm:mb-8 group-hover:scale-110 transition-transform duration-300">
-                <FaGlobe className="h-8 w-8 sm:h-10 sm:w-10 text-primary-600" />
+                <FaChartBar className="h-8 w-8 sm:h-10 sm:w-10 text-primary-600" />
               </div>
-              <h3 className="text-lg sm:text-xl font-semibold text-primary-900 mb-3 sm:mb-4">Global Studies</h3>
+              <h3 className="text-lg sm:text-xl font-semibold text-primary-900 mb-3 sm:mb-4">Marketing & Sales</h3>
               <p className="text-primary-600 mb-4 sm:mb-6 leading-relaxed text-sm sm:text-base">
-                Expand your worldview with courses on international relations and global perspectives.
+                Master digital marketing strategies and sales techniques to grow your business.
               </p>
               <Link to="/courses" onClick={() => window.scrollTo(0, 0)} className="inline-flex items-center text-primary-600 hover:text-primary-700 font-semibold group-hover:translate-x-1 transition-transform duration-200">
                 Explore Courses
