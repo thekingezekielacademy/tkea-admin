@@ -100,6 +100,8 @@ const Dashboard: React.FC = () => {
     if (!user?.id) return;
     
     try {
+      secureLog('🔍 Checking subscription status for user:', user.id);
+      
       // Try to fetch from database first
       const { data: subData, error: subError } = await supabase
         .from('user_subscriptions')
@@ -110,15 +112,32 @@ const Dashboard: React.FC = () => {
         .limit(1)
         .single();
       
+      if (subError) {
+        secureLog('❌ Database subscription query error:', subError);
+      }
+      
       if (!subError && subData) {
         setSubActive(true);
         secureStorage.setSubscriptionActive(true); // Update secure storage
         secureLog('✅ Found active subscription in database, setting subActive = true');
+        secureLog('📊 Subscription data:', subData);
       } else {
         // Fallback to secure storage
         const secureSubActive = secureStorage.isSubscriptionActive();
         setSubActive(secureSubActive);
         secureLog('No active subscription in database, using secure storage status:', secureSubActive);
+        
+        // Also check if there are any subscriptions at all for this user
+        const { data: allSubs, error: allSubsError } = await supabase
+          .from('user_subscriptions')
+          .select('*')
+          .eq('user_id', user.id);
+        
+        if (allSubsError) {
+          secureLog('❌ Error fetching all subscriptions:', allSubsError);
+        } else {
+          secureLog('📊 All subscriptions for user:', allSubs);
+        }
       }
     } catch (error) {
       secureLog('Database not available, using secure storage fallback');
@@ -815,6 +834,35 @@ const Dashboard: React.FC = () => {
                 <p><strong>Subscription Status:</strong> {subActive ? 'Active' : 'Inactive'}</p>
                 <p><strong>Access Granted:</strong> {trialStatus.isActive || subActive ? 'Yes' : 'No'}</p>
                 <p><strong>Secure Storage:</strong> {secureStorage.isSubscriptionActive() ? 'Active' : 'Inactive'}</p>
+                <p><strong>User ID:</strong> {user?.id}</p>
+              </div>
+              <div className="mt-3 flex space-x-2">
+                <button 
+                  onClick={() => {
+                    secureStorage.setSubscriptionActive(true);
+                    setSubActive(true);
+                    console.log('✅ Manually set subscription to active');
+                  }}
+                  className="bg-green-600 text-white px-3 py-1 rounded text-xs hover:bg-green-700"
+                >
+                  Set Sub Active
+                </button>
+                <button 
+                  onClick={() => {
+                    secureStorage.setSubscriptionActive(false);
+                    setSubActive(false);
+                    console.log('❌ Manually set subscription to inactive');
+                  }}
+                  className="bg-red-600 text-white px-3 py-1 rounded text-xs hover:bg-red-700"
+                >
+                  Set Sub Inactive
+                </button>
+                <button 
+                  onClick={() => fetchSubscriptionStatus()}
+                  className="bg-blue-600 text-white px-3 py-1 rounded text-xs hover:bg-blue-700"
+                >
+                  Refresh Sub Status
+                </button>
               </div>
             </div>
           </div>
