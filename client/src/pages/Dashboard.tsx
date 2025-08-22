@@ -1004,10 +1004,20 @@ const Dashboard: React.FC = () => {
                             Choose your first course and begin your learning journey today!
                           </p>
                           <button 
-                            onClick={() => navigate('/courses')}
-                            className="bg-gradient-to-r from-green-600 to-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:from-green-700 hover:to-blue-700 transition-all duration-200"
+                            onClick={() => {
+                              if (trialStatus.isExpired && !subActive) {
+                                navigate('/profile');
+                              } else {
+                                navigate('/courses');
+                              }
+                            }}
+                            className={`px-6 py-2 rounded-lg font-medium transition-all duration-200 ${
+                              trialStatus.isExpired && !subActive
+                                ? 'bg-gradient-to-r from-red-600 to-red-700 text-white hover:from-red-700 hover:to-red-800'
+                                : 'bg-gradient-to-r from-green-600 to-blue-600 text-white hover:from-green-700 hover:to-blue-700'
+                            }`}
                           >
-                            Browse All Courses
+                            {trialStatus.isExpired && !subActive ? 'Upgrade to Access' : 'Browse All Courses'}
                           </button>
                         </div>
                       );
@@ -1051,8 +1061,21 @@ const Dashboard: React.FC = () => {
                             </span>
                           </div>
                           <div className="mt-3">
-                            <button onClick={() => navigate(`/course/${course.id}`)} className="bg-primary-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-700 transition-colors">
-                              Start Learning
+                            <button 
+                              onClick={() => {
+                                if (trialStatus.isExpired && !subActive) {
+                                  navigate('/profile');
+                                } else {
+                                  navigate(`/course/${course.id}`);
+                                }
+                              }} 
+                              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                                trialStatus.isExpired && !subActive
+                                  ? 'bg-red-600 text-white hover:bg-red-700'
+                                  : 'bg-primary-600 text-white hover:bg-primary-700'
+                              }`}
+                            >
+                              {trialStatus.isExpired && !subActive ? 'Upgrade to Access' : 'Start Learning'}
                             </button>
                           </div>
                         </div>
@@ -1070,10 +1093,20 @@ const Dashboard: React.FC = () => {
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">No Recommendations Yet</h3>
                   <p className="text-gray-600 mb-4">Explore our course catalog to find your next learning adventure</p>
                   <button 
-                    onClick={() => navigate('/courses')}
-                    className="bg-primary-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-primary-700 transition-colors"
+                    onClick={() => {
+                      if (trialStatus.isExpired && !subActive) {
+                        navigate('/profile');
+                      } else {
+                        navigate('/courses');
+                      }
+                    }}
+                    className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+                      trialStatus.isExpired && !subActive
+                        ? 'bg-red-600 text-white hover:bg-red-700'
+                        : 'bg-primary-600 text-white hover:bg-primary-700'
+                    }`}
                   >
-                    Explore Courses
+                    {trialStatus.isExpired && !subActive ? 'Upgrade to Access' : 'Explore Courses'}
                   </button>
                 </div>
               )}
@@ -1128,10 +1161,20 @@ const Dashboard: React.FC = () => {
                       Every great adventure begins with a single step. Start learning today and watch your XP grow!
                     </p>
                     <button 
-                      onClick={() => navigate('/courses')}
-                      className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:from-blue-700 hover:to-purple-700 transition-all duration-200"
+                      onClick={() => {
+                        if (trialStatus.isExpired && !subActive) {
+                          navigate('/profile');
+                        } else {
+                          navigate('/courses');
+                        }
+                      }}
+                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                        trialStatus.isExpired && !subActive
+                          ? 'bg-gradient-to-r from-red-600 to-red-700 text-white hover:from-red-700 hover:to-red-800'
+                          : 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700'
+                      }`}
                     >
-                      Explore Courses
+                      {trialStatus.isExpired && !subActive ? 'Upgrade to Access' : 'Explore Courses'}
                     </button>
                   </div>
                 </div>
@@ -1306,10 +1349,20 @@ const Dashboard: React.FC = () => {
                       Start your learning journey today
                     </p>
                     <button 
-                      onClick={() => navigate('/courses')}
-                      className="w-full bg-primary-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-primary-700 transition-colors"
+                      onClick={() => {
+                        if (trialStatus.isExpired && !subActive) {
+                          navigate('/profile');
+                        } else {
+                          navigate('/courses');
+                        }
+                      }}
+                      className={`w-full py-2 px-4 rounded-lg font-medium transition-colors ${
+                        trialStatus.isExpired && !subActive
+                          ? 'bg-red-600 text-white hover:bg-red-700'
+                          : 'bg-primary-600 text-white hover:bg-primary-700'
+                      }`}
                     >
-                      Browse Courses
+                      {trialStatus.isExpired && !subActive ? 'Upgrade to Access' : 'Browse Courses'}
                     </button>
                   </>
                 )}

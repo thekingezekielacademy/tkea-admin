@@ -3,6 +3,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 import ProgressRing from '../../components/ProgressRing';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
+import { TrialStatus } from '../../utils/trialManager';
+import secureStorage from '../../utils/secureStorage';
 
 const CourseOverview: React.FC = () => {
   const navigate = useNavigate();
@@ -13,6 +15,15 @@ const CourseOverview: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [userProgress, setUserProgress] = useState<number>(0);
+  const [trialStatus, setTrialStatus] = useState<TrialStatus>({
+    isActive: false,
+    startDate: '',
+    endDate: '',
+    daysRemaining: 0,
+    totalDays: 0,
+    isExpired: true
+  });
+  const [subActive, setSubActive] = useState<boolean>(false);
 
   // Fetch course data function
   const fetchCourse = async () => {
@@ -71,6 +82,51 @@ const CourseOverview: React.FC = () => {
       setLoading(false);
     }
   };
+
+  // Check trial and subscription status
+  useEffect(() => {
+    const checkAccess = async () => {
+      if (!user?.id) return;
+      
+      try {
+        // Check subscription status
+        const isSubActive = secureStorage.isSubscriptionActive();
+        setSubActive(isSubActive);
+        
+        // Check trial status from localStorage
+        const localTrial = localStorage.getItem('user_trial_status');
+        if (localTrial) {
+          try {
+            const parsedTrial = JSON.parse(localTrial);
+            const now = new Date();
+            const endDate = new Date(parsedTrial.endDate);
+            const timeDiff = endDate.getTime() - now.getTime();
+            const daysRemaining = Math.max(0, Math.floor(timeDiff / (1000 * 60 * 60 * 24)));
+            
+            const updatedTrialStatus = {
+              ...parsedTrial,
+              daysRemaining,
+              isExpired: daysRemaining <= 0
+            };
+            
+            setTrialStatus(updatedTrialStatus);
+            
+            // Redirect if trial expired and no subscription
+            if (updatedTrialStatus.isExpired && !isSubActive) {
+              navigate('/profile');
+              return;
+            }
+          } catch (parseError) {
+            console.log('Failed to parse localStorage trial data');
+          }
+        }
+      } catch (error) {
+        console.log('Error checking access:', error);
+      }
+    };
+    
+    checkAccess();
+  }, [user?.id, navigate]);
 
   // Fetch course data on mount
   useEffect(() => {
