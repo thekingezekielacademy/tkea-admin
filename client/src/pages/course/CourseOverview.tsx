@@ -89,12 +89,17 @@ const CourseOverview: React.FC = () => {
       if (!user?.id) return;
       
       try {
+        console.log('🔍 Checking access for user:', user.id);
+        
         // Check subscription status
         const isSubActive = secureStorage.isSubscriptionActive();
         setSubActive(isSubActive);
+        console.log('📊 Subscription status:', isSubActive);
         
         // Check trial status from localStorage
         const localTrial = localStorage.getItem('user_trial_status');
+        console.log('📅 Local trial data:', localTrial);
+        
         if (localTrial) {
           try {
             const parsedTrial = JSON.parse(localTrial);
@@ -110,21 +115,34 @@ const CourseOverview: React.FC = () => {
             };
             
             setTrialStatus(updatedTrialStatus);
+            console.log('📊 Trial status:', updatedTrialStatus);
             
-            // Only redirect if trial expired AND no active subscription
-            if (updatedTrialStatus.isExpired && !isSubActive) {
-              console.log('🚫 Trial expired and no subscription - redirecting to profile');
-              navigate('/profile');
+            // Check if access should be granted
+            const hasAccess = updatedTrialStatus.isActive || isSubActive;
+            console.log('🔐 Has access:', hasAccess, '(Trial active:', updatedTrialStatus.isActive, '| Sub active:', isSubActive, ')');
+            
+            // Redirect if NO access (trial expired AND no subscription)
+            if (!hasAccess) {
+              console.log('🚫 ACCESS DENIED - Trial expired and no subscription - redirecting to profile');
+              navigate('/profile', { replace: true });
               return;
             } else {
-              console.log('✅ Access granted - trial active or subscription active');
+              console.log('✅ ACCESS GRANTED - Trial active or subscription active');
             }
           } catch (parseError) {
-            console.log('Failed to parse localStorage trial data');
+            console.error('❌ Failed to parse localStorage trial data:', parseError);
+          }
+        } else {
+          console.log('⚠️ No trial data found in localStorage');
+          // If no trial data, check if user has subscription
+          if (!isSubActive) {
+            console.log('🚫 No trial data and no subscription - redirecting to profile');
+            navigate('/profile', { replace: true });
+            return;
           }
         }
       } catch (error) {
-        console.log('Error checking access:', error);
+        console.error('❌ Error checking access:', error);
       }
     };
     
@@ -275,6 +293,11 @@ const CourseOverview: React.FC = () => {
           <div className="text-center py-12">
             <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
             <p className="mt-2 text-gray-600">Loading course...</p>
+            <div className="mt-4 text-sm text-gray-500">
+              <p>Trial Status: {trialStatus?.isActive ? 'Active' : 'Inactive'}</p>
+              <p>Subscription: {subActive ? 'Active' : 'Inactive'}</p>
+              <p>Access: {(trialStatus?.isActive || subActive) ? 'Granted' : 'Checking...'}</p>
+            </div>
           </div>
         </div>
       </div>
