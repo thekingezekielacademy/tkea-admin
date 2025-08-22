@@ -823,50 +823,7 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Debug Info Banner - Remove in production */}
-        <div className="mb-8 bg-gradient-to-r from-yellow-50 to-orange-50 rounded-xl shadow-sm border border-yellow-200 p-4">
-          <div className="flex items-center space-x-3">
-            <div className="text-yellow-600 text-lg">🔍</div>
-            <div>
-              <h3 className="font-semibold text-gray-900 text-sm">Debug Info (Remove in Production)</h3>
-              <div className="text-xs text-gray-700 space-y-1">
-                <p><strong>Trial Status:</strong> {trialStatus.isActive ? 'Active' : 'Inactive'} | Expired: {trialStatus.isExpired ? 'Yes' : 'No'} | Days Left: {trialStatus.daysRemaining}</p>
-                <p><strong>Subscription Status:</strong> {subActive ? 'Active' : 'Inactive'}</p>
-                <p><strong>Access Granted:</strong> {trialStatus.isActive || subActive ? 'Yes' : 'No'}</p>
-                <p><strong>Secure Storage:</strong> {secureStorage.isSubscriptionActive() ? 'Active' : 'Inactive'}</p>
-                <p><strong>User ID:</strong> {user?.id}</p>
-              </div>
-              <div className="mt-3 flex space-x-2">
-                <button 
-                  onClick={() => {
-                    secureStorage.setSubscriptionActive(true);
-                    setSubActive(true);
-                    console.log('✅ Manually set subscription to active');
-                  }}
-                  className="bg-green-600 text-white px-3 py-1 rounded text-xs hover:bg-green-700"
-                >
-                  Set Sub Active
-                </button>
-                <button 
-                  onClick={() => {
-                    secureStorage.setSubscriptionActive(false);
-                    setSubActive(false);
-                    console.log('❌ Manually set subscription to inactive');
-                  }}
-                  className="bg-red-600 text-white px-3 py-1 rounded text-xs hover:bg-red-700"
-                >
-                  Set Sub Inactive
-                </button>
-                <button 
-                  onClick={() => fetchSubscriptionStatus()}
-                  className="bg-blue-600 text-white px-3 py-1 rounded text-xs hover:bg-blue-700"
-                >
-                  Refresh Sub Status
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content - 2/3 width */}
