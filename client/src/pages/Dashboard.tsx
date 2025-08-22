@@ -946,10 +946,22 @@ const Dashboard: React.FC = () => {
                     {/* Continue Learning Button */}
                     <div className="mt-4">
                       <button 
-                        onClick={() => navigate(`/course/${currentCourse.id}`)}
-                        className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 px-4 rounded-lg font-medium hover:from-blue-700 hover:to-purple-700 transition-all duration-200 flex items-center justify-center space-x-2"
+                        onClick={() => {
+                          if (trialStatus.isExpired && !subActive) {
+                            navigate('/profile');
+                          } else {
+                            navigate(`/course/${currentCourse.id}`);
+                          }
+                        }}
+                        className={`w-full py-3 px-4 rounded-lg font-medium transition-all duration-200 flex items-center justify-center space-x-2 ${
+                          trialStatus.isExpired && !subActive
+                            ? 'bg-gradient-to-r from-red-600 to-red-700 text-white hover:from-red-700 hover:to-red-800'
+                            : 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700'
+                        }`}
                       >
-                        <span>🎬 Continue Learning</span>
+                        <span>
+                          {trialStatus.isExpired && !subActive ? '🔒 Upgrade to Access' : '🎬 Continue Learning'}
+                        </span>
                         <FaArrowRight className="text-sm" />
                       </button>
                     </div>
@@ -1017,10 +1029,20 @@ const Dashboard: React.FC = () => {
                               </div>
                               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                                 <button 
-                                  onClick={() => navigate(`/course/${recentCourseId}`)}
-                                  className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-2 rounded-lg font-medium hover:from-blue-700 hover:to-purple-700 transition-all duration-200"
+                                  onClick={() => {
+                                    if (trialStatus.isExpired && !subActive) {
+                                      navigate('/profile');
+                                    } else {
+                                      navigate(`/course/${recentCourseId}`);
+                                    }
+                                  }}
+                                  className={`px-6 py-2 rounded-lg font-medium transition-all duration-200 ${
+                                    trialStatus.isExpired && !subActive
+                                      ? 'bg-gradient-to-r from-red-600 to-red-700 text-white hover:from-red-700 hover:to-red-800'
+                                      : 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700'
+                                  }`}
                                 >
-                                  Continue Learning
+                                  {trialStatus.isExpired && !subActive ? 'Upgrade to Access' : 'Continue Learning'}
                                 </button>
                                 <button 
                                   onClick={() => navigate('/courses')}
@@ -1402,10 +1424,20 @@ const Dashboard: React.FC = () => {
                       Pick up where you left off in {currentCourse.title}
                     </p>
                     <button 
-                      onClick={() => navigate(`/course/${currentCourse.id}/overview`)}
-                      className="w-full bg-primary-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-primary-700 transition-colors"
+                      onClick={() => {
+                        if (trialStatus.isExpired && !subActive) {
+                          navigate('/profile');
+                        } else {
+                          navigate(`/course/${currentCourse.id}/overview`);
+                        }
+                      }}
+                      className={`w-full py-2 px-4 rounded-lg font-medium transition-colors ${
+                        trialStatus.isExpired && !subActive
+                          ? 'bg-red-600 text-white hover:bg-red-700'
+                          : 'bg-primary-600 text-white hover:bg-primary-700'
+                      }`}
                     >
-                      Resume Course
+                      {trialStatus.isExpired && !subActive ? 'Upgrade to Access' : 'Resume Course'}
                     </button>
                   </>
                 ) : (
