@@ -264,17 +264,7 @@ const Contact: React.FC = () => {
           </div>
         </div>
 
-        {/* Map Section */}
-        <div className="mt-20">
-          <h2 className="text-2xl font-bold text-gray-900 text-center mb-8">Find Us</h2>
-          <div className="bg-gray-200 rounded-2xl h-96 flex items-center justify-center">
-            <div className="text-center">
-              <FaMapMarkerAlt className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500 text-lg">Interactive Map Coming Soon</p>
-              <p className="text-gray-400">Lagos, Nigeria</p>
-            </div>
-          </div>
-        </div>
+
       </div>
     </div>
   );
