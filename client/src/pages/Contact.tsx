@@ -117,6 +117,9 @@ const Contact: React.FC = () => {
                     Saturday: 9:00 AM - 4:00 PM<br />
                     Sunday: Closed
                   </p>
+                  <p className="text-sm text-primary-600 font-medium mt-2">
+                    🌐 Online Learning Available 24/7
+                  </p>
                 </div>
               </div>
             </div>
