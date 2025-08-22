@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { FaGraduationCap, FaFacebook, FaTwitter, FaInstagram, FaLinkedin, FaEnvelope, FaPhone, FaMapMarkerAlt } from 'react-icons/fa';
+import { FaGraduationCap, FaFacebook, FaInstagram, FaTelegram, FaEnvelope, FaMapMarkerAlt } from 'react-icons/fa';
 
 const Footer: React.FC = () => {
   const scrollToTop = () => {
@@ -24,18 +24,31 @@ const Footer: React.FC = () => {
               Join our community of learners and transform your career today.
             </p>
             <div className="flex space-x-4">
-              <a href="#" className="w-10 h-10 bg-primary-100 rounded-xl flex items-center justify-center text-primary-600 hover:bg-primary-200 hover:text-primary-700 transition-all duration-200">
+              <a 
+                href="https://www.facebook.com/thekingezekielacademy" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="w-10 h-10 bg-primary-100 rounded-xl flex items-center justify-center text-primary-600 hover:bg-primary-200 hover:text-primary-700 transition-all duration-200"
+              >
                 <FaFacebook className="h-5 w-5" />
               </a>
-              <a href="#" className="w-10 h-10 bg-primary-100 rounded-xl flex items-center justify-center text-primary-600 hover:bg-primary-200 hover:text-primary-700 transition-all duration-200">
-                <FaTwitter className="h-5 w-5" />
-              </a>
-              <a href="#" className="w-10 h-10 bg-primary-100 rounded-xl flex items-center justify-center text-primary-600 hover:bg-primary-200 hover:text-primary-700 transition-all duration-200">
+              <a 
+                href="https://www.instagram.com/thekingezekielacademy" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="w-10 h-10 bg-primary-100 rounded-xl flex items-center justify-center text-primary-600 hover:bg-primary-200 hover:text-primary-700 transition-all duration-200"
+              >
                 <FaInstagram className="h-5 w-5" />
               </a>
-              <a href="#" className="w-10 h-10 bg-primary-100 rounded-xl flex items-center justify-center text-primary-600 hover:bg-primary-200 hover:text-primary-700 transition-all duration-200">
-                <FaLinkedin className="h-5 w-5" />
+              <a 
+                href="https://t.me/kingezekielfreetraining" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="w-10 h-10 bg-primary-100 rounded-xl flex items-center justify-center text-primary-600 hover:bg-primary-200 hover:text-primary-700 transition-all duration-200"
+              >
+                <FaTelegram className="h-5 w-5" />
               </a>
+
             </div>
           </div>
 
@@ -74,19 +87,14 @@ const Footer: React.FC = () => {
                 <div className="w-8 h-8 bg-primary-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
                   <FaMapMarkerAlt className="h-4 w-4 text-primary-600" />
                 </div>
-                <span className="text-primary-600 text-sm leading-relaxed">123 Education St, Learning City</span>
+                <span className="text-primary-600 text-sm leading-relaxed">Lagos, Nigeria</span>
               </div>
-              <div className="flex items-start space-x-3">
-                <div className="w-8 h-8 bg-primary-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
-                  <FaPhone className="h-4 w-4 text-primary-600" />
-                </div>
-                <span className="text-primary-600 text-sm">+1 (555) 123-4567</span>
-              </div>
+
               <div className="flex items-start space-x-3">
                 <div className="w-8 h-8 bg-primary-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
                   <FaEnvelope className="h-4 w-4 text-primary-600" />
                 </div>
-                <span className="text-primary-600 text-sm">info@kingezekielacademy.com</span>
+                <span className="text-primary-600 text-sm">info@thekingezekielacademy.com</span>
               </div>
             </div>
           </div>
