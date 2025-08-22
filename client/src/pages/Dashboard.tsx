@@ -112,12 +112,13 @@ const Dashboard: React.FC = () => {
       
       if (!subError && subData) {
         setSubActive(true);
-        secureLog('✅ Found active subscription in database');
+        secureStorage.setSubscriptionActive(true); // Update secure storage
+        secureLog('✅ Found active subscription in database, setting subActive = true');
       } else {
         // Fallback to secure storage
         const secureSubActive = secureStorage.isSubscriptionActive();
         setSubActive(secureSubActive);
-        secureLog('Using secure storage subscription status:', secureSubActive);
+        secureLog('No active subscription in database, using secure storage status:', secureSubActive);
       }
     } catch (error) {
       secureLog('Database not available, using secure storage fallback');
@@ -799,6 +800,22 @@ const Dashboard: React.FC = () => {
               <p className="text-xs text-gray-700">
                 Your learning activities automatically earn XP and maintain your streak. Watch lessons, complete courses, and stay consistent!
               </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Debug Info Banner - Remove in production */}
+        <div className="mb-8 bg-gradient-to-r from-yellow-50 to-orange-50 rounded-xl shadow-sm border border-yellow-200 p-4">
+          <div className="flex items-center space-x-3">
+            <div className="text-yellow-600 text-lg">🔍</div>
+            <div>
+              <h3 className="font-semibold text-gray-900 text-sm">Debug Info (Remove in Production)</h3>
+              <div className="text-xs text-gray-700 space-y-1">
+                <p><strong>Trial Status:</strong> {trialStatus.isActive ? 'Active' : 'Inactive'} | Expired: {trialStatus.isExpired ? 'Yes' : 'No'} | Days Left: {trialStatus.daysRemaining}</p>
+                <p><strong>Subscription Status:</strong> {subActive ? 'Active' : 'Inactive'}</p>
+                <p><strong>Access Granted:</strong> {trialStatus.isActive || subActive ? 'Yes' : 'No'}</p>
+                <p><strong>Secure Storage:</strong> {secureStorage.isSubscriptionActive() ? 'Active' : 'Inactive'}</p>
+              </div>
             </div>
           </div>
         </div>

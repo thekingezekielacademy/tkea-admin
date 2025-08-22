@@ -111,10 +111,13 @@ const CourseOverview: React.FC = () => {
             
             setTrialStatus(updatedTrialStatus);
             
-            // Redirect if trial expired and no subscription
+            // Only redirect if trial expired AND no active subscription
             if (updatedTrialStatus.isExpired && !isSubActive) {
+              console.log('🚫 Trial expired and no subscription - redirecting to profile');
               navigate('/profile');
               return;
+            } else {
+              console.log('✅ Access granted - trial active or subscription active');
             }
           } catch (parseError) {
             console.log('Failed to parse localStorage trial data');
