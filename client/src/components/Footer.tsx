@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { FaGraduationCap, FaFacebook, FaInstagram, FaTelegram, FaEnvelope, FaMapMarkerAlt } from 'react-icons/fa';
+import { FaGraduationCap, FaFacebook, FaInstagram, FaTelegram, FaEnvelope, FaMapMarkerAlt, FaClock } from 'react-icons/fa';
 
 const Footer: React.FC = () => {
   const scrollToTop = () => {
@@ -95,6 +95,16 @@ const Footer: React.FC = () => {
                   <FaEnvelope className="h-4 w-4 text-primary-600" />
                 </div>
                 <span className="text-primary-600 text-sm">info@thekingezekielacademy.com</span>
+              </div>
+
+              <div className="flex items-start space-x-3">
+                <div className="w-8 h-8 bg-primary-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
+                  <FaClock className="h-4 w-4 text-primary-600" />
+                </div>
+                <div className="text-primary-600 text-sm">
+                  <span className="text-green-600 font-semibold">Always Open</span><br />
+                  <span className="text-xs text-gray-500">24/7 Online Learning</span>
+                </div>
               </div>
             </div>
           </div>

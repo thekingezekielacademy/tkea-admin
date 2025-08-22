@@ -35,10 +35,16 @@ const HeroSection: React.FC = () => {
               </span>
             </h1>
             
-            <p className="text-xl md:text-2xl text-primary-700 mb-10 max-w-2xl leading-relaxed">
+            <p className="text-xl md:text-2xl text-primary-700 mb-6 max-w-2xl leading-relaxed">
               Join 10,000+ students who have transformed their careers with our world-class digital skills courses. 
               Start your journey to success today.
             </p>
+            
+            {/* Always Open Badge */}
+            <div className="inline-flex items-center px-4 py-2 bg-green-100 text-green-700 rounded-full text-sm font-medium mb-8 border border-green-200">
+              <FaClock className="mr-2 h-4 w-4" />
+              Always Open • 24/7 Learning Platform
+            </div>
             
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center lg:justify-start mb-8 sm:mb-12">

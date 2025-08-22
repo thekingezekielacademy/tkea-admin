@@ -113,12 +113,8 @@ const Contact: React.FC = () => {
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-1">Business Hours</h3>
                   <p className="text-gray-600">
-                    Monday - Friday: 8:00 AM - 6:00 PM<br />
-                    Saturday: 9:00 AM - 4:00 PM<br />
-                    Sunday: Closed
-                  </p>
-                  <p className="text-sm text-primary-600 font-medium mt-2">
-                    🌐 Online Learning Available 24/7
+                    <span className="text-green-600 font-semibold">Always Open</span><br />
+                    <span className="text-sm text-gray-500">24/7 Online Learning Platform</span>
                   </p>
                 </div>
               </div>
