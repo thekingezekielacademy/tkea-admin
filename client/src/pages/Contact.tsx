@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FaEnvelope, FaPhone, FaMapMarkerAlt, FaClock, FaFacebook, FaTwitter, FaInstagram, FaLinkedin, FaSpinner } from 'react-icons/fa';
+import { FaEnvelope, FaMapMarkerAlt, FaClock, FaFacebook, FaInstagram, FaTelegram, FaSpinner } from 'react-icons/fa';
 import { secureLog } from '../utils/secureLogger';
 import { contactService } from '../services/contactService';
 
@@ -7,7 +7,6 @@ const Contact: React.FC = () => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    phone: '',
     subject: '',
     message: ''
   });
@@ -47,7 +46,6 @@ const Contact: React.FC = () => {
         setFormData({
           name: '',
           email: '',
-          phone: '',
           subject: '',
           message: ''
         });
@@ -96,16 +94,7 @@ const Contact: React.FC = () => {
                 </div>
               </div>
 
-              <div className="flex items-start space-x-4">
-                <div className="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <FaPhone className="h-6 w-6 text-primary-600" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-1">Phone</h3>
-                  <p className="text-gray-600">+234 (0) 123 456 7890</p>
-                  <p className="text-gray-600">+234 (0) 987 654 3210</p>
-                </div>
-              </div>
+
 
               <div className="flex items-start space-x-4">
                 <div className="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -113,8 +102,7 @@ const Contact: React.FC = () => {
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-1">Email</h3>
-                  <p className="text-gray-600">info@kingezekielacademy.com</p>
-                  <p className="text-gray-600">support@kingezekielacademy.com</p>
+                  <p className="text-gray-600">info@thekingezekielacademy.com</p>
                 </div>
               </div>
 
@@ -137,17 +125,29 @@ const Contact: React.FC = () => {
             <div className="mt-12">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Follow Us</h3>
               <div className="flex space-x-4">
-                <a href="#" className="w-12 h-12 bg-primary-600 rounded-lg flex items-center justify-center text-white hover:bg-primary-700 transition-colors duration-200">
+                <a 
+                  href="https://www.facebook.com/thekingezekielacademy" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="w-12 h-12 bg-primary-600 rounded-lg flex items-center justify-center text-white hover:bg-primary-700 transition-colors duration-200"
+                >
                   <FaFacebook className="h-6 w-6" />
                 </a>
-                <a href="#" className="w-12 h-12 bg-primary-600 rounded-lg flex items-center justify-center text-white hover:bg-primary-700 transition-colors duration-200">
-                  <FaTwitter className="h-6 w-6" />
-                </a>
-                <a href="#" className="w-12 h-12 bg-primary-600 rounded-lg flex items-center justify-center text-white hover:bg-primary-700 transition-colors duration-200">
+                <a 
+                  href="https://www.instagram.com/thekingezekielacademy" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="w-12 h-12 bg-primary-600 rounded-lg flex items-center justify-center text-white hover:bg-primary-700 transition-colors duration-200"
+                >
                   <FaInstagram className="h-6 w-6" />
                 </a>
-                <a href="#" className="w-12 h-12 bg-primary-600 rounded-lg flex items-center justify-center text-white hover:bg-primary-700 transition-colors duration-200">
-                  <FaLinkedin className="h-6 w-6" />
+                <a 
+                  href="https://t.me/kingezekielfreetraining" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="w-12 h-12 bg-primary-600 rounded-lg flex items-center justify-center text-white hover:bg-primary-700 transition-colors duration-200"
+                >
+                  <FaTelegram className="h-6 w-6" />
                 </a>
               </div>
             </div>
@@ -192,43 +192,26 @@ const Contact: React.FC = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
-                    Phone Number
-                  </label>
-                  <input
-                    type="tel"
-                    id="phone"
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                    placeholder="Enter your phone number"
-                  />
-                </div>
-                
-                <div>
-                  <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-2">
-                    Subject *
-                  </label>
-                  <select
-                    id="subject"
-                    name="subject"
-                    value={formData.subject}
-                    onChange={handleChange}
-                    required
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                  >
-                    <option value="">Select a subject</option>
-                    <option value="general">General Inquiry</option>
-                    <option value="courses">Course Information</option>
-                    <option value="enrollment">Enrollment</option>
-                    <option value="support">Technical Support</option>
-                    <option value="partnership">Partnership</option>
-                    <option value="other">Other</option>
-                  </select>
-                </div>
+              <div>
+                <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-2">
+                  Subject *
+                </label>
+                <select
+                  id="subject"
+                  name="subject"
+                  value={formData.subject}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                >
+                  <option value="">Select a subject</option>
+                  <option value="general">General Inquiry</option>
+                  <option value="courses">Course Information</option>
+                  <option value="enrollment">Enrollment</option>
+                  <option value="support">Technical Support</option>
+                  <option value="partnership">Partnership</option>
+                  <option value="other">Other</option>
+                </select>
               </div>
 
               <div>

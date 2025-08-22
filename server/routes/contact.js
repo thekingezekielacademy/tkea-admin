@@ -7,7 +7,6 @@ const router = express.Router();
 router.post('/', [
   body('name').trim().isLength({ min: 2 }).withMessage('Name must be at least 2 characters'),
   body('email').isEmail().normalizeEmail().withMessage('Please enter a valid email'),
-  body('phone').optional().trim(),
   body('message').trim().isLength({ min: 10 }).withMessage('Message must be at least 10 characters')
 ], async (req, res) => {
   try {
@@ -21,11 +20,11 @@ router.post('/', [
       });
     }
 
-    const { name, email, phone, message } = req.body;
+    const { name, email, message } = req.body;
 
     // Here you would typically save to database or send email
     // For now, we'll simulate success
-    console.log('Contact form submission:', { name, email, phone, message });
+    console.log('Contact form submission:', { name, email, message });
 
     res.status(200).json({
       success: true,
