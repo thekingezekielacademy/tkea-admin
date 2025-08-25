@@ -225,9 +225,9 @@ const Subscription: React.FC = () => {
               console.log('⚠️ No real billing history, creating from subscription data');
               // Create billing history from subscription data
               if (subscription) {
-                const subscriptionBilling = {
+                const subscriptionBilling: BillingHistory = {
                   id: `sub-${subscription.id}`,
-                  type: 'subscription',
+                  type: 'subscription' as const,
                   amount: subscription.amount,
                   currency: subscription.currency || 'NGN',
                   status: subscription.status === 'active' ? 'paid' : subscription.status,
@@ -250,9 +250,9 @@ const Subscription: React.FC = () => {
             console.log('⚠️ Failed to fetch real billing history, creating from subscription data');
             // Create billing history from subscription data as fallback
             if (subscription) {
-              const subscriptionBilling = {
+              const subscriptionBilling: BillingHistory = {
                 id: `sub-${subscription.id}`,
-                type: 'subscription',
+                type: 'subscription' as const,
                 amount: subscription.amount,
                 currency: subscription.currency || 'NGN',
                 status: subscription.status === 'active' ? 'paid' : subscription.status,
@@ -275,9 +275,9 @@ const Subscription: React.FC = () => {
           console.error('❌ Error fetching billing history:', error);
           // Create billing history from subscription data as fallback
           if (subscription) {
-            const subscriptionBilling = {
+            const subscriptionBilling: BillingHistory = {
               id: `sub-${subscription.id}`,
-              type: 'subscription',
+              type: 'subscription' as const,
               amount: subscription.amount,
               currency: subscription.currency || 'NGN',
               status: subscription.status === 'active' ? 'paid' : subscription.status,
@@ -306,7 +306,7 @@ const Subscription: React.FC = () => {
     };
 
     fetchSubscriptionData();
-  }, [user?.id]);
+  }, [user?.id, subscription]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -844,7 +844,6 @@ const Subscription: React.FC = () => {
 
   const confirmCancelSubscription = async () => {
     const sanitizedReason = sanitizeInput(cancelReason);
-    const sanitizedFeedback = sanitizeInput(cancelFeedback);
     
     if (!sanitizedReason) {
       alert('Please select a reason for cancellation');
