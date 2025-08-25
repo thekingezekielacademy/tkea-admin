@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useSidebar } from '../contexts/SidebarContext';
 import { supabase } from '../lib/supabase';
@@ -69,186 +69,110 @@ const Subscription: React.FC = () => {
     return isExpanded ? 'ml-64' : 'ml-16'; // Desktop: expanded=256px, collapsed=64px
   };
 
+  const fetchSubscriptionStatus = useCallback(async () => {
+    if (!user) return;
+
+    try {
+      setLoading(true);
+      
+      // Fetch from Supabase first
+      const { data: supabaseData, error: supabaseError } = await supabase
+        .from('user_subscriptions')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+
+      if (supabaseData && !supabaseError) {
+        // Use real Supabase data - this is the source of truth
+        // Calculate proper dates for monthly subscription
+        const now = new Date();
+        let startDate = new Date(supabaseData.created_at);
+        
+        // If the created_at date is in the future, use current date as start
+        if (startDate > now) {
+          console.log('⚠️ Created date is in future, using current date as start');
+          startDate = now;
+        }
+        
+        const endDate = new Date(startDate.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days from start
+        const nextBillingDate = new Date(endDate.getTime()); // Next billing is same as end date for monthly
+        
+        // Debug: Log the date calculations
+        console.log('🔍 Date Debug:', {
+          created_at: supabaseData.created_at,
+          startDate: startDate.toISOString(),
+          endDate: endDate.toISOString(),
+          nextBillingDate: nextBillingDate.toISOString(),
+          currentDate: now.toISOString()
+        });
+        
+        const subscription = {
+          id: supabaseData.id,
+          status: supabaseData.status,
+          plan_name: supabaseData.plan_name,
+          amount: supabaseData.amount === 250000 ? 2500 : supabaseData.amount, // Fix amount display
+          currency: supabaseData.currency || 'NGN',
+          billing_cycle: 'monthly' as const,
+          start_date: supabaseData.created_at,
+          end_date: supabaseData.subscription_end_date || endDate.toISOString(),
+          next_billing_date: supabaseData.next_billing_date || nextBillingDate.toISOString(),
+          paystack_subscription_id: supabaseData.paystack_subscription_id,
+          paystack_customer_code: supabaseData.paystack_customer_code,
+          created_at: supabaseData.created_at,
+          updated_at: supabaseData.updated_at,
+          cancel_at_period_end: supabaseData.cancel_at_period_end || false
+        };
+
+        setSubscription(subscription);
+        
+        // Only set localStorage if we don't have subscription data there
+        const existingLocal = localStorage.getItem('subscription');
+        if (!existingLocal) {
+          localStorage.setItem('subscription', JSON.stringify(subscription));
+        }
+        
+        return; // Exit early, don't check localStorage
+      }
+
+      // Only check localStorage if Supabase has no data
+      const localSubscription = localStorage.getItem('subscription');
+      if (localSubscription) {
+        try {
+          const parsed = JSON.parse(localSubscription);
+          setSubscription(parsed);
+        } catch (e) {
+          console.error('Error parsing localStorage subscription:', e);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching subscription:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [user]);
+
   useEffect(() => {
-    const fetchSubscriptionData = async () => {
+    if (user) {
+      fetchSubscriptionStatus();
+    }
+  }, [user, fetchSubscriptionStatus]);
+
+  useEffect(() => {
+    const fetchBillingHistory = async () => {
       if (!user?.id) return;
 
       setLoading(true);
       setError(null);
       
-      // Debug: Log environment and user info
-      console.log('Environment:', process.env.NODE_ENV);
-      console.log('User ID:', user.id);
-
       try {
-
-        // Fetch active subscription
-        const { data: subData, error: subError } = await supabase
-          .from('user_subscriptions')
-          .select('*')
-          .eq('user_id', user.id)
-          .eq('status', 'active')
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .single();
-
-        console.log('Supabase subscription data:', subData);
-        console.log('Supabase error:', subError);
+        const response = await fetch(`/api/paystack/billing-history/${user.id}`);
         
-        if (subError && subError.code !== 'PGRST116') { // PGRST116 = no rows returned
-          console.error('Error fetching subscription:', subError);
-          setError('Failed to load subscription data');
-          return;
-        }
-
-        // CRITICAL: Check localStorage FIRST for restored subscriptions (highest priority)
-        // This takes priority over everything to maintain restored state
-        const isRestored = localStorage.getItem('subscription_restored') === 'true';
-        const restoredData = localStorage.getItem('subscription_restored_data');
-        
-        if (isRestored && restoredData) {
-          // User has restored their subscription - show restored state (HIGHEST PRIORITY)
-          console.log('🔄 User has restored subscription, overriding everything...');
-          try {
-            const restoredSubscription = JSON.parse(restoredData);
-            console.log('🔄 Setting restored subscription from localStorage:', restoredSubscription);
-            setSubscription(restoredSubscription);
-            console.log('🔄 Showing restored subscription state from localStorage');
-            
-            // CRITICAL: Return early to prevent database fetch
-            setLoading(false);
-            return;
-          } catch (error) {
-            console.error('Error parsing restored subscription data:', error);
-            // Fall through to check for canceled subscriptions
-          }
-        } else {
-          // Check for canceled subscriptions (second priority)
-          const isCanceled = localStorage.getItem('subscription_canceled') === 'true';
-          const canceledAt = localStorage.getItem('subscription_canceled_at');
-          
-          if (isCanceled && canceledAt) {
-            // User has canceled - show canceled subscription state (PRIORITY)
-            console.log('🔒 User has canceled subscription, overriding database data...');
-            const canceledDate = new Date(canceledAt);
-            
-            // Use the preserved end_date from localStorage if available
-            const preservedEndDate = localStorage.getItem('subscription_end_date');
-            const endDate = preservedEndDate ? new Date(preservedEndDate) : new Date(canceledDate.getTime() + 30 * 24 * 60 * 60 * 1000);
-            
-            const canceledSubscriptionData = {
-              id: 'canceled-1',
-              status: 'canceled' as const,
-              plan_name: 'Premium Monthly Plan (Canceled)',
-              amount: 2500,
-              currency: 'NGN',
-              billing_cycle: 'monthly' as const,
-              start_date: new Date(canceledDate.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-              end_date: endDate.toISOString(),
-              next_billing_date: endDate.toISOString(),
-              cancel_at_period_end: true,
-              created_at: new Date(canceledDate.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-              updated_at: canceledAt
-            };
-            
-            console.log('🔒 Setting canceled subscription state from localStorage:', canceledSubscriptionData);
-            console.log('🔒 Preserved end_date from localStorage:', preservedEndDate);
-            console.log('🔒 Calculated end_date:', endDate.toISOString());
-            setSubscription(canceledSubscriptionData);
-            console.log('🔒 Showing canceled subscription state from localStorage');
-            
-            // CRITICAL: Return early to prevent database fetch
-            setLoading(false);
-            return;
-          } else if (subData) {
-            // No cancellation in localStorage, use database data
-            console.log('📊 Using database subscription data (no cancellation found)');
-            
-            // Ensure proper dates are set for active subscriptions
-            const now = new Date();
-            const startDate = subData.start_date ? new Date(subData.start_date) : now;
-            const endDate = subData.end_date ? new Date(subData.end_date) : new Date(startDate.getTime() + 30 * 24 * 60 * 60 * 1000);
-            const nextBilling = subData.next_billing_date ? new Date(subData.next_billing_date) : endDate;
-            
-            // Check if subscription is actually expired
-            const isExpired = endDate <= now;
-            
-            const correctedSubscription = {
-              ...subData,
-              amount: subData.amount === 250000 ? 2500 : subData.amount,
-              end_date: endDate.toISOString(),
-              next_billing_date: nextBilling.toISOString(),
-              // If expired, update status accordingly
-              status: isExpired ? 'expired' as const : subData.status
-            };
-            
-            console.log('📊 Corrected subscription data:', correctedSubscription);
-            setSubscription(correctedSubscription);
-            
-            // Debug the corrected data
-            setTimeout(() => debugSubscriptionData(correctedSubscription), 100);
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success && result.data && result.data.length > 0) {
+            setBillingHistory(result.data);
           } else {
-            // No database subscription and no cancellation - show mock data or nothing
-            console.log('🔍 No database subscription found and no cancellation state...');
-            // Show mock data in development, or create a placeholder for demo purposes
-            if (process.env.NODE_ENV === 'development' || !process.env.NODE_ENV) {
-              setSubscription({
-                id: 'mock-1',
-                status: 'active',
-                plan_name: 'Premium Monthly Plan',
-                amount: 2500,
-                currency: 'NGN',
-                billing_cycle: 'monthly',
-                start_date: new Date().toISOString(),
-                end_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-                next_billing_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-                cancel_at_period_end: false,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-              });
-            }
-            // In strict production, subscription will remain null (no mock data)
-          }
-        }
-
-        // Fetch real billing history from API
-        try {
-          console.log('💰 Fetching real billing history...');
-          const response = await fetch(`/api/paystack/billing-history/${user.id}`);
-          
-          if (response.ok) {
-            const result = await response.json();
-            if (result.success && result.data && result.data.length > 0) {
-              console.log('✅ Real billing history fetched:', result.data);
-              setBillingHistory(result.data);
-            } else {
-              console.log('⚠️ No real billing history, creating from subscription data');
-              // Create billing history from subscription data
-              if (subscription) {
-                const subscriptionBilling: BillingHistory = {
-                  id: `sub-${subscription.id}`,
-                  type: 'subscription' as const,
-                  amount: subscription.amount,
-                  currency: subscription.currency || 'NGN',
-                  status: mapSubscriptionStatusToBillingStatus(subscription.status),
-                  description: `${subscription.plan_name} - ${subscription.billing_cycle} billing`,
-                  date: subscription.start_date,
-                  invoice_url: `#subscription-${subscription.id}`,
-                  subscription_id: subscription.id,
-                  paystack_subscription_id: subscription.paystack_subscription_id,
-                  billing_cycle: subscription.billing_cycle,
-                  start_date: subscription.start_date,
-                  end_date: subscription.end_date,
-                  paystack_reference: subscription.paystack_subscription_id
-                };
-                setBillingHistory([subscriptionBilling]);
-              } else {
-                setBillingHistory([]);
-              }
-            }
-          } else {
-            console.log('⚠️ Failed to fetch real billing history, creating from subscription data');
-            // Create billing history from subscription data as fallback
+            // Create billing history from subscription data
             if (subscription) {
               const subscriptionBilling: BillingHistory = {
                 id: `sub-${subscription.id}`,
@@ -271,8 +195,7 @@ const Subscription: React.FC = () => {
               setBillingHistory([]);
             }
           }
-        } catch (error) {
-          console.error('❌ Error fetching billing history:', error);
+        } else {
           // Create billing history from subscription data as fallback
           if (subscription) {
             const subscriptionBilling: BillingHistory = {
@@ -296,16 +219,36 @@ const Subscription: React.FC = () => {
             setBillingHistory([]);
           }
         }
-
       } catch (error) {
-        console.error('Error fetching subscription data:', error);
-        setError('Failed to load subscription data');
+        console.error('❌ Error fetching billing history:', error);
+        // Create billing history from subscription data as fallback
+        if (subscription) {
+          const subscriptionBilling: BillingHistory = {
+            id: `sub-${subscription.id}`,
+            type: 'subscription' as const,
+            amount: subscription.amount,
+            currency: subscription.currency || 'NGN',
+            status: mapSubscriptionStatusToBillingStatus(subscription.status),
+            description: `${subscription.plan_name} - ${subscription.billing_cycle} billing`,
+            date: subscription.start_date,
+            invoice_url: `#subscription-${subscription.id}`,
+            subscription_id: subscription.id,
+            paystack_subscription_id: subscription.paystack_subscription_id,
+            billing_cycle: subscription.billing_cycle,
+            start_date: subscription.start_date,
+            end_date: subscription.end_date,
+            paystack_reference: subscription.paystack_subscription_id
+          };
+          setBillingHistory([subscriptionBilling]);
+        } else {
+          setBillingHistory([]);
+        }
       } finally {
         setLoading(false);
       }
     };
 
-    fetchSubscriptionData();
+    fetchBillingHistory();
   }, [user?.id, subscription]);
 
   const getStatusColor = (status: string) => {
@@ -438,37 +381,7 @@ const Subscription: React.FC = () => {
     }
   };
 
-  // Debug function to help diagnose subscription data issues
-  const debugSubscriptionData = (subscription: SubscriptionData | null) => {
-    if (!subscription) {
-      console.log('🔍 No subscription data to debug');
-      return;
-    }
 
-    console.log('🔍 ===== SUBSCRIPTION DATA DEBUG =====');
-    console.log('📊 Raw subscription data:', subscription);
-    
-    const now = new Date();
-    const startDate = subscription.start_date ? new Date(subscription.start_date) : null;
-    const endDate = subscription.end_date ? new Date(subscription.end_date) : null;
-    const nextBilling = subscription.next_billing_date ? new Date(subscription.next_billing_date) : null;
-    
-    console.log('📅 Current time:', now.toISOString());
-    console.log('📅 Start date:', startDate?.toISOString());
-    console.log('📅 End date:', endDate?.toISOString());
-    console.log('📅 Next billing:', nextBilling?.toISOString());
-    
-    if (endDate) {
-      const daysRemaining = Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-      const isExpired = endDate <= now;
-      console.log('⏰ Days remaining:', daysRemaining);
-      console.log('⏰ Is expired:', isExpired);
-    }
-    
-    console.log('🎯 Status:', subscription.status);
-    console.log('🎯 Cancel at period end:', subscription.cancel_at_period_end);
-    console.log('🔍 ======================================');
-  };
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -985,20 +898,6 @@ const Subscription: React.FC = () => {
 
             {/* Current Subscription Status */}
             <div className="bg-white rounded-xl shadow-sm border p-6 mb-8">
-              {/* Debug Info - Development Only */}
-              {process.env.NODE_ENV === 'development' && subscription && (
-                <div className="mb-4 p-3 bg-gray-100 rounded-lg text-xs">
-                  <p className="font-mono text-gray-600">
-                    <strong>Debug Info:</strong> status="{subscription.status}", cancel_at_period_end={subscription.cancel_at_period_end ? 'true' : 'false'}
-                  </p>
-                  <p className="font-mono text-gray-600 mt-1">
-                    <strong>Access State:</strong> {getAccessText(subscription.status, subscription.cancel_at_period_end, subscription.end_date)}
-                  </p>
-                  <p className="font-mono text-gray-600 mt-1">
-                    <strong>End Date:</strong> {subscription.end_date ? formatDate(subscription.end_date) : 'N/A'}
-                  </p>
-                </div>
-              )}
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-semibold text-gray-900">Current Subscription</h2>
                 <div className="flex items-center space-x-2">
