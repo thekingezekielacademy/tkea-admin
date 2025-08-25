@@ -291,6 +291,124 @@ router.get('/subscription/:subscriptionId/payments', async (req, res) => {
   }
 });
 
+// Get user's complete billing history
+router.get('/billing-history/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { format = 'json' } = req.query;
+
+    console.log(`💰 Fetching complete billing history for user: ${userId}`);
+
+    // Get user's subscriptions from Supabase
+    const { data: subscriptions, error: subError } = await supabase
+      .from('user_subscriptions')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (subError) {
+      throw subError;
+    }
+
+    // Transform subscriptions into billing history
+    const billingHistory = subscriptions.map(sub => ({
+      id: `sub-${sub.id}`,
+      type: 'subscription',
+      amount: sub.amount || 2500,
+      currency: sub.currency || 'NGN',
+      status: sub.status,
+      description: `${sub.plan_name} - ${sub.billing_cycle} billing`,
+      date: sub.created_at,
+      invoice_url: `#subscription-${sub.id}`,
+      subscription_id: sub.id,
+      paystack_subscription_id: sub.paystack_subscription_id,
+      billing_cycle: sub.billing_cycle,
+      start_date: sub.start_date,
+      end_date: sub.end_date,
+      paystack_reference: sub.paystack_subscription_id
+    }));
+
+    // If user has Paystack subscriptions, fetch payment details
+    const paystackPayments = [];
+    for (const sub of subscriptions) {
+      if (sub.paystack_subscription_id) {
+        try {
+          const paymentData = await makePaystackRequest(
+            `/transaction?subscription=${sub.paystack_subscription_id}`
+          );
+          
+          if (paymentData.data && paymentData.data.length > 0) {
+            paymentData.data.forEach(payment => {
+              paystackPayments.push({
+                id: `payment-${payment.id}`,
+                type: 'payment',
+                amount: payment.amount / 100, // Paystack amounts are in kobo
+                currency: payment.currency,
+                status: payment.status,
+                description: payment.description || 'Subscription Payment',
+                date: payment.created_at,
+                invoice_url: payment.reference,
+                payment_id: payment.id,
+                paystack_reference: payment.reference,
+                payment_method: payment.channel,
+                subscription_id: sub.id
+              });
+            });
+          }
+        } catch (error) {
+          console.log(`⚠️ Could not fetch Paystack payments for subscription: ${sub.paystack_subscription_id}`);
+        }
+      }
+    }
+
+    // Combine and sort all billing records
+    const allBillingHistory = [...billingHistory, ...paystackPayments]
+      .sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    // Return in requested format
+    if (format === 'csv') {
+      const csvContent = this.generateCSV(allBillingHistory);
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', `attachment; filename="billing-history-${userId}.csv"`);
+      res.send(csvContent);
+    } else {
+      res.json({
+        success: true,
+        data: allBillingHistory,
+        total: allBillingHistory.length,
+        userId: userId
+      });
+    }
+
+  } catch (error) {
+    console.error('❌ Error fetching billing history:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch billing history',
+      error: error.message
+    });
+  }
+});
+
+// Helper function to generate CSV
+function generateCSV(billingHistory) {
+  const headers = ['Date', 'Description', 'Amount', 'Status', 'Type', 'Reference'];
+  
+  const csvRows = [
+    headers.join(','),
+    ...billingHistory.map(record => [
+      new Date(record.date).toLocaleDateString(),
+      `"${record.description}"`,
+      record.amount,
+      record.status,
+      record.type,
+      record.paystack_reference || 'N/A'
+    ].join(','))
+  ];
+
+  return csvRows.join('\n');
+}
+
 // Webhook endpoint for Paystack notifications
 router.post('/webhook', async (req, res) => {
   try {

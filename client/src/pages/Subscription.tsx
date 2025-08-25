@@ -35,12 +35,20 @@ interface SubscriptionData {
 
 interface BillingHistory {
   id: string;
+  type?: 'subscription' | 'payment';
   amount: number;
   currency: string;
   status: 'paid' | 'pending' | 'failed';
   description: string;
   date: string;
   invoice_url?: string;
+  subscription_id?: string;
+  paystack_subscription_id?: string;
+  paystack_reference?: string;
+  billing_cycle?: string;
+  start_date?: string;
+  end_date?: string;
+  payment_method?: string;
 }
 
 const Subscription: React.FC = () => {
@@ -203,32 +211,26 @@ const Subscription: React.FC = () => {
           }
         }
 
-        // Fetch billing history (mock data for development or demo purposes)
-        if (process.env.NODE_ENV === 'development' || !process.env.NODE_ENV) {
-          const mockBillingHistory: BillingHistory[] = [
-            {
-              id: '1',
-              amount: 2500,
-              currency: 'NGN',
-              status: 'paid',
-              description: 'Monthly Subscription - King Ezekiel Academy',
-              date: new Date().toISOString(),
-              invoice_url: '#'
-            },
-            {
-              id: '2',
-              amount: 2500,
-              currency: 'NGN',
-              status: 'paid',
-              description: 'Monthly Subscription - King Ezekiel Academy',
-              date: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-              invoice_url: '#'
+        // Fetch real billing history from API
+        try {
+          console.log('💰 Fetching real billing history...');
+          const response = await fetch(`/api/paystack/billing-history/${user.id}`);
+          
+          if (response.ok) {
+            const result = await response.json();
+            if (result.success && result.data) {
+              console.log('✅ Real billing history fetched:', result.data);
+              setBillingHistory(result.data);
+            } else {
+              console.log('⚠️ No real billing history, using fallback');
+              setBillingHistory([]);
             }
-          ];
-          setBillingHistory(mockBillingHistory);
-        } else {
-          // In production, fetch real billing history from database
-          // TODO: Implement real billing history fetch
+          } else {
+            console.log('⚠️ Failed to fetch real billing history, using fallback');
+            setBillingHistory([]);
+          }
+        } catch (error) {
+          console.error('❌ Error fetching billing history:', error);
           setBillingHistory([]);
         }
 
@@ -701,7 +703,7 @@ const Subscription: React.FC = () => {
     }, 'image/jpeg', 0.95);
   };
 
-  const handleExportAll = () => {
+  const handleExportAll = async () => {
     // Security: Rate limiting check
     if (!user?.id || !checkRateLimit(user.id)) {
       alert('Please wait a few seconds before exporting again');
@@ -713,37 +715,64 @@ const Subscription: React.FC = () => {
       return;
     }
 
-    // Security: Sanitize data before export
-    const sanitizedBillingHistory = billingHistory.map(item => ({
-      ...item,
-      description: sanitizeInput(item.description)
-    }));
+    try {
+      console.log('📊 Exporting billing history...');
+      
+      // Use real API to export billing history
+      const response = await fetch(`/api/paystack/billing-history/${user.id}?format=csv`);
+      
+      if (response.ok) {
+        const csvContent = await response.text();
+        
+        // Create and download CSV file
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', `billing-history-${new Date().toISOString().split('T')[0]}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        
+        console.log('✅ Billing history exported successfully');
+      } else {
+        throw new Error('Failed to export billing history');
+      }
+    } catch (error) {
+      console.error('❌ Export error:', error);
+      
+      // Fallback to local CSV generation
+      console.log('🔄 Using fallback CSV generation...');
+      const sanitizedBillingHistory = billingHistory.map(item => ({
+        ...item,
+        description: sanitizeInput(item.description)
+      }));
 
-    // Create CSV content
-    const csvContent = [
-      ['Date', 'Description', 'Amount', 'Status', 'Invoice'],
-      ...sanitizedBillingHistory.map(item => [
-        formatDate(item.date),
-        item.description,
-        formatCurrency(item.amount, item.currency),
-        item.status,
-        item.invoice_url ? 'Available' : 'N/A'
-      ])
-    ].map(row => row.join(',')).join('\n');
+      const csvContent = [
+        ['Date', 'Description', 'Amount', 'Status', 'Type', 'Reference'],
+                 ...sanitizedBillingHistory.map(item => [
+           formatDate(item.date),
+           item.description,
+           formatCurrency(item.amount, item.currency),
+           item.status,
+           item.type || 'subscription',
+           item.paystack_reference || 'N/A'
+         ])
+      ].map(row => row.join(',')).join('\n');
 
-    // Create and download CSV file
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', `billing-history-${new Date().toISOString().split('T')[0]}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    // Clean up URL object
-    URL.revokeObjectURL(url);
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `billing-history-fallback-${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    }
   };
 
   const handleCancelSubscription = () => {
