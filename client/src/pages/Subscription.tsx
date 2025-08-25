@@ -230,7 +230,7 @@ const Subscription: React.FC = () => {
                   type: 'subscription' as const,
                   amount: subscription.amount,
                   currency: subscription.currency || 'NGN',
-                  status: subscription.status === 'active' ? 'paid' : subscription.status,
+                  status: mapSubscriptionStatusToBillingStatus(subscription.status),
                   description: `${subscription.plan_name} - ${subscription.billing_cycle} billing`,
                   date: subscription.start_date,
                   invoice_url: `#subscription-${subscription.id}`,
@@ -255,7 +255,7 @@ const Subscription: React.FC = () => {
                 type: 'subscription' as const,
                 amount: subscription.amount,
                 currency: subscription.currency || 'NGN',
-                status: subscription.status === 'active' ? 'paid' : subscription.status,
+                status: mapSubscriptionStatusToBillingStatus(subscription.status),
                 description: `${subscription.plan_name} - ${subscription.billing_cycle} billing`,
                 date: subscription.start_date,
                 invoice_url: `#subscription-${subscription.id}`,
@@ -280,7 +280,7 @@ const Subscription: React.FC = () => {
               type: 'subscription' as const,
               amount: subscription.amount,
               currency: subscription.currency || 'NGN',
-              status: subscription.status === 'active' ? 'paid' : subscription.status,
+              status: mapSubscriptionStatusToBillingStatus(subscription.status),
               description: `${subscription.plan_name} - ${subscription.billing_cycle} billing`,
               date: subscription.start_date,
               invoice_url: `#subscription-${subscription.id}`,
@@ -420,6 +420,22 @@ const Subscription: React.FC = () => {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(amount);
+  };
+
+  // Helper function to map subscription status to billing status
+  const mapSubscriptionStatusToBillingStatus = (subscriptionStatus: string): 'paid' | 'pending' | 'failed' => {
+    switch (subscriptionStatus) {
+      case 'active':
+        return 'paid';
+      case 'canceled':
+        return 'paid'; // Canceled subscriptions were paid
+      case 'expired':
+        return 'paid'; // Expired subscriptions were paid
+      case 'trialing':
+        return 'pending'; // Trial subscriptions are pending
+      default:
+        return 'paid'; // Default to paid for other statuses
+    }
   };
 
   // Debug function to help diagnose subscription data issues
