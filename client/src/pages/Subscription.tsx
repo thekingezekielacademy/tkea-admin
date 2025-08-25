@@ -155,11 +155,30 @@ const Subscription: React.FC = () => {
           } else if (subData) {
             // No cancellation in localStorage, use database data
             console.log('📊 Using database subscription data (no cancellation found)');
+            
+            // Ensure proper dates are set for active subscriptions
+            const now = new Date();
+            const startDate = subData.start_date ? new Date(subData.start_date) : now;
+            const endDate = subData.end_date ? new Date(subData.end_date) : new Date(startDate.getTime() + 30 * 24 * 60 * 60 * 1000);
+            const nextBilling = subData.next_billing_date ? new Date(subData.next_billing_date) : endDate;
+            
+            // Check if subscription is actually expired
+            const isExpired = endDate <= now;
+            
             const correctedSubscription = {
               ...subData,
-              amount: subData.amount === 250000 ? 2500 : subData.amount
+              amount: subData.amount === 250000 ? 2500 : subData.amount,
+              end_date: endDate.toISOString(),
+              next_billing_date: nextBilling.toISOString(),
+              // If expired, update status accordingly
+              status: isExpired ? 'expired' as const : subData.status
             };
+            
+            console.log('📊 Corrected subscription data:', correctedSubscription);
             setSubscription(correctedSubscription);
+            
+            // Debug the corrected data
+            setTimeout(() => debugSubscriptionData(correctedSubscription), 100);
           } else {
             // No database subscription and no cancellation - show mock data or nothing
             console.log('🔍 No database subscription found and no cancellation state...');
@@ -336,6 +355,38 @@ const Subscription: React.FC = () => {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(amount);
+  };
+
+  // Debug function to help diagnose subscription data issues
+  const debugSubscriptionData = (subscription: SubscriptionData | null) => {
+    if (!subscription) {
+      console.log('🔍 No subscription data to debug');
+      return;
+    }
+
+    console.log('🔍 ===== SUBSCRIPTION DATA DEBUG =====');
+    console.log('📊 Raw subscription data:', subscription);
+    
+    const now = new Date();
+    const startDate = subscription.start_date ? new Date(subscription.start_date) : null;
+    const endDate = subscription.end_date ? new Date(subscription.end_date) : null;
+    const nextBilling = subscription.next_billing_date ? new Date(subscription.next_billing_date) : null;
+    
+    console.log('📅 Current time:', now.toISOString());
+    console.log('📅 Start date:', startDate?.toISOString());
+    console.log('📅 End date:', endDate?.toISOString());
+    console.log('📅 Next billing:', nextBilling?.toISOString());
+    
+    if (endDate) {
+      const daysRemaining = Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+      const isExpired = endDate <= now;
+      console.log('⏰ Days remaining:', daysRemaining);
+      console.log('⏰ Is expired:', isExpired);
+    }
+    
+    console.log('🎯 Status:', subscription.status);
+    console.log('🎯 Cancel at period end:', subscription.cancel_at_period_end);
+    console.log('🔍 ======================================');
   };
 
   const formatDate = (dateString: string) => {
