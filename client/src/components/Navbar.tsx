@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { FaGraduationCap, FaBars, FaTimes, FaUser, FaSignOutAlt } from 'react-icons/fa';
 import { useAuth } from '../contexts/AuthContext';
+import { useSidebar } from '../contexts/SidebarContext';
 
 const Navbar: React.FC = () => {
   const { user, signOut, setOnSignOut } = useAuth();
@@ -50,15 +51,29 @@ const Navbar: React.FC = () => {
     }
   };
 
+  const { isExpanded, isMobile } = useSidebar();
+  
+  // Check if we're on a page with sidebar
+  const hasSidebar = ['/dashboard', '/dashboard-new', '/profile', '/achievements', '/subscription'].includes(location.pathname) || 
+                     (location.pathname === '/courses' && user);
+
+  // Calculate dynamic margin and width based on sidebar state (desktop only)
+  const getSidebarMargin = () => {
+    if (!hasSidebar) return 'w-full';
+    if (isMobile) return 'ml-16 w-[calc(100%-4rem)]'; // Mobile: 64px margin, width fills remaining space
+    return isExpanded ? 'ml-64 w-[calc(100%-16rem)]' : 'ml-16 w-[calc(100%-4rem)]'; // Desktop: dynamic width
+  };
+
   return (
-    <nav className="bg-white shadow-lg fixed w-full top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <nav className={`bg-white shadow-lg fixed top-0 z-50 transition-all duration-300 ease-in-out ${getSidebarMargin()}`}>
+      <div className={`${hasSidebar ? 'w-full' : 'max-w-7xl mx-auto'} px-4 sm:px-6 lg:px-8`}>
         <div className="flex justify-between h-16">
           {/* Logo and User Info (Left Side) */}
           <div className="flex items-center space-x-8">
             <Link to="/" onClick={scrollToTop} className="flex items-center space-x-2">
               <FaGraduationCap className="h-8 w-8 text-primary-500" />
-              <span className="text-xl font-bold text-secondary-900">King Ezekiel Academy</span>
+              <span className="hidden md:block text-xl font-bold text-secondary-900">King Ezekiel Academy</span>
+              <span className="md:hidden text-xl font-bold text-secondary-900">TKEA</span>
             </Link>
             
             {/* User Name and Icon (when signed in) */}

@@ -1,15 +1,32 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { FaGraduationCap, FaFacebook, FaInstagram, FaTelegram, FaEnvelope, FaMapMarkerAlt, FaClock } from 'react-icons/fa';
+import { useAuth } from '../contexts/AuthContext';
+import { useSidebar } from '../contexts/SidebarContext';
 
 const Footer: React.FC = () => {
   const scrollToTop = () => {
     window.scrollTo(0, 0);
   };
+  
+  const location = useLocation();
+  const { user } = useAuth();
+  const { isExpanded, isMobile } = useSidebar();
+  
+  // Check if we're on a page with sidebar
+  const hasSidebar = ['/dashboard', '/dashboard-new', '/profile', '/achievements', '/subscription'].includes(location.pathname) || 
+                     (location.pathname === '/courses' && user);
+
+  // Calculate dynamic margin and width based on sidebar state (desktop only)
+  const getSidebarMargin = () => {
+    if (!hasSidebar) return '';
+    if (isMobile) return 'ml-16 w-[calc(100%-4rem)]'; // Mobile: 64px margin, width fills remaining space
+    return isExpanded ? 'ml-64 w-[calc(100%-16rem)]' : 'ml-16 w-[calc(100%-4rem)]'; // Desktop: dynamic width
+  };
 
   return (
-    <footer className="bg-gradient-to-br from-primary-50 to-secondary-50 text-primary-900">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+    <footer className={`bg-gradient-to-br from-primary-50 to-secondary-50 text-primary-900 transition-all duration-300 ease-in-out ${getSidebarMargin()}`}>
+      <div className={`${hasSidebar ? 'w-full' : 'max-w-7xl mx-auto'} px-4 sm:px-6 lg:px-8 py-16`}>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
           {/* Brand Section */}
           <div className="col-span-1 md:col-span-2">

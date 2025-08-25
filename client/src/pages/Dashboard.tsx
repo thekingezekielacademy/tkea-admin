@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useSidebar } from '../contexts/SidebarContext';
 import { supabase } from '../lib/supabase';
 import secureStorage from '../utils/secureStorage';
 import TrialBanner from '../components/TrialBanner';
 import { TrialStatus } from '../utils/trialManager';
+import DashboardSidebar from '../components/DashboardSidebar';
 import { 
   FaTrophy, 
   FaFire, 
@@ -64,6 +66,13 @@ const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, isAdmin } = useAuth();
+  const { isExpanded, isMobile } = useSidebar();
+
+  // Calculate dynamic margin based on sidebar state
+  const getSidebarMargin = () => {
+    if (isMobile) return 'ml-16'; // Mobile always uses collapsed width
+    return isExpanded ? 'ml-64' : 'ml-16'; // Desktop: expanded=256px, collapsed=64px
+  };
   
   // User stats state
   const [userStats, setUserStats] = useState<UserStats>({
@@ -117,15 +126,36 @@ const Dashboard: React.FC = () => {
       }
       
       if (!subError && subData) {
-        setSubActive(true);
-        secureStorage.setSubscriptionActive(true); // Update secure storage
-        secureLog('✅ Found active subscription in database, setting subActive = true');
-        secureLog('📊 Subscription data:', subData);
+        // SECURITY: Check if subscription is actually active and not canceled
+        const now = new Date();
+        const nextBillingDate = subData.next_billing_date ? new Date(subData.next_billing_date) : null;
+        const endDate = subData.end_date ? new Date(subData.end_date) : null;
+        
+        // Subscription is active if:
+        // 1. Status is 'active' AND
+        // 2. Not canceled at period end OR
+        // 3. If canceled, still within the paid period
+        const isActuallyActive = subData.status === 'active' && 
+          (!subData.cancel_at_period_end || 
+           (endDate && now < endDate) ||
+           (nextBillingDate && now < nextBillingDate));
+        
+        if (isActuallyActive) {
+          setSubActive(true);
+          secureStorage.setSubscriptionActive(true);
+          secureLog('✅ Found ACTIVE subscription, setting subActive = true');
+          secureLog('📊 Subscription data:', subData);
+        } else {
+          setSubActive(false);
+          secureStorage.setSubscriptionActive(false);
+          secureLog('❌ Subscription exists but NOT active (canceled/expired), setting subActive = false');
+          secureLog('📊 Subscription status:', { status: subData.status, cancel_at_period_end: subData.cancel_at_period_end });
+        }
       } else {
-        // Fallback to secure storage
-        const secureSubActive = secureStorage.isSubscriptionActive();
-        setSubActive(secureSubActive);
-        secureLog('No active subscription in database, using secure storage status:', secureSubActive);
+        // No active subscription found
+        setSubActive(false);
+        secureStorage.setSubscriptionActive(false);
+        secureLog('No active subscription in database, setting subActive = false');
         
         // Also check if there are any subscriptions at all for this user
         const { data: allSubs, error: allSubsError } = await supabase
@@ -732,32 +762,44 @@ const Dashboard: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 pt-16 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading your dashboard...</p>
+      <div className="min-h-screen bg-gray-50">
+        {/* Sidebar */}
+        <DashboardSidebar />
+        
+        {/* Main Content */}
+                     <div className={`${getSidebarMargin()} transition-all duration-300 ease-in-out flex items-center justify-center min-h-screen pt-16`}>
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading your dashboard...</p>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-16">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b">
+    <div className="min-h-screen bg-gray-50">
+      {/* Sidebar */}
+      <DashboardSidebar />
+      
+      {/* Main Content */}
+                 <div className={`${getSidebarMargin()} transition-all duration-300 ease-in-out`}>
+        {/* Header */}
+        <div className="bg-white shadow-sm border-b pt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">
-                Welcome back, {user?.name || user?.email?.split('@')[0] || 'Student'}! 👋
+              <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 leading-tight">
+                <span className="block sm:inline">Welcome back, </span>
+                <span className="block sm:inline">{user?.name || user?.email?.split('@')[0] || 'Student'}! 👋</span>
               </h1>
-              <p className="text-gray-600">Continue your learning journey</p>
+              <p className="text-xs sm:text-sm text-gray-600 mt-1">Continue your learning journey</p>
             </div>
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2 bg-blue-50 px-4 py-2 rounded-lg">
                 <FaFire className="text-orange-500" />
                 <span className="text-sm font-medium text-blue-900">
-                  {userStats.streak_count} day streak
+                  {userStats.streak_count} day{userStats.streak_count !== 1 ? 's' : ''}
                 </span>
               </div>
               <div className="flex items-center space-x-2 bg-purple-50 px-4 py-2 rounded-lg">
@@ -774,18 +816,18 @@ const Dashboard: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Admin Status Banner */}
         {isAdmin && (
-          <div className="mb-8 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl shadow-sm border border-purple-200 p-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <FaCrown className="text-purple-600 text-xl" />
-                <div>
-                  <h3 className="font-semibold text-gray-900 text-lg">🎉 Admin Access Granted!</h3>
-                  <p className="text-sm text-gray-700">
+          <div className="mb-6 sm:mb-8 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl shadow-sm border border-purple-200 p-4 sm:p-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
+              <div className="flex items-start sm:items-center space-x-3">
+                <FaCrown className="text-purple-600 text-lg sm:text-xl flex-shrink-0 mt-1 sm:mt-0" />
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-semibold text-gray-900 text-base sm:text-lg">🎉 Admin Access Granted!</h3>
+                  <p className="text-xs sm:text-sm text-gray-700 mt-1">
                     You are signed in as an administrator. You can now access admin features and manage courses.
                   </p>
                   {/* Debug info for admins - shows if someone was redirected */}
                   {location.state?.redirectedFrom && (
-                    <p className="text-xs text-purple-600 mt-1 italic">
+                    <p className="text-xs text-purple-600 mt-2 italic">
                       🔍 Debug: User was redirected from {location.state.redirectedFrom}
                     </p>
                   )}
@@ -793,7 +835,7 @@ const Dashboard: React.FC = () => {
               </div>
               <button 
                 onClick={() => navigate('/admin')}
-                className="bg-purple-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-purple-700 transition-colors flex items-center space-x-2"
+                className="w-full sm:w-auto bg-purple-600 text-white py-2.5 sm:py-3 px-4 sm:px-6 rounded-lg font-medium hover:bg-purple-700 transition-colors flex items-center justify-center sm:justify-start space-x-2 text-sm sm:text-base"
               >
                 <span>Go to Admin Panel</span>
                 <FaArrowRight className="text-sm" />
@@ -811,12 +853,12 @@ const Dashboard: React.FC = () => {
         )}
 
         {/* XP System Info Banner */}
-        <div className="mb-8 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl shadow-sm border border-blue-200 p-4">
-          <div className="flex items-center space-x-3">
-            <FaStar className="text-blue-500 text-lg" />
-            <div>
-              <h3 className="font-semibold text-gray-900 text-sm">🎯 XP System Active</h3>
-              <p className="text-xs text-gray-700">
+        <div className="mb-6 sm:mb-8 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl shadow-sm border border-blue-200 p-3 sm:p-4">
+          <div className="flex items-start sm:items-center space-x-3">
+            <FaStar className="text-blue-500 text-base sm:text-lg flex-shrink-0 mt-0.5 sm:mt-0" />
+            <div className="flex-1 min-w-0">
+              <h3 className="font-semibold text-gray-900 text-xs sm:text-sm">🎯 XP System Active</h3>
+              <p className="text-xs text-gray-700 mt-1">
                 Your learning activities automatically earn XP and maintain your streak. Watch lessons, complete courses, and stay consistent!
               </p>
             </div>
@@ -1473,6 +1515,7 @@ const Dashboard: React.FC = () => {
               </div>
             </div>
           </div>
+        </div>
         </div>
       </div>
     </div>

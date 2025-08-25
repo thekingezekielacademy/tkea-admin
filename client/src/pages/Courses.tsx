@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { FaSearch, FaClock, FaUser, FaBook, FaTag, FaLock, FaUnlock, FaGraduationCap } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useSidebar } from '../contexts/SidebarContext';
 import { supabase } from '../lib/supabase';
 import secureStorage from '../utils/secureStorage';
 import TrialManager from '../utils/trialManager';
+import DashboardSidebar from '../components/DashboardSidebar';
 
 interface Course {
   id: string;
@@ -42,6 +44,14 @@ const Courses: React.FC = () => {
   const COURSES_PER_PAGE = 10;
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { isExpanded, isMobile } = useSidebar();
+
+  // Calculate dynamic margin based on sidebar state
+  const getSidebarMargin = () => {
+    if (!user) return ''; // No sidebar when not signed in
+    if (isMobile) return 'ml-16'; // Mobile always uses collapsed width
+    return isExpanded ? 'ml-64' : 'ml-16'; // Desktop: expanded=256px, collapsed=64px
+  };
 
   // Check database subscription status
   const checkDatabaseSubscription = async () => {
@@ -597,8 +607,14 @@ const Courses: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-16">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+    <div className="min-h-screen bg-gray-50">
+      {/* Sidebar - Only show when user is signed in */}
+      {user && <DashboardSidebar />}
+      
+      {/* Main Content */}
+                   <div className={`${getSidebarMargin()} transition-all duration-300 ease-in-out`}>
+        <div className="pt-16">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
         {/* Header */}
         <div className="text-center mb-6 sm:mb-8">
           <div className="flex items-center justify-center gap-2 sm:gap-4 mb-3 sm:mb-4">
@@ -1002,6 +1018,8 @@ const Courses: React.FC = () => {
 
 
 
+          </div>
+        </div>
       </div>
     </div>
   );

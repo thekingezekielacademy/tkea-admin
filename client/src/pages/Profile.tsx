@@ -1,7 +1,9 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { useSidebar } from '../contexts/SidebarContext';
 import { supabase } from '../lib/supabase';
 import secureStorage from '../utils/secureStorage';
+import DashboardSidebar from '../components/DashboardSidebar';
 import { FaEdit, FaEnvelope, FaUser, FaImage, FaKey, FaSave, FaTimes, FaCreditCard, FaHistory } from 'react-icons/fa';
 
 declare global {
@@ -12,6 +14,13 @@ declare global {
 
 const Profile: React.FC = () => {
   const { user, updateProfile, fetchProfile } = useAuth();
+  const { isExpanded, isMobile } = useSidebar();
+
+  // Calculate dynamic margin based on sidebar state
+  const getSidebarMargin = () => {
+    if (isMobile) return 'ml-16'; // Mobile always uses collapsed width
+    return isExpanded ? 'ml-64' : 'ml-16'; // Desktop: expanded=256px, collapsed=64px
+  };
 
   const [showEditName, setShowEditName] = useState(false);
   const [showEditBio, setShowEditBio] = useState(false);
@@ -545,8 +554,14 @@ const Profile: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-16">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
+    <div className="min-h-screen bg-gray-50">
+      {/* Sidebar */}
+      <DashboardSidebar />
+      
+      {/* Main Content */}
+                   <div className={`${getSidebarMargin()} transition-all duration-300 ease-in-out`}>
+        <div className="pt-16">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
         {/* Main card */}
         <div className="lg:col-span-2 bg-white border rounded-2xl shadow-sm p-6">
           <h1 className="text-2xl font-bold text-gray-900 mb-6">Your Profile</h1>
@@ -967,6 +982,8 @@ const Profile: React.FC = () => {
           </div>
         )}
 
+          </div>
+        </div>
       </div>
     </div>
   );
