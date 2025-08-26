@@ -19,7 +19,7 @@ import {
   FaArrowRight,
   FaUser
 } from 'react-icons/fa';
-import { secureLog, secureError, criticalLog } from '../utils/secureLogger';
+import { secureLog, secureError } from '../utils/secureLogger';
 
 interface Course {
   id: string;
@@ -294,7 +294,7 @@ const Dashboard: React.FC = () => {
         isExpired: true
       });
     }
-  }, [user?.id]);
+  }, [user?.id, user?.created_at]);
 
   // Fetch user stats from database
   const fetchUserStats = useCallback(async () => {
@@ -505,7 +505,7 @@ const Dashboard: React.FC = () => {
           totalLessons: totalLessons || 0,
           completedLessons: mostRecent.completed_lessons || 0,
           category: courseData.level || 'General',
-          instructor: 'Admin', // We can add instructor field later
+          instructor: 'King Ezekiel Academy', // We can add instructor field later
           rating: 4.8, // We can add rating system later
           enrolledStudents: 1247, // We can add enrollment count later
           image: courseData.cover_photo_url || '/api/placeholder/300/200'
@@ -530,7 +530,7 @@ const Dashboard: React.FC = () => {
                 totalLessons: 0, // Will be updated with real data
                 completedLessons: 0, // Will be updated with real data
                 category: 'General',
-                instructor: 'Admin',
+                instructor: 'King Ezekiel Academy',
                 rating: 4.8,
                 enrolledStudents: 1247,
                 image: '/api/placeholder/300/200'
@@ -606,7 +606,7 @@ const Dashboard: React.FC = () => {
         totalLessons: 0, // We'll fetch this if needed
         completedLessons: 0,
         category: course.level || 'General',
-        instructor: 'Admin',
+        instructor: 'King Ezekiel Academy',
         rating: 4.7,
         enrolledStudents: 1000,
         image: course.cover_photo_url || '/api/placeholder/300/200'
