@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useSidebar } from '../contexts/SidebarContext';
 import { supabase } from '../lib/supabase';
 import DashboardSidebar from '../components/DashboardSidebar';
+import { ProgressService } from '../services/progressService';
 import { 
   FaTrophy, 
   FaStar, 
@@ -57,7 +58,7 @@ const Achievements: React.FC = () => {
   const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [userCourses, setUserCourses] = useState<any[]>([]);
   const [userLessons, setUserLessons] = useState<any[]>([]);
-  const [userProfile, setUserProfile] = useState<any>(null);
+  const [userAchievements, setUserAchievements] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -72,7 +73,6 @@ const Achievements: React.FC = () => {
           .single();
 
         if (!profileError && profileData) {
-          setUserProfile(profileData);
           setUserStats(prev => ({
             ...prev,
             xp: profileData.xp || 0,
@@ -81,38 +81,70 @@ const Achievements: React.FC = () => {
           }));
         }
 
-        // Fetch user courses
-        const { data: coursesData, error: coursesError } = await supabase
-          .from('user_courses')
-          .select(`
-            *,
-            courses (*)
-          `)
-          .eq('user_id', user.id);
-
-        if (!coursesError && coursesData) {
-          setUserCourses(coursesData);
-        }
-
-        // Fetch user lesson progress
-        const { data: lessonsData, error: lessonsError } = await supabase
-          .from('user_lesson_progress')
-          .select('*')
-          .eq('user_id', user.id);
-
-        if (!lessonsError && lessonsData) {
-          setUserLessons(lessonsData);
+        // Fetch user data using progress service
+        let courseProgress = [];
+        let lessonProgress = [];
+        let achievements = [];
+        
+        try {
+          // Fetch course progress
+          courseProgress = await ProgressService.getUserCourseProgress(user.id);
+          setUserCourses(courseProgress);
+          
+          // Fetch lesson progress
+          lessonProgress = await ProgressService.getUserLessonProgress(user.id);
+          setUserLessons(lessonProgress);
+          
+          // Fetch achievements
+          achievements = await ProgressService.getUserAchievements(user.id);
+          setUserAchievements(achievements);
+          
+        } catch (error) {
+          console.log('Progress service not available yet, using empty arrays');
         }
 
         // Generate dynamic achievements based on real data
-        const dynamicAchievements = generateDynamicAchievements(profileData, coursesData, lessonsData);
-        setAchievements(dynamicAchievements);
+        const dynamicAchievements = generateDynamicAchievements(profileData, courseProgress, lessonProgress);
+        console.log('🎯 Generated dynamic achievements:', dynamicAchievements);
+        
+        // Merge with existing achievements from database
+        const allAchievements = [...dynamicAchievements];
+        if (achievements && achievements.length > 0) {
+          console.log('🏆 Found database achievements:', achievements);
+          achievements.forEach(dbAchievement => {
+            // Check if this achievement is already in dynamic list
+            const existingIndex = allAchievements.findIndex(a => a.id === dbAchievement.achievement_id);
+            if (existingIndex >= 0) {
+              // Update existing achievement with database data
+              allAchievements[existingIndex] = {
+                ...allAchievements[existingIndex],
+                earned: true,
+                earnedDate: dbAchievement.earned_at
+              };
+            } else {
+              // Add new achievement from database
+              allAchievements.push({
+                id: dbAchievement.achievement_id,
+                title: dbAchievement.title,
+                description: dbAchievement.description,
+                icon: getAchievementIcon(dbAchievement.category),
+                category: dbAchievement.category,
+                xpReward: dbAchievement.xp_reward,
+                earned: true,
+                earnedDate: dbAchievement.earned_at
+              });
+            }
+          });
+        }
+        
+        console.log('🎉 Final achievements array:', allAchievements);
+        setAchievements(allAchievements);
 
         // Update stats with real achievement data
         setUserStats(prev => ({
           ...prev,
-          total_achievements: dynamicAchievements.length,
-          achievements_earned: dynamicAchievements.filter(a => a.earned).length
+          total_achievements: allAchievements.length,
+          achievements_earned: allAchievements.filter(a => a.earned).length
         }));
 
       } catch (error) {
@@ -151,6 +183,22 @@ const Achievements: React.FC = () => {
     return 'bg-gray-300';
   };
 
+  // Helper function to get achievement icon based on category
+  const getAchievementIcon = (category: string) => {
+    switch (category) {
+      case 'learning':
+        return '📚';
+      case 'streak':
+        return '🔥';
+      case 'social':
+        return '👥';
+      case 'special':
+        return '⭐';
+      default:
+        return '🏆';
+    }
+  };
+
   // Generate dynamic achievements based on real user data
   const generateDynamicAchievements = (profile: any, courses: any[], lessons: any[]) => {
     const achievements: Achievement[] = [];
@@ -158,27 +206,41 @@ const Achievements: React.FC = () => {
     // Learning Achievements
     if (lessons && lessons.length > 0) {
       // First Steps - Complete first lesson
-      achievements.push({
-        id: 'first-steps',
-        title: 'First Steps',
-        description: 'Complete your first lesson',
-        icon: '🎬',
-        category: 'learning',
-        xpReward: 50,
-        earned: true,
-        earnedDate: lessons[0]?.completed_at || new Date().toISOString().split('T')[0]
-      });
+      const firstLesson = lessons.find(l => l.status === 'completed');
+      if (firstLesson) {
+        achievements.push({
+          id: 'first-steps',
+          title: 'First Steps',
+          description: 'Complete your first lesson',
+          icon: '🎬',
+          category: 'learning',
+          xpReward: 50,
+          earned: true,
+          earnedDate: firstLesson.completed_at?.split('T')[0] || new Date().toISOString().split('T')[0]
+        });
+      } else {
+        achievements.push({
+          id: 'first-steps',
+          title: 'First Steps',
+          description: 'Complete your first lesson',
+          icon: '🎬',
+          category: 'learning',
+          xpReward: 50,
+          earned: false
+        });
+      }
 
       // Knowledge Seeker - Watch multiple lessons
-      const totalLessons = lessons.length;
+      const completedLessons = lessons.filter(l => l.status === 'completed');
+      const totalCompleted = completedLessons.length;
       const lessonMilestones = [10, 25, 50, 100, 200];
       
       lessonMilestones.forEach((milestone, index) => {
-        if (totalLessons >= milestone) {
+        if (totalCompleted >= milestone) {
           achievements.push({
             id: `lesson-${milestone}`,
             title: `Lesson ${milestone}`,
-            description: `Watch ${milestone} lessons`,
+            description: `Complete ${milestone} lessons`,
             icon: '🎯',
             category: 'learning',
             xpReward: 50 + (index * 25),
@@ -189,12 +251,12 @@ const Achievements: React.FC = () => {
           achievements.push({
             id: `lesson-${milestone}`,
             title: `Lesson ${milestone}`,
-            description: `Watch ${milestone} lessons`,
+            description: `Complete ${milestone} lessons`,
             icon: '🎯',
             category: 'learning',
             xpReward: 50 + (index * 25),
             earned: false,
-            progress: totalLessons,
+            progress: totalCompleted,
             maxProgress: milestone
           });
         }
@@ -234,7 +296,7 @@ const Achievements: React.FC = () => {
       });
 
       // Course Completion Achievements
-      const completedCourses = courses.filter(course => course.progress === 100).length;
+      const completedCourses = courses.filter(course => course.status === 'completed').length;
       const completionMilestones = [1, 3, 5, 10];
       
       completionMilestones.forEach((milestone, index) => {
@@ -292,6 +354,68 @@ const Achievements: React.FC = () => {
             xpReward: 100 + (index * 100),
             earned: false,
             progress: currentStreak,
+            maxProgress: milestone
+          });
+        }
+      });
+      
+      // XP and Level Achievements
+      const currentXP = profile.xp || 0;
+      const currentLevel = profile.level || 1;
+      
+      // XP milestones
+      const xpMilestones = [100, 500, 1000, 2500, 5000, 10000];
+      xpMilestones.forEach((milestone, index) => {
+        if (currentXP >= milestone) {
+          achievements.push({
+            id: `xp-collector-${milestone}`,
+            title: `${milestone} XP Collector`,
+            description: `Earn ${milestone} total XP`,
+            icon: '💎',
+            category: 'special',
+            xpReward: 0, // Already earned this XP
+            earned: true,
+            earnedDate: new Date().toISOString().split('T')[0]
+          });
+        } else {
+          achievements.push({
+            id: `xp-collector-${milestone}`,
+            title: `${milestone} XP Collector`,
+            description: `Earn ${milestone} total XP`,
+            icon: '💎',
+            category: 'special',
+            xpReward: 50 + (index * 25),
+            earned: false,
+            progress: currentXP,
+            maxProgress: milestone
+          });
+        }
+      });
+      
+      // Level milestones
+      const levelMilestones = [5, 10, 20, 50, 100];
+      levelMilestones.forEach((milestone, index) => {
+        if (currentLevel >= milestone) {
+          achievements.push({
+            id: `level-master-${milestone}`,
+            title: `Level ${milestone} Master`,
+            description: `Reach level ${milestone}`,
+            icon: '⭐',
+            category: 'special',
+            xpReward: 0, // Already reached this level
+            earned: true,
+            earnedDate: new Date().toISOString().split('T')[0]
+          });
+        } else {
+          achievements.push({
+            id: `level-master-${milestone}`,
+            title: `Level ${milestone} Master`,
+            description: `Reach level ${milestone}`,
+            icon: '⭐',
+            category: 'special',
+            xpReward: 100 + (index * 100),
+            earned: false,
+            progress: currentLevel,
             maxProgress: milestone
           });
         }
