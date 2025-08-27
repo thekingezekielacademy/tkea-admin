@@ -472,15 +472,37 @@ const Dashboard: React.FC = () => {
 
       // Set current course (most recently accessed)
       if (enrolledCourses && enrolledCourses.length > 0) {
-        const mostRecent = enrolledCourses[0];
+        // First, check localStorage for the most recent course activity
+        const recentCourseId = localStorage.getItem('recent_course_id');
+        const recentCourseProgress = localStorage.getItem('recent_course_progress');
+        const recentTimestamp = localStorage.getItem('recent_course_timestamp');
         
-        // Update last_accessed timestamp for this course
+        let courseToShow = enrolledCourses[0]; // Default to first enrolled course
+        
+        // If we have recent localStorage activity, prioritize that course
+        if (recentCourseId && recentCourseProgress && recentTimestamp) {
+          const timeDiff = Date.now() - new Date(recentTimestamp).getTime();
+          const hoursAgo = timeDiff / (1000 * 60 * 60);
+          
+          if (hoursAgo < 24) { // Within last 24 hours
+            // Find if this recent course is in enrolled courses
+            const recentEnrolledCourse = enrolledCourses.find(ec => ec.course_id === recentCourseId);
+            if (recentEnrolledCourse) {
+              courseToShow = recentEnrolledCourse;
+              secureLog('✅ Using recent course from localStorage:', recentCourseId);
+            } else {
+              secureLog('⚠️ Recent course not found in enrolled courses, using default');
+            }
+          }
+        }
+        
+        // Update last_accessed timestamp for the course we're showing
         try {
           await supabase
             .from('user_courses')
             .update({ last_accessed: new Date().toISOString() })
             .eq('user_id', user.id)
-            .eq('course_id', mostRecent.course_id);
+            .eq('course_id', courseToShow.course_id);
         } catch (updateError) {
           secureLog('Could not update last_accessed timestamp');
         }
@@ -489,7 +511,7 @@ const Dashboard: React.FC = () => {
         const { data: courseData, error: courseError } = await supabase
           .from('courses')
           .select('id, title, description, level, cover_photo_url, created_by')
-          .eq('id', mostRecent.course_id)
+          .eq('id', courseToShow.course_id)
           .single();
 
         if (courseError) {
@@ -504,14 +526,14 @@ const Dashboard: React.FC = () => {
           .eq('course_id', courseData.id);
 
         // Calculate actual progress based on completed lessons
-        const actualProgress = totalLessons > 0 ? Math.round((mostRecent.completed_lessons / totalLessons) * 100) : 0;
+        const actualProgress = totalLessons > 0 ? Math.round((courseToShow.completed_lessons / totalLessons) * 100) : 0;
         
         setCurrentCourse({
           id: courseData.id,
           title: courseData.title,
           progress: actualProgress,
           totalLessons: totalLessons || 0,
-          completedLessons: mostRecent.completed_lessons || 0,
+          completedLessons: courseToShow.completed_lessons || 0,
           category: courseData.level || 'General',
           instructor: 'King Ezekiel Academy', // We can add instructor field later
           rating: 4.8, // We can add rating system later
