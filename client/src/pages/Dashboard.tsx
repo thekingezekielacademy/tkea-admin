@@ -98,6 +98,9 @@ const Dashboard: React.FC = () => {
   const [subActive, setSubActive] = useState<boolean>(() => {
     try { return secureStorage.isSubscriptionActive(); } catch { return false; }
   });
+  
+  // Add refresh trigger for course data
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   // Calculate level based on XP (every 1000 XP = 1 level)
   const calculateLevel = (xp: number): number => {
@@ -627,7 +630,14 @@ const Dashboard: React.FC = () => {
     fetchUserStats();
     fetchCourseData();
     fetchTrialStatus();
-  }, [user?.id, fetchSubscriptionStatus, fetchUserStats, fetchCourseData, fetchTrialStatus]);
+  }, [user?.id, fetchSubscriptionStatus, fetchUserStats, fetchCourseData, fetchTrialStatus, refreshTrigger]);
+
+  // Refresh data when navigating to Dashboard
+  useEffect(() => {
+    if (location.pathname === '/dashboard') {
+      refreshCourseData();
+    }
+  }, [location.pathname, refreshCourseData]);
 
   // Real data state
   const [currentCourse, setCurrentCourse] = useState<Course | null>(null);
@@ -875,6 +885,15 @@ const Dashboard: React.FC = () => {
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-bold text-gray-900">Your Progress</h2>
                 <div className="flex items-center space-x-2">
+                  <button
+                    onClick={refreshCourseData}
+                    className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-200"
+                    title="Refresh course progress"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                  </button>
                   <FaChartLine className="text-green-500" />
                   <span className="text-sm text-gray-600">Level {userStats.level}</span>
                 </div>
