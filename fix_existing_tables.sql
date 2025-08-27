@@ -6,35 +6,22 @@ FROM information_schema.columns
 WHERE table_name = 'user_courses'
 ORDER BY ordinal_position;
 
--- 2. Add missing columns to user_courses table
-DO $$
-BEGIN
-    -- Add status column if it doesn't exist
-    IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_name = 'user_courses' AND column_name = 'status') THEN
-        ALTER TABLE user_courses ADD COLUMN status TEXT DEFAULT 'enrolled' CHECK (status IN ('enrolled', 'in_progress', 'completed'));
-        RAISE NOTICE 'Added status column to user_courses';
-    END IF;
-    
-    -- Add progress_percentage column if it doesn't exist
-    IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_name = 'user_courses' AND column_name = 'progress_percentage') THEN
-        ALTER TABLE user_courses ADD COLUMN progress_percentage INTEGER DEFAULT 0;
-        RAISE NOTICE 'Added progress_percentage column to user_courses';
-    END IF;
-    
-    -- Add created_at column if it doesn't exist
-    IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_name = 'user_courses' AND column_name = 'created_at') THEN
-        ALTER TABLE user_courses ADD COLUMN created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW();
-        RAISE NOTICE 'Added created_at column to user_courses';
-    END IF;
-    
-    -- Add updated_at column if it doesn't exist
-    IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_name = 'user_courses' AND column_name = 'updated_at') THEN
-        ALTER TABLE user_courses ADD COLUMN updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW();
-        RAISE NOTICE 'Added updated_at column to user_courses';
-    END IF;
-    
-    RAISE NOTICE 'user_courses table structure updated';
-END $$;
+-- 2. Drop and recreate user_courses table with correct schema
+DROP TABLE IF EXISTS user_courses CASCADE;
+
+CREATE TABLE user_courses (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    course_id UUID REFERENCES courses(id) ON DELETE CASCADE,
+    status TEXT DEFAULT 'enrolled' CHECK (status IN ('enrolled', 'in_progress', 'completed')),
+    progress INTEGER DEFAULT 0,
+    completed_lessons INTEGER DEFAULT 0,
+    progress_percentage INTEGER DEFAULT 0,
+    last_accessed TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE(user_id, course_id)
+);
 
 -- 3. Create user_lesson_progress table if it doesn't exist
 CREATE TABLE IF NOT EXISTS user_lesson_progress (
@@ -66,6 +53,7 @@ CREATE TABLE IF NOT EXISTS user_achievements (
 
 -- 5. Create indexes
 CREATE INDEX IF NOT EXISTS idx_user_courses_user_id ON user_courses(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_courses_course_id ON user_courses(course_id);
 CREATE INDEX IF NOT EXISTS idx_user_lesson_progress_user_id ON user_lesson_progress(user_id);
 CREATE INDEX IF NOT EXISTS idx_user_achievements_user_id ON user_achievements(user_id);
 
