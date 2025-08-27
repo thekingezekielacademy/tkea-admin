@@ -430,7 +430,7 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
         }}
       >
         <div className="relative w-full" style={{ paddingTop: '56.25%', position: 'relative', overflow: 'hidden' }}>
-          <style jsx>{`
+          <style>{`
             /* Fullscreen styles */
             .video-container:fullscreen {
               background: #000;
