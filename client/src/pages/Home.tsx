@@ -75,7 +75,7 @@ const Home: React.FC = () => {
               </p>
               <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center items-center">
                 <Link 
-                  to="/profile" 
+                  to="/subscription" 
                   className="group bg-gradient-to-r from-primary-700 to-primary-900 text-white font-bold py-3 sm:py-4 px-6 sm:px-8 rounded-xl text-base sm:text-lg transition-all duration-300 transform hover:scale-105 shadow-soft hover:shadow-glow inline-flex items-center"
                 >
                   <span className="mr-2">Subscribe Now — only ₦2,500/month</span>

@@ -587,8 +587,8 @@ const Courses: React.FC = () => {
       // User has active subscription or trial access - go to dashboard
       navigate('/dashboard');
     } else if (user) {
-      // User is signed in but no active subscription or trial - go to profile to upgrade
-      navigate('/profile');
+      // User is signed in but no active subscription or trial - go to subscription page to upgrade
+      navigate('/subscription');
     } else {
       // User is not signed in - go to sign in page
       navigate('/signin');
@@ -600,8 +600,8 @@ const Courses: React.FC = () => {
       // User is signed in and has active subscription OR trial access - go to course overview
       navigate(`/course/${courseId}/overview`);
     } else if (user) {
-      // User is signed in but no active subscription or trial - go to profile to upgrade
-      navigate('/profile');
+      // User is signed in but no active subscription or trial - go to subscription page to upgrade
+      navigate('/subscription');
     } else {
       // User is not signed in - go to sign in page
       navigate('/signin');
@@ -697,7 +697,7 @@ const Courses: React.FC = () => {
                   </div>
                   <div className="text-center sm:text-right">
                     <button 
-                      onClick={() => navigate('/profile')}
+                      onClick={() => navigate('/subscription')}
                       className="bg-white text-blue-600 px-3 sm:px-4 md:px-6 py-2 sm:py-3 rounded-full font-semibold hover:bg-blue-50 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 text-xs sm:text-sm md:text-base"
                     >
                       Upgrade Now
@@ -726,7 +726,7 @@ const Courses: React.FC = () => {
                   </div>
                   <div className="text-center sm:text-right">
                     <button 
-                      onClick={() => navigate('/profile')}
+                      onClick={() => navigate('/subscription')}
                       className="bg-white text-orange-600 px-3 sm:px-4 md:px-6 py-2 sm:py-3 rounded-full font-semibold hover:bg-orange-50 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 text-xs sm:text-sm md:text-base"
                     >
                       Subscribe Now

@@ -56,9 +56,6 @@ const Achievements: React.FC = () => {
 
   // Dynamic achievements based on real user data
   const [achievements, setAchievements] = useState<Achievement[]>([]);
-  const [userCourses, setUserCourses] = useState<any[]>([]);
-  const [userLessons, setUserLessons] = useState<any[]>([]);
-  const [userAchievements, setUserAchievements] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -89,15 +86,12 @@ const Achievements: React.FC = () => {
         try {
           // Fetch course progress
           courseProgress = await ProgressService.getUserCourseProgress(user.id);
-          setUserCourses(courseProgress);
           
           // Fetch lesson progress
           lessonProgress = await ProgressService.getUserLessonProgress(user.id);
-          setUserLessons(lessonProgress);
           
           // Fetch achievements
           achievements = await ProgressService.getUserAchievements(user.id);
-          setUserAchievements(achievements);
           
         } catch (error) {
           console.log('Progress service not available yet, using empty arrays');
