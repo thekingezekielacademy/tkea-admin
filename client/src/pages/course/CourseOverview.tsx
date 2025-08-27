@@ -24,6 +24,7 @@ const CourseOverview: React.FC = () => {
     isExpired: true
   });
   const [subActive, setSubActive] = useState<boolean>(false);
+  const [databaseSubscriptionStatus, setDatabaseSubscriptionStatus] = useState<boolean>(false);
 
   // Fetch course data function
   const fetchCourse = async () => {
@@ -83,6 +84,36 @@ const CourseOverview: React.FC = () => {
     }
   };
 
+  // Check database subscription status
+  const checkDatabaseSubscription = async () => {
+    if (!user?.id) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('user_subscriptions')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('status', 'active')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+      
+      if (!error && data) {
+        console.log('✅ Found active subscription in database:', data);
+        setDatabaseSubscriptionStatus(true);
+        return true;
+      } else {
+        console.log('❌ No active subscription found in database');
+        setDatabaseSubscriptionStatus(false);
+        return false;
+      }
+    } catch (error) {
+      console.log('⚠️ Database subscription check failed (table may not exist yet):', error);
+      setDatabaseSubscriptionStatus(false);
+      return false;
+    }
+  };
+
   // Check trial and subscription status
   useEffect(() => {
     const checkAccess = async () => {
@@ -91,7 +122,10 @@ const CourseOverview: React.FC = () => {
       try {
         console.log('🔍 Checking access for user:', user.id);
         
-        // Check subscription status
+        // Check database subscription status first
+        await checkDatabaseSubscription();
+        
+        // Check subscription status from secure storage
         const isSubActive = secureStorage.isSubscriptionActive();
         setSubActive(isSubActive);
         console.log('📊 Subscription status:', isSubActive);
@@ -117,9 +151,9 @@ const CourseOverview: React.FC = () => {
             setTrialStatus(updatedTrialStatus);
             console.log('📊 Trial status:', updatedTrialStatus);
             
-            // Check if access should be granted
-            const hasAccess = updatedTrialStatus.isActive || isSubActive;
-            console.log('🔐 Has access:', hasAccess, '(Trial active:', updatedTrialStatus.isActive, '| Sub active:', isSubActive, ')');
+            // Check if access should be granted (prioritize database subscription)
+            const hasAccess = updatedTrialStatus.isActive || databaseSubscriptionStatus || isSubActive;
+            console.log('🔐 Has access:', hasAccess, '(Trial active:', updatedTrialStatus.isActive, '| DB Sub:', databaseSubscriptionStatus, '| Secure Sub:', isSubActive, ')');
             
             // Redirect if NO access (trial expired AND no subscription)
             if (!hasAccess) {
@@ -134,11 +168,13 @@ const CourseOverview: React.FC = () => {
           }
         } else {
           console.log('⚠️ No trial data found in localStorage');
-          // If no trial data, check if user has subscription
-          if (!isSubActive) {
+          // If no trial data, check if user has subscription (prioritize database)
+          if (!databaseSubscriptionStatus && !isSubActive) {
             console.log('🚫 No trial data and no subscription - redirecting to profile');
             navigate('/profile', { replace: true });
             return;
+          } else {
+            console.log('✅ ACCESS GRANTED - Database subscription or secure storage subscription active');
           }
         }
       } catch (error) {
