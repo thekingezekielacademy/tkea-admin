@@ -184,11 +184,13 @@ const Courses: React.FC = () => {
   // Check subscription status and trial access when user changes
   useEffect(() => {
     if (user) {
-      // Check database subscription status first
-      checkDatabaseSubscription();
+      // Check database subscription status first, then trial access
+      const checkSubscriptionAndTrial = async () => {
+        await checkDatabaseSubscription();
+        await checkTrialAccess();
+      };
       
-      // Then check trial access
-      checkTrialAccess();
+      checkSubscriptionAndTrial();
     }
   }, [user]);
 
