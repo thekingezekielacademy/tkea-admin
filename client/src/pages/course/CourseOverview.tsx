@@ -122,13 +122,14 @@ const CourseOverview: React.FC = () => {
       try {
         console.log('🔍 Checking access for user:', user.id);
         
-        // Check database subscription status first
-        await checkDatabaseSubscription();
+        // Check database subscription status first and get the result
+        const hasDatabaseSubscription = await checkDatabaseSubscription();
         
         // Check subscription status from secure storage
         const isSubActive = secureStorage.isSubscriptionActive();
         setSubActive(isSubActive);
         console.log('📊 Subscription status:', isSubActive);
+        console.log('📊 Database subscription status:', hasDatabaseSubscription);
         
         // Check trial status from localStorage
         const localTrial = localStorage.getItem('user_trial_status');
@@ -152,8 +153,8 @@ const CourseOverview: React.FC = () => {
             console.log('📊 Trial status:', updatedTrialStatus);
             
             // Check if access should be granted (prioritize database subscription)
-            const hasAccess = updatedTrialStatus.isActive || databaseSubscriptionStatus || isSubActive;
-            console.log('🔐 Has access:', hasAccess, '(Trial active:', updatedTrialStatus.isActive, '| DB Sub:', databaseSubscriptionStatus, '| Secure Sub:', isSubActive, ')');
+            const hasAccess = updatedTrialStatus.isActive || hasDatabaseSubscription || isSubActive;
+            console.log('🔐 Has access:', hasAccess, '(Trial active:', updatedTrialStatus.isActive, '| DB Sub:', hasDatabaseSubscription, '| Secure Sub:', isSubActive, ')');
             
             // Redirect if NO access (trial expired AND no subscription)
             if (!hasAccess) {
@@ -169,7 +170,7 @@ const CourseOverview: React.FC = () => {
         } else {
           console.log('⚠️ No trial data found in localStorage');
           // If no trial data, check if user has subscription (prioritize database)
-          if (!databaseSubscriptionStatus && !isSubActive) {
+          if (!hasDatabaseSubscription && !isSubActive) {
             console.log('🚫 No trial data and no subscription - redirecting to profile');
             navigate('/profile', { replace: true });
             return;
