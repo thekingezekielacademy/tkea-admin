@@ -299,20 +299,104 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
     }
   };
 
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
   const toggleFullscreen = () => {
+    // Check if we're on iOS Safari
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const isSafari = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
+    
     if (!document.fullscreenElement) {
-      containerRef.current?.requestFullscreen();
+      // Enter fullscreen
+      if (isIOS && isSafari && videoRef.current) {
+        // iOS Safari fallback - use webkitEnterFullscreen for video element
+        try {
+          (videoRef.current as any).webkitEnterFullscreen();
+        } catch (error) {
+          console.log('iOS Safari fullscreen not supported, falling back to standard API');
+          // Fallback to standard API
+          if (containerRef.current) {
+            if (containerRef.current.requestFullscreen) {
+              containerRef.current.requestFullscreen();
+            } else if ((containerRef.current as any).webkitRequestFullscreen) {
+              (containerRef.current as any).webkitRequestFullscreen();
+            } else if ((containerRef.current as any).mozRequestFullScreen) {
+              (containerRef.current as any).mozRequestFullScreen();
+            } else if ((containerRef.current as any).msRequestFullscreen) {
+              (containerRef.current as any).msRequestFullscreen();
+            }
+          }
+        }
+      } else {
+        // Standard fullscreen API for other browsers
+        if (containerRef.current) {
+          if (containerRef.current.requestFullscreen) {
+            containerRef.current.requestFullscreen();
+          } else if ((containerRef.current as any).webkitRequestFullscreen) {
+            (containerRef.current as any).webkitRequestFullscreen();
+          } else if ((containerRef.current as any).mozRequestFullScreen) {
+            (containerRef.current as any).mozRequestFullScreen();
+          } else if ((containerRef.current as any).msRequestFullscreen) {
+            (containerRef.current as any).msRequestFullscreen();
+          }
+        }
+      }
     } else {
-      document.exitFullscreen();
+      // Exit fullscreen
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      } else if ((document as any).webkitExitFullscreen) {
+        (document as any).webkitExitFullscreen();
+      } else if ((document as any).mozCancelFullScreen) {
+        (document as any).mozCancelFullScreen();
+      } else if ((document as any).msExitFullscreen) {
+        (document as any).msExitFullscreen();
+      }
     }
   };
+
+  // Handle fullscreen change events and keyboard shortcuts
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && document.fullscreenElement) {
+        // ESC key exits fullscreen
+        if (document.exitFullscreen) {
+          document.exitFullscreen();
+        } else if ((document as any).webkitExitFullscreen) {
+          (document as any).webkitExitFullscreen();
+        } else if ((document as any).mozCancelFullScreen) {
+          (document as any).mozCancelFullScreen();
+        } else if ((document as any).msExitFullscreen) {
+          (document as any).msExitFullscreen();
+        }
+      }
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+    document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
 
 
 
   if (type === "youtube") {
     return (
       <div 
-        className="w-full bg-black overflow-hidden relative" 
+        className="w-full bg-black overflow-hidden relative video-container" 
         ref={containerRef}
         style={{ 
           margin: 0, 
@@ -346,6 +430,79 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
         }}
       >
         <div className="relative w-full" style={{ paddingTop: '56.25%', position: 'relative', overflow: 'hidden' }}>
+          <style jsx>{`
+            /* Fullscreen styles */
+            .video-container:fullscreen {
+              background: #000;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+            }
+            
+            .video-container:-webkit-full-screen {
+              background: #000;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+            }
+            
+            .video-container:-moz-full-screen {
+              background: #000;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+            }
+            
+            .video-container:-ms-fullscreen {
+              background: #000;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+            }
+            
+            /* Mobile fullscreen optimization */
+            @media (max-width: 768px) {
+              .video-container:fullscreen {
+                padding-top: 0 !important;
+                height: 100vh !important;
+              }
+              
+              .video-container:-webkit-full-screen {
+                padding-top: 0 !important;
+                height: 100vh !important;
+              }
+            }
+            
+            /* Hide controls in fullscreen on mobile */
+            @media (max-width: 768px) {
+              .video-container:fullscreen .controls-overlay {
+                opacity: 0 !important;
+                pointer-events: none !important;
+              }
+              
+              .video-container:-webkit-full-screen .controls-overlay {
+                opacity: 0 !important;
+                pointer-events: none !important;
+              }
+            }
+          `}</style>
+          {/* Mobile fullscreen button */}
+          <button 
+            onClick={toggleFullscreen}
+            className="absolute top-4 right-4 z-50 md:hidden bg-black bg-opacity-70 text-white p-2 rounded-lg hover:bg-opacity-90 transition-all duration-200"
+            title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
+          >
+            {isFullscreen ? (
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M3 4a1 1 0 011-1h4a1 1 0 010 2H6.414l2.293 2.293a1 1 0 11-1.414 1.414L5 6.414V8a1 1 0 01-2 0V4zm9 1a1 1 0 010-2h4a1 1 0 011 1v4a1 1 0 01-2 0V6.414l-2.293 2.293a1 1 0 11-1.414-1.414L13.586 5H12z" clipRule="evenodd" />
+              </svg>
+            ) : (
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M3 4a1 1 0 011-1h4a1 1 0 010 2H6.414l2.293 2.293a1 1 0 11-1.414 1.414L5 6.414V8a1 1 0 01-2 0V4zm9 1a1 1 0 010-2h4a1 1 0 011 1v4a1 1 0 01-2 0V6.414l-2.293 2.293a1 1 0 11-1.414-1.414L13.586 5H12z" clipRule="evenodd" />
+              </svg>
+            )}
+          </button>
+
           {/* Mobile touch indicator */}
           <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-40 md:hidden">
             <div className="w-16 h-16 bg-black bg-opacity-50 rounded-full flex items-center justify-center opacity-0 transition-opacity duration-150 pointer-events-none"
@@ -435,7 +592,7 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
           </div>
           
           {/* Custom controls overlay */}
-          <div className={`absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black via-black to-transparent px-3 pb-0 pt-2 z-30 transition-opacity duration-75 ${
+          <div className={`absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black via-black to-transparent px-3 pb-0 pt-2 z-30 transition-opacity duration-75 controls-overlay ${
             isLoading ? 'opacity-100' : (isPlaying ? (isHovered ? 'opacity-100' : 'opacity-0') : 'opacity-100')
           }`}>
             {/* Progress bar */}
@@ -507,10 +664,22 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
 
               </div>
               
-              <button onClick={toggleFullscreen} className="hover:text-blue-400 transition-colors p-1 md:p-0">
-                <svg className="w-4 h-4 md:w-5 md:h-5" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M3 4a1 1 0 011-1h4a1 1 0 010 2H6.414l2.293 2.293a1 1 0 11-1.414 1.414L5 6.414V8a1 1 0 01-2 0V4zm9 1a1 1 0 010-2h4a1 1 0 011 1v4a1 1 0 01-2 0V6.414l-2.293 2.293a1 1 0 11-1.414-1.414L13.586 5H12z" clipRule="evenodd" />
-                </svg>
+              <button 
+                onClick={toggleFullscreen} 
+                className="hover:text-blue-400 transition-colors p-1 md:p-0 group"
+                title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
+              >
+                {isFullscreen ? (
+                  // Exit fullscreen icon (compress)
+                  <svg className="w-4 h-4 md:w-5 md:h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M3 4a1 1 0 011-1h4a1 1 0 010 2H6.414l2.293 2.293a1 1 0 11-1.414 1.414L5 6.414V8a1 1 0 01-2 0V4zm9 1a1 1 0 010-2h4a1 1 0 011 1v4a1 1 0 01-2 0V6.414l-2.293 2.293a1 1 0 11-1.414-1.414L13.586 5H12z" clipRule="evenodd" />
+                  </svg>
+                ) : (
+                  // Enter fullscreen icon (expand)
+                  <svg className="w-4 h-4 md:w-5 md:h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M3 4a1 1 0 011-1h4a1 1 0 010 2H6.414l2.293 2.293a1 1 0 11-1.414 1.414L5 6.414V8a1 1 0 01-2 0V4zm9 1a1 1 0 010-2h4a1 1 0 011 1v4a1 1 0 01-2 0V6.414l-2.293 2.293a1 1 0 11-1.414-1.414L13.586 5H12z" clipRule="evenodd" />
+                  </svg>
+                )}
               </button>
             </div>
           </div>
