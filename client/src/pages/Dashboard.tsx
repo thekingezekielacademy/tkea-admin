@@ -99,9 +99,14 @@ const Dashboard: React.FC = () => {
     try { return secureStorage.isSubscriptionActive(); } catch { return false; }
   });
   
-  // Add refresh trigger for course data
+    // Add refresh trigger for course data
   const [refreshTrigger, setRefreshTrigger] = useState(0);
-
+  
+  // Function to refresh course data
+  const refreshCourseData = useCallback(() => {
+    setRefreshTrigger(prev => prev + 1);
+  }, []);
+  
   // Calculate level based on XP (every 1000 XP = 1 level)
   const calculateLevel = (xp: number): number => {
     return Math.floor(xp / 1000) + 1;
