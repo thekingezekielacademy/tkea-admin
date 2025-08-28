@@ -12,14 +12,12 @@ import {
   FaFire, 
   FaPlay, 
   FaStar, 
-  FaUsers, 
   FaCrown,
   FaChartLine,
-  FaCheckCircle,
   FaArrowRight,
   FaUser
 } from 'react-icons/fa';
-import { secureLog, secureError, criticalLog } from '../utils/secureLogger';
+import { secureLog, secureError } from '../utils/secureLogger';
 
 interface Course {
   id: string;
@@ -34,24 +32,7 @@ interface Course {
   image: string;
 }
 
-interface Badge {
-  id: string;
-  name: string;
-  description: string;
-  icon: string;
-  earned: boolean;
-  earnedDate?: string;
-  progress?: number;
-}
 
-interface Achievement {
-  id: string;
-  title: string;
-  description: string;
-  xp: number;
-  earned: boolean;
-  earnedDate?: string;
-}
 
 interface UserStats {
   xp: number;

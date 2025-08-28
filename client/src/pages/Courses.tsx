@@ -192,7 +192,7 @@ const Courses: React.FC = () => {
       
       checkSubscriptionAndTrial();
     }
-  }, [user]);
+  }, [user, checkDatabaseSubscription, checkTrialAccess]);
 
   // Fetch courses from database with pagination
   const fetchCourses = async (page = 0, append = false) => {
@@ -212,7 +212,7 @@ const Courses: React.FC = () => {
         console.log('👤 Guest user fetching courses - allowing read-only access');
       } else {
         // First, refresh the session to ensure we have a valid token
-        const { data: sessionData, error: sessionError } = await supabase.auth.refreshSession();
+        const { error: sessionError } = await supabase.auth.refreshSession();
         
         if (sessionError) {
           console.log('⚠️ Session refresh failed, trying to get current session:', sessionError);
@@ -267,7 +267,7 @@ const Courses: React.FC = () => {
           console.log('🔄 JWT expired, attempting to refresh session...');
           
           // Try to refresh the session and retry
-          const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+          const { error: refreshError } = await supabase.auth.refreshSession();
           
           if (refreshError) {
             console.error('❌ Failed to refresh session:', refreshError);
@@ -490,7 +490,7 @@ const Courses: React.FC = () => {
     if (user?.id) {
       checkTrialAccess();
     }
-  }, [user?.id]); // Run when user changes
+  }, [user?.id, fetchCourses, checkTrialAccess]); // Run when user changes
 
   // Debug logging for trial access
   useEffect(() => {
@@ -582,18 +582,7 @@ const Courses: React.FC = () => {
     );
   };
 
-  const goToAccess = () => {
-    if (user && (databaseSubscriptionStatus || secureStorage.isSubscriptionActive() || hasTrialAccess)) {
-      // User has active subscription or trial access - go to dashboard
-      navigate('/dashboard');
-    } else if (user) {
-      // User is signed in but no active subscription or trial - go to subscription page to upgrade
-      navigate('/subscription');
-    } else {
-      // User is not signed in - go to sign in page
-      navigate('/signin');
-    }
-  };
+
 
   const handleEnroll = (courseId: string) => {
     if (user && (databaseSubscriptionStatus || secureStorage.isSubscriptionActive() || hasTrialAccess)) {

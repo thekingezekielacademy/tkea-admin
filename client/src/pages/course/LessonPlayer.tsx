@@ -18,16 +18,7 @@ const LessonPlayer: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [currentLessonIndex, setCurrentLessonIndex] = useState(0);
   const [completedLessons, setCompletedLessons] = useState<Set<string>>(new Set());
-  const [trialStatus, setTrialStatus] = useState<TrialStatus>({
-    isActive: false,
-    startDate: '',
-    endDate: '',
-    daysRemaining: 0,
-    totalDays: 0,
-    isExpired: true
-  });
-  const [subActive, setSubActive] = useState<boolean>(false);
-  const [databaseSubscriptionStatus, setDatabaseSubscriptionStatus] = useState<boolean>(false);
+
 
   // Fetch course and lesson data function
   const fetchCourseAndLesson = async () => {
@@ -249,7 +240,7 @@ const LessonPlayer: React.FC = () => {
   // Fetch course and lesson data on mount
   useEffect(() => {
     fetchCourseAndLesson();
-  }, [id, lessonId, user?.id]);
+  }, [id, lessonId, user?.id, fetchCourseAndLesson]);
 
   // Handle video player events
   const handleVideoPlay = () => {

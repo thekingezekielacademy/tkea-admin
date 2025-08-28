@@ -29,7 +29,7 @@ const CourseOverview: React.FC = () => {
     isExpired: true
   });
   const [subActive, setSubActive] = useState<boolean>(false);
-  const [databaseSubscriptionStatus, setDatabaseSubscriptionStatus] = useState<boolean>(false);
+
 
   // Fetch course data function
   const fetchCourse = async () => {
@@ -47,7 +47,7 @@ const CourseOverview: React.FC = () => {
         console.log('👤 Guest user viewing course - allowing read-only access');
       } else {
         // First, refresh the session to ensure we have a valid token
-        const { data: sessionData, error: sessionError } = await supabase.auth.refreshSession();
+        const { error: sessionError } = await supabase.auth.refreshSession();
         
         if (sessionError) {
           console.log('⚠️ Session refresh failed, trying to get current session:', sessionError);
@@ -113,16 +113,13 @@ const CourseOverview: React.FC = () => {
       
       if (!error && data) {
         console.log('✅ Found active subscription in database:', data);
-        setDatabaseSubscriptionStatus(true);
         return true;
       } else {
         console.log('❌ No active subscription found in database');
-        setDatabaseSubscriptionStatus(false);
         return false;
       }
     } catch (error) {
       console.log('⚠️ Database subscription check failed (table may not exist yet):', error);
-      setDatabaseSubscriptionStatus(false);
       return false;
     }
   };
@@ -202,7 +199,7 @@ const CourseOverview: React.FC = () => {
   // Fetch course data on mount
   useEffect(() => {
     fetchCourse();
-  }, [id]);
+  }, [id, fetchCourse]);
 
   // Fetch user progress for this course
   useEffect(() => {
