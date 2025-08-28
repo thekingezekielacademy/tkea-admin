@@ -82,8 +82,20 @@ const BlogPost: React.FC = () => {
     // First sanitize the content
     let sanitizedContent = DOMPurify.sanitize(content);
     
+    // Split content into sentences for better formatting
+    const sentences = sanitizedContent.split(/(?<=[.!?])\s+/);
+    
+    // Process each sentence to add proper spacing
+    const formattedSentences = sentences.map(sentence => {
+      // Add extra space after periods, exclamation marks, and question marks
+      return sentence.replace(/([.!?])\s*/g, '$1  ');
+    });
+    
+    // Join sentences back together
+    sanitizedContent = formattedSentences.join(' ');
+    
     // Add proper paragraph spacing
-    // Replace single line breaks with paragraph breaks for better readability
+    // Replace multiple line breaks with paragraph breaks
     sanitizedContent = sanitizedContent
       .replace(/\n\n+/g, '</p><p>') // Multiple line breaks become paragraph breaks
       .replace(/\n/g, '</p><p>'); // Single line breaks become paragraph breaks
@@ -96,22 +108,22 @@ const BlogPost: React.FC = () => {
       sanitizedContent = sanitizedContent + '</p>';
     }
     
-    // Add spacing after sentences ending with periods
-    sanitizedContent = sanitizedContent.replace(
-      /\.(?=\s*<\/p>)/g, 
-      '.</p>'
-    );
-    
     // Add extra spacing after sentences ending with periods within paragraphs
     sanitizedContent = sanitizedContent.replace(
       /\.(?=\s*[A-Z])/g, 
-      '. '
+      '.  '
     );
     
-    // Ensure proper spacing between paragraphs
+    // Ensure proper spacing between paragraphs with more breathing room
     sanitizedContent = sanitizedContent.replace(
       /<\/p><p>/g, 
-      '</p>\n<p>'
+      '</p>\n\n<p>'
+    );
+    
+    // Add extra line breaks for better readability
+    sanitizedContent = sanitizedContent.replace(
+      /<\/p>/g, 
+      '</p>\n'
     );
     
     return sanitizedContent;
@@ -234,6 +246,7 @@ const BlogPost: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 pt-16">
+
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Back Button */}
         <div className="mb-6">
@@ -338,7 +351,12 @@ const BlogPost: React.FC = () => {
             <div className="prose prose-lg max-w-none mb-8">
               <div
                 dangerouslySetInnerHTML={{ __html: formatBlogContent(removeConclusion(blogPost.content)) }}
-                className="text-gray-800 leading-relaxed"
+                className="text-gray-800 leading-relaxed blog-content"
+                style={{
+                  lineHeight: '1.8',
+                  fontSize: '1.1rem',
+                  letterSpacing: '0.01em'
+                }}
               />
             </div>
 
