@@ -11,6 +11,11 @@ const CourseOverview: React.FC = () => {
   const { id } = useParams();
   const { user } = useAuth();
   
+  // Debug logging for refresh issues
+  console.log('🔄 CourseOverview component mounted');
+  console.log('📋 Course ID:', id);
+  console.log('👤 User state:', user);
+  
   const [course, setCourse] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -29,6 +34,8 @@ const CourseOverview: React.FC = () => {
   // Fetch course data function
   const fetchCourse = async () => {
     if (!id) return;
+    
+    console.log('🔍 Starting to fetch course data for ID:', id);
     
     try {
       setLoading(true);
@@ -83,6 +90,12 @@ const CourseOverview: React.FC = () => {
       setLoading(false);
     }
   };
+
+  // Add useEffect for debugging
+  useEffect(() => {
+    console.log('🔄 CourseOverview useEffect triggered');
+    console.log('📋 Current state - loading:', loading, 'error:', error, 'course:', course);
+  }, [loading, error, course]);
 
   // Check database subscription status
   const checkDatabaseSubscription = async () => {
