@@ -102,10 +102,10 @@ const BlogPost: React.FC = () => {
       '.</p>'
     );
     
-    // Add extra spacing after sentences ending with periods for better readability
+    // Add extra spacing after sentences ending with periods within paragraphs
     sanitizedContent = sanitizedContent.replace(
-      /\.(?=\s*<\/p>)/g, 
-      '.</p>'
+      /\.(?=\s*[A-Z])/g, 
+      '. '
     );
     
     // Ensure proper spacing between paragraphs
@@ -115,6 +115,43 @@ const BlogPost: React.FC = () => {
     );
     
     return sanitizedContent;
+  };
+
+  const extractConclusion = (content: string) => {
+    // Look for conclusion section in the content
+    const conclusionRegex = /##\s*Conclusion\s*\n([\s\S]*?)(?=\n##|$)/i;
+    const match = content.match(conclusionRegex);
+    
+    if (match && match[1]) {
+      return match[1].trim();
+    }
+    
+    // Fallback: look for "Conclusion" without ##
+    const fallbackRegex = /Conclusion\s*\n([\s\S]*?)(?=\n[A-Z]|$)/i;
+    const fallbackMatch = content.match(fallbackRegex);
+    
+    if (fallbackMatch && fallbackMatch[1]) {
+      return fallbackMatch[1].trim();
+    }
+    
+    // If no conclusion found, return empty string
+    return '';
+  };
+
+  const removeConclusion = (content: string) => {
+    // Remove conclusion section from the main content
+    const conclusionRegex = /##\s*Conclusion\s*\n[\s\S]*$/i;
+    const fallbackRegex = /Conclusion\s*\n[\s\S]*$/i;
+    
+    // Try to remove with ## first
+    let cleanedContent = content.replace(conclusionRegex, '');
+    
+    // If no change, try without ##
+    if (cleanedContent === content) {
+      cleanedContent = content.replace(fallbackRegex, '');
+    }
+    
+    return cleanedContent.trim();
   };
 
   const copyToClipboard = async () => {
@@ -300,26 +337,25 @@ const BlogPost: React.FC = () => {
             {/* Content */}
             <div className="prose prose-lg max-w-none mb-8">
               <div
-                dangerouslySetInnerHTML={{ __html: formatBlogContent(blogPost.content) }}
+                dangerouslySetInnerHTML={{ __html: formatBlogContent(removeConclusion(blogPost.content)) }}
                 className="text-gray-800 leading-relaxed"
               />
             </div>
 
-            {/* Conclusion Section */}
-            <div className="mt-12 p-6 bg-blue-50 border-l-4 border-blue-400 rounded-lg">
-              <h3 className="text-xl font-bold text-blue-900 mb-4">Conclusion</h3>
-              <div className="text-blue-800 leading-relaxed">
-                <p className="mb-4">
-                  Thank you for reading this article. We hope you found it informative and actionable.
-                </p>
-                <p className="mb-4">
-                  If you have any questions or would like to learn more about this topic, feel free to explore our other blog posts or reach out to our team.
-                </p>
-                <p className="font-medium">
-                  Keep learning and growing with King Ezekiel Academy!
-                </p>
+            {/* Conclusion Section - Only show if content contains conclusion */}
+            {blogPost.content.toLowerCase().includes('conclusion') && (
+              <div className="mt-12 p-6 bg-blue-50 border-l-4 border-blue-400 rounded-lg">
+                <h3 className="text-xl font-bold text-blue-900 mb-4">Conclusion</h3>
+                <div className="text-blue-800 leading-relaxed">
+                  <div
+                    dangerouslySetInnerHTML={{ 
+                      __html: formatBlogContent(extractConclusion(blogPost.content)) 
+                    }}
+                    className="prose prose-blue max-w-none"
+                  />
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Social Sharing */}
             <div className="mb-8 p-6 bg-gray-50 rounded-lg">
