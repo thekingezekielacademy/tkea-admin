@@ -38,10 +38,12 @@ body {
 
 /* Blog content readability improvements */
 .blog-content p {
-  margin-bottom: 1.5rem !important;
-  line-height: 1.8 !important;
-  font-size: 1.1rem !important;
+  margin-bottom: 1.2rem !important;
+  line-height: 1.7 !important;
+  font-size: 1rem !important;
   letter-spacing: 0.01em !important;
+  text-align: justify;
+  word-spacing: 0.05em;
 }
 
 .blog-content p:last-child {
@@ -49,11 +51,33 @@ body {
 }
 
 .blog-content p + p {
-  margin-top: 1.5rem !important;
+  margin-top: 1.2rem !important;
 }
 
-/* Ensure proper spacing between sentences */
-.blog-content p {
-  text-align: justify;
-  word-spacing: 0.05em;
+/* Mobile optimization */
+@media (max-width: 768px) {
+  .blog-content p {
+    margin-bottom: 1rem !important;
+    line-height: 1.6 !important;
+    font-size: 0.95rem !important;
+    text-align: left !important;
+    padding: 0 0.5rem !important;
+  }
+  
+  .blog-content p + p {
+    margin-top: 1rem !important;
+  }
+}
+
+/* Tablet optimization */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .blog-content p {
+    margin-bottom: 1.1rem !important;
+    line-height: 1.65 !important;
+    font-size: 1rem !important;
+  }
+  
+  .blog-content p + p {
+    margin-top: 1.1rem !important;
+  }
 }

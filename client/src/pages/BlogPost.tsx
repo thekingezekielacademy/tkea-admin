@@ -215,7 +215,7 @@ const BlogPost: React.FC = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 pt-16">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-4xl mx-auto px-3 sm:px-6 lg:px-8 py-6 sm:py-8">
           <div className="flex items-center justify-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
             <span className="ml-3 text-gray-600">Loading blog post...</span>
@@ -228,7 +228,7 @@ const BlogPost: React.FC = () => {
   if (error || !blogPost) {
     return (
       <div className="min-h-screen bg-gray-50 pt-16">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-4xl mx-auto px-3 sm:px-6 lg:px-8 py-6 sm:py-8">
           <div className="text-center">
             <h1 className="text-2xl font-bold text-gray-900">Blog Post Not Found</h1>
             <p className="mt-2 text-gray-600">{error || 'The blog post you are looking for does not exist.'}</p>
@@ -247,7 +247,7 @@ const BlogPost: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50 pt-16">
 
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-4xl mx-auto px-3 sm:px-6 lg:px-8 py-6 sm:py-8">
         {/* Back Button */}
         <div className="mb-6">
           <button
@@ -274,45 +274,45 @@ const BlogPost: React.FC = () => {
 
           <div className="p-6 sm:p-8 lg:p-12">
             {/* Header */}
-            <header className="mb-8">
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-4 leading-tight">
+            <header className="mb-6 sm:mb-8">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-3 sm:mb-4 leading-tight">
                 {blogPost.title}
               </h1>
               
               {/* Meta Information */}
-              <div className="flex flex-wrap items-center gap-4 sm:gap-6 text-sm text-gray-600 mb-6">
+              <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-2 sm:gap-4 md:gap-6 text-xs sm:text-sm text-gray-600 mb-4 sm:mb-6">
                 <div className="flex items-center">
-                  <FaUser className="w-4 h-4 mr-2" />
+                  <FaUser className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                   <span>King Ezekiel Academy</span>
                 </div>
                 <div className="flex items-center">
-                  <FaCalendar className="w-4 h-4 mr-2" />
+                  <FaCalendar className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                   <span>{formatDate(blogPost.created_at)}</span>
                 </div>
                 {blogPost.reading_time && (
                   <div className="flex items-center">
-                    <FaClock className="w-4 h-4 mr-2" />
+                    <FaClock className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                     <span>{blogPost.reading_time} min read</span>
                   </div>
                 )}
                 {blogPost.view_count !== undefined && (
                   <div className="flex items-center">
-                    <FaEye className="w-4 h-4 mr-2" />
+                    <FaEye className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                     <span>{blogPost.view_count} views</span>
                   </div>
                 )}
               </div>
 
               {/* Categories and Tags */}
-              <div className="flex flex-wrap items-center gap-4 mb-6">
+              <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
                 {blogPost.categories && blogPost.categories.length > 0 && (
                   <div className="flex items-center">
-                    <FaFolder className="w-4 h-4 mr-2 text-gray-400" />
-                    <div className="flex flex-wrap gap-2">
+                    <FaFolder className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 text-gray-400" />
+                    <div className="flex flex-wrap gap-1 sm:gap-2">
                       {blogPost.categories.map((cat, index) => (
                         <span
                           key={index}
-                          className="px-3 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full"
+                          className="px-2 sm:px-3 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full"
                         >
                           {cat.blog_categories.name}
                         </span>
@@ -322,12 +322,12 @@ const BlogPost: React.FC = () => {
                 )}
                 {blogPost.tags && blogPost.tags.length > 0 && (
                   <div className="flex items-center">
-                    <FaTags className="w-4 h-4 mr-2 text-gray-400" />
-                    <div className="flex flex-wrap gap-2">
+                    <FaTags className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 text-gray-400" />
+                    <div className="flex flex-wrap gap-1 sm:gap-2">
                       {blogPost.tags.map((tag, index) => (
                         <span
                           key={index}
-                          className="px-3 py-1 bg-gray-100 text-gray-700 text-xs font-medium rounded-full"
+                          className="px-2 sm:px-3 py-1 bg-gray-100 text-gray-700 text-xs font-medium rounded-full"
                         >
                           {tag.blog_tags.name}
                         </span>
@@ -339,8 +339,8 @@ const BlogPost: React.FC = () => {
 
               {/* Excerpt */}
               {blogPost.excerpt && (
-                <div className="mb-8 p-4 bg-gray-50 rounded-lg">
-                  <p className="text-lg text-gray-700 italic">
+                <div className="mb-6 sm:mb-8 p-3 sm:p-4 bg-gray-50 rounded-lg">
+                  <p className="text-base sm:text-lg text-gray-700 italic">
                     {blogPost.excerpt}
                   </p>
                 </div>
@@ -352,18 +352,13 @@ const BlogPost: React.FC = () => {
               <div
                 dangerouslySetInnerHTML={{ __html: formatBlogContent(removeConclusion(blogPost.content)) }}
                 className="text-gray-800 leading-relaxed blog-content"
-                style={{
-                  lineHeight: '1.8',
-                  fontSize: '1.1rem',
-                  letterSpacing: '0.01em'
-                }}
               />
             </div>
 
             {/* Conclusion Section - Only show if content contains conclusion */}
             {blogPost.content.toLowerCase().includes('conclusion') && (
-              <div className="mt-12 p-6 bg-blue-50 border-l-4 border-blue-400 rounded-lg">
-                <h3 className="text-xl font-bold text-blue-900 mb-4">Conclusion</h3>
+              <div className="mt-8 sm:mt-12 p-4 sm:p-6 bg-blue-50 border-l-4 border-blue-400 rounded-lg">
+                <h3 className="text-lg sm:text-xl font-bold text-blue-900 mb-3 sm:mb-4">Conclusion</h3>
                 <div className="text-blue-800 leading-relaxed">
                   <div
                     dangerouslySetInnerHTML={{ 
@@ -376,36 +371,40 @@ const BlogPost: React.FC = () => {
             )}
 
             {/* Social Sharing */}
-            <div className="mb-8 p-6 bg-gray-50 rounded-lg">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Share this post</h3>
-              <div className="flex flex-wrap gap-3">
+            <div className="mb-6 sm:mb-8 p-4 sm:p-6 bg-gray-50 rounded-lg">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Share this post</h3>
+              <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 sm:gap-3">
                 <button
                   onClick={() => shareToSocial('twitter')}
-                  className="inline-flex items-center px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                  className="inline-flex items-center justify-center px-3 sm:px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm sm:text-base"
                 >
-                  <FaTwitter className="w-4 h-4 mr-2" />
-                  Twitter
+                  <FaTwitter className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                  <span className="hidden sm:inline">Twitter</span>
+                  <span className="sm:hidden">Tweet</span>
                 </button>
                 <button
                   onClick={() => shareToSocial('facebook')}
-                  className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  className="inline-flex items-center justify-center px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base"
                 >
-                  <FaFacebook className="w-4 h-4 mr-2" />
-                  Facebook
+                  <FaFacebook className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                  <span className="hidden sm:inline">Facebook</span>
+                  <span className="sm:hidden">Share</span>
                 </button>
                 <button
                   onClick={() => shareToSocial('linkedin')}
-                  className="inline-flex items-center px-4 py-2 bg-blue-700 text-white rounded-lg hover:bg-blue-800 transition-colors"
+                  className="inline-flex items-center justify-center px-3 sm:px-4 py-2 bg-blue-700 text-white rounded-lg hover:bg-blue-800 transition-colors text-sm sm:text-base"
                 >
-                  <FaLinkedin className="w-4 h-4 mr-2" />
-                  LinkedIn
+                  <FaLinkedin className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                  <span className="hidden sm:inline">LinkedIn</span>
+                  <span className="sm:hidden">Post</span>
                 </button>
                 <button
                   onClick={() => shareToSocial('whatsapp')}
-                  className="inline-flex items-center px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+                  className="inline-flex items-center justify-center px-3 sm:px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm sm:text-base"
                 >
-                  <FaWhatsapp className="w-4 h-4 mr-2" />
-                  WhatsApp
+                  <FaWhatsapp className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                  <span className="hidden sm:inline">WhatsApp</span>
+                  <span className="sm:hidden">Send</span>
                 </button>
               </div>
             </div>
