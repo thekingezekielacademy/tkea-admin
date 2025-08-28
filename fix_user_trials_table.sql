@@ -16,24 +16,28 @@ CREATE TABLE IF NOT EXISTS user_trials (
 ALTER TABLE user_trials ENABLE ROW LEVEL SECURITY;
 
 -- Policy to allow users to read their own trial data
-CREATE POLICY IF NOT EXISTS "Users can view own trial data" ON user_trials
+DROP POLICY IF EXISTS "Users can view own trial data" ON user_trials;
+CREATE POLICY "Users can view own trial data" ON user_trials
     FOR SELECT USING (auth.uid() = user_id);
 
 -- Policy to allow users to insert their own trial data
-CREATE POLICY IF NOT EXISTS "Users can insert own trial data" ON user_trials
+DROP POLICY IF EXISTS "Users can insert own trial data" ON user_trials;
+CREATE POLICY "Users can insert own trial data" ON user_trials
     FOR INSERT WITH CHECK (auth.uid() = user_id);
 
 -- Policy to allow users to update their own trial data
-CREATE POLICY IF NOT EXISTS "Users can update own trial data" ON user_trials
+DROP POLICY IF EXISTS "Users can update own trial data" ON user_trials;
+CREATE POLICY "Users can update own trial data" ON user_trials
     FOR UPDATE USING (auth.uid() = user_id);
 
 -- 3. Create index for better performance
-CREATE INDEX IF NOT EXISTS idx_user_trials_user_id ON user_trials(user_id);
-CREATE INDEX IF NOT EXISTS idx_user_trials_is_active ON user_trials(is_active);
+DROP INDEX IF EXISTS idx_user_trials_user_id;
+CREATE INDEX idx_user_trials_user_id ON user_trials(user_id);
+DROP INDEX IF EXISTS idx_user_trials_is_active;
+CREATE INDEX idx_user_trials_is_active ON user_trials(is_active);
 
 -- 4. Grant necessary permissions
 GRANT SELECT, INSERT, UPDATE ON user_trials TO authenticated;
-GRANT USAGE ON SEQUENCE user_trials_id_seq TO authenticated;
 
 -- 5. Verify the table structure
 SELECT 
