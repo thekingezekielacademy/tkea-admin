@@ -78,6 +78,45 @@ const BlogPost: React.FC = () => {
     }
   };
 
+  const formatBlogContent = (content: string) => {
+    // First sanitize the content
+    let sanitizedContent = DOMPurify.sanitize(content);
+    
+    // Add proper paragraph spacing
+    // Replace single line breaks with paragraph breaks for better readability
+    sanitizedContent = sanitizedContent
+      .replace(/\n\n+/g, '</p><p>') // Multiple line breaks become paragraph breaks
+      .replace(/\n/g, '</p><p>'); // Single line breaks become paragraph breaks
+    
+    // Wrap in paragraph tags if not already wrapped
+    if (!sanitizedContent.startsWith('<p>')) {
+      sanitizedContent = '<p>' + sanitizedContent;
+    }
+    if (!sanitizedContent.endsWith('</p>')) {
+      sanitizedContent = sanitizedContent + '</p>';
+    }
+    
+    // Add spacing after sentences ending with periods
+    sanitizedContent = sanitizedContent.replace(
+      /\.(?=\s*<\/p>)/g, 
+      '.</p>'
+    );
+    
+    // Add extra spacing after sentences ending with periods for better readability
+    sanitizedContent = sanitizedContent.replace(
+      /\.(?=\s*<\/p>)/g, 
+      '.</p>'
+    );
+    
+    // Ensure proper spacing between paragraphs
+    sanitizedContent = sanitizedContent.replace(
+      /<\/p><p>/g, 
+      '</p>\n<p>'
+    );
+    
+    return sanitizedContent;
+  };
+
   const copyToClipboard = async () => {
     try {
       const url = window.location.href;
@@ -261,9 +300,25 @@ const BlogPost: React.FC = () => {
             {/* Content */}
             <div className="prose prose-lg max-w-none mb-8">
               <div
-                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(blogPost.content) }}
+                dangerouslySetInnerHTML={{ __html: formatBlogContent(blogPost.content) }}
                 className="text-gray-800 leading-relaxed"
               />
+            </div>
+
+            {/* Conclusion Section */}
+            <div className="mt-12 p-6 bg-blue-50 border-l-4 border-blue-400 rounded-lg">
+              <h3 className="text-xl font-bold text-blue-900 mb-4">Conclusion</h3>
+              <div className="text-blue-800 leading-relaxed">
+                <p className="mb-4">
+                  Thank you for reading this article. We hope you found it informative and actionable.
+                </p>
+                <p className="mb-4">
+                  If you have any questions or would like to learn more about this topic, feel free to explore our other blog posts or reach out to our team.
+                </p>
+                <p className="font-medium">
+                  Keep learning and growing with King Ezekiel Academy!
+                </p>
+              </div>
             </div>
 
             {/* Social Sharing */}

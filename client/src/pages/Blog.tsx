@@ -28,11 +28,13 @@ const Blog: React.FC = () => {
   const [selectedTag, setSelectedTag] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+  const [showAllCategories, setShowAllCategories] = useState(false);
+  const [showAllTags, setShowAllTags] = useState(false);
   const postsPerPage = 9;
 
   useEffect(() => {
     fetchBlogPosts();
-  }, [currentPage, selectedCategory, selectedTag]);
+  }, [currentPage, selectedCategory, selectedTag, searchTerm]);
 
   const fetchBlogPosts = async () => {
     try {
@@ -123,6 +125,9 @@ const Blog: React.FC = () => {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     setCurrentPage(1);
+    // Reset other filters when searching
+    setSelectedCategory('');
+    setSelectedTag('');
     fetchBlogPosts();
   };
 
@@ -255,28 +260,53 @@ const Blog: React.FC = () => {
           {/* Category and Tag Filters */}
           <div className="flex flex-wrap gap-4">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-gray-700">Categories:</span>
-              <div className="flex flex-wrap gap-2">
-                {getUniqueCategories().map((category) => (
-                  <button
-                    key={category}
-                    onClick={() => handleCategoryChange(category)}
-                    className={`px-3 py-1 text-sm rounded-full transition-colors ${
-                      selectedCategory === category
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                    }`}
-                  >
-                    {category}
-                  </button>
-                ))}
-              </div>
+                             <span className="text-sm font-medium text-gray-700">Categories:</span>
+               <div className="flex flex-wrap gap-2">
+                 {getUniqueCategories().slice(0, 4).map((category) => (
+                   <button
+                     key={category}
+                     onClick={() => handleCategoryChange(category)}
+                     className={`px-3 py-1 text-sm rounded-full transition-colors ${
+                       selectedCategory === category
+                         ? 'bg-blue-600 text-white'
+                         : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                     }`}
+                   >
+                     {category}
+                   </button>
+                 ))}
+                 {getUniqueCategories().length > 4 && (
+                   <button
+                     onClick={() => setShowAllCategories(!showAllCategories)}
+                     className="px-3 py-1 text-sm rounded-full bg-gray-300 text-gray-700 hover:bg-gray-400 transition-colors"
+                   >
+                     +{getUniqueCategories().length - 4} (the remaining)
+                   </button>
+                 )}
+               </div>
+               {showAllCategories && getUniqueCategories().length > 4 && (
+                 <div className="flex flex-wrap gap-2 mt-2">
+                   {getUniqueCategories().slice(4).map((category) => (
+                     <button
+                       key={category}
+                       onClick={() => handleCategoryChange(category)}
+                       className={`px-3 py-1 text-sm rounded-full transition-colors ${
+                         selectedCategory === category
+                           ? 'bg-blue-600 text-white'
+                           : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                       }`}
+                     >
+                       {category}
+                     </button>
+                   ))}
+                 </div>
+               )}
             </div>
 
             <div className="flex items-center gap-2">
               <span className="text-sm font-medium text-gray-700">Tags:</span>
               <div className="flex flex-wrap gap-2">
-                {getUniqueTags().map((tag) => (
+                {getUniqueTags().slice(0, 6).map((tag) => (
                   <button
                     key={tag}
                     onClick={() => handleTagChange(tag)}
@@ -289,7 +319,32 @@ const Blog: React.FC = () => {
                     {tag}
                   </button>
                 ))}
+                {getUniqueTags().length > 6 && (
+                  <button
+                    onClick={() => setShowAllTags(!showAllTags)}
+                    className="px-3 py-1 text-sm rounded-full bg-gray-300 text-gray-700 hover:bg-gray-400 transition-colors"
+                  >
+                    +{getUniqueTags().length - 6} (the remaining)
+                  </button>
+                )}
               </div>
+              {showAllTags && getUniqueTags().length > 6 && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {getUniqueTags().slice(6).map((tag) => (
+                    <button
+                      key={tag}
+                      onClick={() => handleTagChange(tag)}
+                      className={`px-3 py-1 text-sm rounded-full transition-colors ${
+                        selectedTag === tag
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                      }`}
+                    >
+                      {tag}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>
