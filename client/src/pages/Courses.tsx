@@ -629,8 +629,8 @@ const Courses: React.FC = () => {
       // User is signed in but no active subscription or trial - go to subscription page to upgrade
       navigate('/subscription');
     } else {
-      // User is not signed in - go to sign in page
-      navigate('/signin');
+      // User is not signed in - go to signup page to start free
+      navigate('/signup');
     }
   };
 
@@ -670,7 +670,7 @@ const Courses: React.FC = () => {
             )}
           </div>
           <p className="text-base sm:text-lg md:text-xl text-gray-600 max-w-3xl mx-auto px-2 sm:px-0 leading-relaxed">
-            Master the most in-demand digital skills with our comprehensive courses. Register as a member to access all courses.
+            Master the most in-demand digital skills with our comprehensive courses. Start free and upgrade to access all courses.
           </p>
         </div>
 
@@ -777,15 +777,15 @@ const Courses: React.FC = () => {
                   </div>
                   <div className="min-w-0 flex-1">
                     <h3 className="text-base sm:text-lg md:text-2xl font-bold mb-1">👋 Welcome Guest!</h3>
-                    <p className="text-purple-100 text-xs sm:text-sm md:text-lg leading-relaxed">Browse our courses and sign up to start learning</p>
+                    <p className="text-purple-100 text-xs sm:text-sm md:text-lg leading-relaxed">Browse our courses and start learning for free</p>
                   </div>
                 </div>
                 <div className="text-center sm:text-right">
                   <button 
-                    onClick={() => navigate('/signin')}
+                    onClick={() => navigate('/signup')}
                     className="bg-white text-purple-600 px-3 sm:px-4 md:px-6 py-2 sm:py-3 rounded-full font-semibold hover:bg-purple-50 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 text-xs sm:text-sm md:text-base"
                   >
-                    Sign In
+                    Start Free!
                   </button>
                 </div>
               </div>
@@ -1007,7 +1007,7 @@ const Courses: React.FC = () => {
                     ) : (
                       <>
                       <FaLock className="h-3 w-3 sm:h-4 sm:w-4" />
-                        <span>Sign In</span>
+                        <span>Start Free!</span>
                       </>
                     )}
                   </button>
