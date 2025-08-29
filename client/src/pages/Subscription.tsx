@@ -96,8 +96,19 @@ const Subscription: React.FC = () => {
           startDate = now;
         }
         
-        const endDate = new Date(startDate.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days from start
-        const nextBillingDate = new Date(endDate.getTime()); // Next billing is same as end date for monthly
+        // Use the actual next_payment_date from database if it exists
+        let endDate: Date;
+        let nextBillingDate: Date;
+        
+        if (supabaseData.next_payment_date) {
+          // Use the actual next payment date from database
+          endDate = new Date(supabaseData.next_payment_date);
+          nextBillingDate = new Date(supabaseData.next_payment_date);
+        } else {
+          // Calculate based on created_at + 30 days
+          endDate = new Date(startDate.getTime() + 30 * 24 * 60 * 60 * 1000);
+          nextBillingDate = new Date(endDate.getTime());
+        }
         
         // Debug: Log the date calculations
         console.log('🔍 Date Debug:', {
@@ -105,7 +116,8 @@ const Subscription: React.FC = () => {
           startDate: startDate.toISOString(),
           endDate: endDate.toISOString(),
           nextBillingDate: nextBillingDate.toISOString(),
-          currentDate: now.toISOString()
+          currentDate: now.toISOString(),
+          next_payment_date: supabaseData.next_payment_date
         });
         
         const subscription = {
@@ -116,8 +128,8 @@ const Subscription: React.FC = () => {
           currency: supabaseData.currency || 'NGN',
           billing_cycle: 'monthly' as const,
           start_date: supabaseData.created_at,
-          end_date: supabaseData.subscription_end_date || endDate.toISOString(),
-          next_billing_date: supabaseData.next_billing_date || nextBillingDate.toISOString(),
+          end_date: endDate.toISOString(),
+          next_billing_date: nextBillingDate.toISOString(),
           paystack_subscription_id: supabaseData.paystack_subscription_id,
           paystack_customer_code: supabaseData.paystack_customer_code,
           created_at: supabaseData.created_at,
@@ -217,74 +229,59 @@ const Subscription: React.FC = () => {
   };
 
   const getAccessColor = (status: string, cancelAtPeriodEnd?: boolean, endDate?: string) => {
-    // NETFLIX/SPOTIFY MODEL: Access is based on current date vs subscription end date
-    const now = new Date();
-    const subscriptionEnd = endDate ? new Date(endDate) : null;
-    const hasAccess = subscriptionEnd && now <= subscriptionEnd;
-    
-    if (hasAccess) {
-      if (status === 'active' && !cancelAtPeriodEnd) {
-        return 'bg-green-100 text-green-800 border-green-200'; // Full access
-      } else if (status === 'active' && cancelAtPeriodEnd) {
+    // For active subscriptions, always show active access
+    if (status === 'active') {
+      if (cancelAtPeriodEnd) {
         return 'bg-yellow-100 text-yellow-800 border-yellow-200'; // Grace period (canceled but still active)
-      } else if (status === 'trialing') {
-        return 'bg-blue-100 text-blue-800 border-blue-200'; // Trial access
-      } else if (status === 'canceled') {
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200'; // Canceled but still in paid period
       } else {
-        return 'bg-green-100 text-green-800 border-green-200'; // Other active statuses
+        return 'bg-green-100 text-green-800 border-green-200'; // Full access
       }
+    } else if (status === 'trialing') {
+      return 'bg-blue-100 text-blue-800 border-blue-200'; // Trial access
+    } else if (status === 'canceled') {
+      return 'bg-red-100 text-red-800 border-red-200'; // Canceled
+    } else if (status === 'expired') {
+      return 'bg-gray-100 text-gray-800 border-gray-200'; // Expired
     } else {
-      return 'bg-red-100 text-red-800 border-red-200'; // No access - expired
+      return 'bg-gray-100 text-gray-800 border-gray-200'; // Default
     }
   };
 
   const getAccessIcon = (status: string, cancelAtPeriodEnd?: boolean, endDate?: string) => {
-    // NETFLIX/SPOTIFY MODEL: Access is based on current date vs subscription end date
-    const now = new Date();
-    const subscriptionEnd = endDate ? new Date(endDate) : null;
-    const hasAccess = subscriptionEnd && now <= subscriptionEnd;
-    
-    if (hasAccess) {
-      if (status === 'active' && !cancelAtPeriodEnd) {
-        return <FaCheckCircle className="w-4 h-4" />; // Full access
-      } else if (status === 'active' && cancelAtPeriodEnd) {
+    // For active subscriptions, always show active access
+    if (status === 'active') {
+      if (cancelAtPeriodEnd) {
         return <FaClock className="w-4 h-4" />; // Grace period (canceled but still active)
-      } else if (status === 'trialing') {
-        return <FaClock className="w-4 h-4" />; // Trial access
-      } else if (status === 'canceled') {
-        return <FaClock className="w-4 h-4" />; // Canceled but still in paid period
       } else {
-        return <FaCheckCircle className="w-4 h-4" />; // Other active statuses
+        return <FaCheckCircle className="w-4 h-4" />; // Full access
       }
+    } else if (status === 'trialing') {
+      return <FaClock className="w-4 h-4" />; // Trial access
+    } else if (status === 'canceled') {
+      return <FaTimesCircle className="w-4 h-4" />; // Canceled
+    } else if (status === 'expired') {
+      return <FaTimesCircle className="w-4 h-4" />; // Expired
     } else {
-      return <FaTimesCircle className="w-4 h-4" />; // No access - expired
+      return <FaTimesCircle className="w-4 h-4" />; // Default
     }
   };
 
   const getAccessText = (status: string, cancelAtPeriodEnd?: boolean, endDate?: string) => {
-    // NETFLIX/SPOTIFY MODEL: Access is based on current date vs subscription end date
-    const now = new Date();
-    const subscriptionEnd = endDate ? new Date(endDate) : null;
-    const hasAccess = subscriptionEnd && now <= subscriptionEnd;
-    
-    if (hasAccess) {
-      // Calculate days remaining
-      const daysRemaining = subscriptionEnd ? Math.ceil((subscriptionEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)) : 0;
-      
-      if (status === 'active' && !cancelAtPeriodEnd) {
-        return `Active (${daysRemaining} days left)`; // Full access with countdown
-      } else if (status === 'active' && cancelAtPeriodEnd) {
-        return `Grace Period (${daysRemaining} days left)`; // Access until end of billing cycle
-      } else if (status === 'trialing') {
-        return `Trial (${daysRemaining} days left)`; // Trial access with countdown
-      } else if (status === 'canceled') {
-        return `Grace Period (${daysRemaining} days left)`; // Canceled but still in paid period
+    // For active subscriptions, always show active access
+    if (status === 'active') {
+      if (cancelAtPeriodEnd) {
+        return 'Grace Period'; // Canceled but still active
       } else {
-        return `Active (${daysRemaining} days left)`; // Other active statuses
+        return 'Active'; // Full access
       }
+    } else if (status === 'trialing') {
+      return 'Trial'; // Trial access
+    } else if (status === 'canceled') {
+      return 'Canceled'; // Canceled
+    } else if (status === 'expired') {
+      return 'Expired'; // Expired
     } else {
-      return 'Expired'; // No access - subscription period ended
+      return 'Unknown'; // Default
     }
   };
 
@@ -903,7 +900,7 @@ const Subscription: React.FC = () => {
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium text-gray-500">Amount</span>
                       <span className="text-sm font-semibold text-gray-900">
-                        {formatCurrency(subscription.amount, subscription.currency)}/{subscription.billing_cycle}
+                        {formatCurrency(subscription.amount, subscription.currency)}/month
                       </span>
                     </div>
 
