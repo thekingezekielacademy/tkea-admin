@@ -2,7 +2,7 @@
 CREATE TABLE IF NOT EXISTS subscription_payments (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-  subscription_id UUID REFERENCES user_subscriptions(id) ON DELETE CASCADE,
+  paystack_subscription_id TEXT, -- Reference to Paystack subscription ID
   paystack_transaction_id TEXT NOT NULL UNIQUE,
   paystack_reference TEXT NOT NULL UNIQUE,
   amount INTEGER NOT NULL, -- Amount in kobo (smallest currency unit)
@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS subscription_payments (
 
 -- Create indexes for performance
 CREATE INDEX IF NOT EXISTS idx_subscription_payments_user_id ON subscription_payments(user_id);
-CREATE INDEX IF NOT EXISTS idx_subscription_payments_subscription_id ON subscription_payments(subscription_id);
+CREATE INDEX IF NOT EXISTS idx_subscription_payments_paystack_subscription_id ON subscription_payments(paystack_subscription_id);
 CREATE INDEX IF NOT EXISTS idx_subscription_payments_paystack_transaction_id ON subscription_payments(paystack_transaction_id);
 CREATE INDEX IF NOT EXISTS idx_subscription_payments_paystack_reference ON subscription_payments(paystack_reference);
 CREATE INDEX IF NOT EXISTS idx_subscription_payments_status ON subscription_payments(status);
