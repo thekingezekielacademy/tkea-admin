@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { FaArrowLeft, FaClock, FaUser, FaTags, FaFolder, FaCalendar, FaEye, FaCopy, FaCheck, FaTwitter, FaFacebook, FaLinkedin, FaWhatsapp } from 'react-icons/fa';
+import { FaArrowLeft, FaShare, FaClock, FaUser, FaTags, FaFolder, FaCalendar, FaEye, FaCopy, FaCheck, FaTwitter, FaFacebook, FaLinkedin, FaWhatsapp } from 'react-icons/fa';
 import { supabase } from '../lib/supabase';
 import DOMPurify from 'dompurify';
 import { secureLog, secureError } from '../utils/secureLogger';
@@ -35,7 +35,7 @@ const BlogPost: React.FC = () => {
     if (slug) {
       fetchBlogPost();
     }
-  }, [slug, fetchBlogPost]);
+  }, [slug]);
 
   const fetchBlogPost = async () => {
     try {

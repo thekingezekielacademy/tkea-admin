@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useSidebar } from '../contexts/SidebarContext';
 import { supabase } from '../lib/supabase';
 import DashboardSidebar from '../components/DashboardSidebar';
+import PaymentModal from '../components/PaymentModal';
 import secureStorage from '../utils/secureStorage';
 import DOMPurify from 'dompurify';
 import { 
@@ -59,6 +60,7 @@ const Subscription: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showCancelModal, setShowCancelModal] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
   const [cancelFeedback, setCancelFeedback] = useState('');
   const [canceling, setCanceling] = useState(false);
@@ -946,7 +948,10 @@ const Subscription: React.FC = () => {
                   <p className="text-gray-600 mb-4">
                     You don't have an active subscription. Subscribe to access all courses and features.
                   </p>
-                  <button className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors">
+                  <button 
+                    onClick={() => setShowPaymentModal(true)}
+                    className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                  >
                     Subscribe Now
                   </button>
                 </div>
@@ -1027,6 +1032,16 @@ const Subscription: React.FC = () => {
                       className="text-red-600 hover:text-red-700 text-sm font-medium px-4 py-2 border border-red-200 rounded-lg hover:bg-red-50 transition-colors"
                     >
                       Cancel Subscription
+                    </button>
+                  )}
+                  
+                  {/* Re-subscribe button for canceled subscriptions */}
+                  {subscription && subscription.status === 'canceled' && (
+                    <button
+                      onClick={() => setShowPaymentModal(true)}
+                      className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                    >
+                      Subscribe Again
                     </button>
                   )}
                   
@@ -1159,6 +1174,19 @@ const Subscription: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Payment Modal */}
+      <PaymentModal
+        isOpen={showPaymentModal}
+        onClose={() => setShowPaymentModal(false)}
+        onSuccess={() => {
+          setShowPaymentModal(false);
+          // Refresh subscription data
+          fetchSubscriptionStatus();
+        }}
+        planName="Monthly Membership"
+        amount={2500}
+      />
     </div>
   );
 };

@@ -29,6 +29,7 @@ import ViewBlogPost from './pages/admin/ViewBlogPost';
 import Profile from './pages/Profile';
 import Achievements from './pages/Achievements';
 import Subscription from './pages/Subscription';
+import PaymentVerification from './pages/PaymentVerification';
 import DashboardWithSidebar from './pages/DashboardWithSidebar';
 import CourseOverview from './pages/course/CourseOverview';
 import LessonPlayer from './pages/course/LessonPlayer';
@@ -76,6 +77,7 @@ function App() {
                 <Route path="/admin/blog/:id/view" element={<AdminRoute><ViewBlogPost /></AdminRoute>} />
               <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
               <Route path="/subscription" element={<ProtectedRoute><Subscription /></ProtectedRoute>} />
+              <Route path="/payment/verify" element={<PaymentVerification />} />
               <Route path="/achievements" element={<ProtectedRoute><Achievements /></ProtectedRoute>} />
               <Route path="/course/:id" element={<ProtectedRoute><CourseOverview /></ProtectedRoute>} />
               <Route path="/course/:id/overview" element={<ProtectedRoute><CourseOverview /></ProtectedRoute>} />

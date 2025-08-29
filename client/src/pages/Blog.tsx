@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { FaSearch, FaClock, FaUser, FaArrowRight } from 'react-icons/fa';
+import { FaSearch, FaClock, FaUser, FaTags, FaFolder, FaArrowRight } from 'react-icons/fa';
 
 interface BlogPost {
   id: string;
@@ -34,7 +34,7 @@ const Blog: React.FC = () => {
 
   useEffect(() => {
     fetchBlogPosts();
-  }, [currentPage, selectedCategory, selectedTag, searchTerm, fetchBlogPosts]);
+  }, [currentPage, selectedCategory, selectedTag, searchTerm]);
 
   const fetchBlogPosts = async () => {
     try {

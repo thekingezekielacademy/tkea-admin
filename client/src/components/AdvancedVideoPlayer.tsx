@@ -204,10 +204,7 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
          }
          window.removeEventListener('message', handleMessage);
          if (containerRef.current && iframe.parentNode?.parentNode) {
-           const container = containerRef.current;
-           if (iframe.parentNode?.parentNode) {
-             iframe.parentNode.parentNode.removeChild(iframe.parentNode);
-           }
+           iframe.parentNode.parentNode.removeChild(iframe.parentNode);
          }
        };
     }
@@ -217,7 +214,7 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
   useEffect(() => {
     setCurrentTime(0);
     setIsPlaying(false);
-  }, [src, setCurrentTime, setIsPlaying]);
+  }, [src]);
   
   // Cleanup on unmount
   useEffect(() => {
