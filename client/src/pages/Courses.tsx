@@ -192,7 +192,7 @@ const Courses: React.FC = () => {
       
       checkSubscriptionAndTrial();
     }
-  }, [user, checkDatabaseSubscription, checkTrialAccess]);
+  }, [user]);
 
   // Fetch courses from database with pagination
   const fetchCourses = async (page = 0, append = false) => {
@@ -212,7 +212,7 @@ const Courses: React.FC = () => {
         console.log('👤 Guest user fetching courses - allowing read-only access');
       } else {
         // First, refresh the session to ensure we have a valid token
-        const { error: sessionError } = await supabase.auth.refreshSession();
+        const { data: sessionData, error: sessionError } = await supabase.auth.refreshSession();
         
         if (sessionError) {
           console.log('⚠️ Session refresh failed, trying to get current session:', sessionError);
@@ -267,7 +267,7 @@ const Courses: React.FC = () => {
           console.log('🔄 JWT expired, attempting to refresh session...');
           
           // Try to refresh the session and retry
-          const { error: refreshError } = await supabase.auth.refreshSession();
+          const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
           
           if (refreshError) {
             console.error('❌ Failed to refresh session:', refreshError);
@@ -332,10 +332,18 @@ const Courses: React.FC = () => {
                     lessons: course.course_videos?.length || 0
                   }));
             
+            // Apply shuffling only for the first page (not when appending for pagination)
+            // This ensures fresh random order every time users visit the page
+            const finalCourses = append ? transformedCourses : shuffleArray(transformedCourses);
+            
+            if (!append) {
+              console.log('🎲 Courses shuffled for fresh random order!');
+            }
+            
             if (append) {
-              setCourses(prev => [...prev, ...transformedCourses]);
+              setCourses(prev => [...prev, ...finalCourses]);
             } else {
-              setCourses(transformedCourses);
+              setCourses(finalCourses);
             }
             
                     // Check if there are more courses
@@ -373,10 +381,18 @@ const Courses: React.FC = () => {
                     lessons: course.course_videos?.length || 0
                   }));
         
+        // Apply shuffling only for the first page (not when appending for pagination)
+        // This ensures fresh random order every time users visit the page
+        const finalCourses = append ? transformedCourses : shuffleArray(transformedCourses);
+        
+        if (!append) {
+          console.log('🎲 Courses shuffled for fresh random order!');
+        }
+        
         if (append) {
-          setCourses(prev => [...prev, ...transformedCourses]);
+          setCourses(prev => [...prev, ...finalCourses]);
         } else {
-          setCourses(transformedCourses);
+          setCourses(finalCourses);
         }
         
         // Check if there are more courses
@@ -413,6 +429,16 @@ const Courses: React.FC = () => {
     if (hasMore && !loadingMore) {
       fetchCourses(currentPage + 1, true);
     }
+  };
+
+  // Helper function to shuffle array (Fisher-Yates algorithm)
+  const shuffleArray = (array: any[]): any[] => {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
   };
 
   // Helper function to calculate total duration from videos
@@ -490,7 +516,7 @@ const Courses: React.FC = () => {
     if (user?.id) {
       checkTrialAccess();
     }
-  }, [user?.id, fetchCourses, checkTrialAccess]); // Run when user changes
+  }, [user?.id]); // Run when user changes
 
   // Debug logging for trial access
   useEffect(() => {
@@ -582,7 +608,18 @@ const Courses: React.FC = () => {
     );
   };
 
-
+  const goToAccess = () => {
+    if (user && (databaseSubscriptionStatus || secureStorage.isSubscriptionActive() || hasTrialAccess)) {
+      // User has active subscription or trial access - go to dashboard
+      navigate('/dashboard');
+    } else if (user) {
+      // User is signed in but no active subscription or trial - go to subscription page to upgrade
+      navigate('/subscription');
+    } else {
+      // User is not signed in - go to sign in page
+      navigate('/signin');
+    }
+  };
 
   const handleEnroll = (courseId: string) => {
     if (user && (databaseSubscriptionStatus || secureStorage.isSubscriptionActive() || hasTrialAccess)) {
@@ -897,7 +934,16 @@ const Courses: React.FC = () => {
 
         {/* Courses Grid */}
         {!loading && !error && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
+          <>
+            {/* Shuffle Indicator */}
+            <div className="col-span-full mb-4 text-center">
+              <div className="inline-flex items-center space-x-2 bg-gradient-to-r from-purple-100 to-pink-100 border border-purple-200 rounded-full px-4 py-2">
+                <span className="text-purple-600 text-sm font-medium">🎲</span>
+                <span className="text-purple-700 text-sm">Courses are shuffled for fresh discovery every time!</span>
+              </div>
+            </div>
+            
+            <div className="col-span-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
           {filteredCourses.map(course => (
             <div key={course.id} className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300">
               <div className="relative">
@@ -969,7 +1015,8 @@ const Courses: React.FC = () => {
               </div>
             </div>
           ))}
-        </div>
+            </div>
+          </>
         )}
 
         {/* Load More Button */}
