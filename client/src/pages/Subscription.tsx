@@ -1023,6 +1023,15 @@ const Subscription: React.FC = () => {
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-semibold text-gray-900">Quick Actions</h2>
                 <div className="flex space-x-3">
+                  {/* Debug info - remove this in production */}
+                  {process.env.NODE_ENV === 'development' && (
+                    <div className="text-xs text-gray-500 mr-4">
+                      Debug: Status={subscription?.status}, 
+                      CancelAtPeriodEnd={subscription?.cancel_at_period_end?.toString()}, 
+                      LocalStorage={localStorage.getItem('subscription_canceled')}
+                    </div>
+                  )}
+                  
                   {subscription && subscription.status === 'active' && !subscription.cancel_at_period_end && (
                     <button
                       onClick={handleCancelSubscription}
@@ -1042,14 +1051,16 @@ const Subscription: React.FC = () => {
                     </button>
                   )}
                   
-                  {/* Development: Re-subscribe button for testing */}
-                  {process.env.NODE_ENV === 'development' && localStorage.getItem('subscription_canceled') === 'true' && (
+                  {/* Development: Re-subscribe button for testing - only show if explicitly needed */}
+                  {process.env.NODE_ENV === 'development' && 
+                   localStorage.getItem('subscription_canceled') === 'true' && 
+                   (!subscription || subscription.status === 'canceled') && (
                     <button
                       onClick={clearCancellationState}
                       className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
                       title="Re-subscribe to restore access (dev only)"
                     >
-                      🔄 Re-Subscribe
+                      🔄 Re-Subscribe (Dev)
                     </button>
                   )}
                 </div>
