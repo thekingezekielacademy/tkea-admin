@@ -100,14 +100,13 @@ const Subscription: React.FC = () => {
         let endDate: Date;
         let nextBillingDate: Date;
         
+        // Always calculate next billing date as 30 days from start
+        endDate = new Date(startDate.getTime() + 30 * 24 * 60 * 60 * 1000);
+        nextBillingDate = new Date(endDate.getTime());
+        
+        // If we have a next_payment_date from database, use that instead
         if (supabaseData.next_payment_date) {
-          // Use the actual next payment date from database
-          endDate = new Date(supabaseData.next_payment_date);
           nextBillingDate = new Date(supabaseData.next_payment_date);
-        } else {
-          // Calculate based on created_at + 30 days
-          endDate = new Date(startDate.getTime() + 30 * 24 * 60 * 60 * 1000);
-          nextBillingDate = new Date(endDate.getTime());
         }
         
         // Debug: Log the date calculations
@@ -117,7 +116,8 @@ const Subscription: React.FC = () => {
           endDate: endDate.toISOString(),
           nextBillingDate: nextBillingDate.toISOString(),
           currentDate: now.toISOString(),
-          next_payment_date: supabaseData.next_payment_date
+          next_payment_date: supabaseData.next_payment_date,
+          calculated_next_billing: nextBillingDate.toISOString()
         });
         
         const subscription = {
