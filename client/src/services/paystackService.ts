@@ -1,9 +1,9 @@
 // Paystack Service - Secure Subscription Management
 import { supabase } from '../lib/supabase';
 
-// Paystack configuration
-const PAYSTACK_PUBLIC_KEY = process.env.REACT_APP_PAYSTACK_PUBLIC_KEY;
-const PAYSTACK_PLAN_CODE = process.env.REACT_APP_PAYSTACK_PLAN_CODE;
+// Paystack configuration - TEMPORARILY HARDCODED
+const PAYSTACK_PUBLIC_KEY = process.env.REACT_APP_PAYSTACK_PUBLIC_KEY || 'pk_test_021c63210a1910a260b520b8bfa97cce19e996d8';
+const PAYSTACK_PLAN_CODE = process.env.REACT_APP_PAYSTACK_PLAN_CODE || 'PLN_fx0dayx3idr67x1';
 
 export interface PaystackTransaction {
   id: string;
@@ -37,27 +37,33 @@ class PaystackService {
   // Initialize Paystack payment
   async initializePayment(email: string, amount: number, metadata: any = {}) {
     try {
-      const response = await fetch('https://api.paystack.co/transaction/initialize', {
+      console.log('🚀 Initializing Paystack payment via server endpoint');
+      
+      // Call our server endpoint instead of Paystack directly
+      const response = await fetch('/api/paystack/initialize-payment', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${PAYSTACK_PUBLIC_KEY}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           email,
-          amount: amount * 100, // Convert to kobo (smallest currency unit)
-          currency: 'NGN',
-          callback_url: `${window.location.origin}/payment/verify`,
-          metadata: {
-            ...metadata,
-            plan_code: PAYSTACK_PLAN_CODE,
-          },
-        }),
+          amount,
+          metadata
+        })
       });
 
-      const result = await response.json();
+      console.log('📡 Server API Response Status:', response.status);
       
-      if (result.status) {
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Server API Error Response:', errorText);
+        throw new Error(`Server API error: ${response.status} - ${errorText}`);
+      }
+
+      const result = await response.json();
+      console.log('✅ Payment initialized successfully via server:', result);
+      
+      if (result.success) {
         return {
           success: true,
           authorization_url: result.data.authorization_url,
@@ -67,7 +73,7 @@ class PaystackService {
         throw new Error(result.message || 'Payment initialization failed');
       }
     } catch (error) {
-      console.error('Paystack payment initialization error:', error);
+      console.error('💥 Paystack payment initialization error:', error);
       throw error;
     }
   }

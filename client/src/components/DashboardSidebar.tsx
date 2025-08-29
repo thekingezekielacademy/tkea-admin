@@ -28,7 +28,6 @@ interface SidebarItem {
   label: string;
   icon: React.ReactNode;
   path: string;
-  comingSoon?: boolean;
   badge?: string;
 }
 
@@ -72,48 +71,41 @@ const DashboardSidebar: React.FC = () => {
       icon: <FaTrophy className="w-5 h-5" />,
       path: '/achievements'
     },
-
     {
       id: 'levels',
       label: 'Levels',
       icon: <FaStar className="w-5 h-5" />,
-      path: '/levels',
-      comingSoon: true
+      path: '/levels'
     },
     {
       id: 'certificates',
       label: 'Certificates',
       icon: <FaCertificate className="w-5 h-5" />,
-      path: '/certificates',
-      comingSoon: true
+      path: '/certificates'
     },
     {
       id: 'resume',
       label: 'Résumé',
       icon: <FaFileAlt className="w-5 h-5" />,
-      path: '/resume',
-      comingSoon: true
+      path: '/resume'
     },
     {
       id: 'rooms',
       label: 'Rooms: Q&A',
       icon: <FaComments className="w-5 h-5" />,
-      path: '/rooms',
-      comingSoon: true
+      path: '/rooms'
     },
     {
       id: 'assessments',
       label: 'Assessments',
       icon: <FaClipboardCheck className="w-5 h-5" />,
-      path: '/assessments',
-      comingSoon: true
+      path: '/assessments'
     },
     {
       id: 'affiliates',
       label: 'Affiliates',
       icon: <FaShareAlt className="w-5 h-5" />,
-      path: '/affiliates',
-      comingSoon: true
+      path: '/affiliates'
     },
     {
       id: 'subscription',
@@ -130,8 +122,6 @@ const DashboardSidebar: React.FC = () => {
   ];
 
   const handleItemClick = (item: SidebarItem) => {
-    if (item.comingSoon) return; // Don't navigate for coming soon items
-    
     navigate(item.path);
     if (window.innerWidth < 768) {
       setIsMobileOpen(false);
@@ -190,14 +180,12 @@ const DashboardSidebar: React.FC = () => {
               <li key={item.id}>
                 <button
                   onClick={() => handleItemClick(item)}
-                  disabled={item.comingSoon}
                   className={`
-                    w-full flex items-center px-3 py-3 rounded-lg transition-all duration-200 text-left
+                    w-full flex items-center px-3 py-3 rounded-lg transition-all duration-200 text-left cursor-pointer
                     ${isActive(item.path) 
                       ? 'bg-primary-100 text-primary-700 border-r-2 border-primary-600' 
                       : 'text-gray-700 hover:bg-gray-50'
                     }
-                    ${item.comingSoon ? 'cursor-not-allowed opacity-75' : 'cursor-pointer'}
                   `}
                   title={isCollapsed ? item.label : undefined}
                 >
@@ -209,11 +197,6 @@ const DashboardSidebar: React.FC = () => {
                     <div className="ml-3 flex-1 min-w-0">
                       <div className="flex items-center justify-between">
                         <span className="text-sm font-medium truncate">{item.label}</span>
-                        {item.comingSoon && (
-                          <span className="ml-2 px-2 py-1 text-xs font-medium bg-blue-100 text-orange-600 border border-orange-300 rounded-full">
-                            Soon
-                          </span>
-                        )}
                       </div>
                     </div>
                   )}

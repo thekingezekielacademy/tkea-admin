@@ -37,6 +37,58 @@ const makePaystackRequest = async (endpoint, method = 'GET', body = null) => {
   }
 };
 
+// Initialize payment endpoint
+router.post('/initialize-payment', async (req, res) => {
+  try {
+    const { email, amount, metadata = {} } = req.body;
+
+    if (!email || !amount) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Email and amount are required' 
+      });
+    }
+
+    console.log(`🚀 Initializing Paystack payment for: ${email}, Amount: ${amount}`);
+
+    // Call Paystack API to initialize payment
+    const paymentResponse = await makePaystackRequest(
+      `/transaction/initialize`,
+      'POST',
+      {
+        email,
+        amount: amount * 100, // Convert to kobo
+        callback_url: `${req.protocol}://${req.get('host')}/payment/verify`,
+        metadata: {
+          ...metadata,
+          plan_code: PAYSTACK_PLAN_CODE
+        }
+      }
+    );
+
+    console.log('✅ Paystack payment initialized successfully:', paymentResponse);
+
+    // Return success response with authorization URL
+    res.json({
+      success: true,
+      message: 'Payment initialized successfully',
+      data: {
+        authorization_url: paymentResponse.data.authorization_url,
+        reference: paymentResponse.data.reference,
+        access_code: paymentResponse.data.access_code
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Error initializing payment:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to initialize payment',
+      error: error.message
+    });
+  }
+});
+
 // Cancel subscription endpoint
 router.post('/cancel-subscription', async (req, res) => {
   try {

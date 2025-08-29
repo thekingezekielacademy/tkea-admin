@@ -38,6 +38,12 @@ import Blog from './pages/Blog';
 import BlogPost from './pages/BlogPost';
 import Privacy from './pages/Privacy';
 import Terms from './pages/Terms';
+import Levels from './pages/Levels';
+import Certificates from './pages/Certificates';
+import Assessments from './pages/Assessments';
+import Resume from './pages/Resume';
+import Rooms from './pages/Rooms';
+import Affiliates from './pages/Affiliates';
 import './App.css';
 
 function App() {
@@ -79,6 +85,12 @@ function App() {
               <Route path="/subscription" element={<ProtectedRoute><Subscription /></ProtectedRoute>} />
               <Route path="/payment/verify" element={<PaymentVerification />} />
               <Route path="/achievements" element={<ProtectedRoute><Achievements /></ProtectedRoute>} />
+              <Route path="/levels" element={<ProtectedRoute><Levels /></ProtectedRoute>} />
+              <Route path="/certificates" element={<ProtectedRoute><Certificates /></ProtectedRoute>} />
+              <Route path="/assessments" element={<ProtectedRoute><Assessments /></ProtectedRoute>} />
+              <Route path="/resume" element={<ProtectedRoute><Resume /></ProtectedRoute>} />
+              <Route path="/rooms" element={<ProtectedRoute><Rooms /></ProtectedRoute>} />
+              <Route path="/affiliates" element={<ProtectedRoute><Affiliates /></ProtectedRoute>} />
               <Route path="/course/:id" element={<ProtectedRoute><CourseOverview /></ProtectedRoute>} />
               <Route path="/course/:id/overview" element={<ProtectedRoute><CourseOverview /></ProtectedRoute>} />
               <Route path="/course/:id/lesson/:lessonId" element={<ProtectedRoute><LessonPlayer /></ProtectedRoute>} />
