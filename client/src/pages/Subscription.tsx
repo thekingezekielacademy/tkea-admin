@@ -165,63 +165,8 @@ const Subscription: React.FC = () => {
       setError(null);
       
       try {
-        const response = await fetch(`/api/paystack/billing-history/${user.id}`);
-        
-        if (response.ok) {
-          const result = await response.json();
-          if (result.success && result.data && result.data.length > 0) {
-            setBillingHistory(result.data);
-          } else {
-            // Create billing history from subscription data
-            if (subscription) {
-              const subscriptionBilling: BillingHistory = {
-                id: `sub-${subscription.id}`,
-                type: 'subscription' as const,
-                amount: subscription.amount,
-                currency: subscription.currency || 'NGN',
-                status: mapSubscriptionStatusToBillingStatus(subscription.status),
-                description: `${subscription.plan_name} - ${subscription.billing_cycle} billing`,
-                date: subscription.start_date,
-                invoice_url: `#subscription-${subscription.id}`,
-                subscription_id: subscription.id,
-                paystack_subscription_id: subscription.paystack_subscription_id,
-                billing_cycle: subscription.billing_cycle,
-                start_date: subscription.start_date,
-                end_date: subscription.end_date,
-                paystack_reference: subscription.paystack_subscription_id
-              };
-              setBillingHistory([subscriptionBilling]);
-            } else {
-              setBillingHistory([]);
-            }
-          }
-        } else {
-          // Create billing history from subscription data as fallback
-          if (subscription) {
-            const subscriptionBilling: BillingHistory = {
-              id: `sub-${subscription.id}`,
-              type: 'subscription' as const,
-              amount: subscription.amount,
-              currency: subscription.currency || 'NGN',
-              status: mapSubscriptionStatusToBillingStatus(subscription.status),
-              description: `${subscription.plan_name} - ${subscription.billing_cycle} billing`,
-              date: subscription.start_date,
-              invoice_url: `#subscription-${subscription.id}`,
-              subscription_id: subscription.id,
-              paystack_subscription_id: subscription.paystack_subscription_id,
-              billing_cycle: subscription.billing_cycle,
-              start_date: subscription.start_date,
-              end_date: subscription.end_date,
-              paystack_reference: subscription.paystack_subscription_id
-            };
-            setBillingHistory([subscriptionBilling]);
-          } else {
-            setBillingHistory([]);
-          }
-        }
-      } catch (error) {
-        console.error('❌ Error fetching billing history:', error);
-        // Create billing history from subscription data as fallback
+        // Use Supabase data directly instead of calling non-existent API
+        // Create billing history from subscription data
         if (subscription) {
           const subscriptionBilling: BillingHistory = {
             id: `sub-${subscription.id}`,
@@ -229,20 +174,23 @@ const Subscription: React.FC = () => {
             amount: subscription.amount,
             currency: subscription.currency || 'NGN',
             status: mapSubscriptionStatusToBillingStatus(subscription.status),
-            description: `${subscription.plan_name} - ${subscription.billing_cycle} billing`,
+            description: `${subscription.plan_name} - Monthly billing`,
             date: subscription.start_date,
             invoice_url: `#subscription-${subscription.id}`,
             subscription_id: subscription.id,
             paystack_subscription_id: subscription.paystack_subscription_id,
-            billing_cycle: subscription.billing_cycle,
+            billing_cycle: 'monthly',
             start_date: subscription.start_date,
-            end_date: subscription.end_date,
+            end_date: subscription.next_billing_date || subscription.end_date,
             paystack_reference: subscription.paystack_subscription_id
           };
           setBillingHistory([subscriptionBilling]);
         } else {
           setBillingHistory([]);
         }
+      } catch (error) {
+        console.error('❌ Error creating billing history from subscription:', error);
+        setBillingHistory([]);
       } finally {
         setLoading(false);
       }
