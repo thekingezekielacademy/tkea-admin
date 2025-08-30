@@ -39,8 +39,13 @@ class PaystackService {
     try {
       console.log('🚀 Initializing Paystack payment via server endpoint');
       
+      // Use the correct API endpoint for both dev and production
+      const apiEndpoint = process.env.NODE_ENV === 'production' 
+        ? '/api/paystack/initialize-payment'
+        : 'http://localhost:5000/api/paystack/initialize-payment';
+      
       // Call our server endpoint instead of Paystack directly
-      const response = await fetch('/api/paystack/initialize-payment', {
+      const response = await fetch(apiEndpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
