@@ -20,6 +20,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [email, setEmail] = useState(user?.email || '');
   const [paystackLoaded, setPaystackLoaded] = useState(false);
 
@@ -130,8 +131,18 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
           createSubscriptionRecord(response);
           
           setLoading(false);
-          onSuccess();
-          onClose();
+          
+          // Show success message before closing
+          setError(null);
+          setSuccess('Payment successful! Your subscription is now active.');
+          
+          // Wait 2 seconds to show success message, then close and refresh
+          setTimeout(() => {
+            onSuccess();
+            onClose();
+            // Force page refresh to show updated subscription status
+            window.location.reload();
+          }, 2000);
         },
         onClose: function() {
           // Payment cancelled
@@ -205,6 +216,12 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
                 <p className="text-red-700 text-sm">{error}</p>
               </div>
             )}
+            
+            {success && (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                <p className="text-green-700 text-sm">{success}</p>
+              </div>
+            )}
 
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
               <p className="text-yellow-800 text-sm">
@@ -218,13 +235,13 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
           <button
             onClick={onClose}
             className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
-            disabled={loading}
+            disabled={loading || success}
           >
-            Cancel
+            {success ? 'Closing...' : 'Cancel'}
           </button>
           <button
             onClick={handlePayment}
-            disabled={loading || !email}
+            disabled={loading || !email || success}
             className="flex-1 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? (
@@ -232,6 +249,8 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                 Processing...
               </div>
+            ) : success ? (
+              'Payment Successful! 🎉'
             ) : (
               `Pay ₦${amount.toLocaleString()}`
             )}
