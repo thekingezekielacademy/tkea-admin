@@ -70,7 +70,6 @@ CREATE TABLE user_subscriptions (
 CREATE TABLE IF NOT EXISTS subscription_payments (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
-    subscription_id UUID REFERENCES user_subscriptions(id) ON DELETE CASCADE,
     paystack_reference TEXT UNIQUE NOT NULL,
     amount DECIMAL(10,2) NOT NULL,
     currency TEXT DEFAULT 'NGN',

@@ -20,7 +20,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
+  const [success, setSuccess] = useState<boolean>(false);
   const [email, setEmail] = useState(user?.email || '');
   const [paystackLoaded, setPaystackLoaded] = useState(false);
 
@@ -134,7 +134,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
           
           // Show success message before closing
           setError(null);
-          setSuccess('Payment successful! Your subscription is now active.');
+          setSuccess(true);
           
           // Wait 2 seconds to show success message, then close and refresh
           setTimeout(() => {
@@ -219,7 +219,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
             
             {success && (
               <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                <p className="text-green-700 text-sm">{success}</p>
+                <p className="text-green-700 text-sm">Payment successful! Your subscription is now active.</p>
               </div>
             )}
 
