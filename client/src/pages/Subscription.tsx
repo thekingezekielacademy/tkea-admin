@@ -92,6 +92,20 @@ const Subscription: React.FC = () => {
         return;
       }
       
+      // Debug: Log the query parameters
+      console.log('🔍 Debug: Query parameters:', {
+        user_id: user.id,
+        status: 'active',
+        order: 'created_at.desc',
+        limit: 1
+      });
+      
+      // Debug: Log Supabase client state
+      console.log('🔍 Debug: Supabase client state:', {
+        hasAuth: !!supabase.auth,
+        session: await supabase.auth.getSession()
+      });
+      
       // Fetch from Supabase first
       const { data: supabaseData, error: supabaseError } = await supabase
         .from('user_subscriptions')
