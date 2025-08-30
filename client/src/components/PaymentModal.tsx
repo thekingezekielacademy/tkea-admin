@@ -1,6 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { paystackService } from '../services/paystackService';
 import { supabase } from '../lib/supabase';
 
 interface PaymentModalProps {
@@ -22,6 +21,69 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [email, setEmail] = useState(user?.email || '');
+  const [paystackLoaded, setPaystackLoaded] = useState(false);
+
+  // Load Paystack script
+  useEffect(() => {
+    if (typeof window !== 'undefined' && !window.PaystackPop) {
+      const script = document.createElement('script');
+      script.src = 'https://js.paystack.co/v1/inline.js';
+      script.async = true;
+      script.onload = () => setPaystackLoaded(true);
+      document.head.appendChild(script);
+    } else if (window.PaystackPop) {
+      setPaystackLoaded(true);
+    }
+  }, []);
+
+  // Create subscription record in database
+  const createSubscriptionRecord = async (paymentResponse: any) => {
+    try {
+      console.log('💾 Creating subscription record for payment:', paymentResponse);
+      
+      const { data, error } = await supabase
+        .from('user_subscriptions')
+        .insert({
+          user_id: user?.id,
+          status: 'active',
+          plan_name: planName,
+          amount: amount * 100, // Convert to kobo
+          currency: 'NGN',
+          billing_cycle: 'monthly',
+          start_date: new Date().toISOString(),
+          next_payment_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          paystack_subscription_id: paymentResponse.reference,
+          paystack_customer_code: user?.id
+        });
+
+      if (error) {
+        console.error('❌ Error creating subscription record:', error);
+        throw error;
+      }
+
+      console.log('✅ Subscription record created successfully:', data);
+      
+      // Also create payment record
+      await supabase
+        .from('subscription_payments')
+        .insert({
+          user_id: user?.id,
+          paystack_transaction_id: paymentResponse.reference,
+          paystack_reference: paymentResponse.reference,
+          amount: amount * 100,
+          currency: 'NGN',
+          status: 'success',
+          payment_method: 'card',
+          paid_at: new Date().toISOString()
+        });
+
+      console.log('✅ Payment record created successfully');
+      
+    } catch (error) {
+      console.error('💥 Error in subscription creation flow:', error);
+      // Don't throw error to user - payment succeeded, just log the issue
+    }
+  };
 
   const handlePayment = async () => {
     if (!user || !email) {
@@ -29,48 +91,62 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
       return;
     }
 
+    if (!paystackLoaded) {
+      setError('Paystack is still loading, please wait...');
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
     try {
-      // Step 1: Initialize payment
-      const paymentInit = await paystackService.initializePayment(email, amount, {
-        user_id: user.id,
-        plan_name: planName,
+      // Use Paystack directly with popup
+      const handler = (window as any).PaystackPop.setup({
+        key: process.env.REACT_APP_PAYSTACK_PUBLIC_KEY || 'pk_test_021c63210a1910a260b520b8bfa97cce19e996d8',
+        email: email,
+        amount: amount * 100, // Convert to kobo
+        currency: 'NGN',
+        metadata: {
+          user_id: user.id,
+          plan_name: planName,
+          custom_fields: [
+            {
+              display_name: "User ID",
+              variable_name: "user_id",
+              value: user.id
+            },
+            {
+              display_name: "Plan Name",
+              variable_name: "plan_name", 
+              value: planName
+            }
+          ]
+        },
+        callback: function(response: any) {
+          // Payment successful
+          console.log('✅ Payment successful:', response);
+          
+          // Create subscription record automatically
+          createSubscriptionRecord(response);
+          
+          setLoading(false);
+          onSuccess();
+          onClose();
+        },
+        onClose: function() {
+          // Payment cancelled
+          console.log('❌ Payment cancelled by user');
+          setError('Payment was cancelled');
+          setLoading(false);
+        }
       });
 
-      if (paymentInit.success) {
-        // Step 2: Open Paystack in a popup window
-        const popup = window.open(
-          paymentInit.authorization_url,
-          'paystack_payment',
-          'width=500,height=600,scrollbars=yes,resizable=yes,status=yes,toolbar=no,menubar=no'
-        );
-
-        // Check if popup was blocked
-        if (!popup) {
-          setError('Popup blocked! Please allow popups and try again.');
-          return;
-        }
-
-        // Monitor popup for completion
-        const checkClosed = setInterval(() => {
-          if (popup.closed) {
-            clearInterval(checkClosed);
-            // Payment completed, refresh subscription status
-            onSuccess();
-          }
-        }, 1000);
-
-        // Close modal after opening popup
-        onClose();
-      } else {
-        throw new Error('Payment initialization failed');
-      }
+      // Open Paystack popup
+      handler.openIframe();
+      
     } catch (err) {
       console.error('Payment error:', err);
       setError(err instanceof Error ? err.message : 'Payment failed. Please try again.');
-    } finally {
       setLoading(false);
     }
   };

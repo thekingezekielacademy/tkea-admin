@@ -55,15 +55,15 @@ interface BillingHistory {
 const Subscription: React.FC = () => {
   const { user } = useAuth();
   const { isExpanded, isMobile } = useSidebar();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [subscription, setSubscription] = useState<SubscriptionData | null>(null);
   const [billingHistory, setBillingHistory] = useState<BillingHistory[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
   const [cancelFeedback, setCancelFeedback] = useState('');
-  const [canceling, setCanceling] = useState(false);
 
   // Calculate dynamic margin based on sidebar state
   const getSidebarMargin = () => {
@@ -765,82 +765,56 @@ const Subscription: React.FC = () => {
   };
 
   const confirmCancelSubscription = async () => {
-    const sanitizedReason = sanitizeInput(cancelReason);
-    
-    if (!sanitizedReason) {
-      alert('Please select a reason for cancellation');
+    if (!subscription?.paystack_subscription_id) {
+      setError('No subscription ID found');
       return;
     }
 
-    setCanceling(true);
     try {
-      // REAL PAYSTACK INTEGRATION: Cancel subscription via API
-      if (subscription?.paystack_subscription_id) {
-        console.log('🔒 Canceling Paystack subscription:', subscription.paystack_subscription_id);
-        
-        const response = await fetch('/api/paystack/cancel-subscription', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            subscriptionId: subscription.paystack_subscription_id,
-            reason: sanitizedReason
-          })
-        });
+      setLoading(true);
+      setError(null);
+      setSuccess(null); // Clear previous success messages
 
-        if (!response.ok) {
-          throw new Error('Failed to cancel subscription via Paystack');
-        }
+      console.log('🔒 Canceling Paystack subscription:', subscription.paystack_subscription_id);
 
-        const result = await response.json();
-        console.log('✅ Paystack cancellation successful:', result);
-      } else {
-        console.log('⚠️ No Paystack subscription ID found, using local simulation');
+      // Call Paystack directly to cancel subscription
+      const response = await fetch(`https://api.paystack.co/subscription/disable`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.REACT_APP_PAYSTACK_SECRET_KEY || 'sk_test_...'}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          code: subscription.paystack_subscription_id,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Paystack API error: ${response.status}`);
       }
+
+      const result = await response.json();
       
-      // Update local state to show canceled
-      if (subscription) {
-          console.log('🔒 Canceling subscription:', subscription.id);
+      if (result.status) {
+        // Update local subscription status
+        setSubscription(prev => prev ? { ...prev, status: 'canceled' } : null);
+        setSuccess('Subscription cancelled successfully');
+        
+        // Update database status
+        await supabase
+          .from('user_subscriptions')
+          .update({ status: 'canceled' })
+          .eq('id', subscription.id);
           
-          // CRITICAL: Maintain the original end_date when canceling
-          // This ensures access continues until the paid period expires
-          const canceledSubscription: SubscriptionData = {
-            ...subscription,
-            status: 'canceled' as const,
-            cancel_at_period_end: true,
-            // Ensure end_date is preserved - this is the key fix!
-            end_date: subscription.end_date || subscription.next_billing_date || 
-                     (subscription.start_date ? new Date(new Date(subscription.start_date).getTime() + (30 * 24 * 60 * 60 * 1000)).toISOString() : null)
-          };
-          
-          console.log('🔒 Setting canceled subscription:', canceledSubscription);
-          setSubscription(canceledSubscription);
-          
-          // SECURITY: Persist cancellation state to prevent refresh bypass
-          localStorage.setItem('subscription_canceled', 'true');
-          localStorage.setItem('subscription_canceled_at', new Date().toISOString());
-          localStorage.setItem('subscription_canceled_reason', sanitizedReason);
-          
-          // Store the end_date for persistence
-          if (canceledSubscription.end_date) {
-            localStorage.setItem('subscription_end_date', canceledSubscription.end_date);
-          }
-          
-          console.log('🔒 Cancellation state persisted to localStorage');
-          
-          // Update secure storage to reflect canceled state
-          secureStorage.setSubscriptionActive(false);
-          console.log('🔒 Secure storage updated: subscription inactive');
-        }
-      
-      setShowCancelModal(false);
-      setCancelReason('');
-      setCancelFeedback('');
-      alert('Your subscription has been canceled via Paystack. You will continue to have access until the end of your current billing period.');
+        console.log('✅ Subscription cancelled successfully');
+      } else {
+        throw new Error(result.message || 'Failed to cancel subscription');
+      }
     } catch (error) {
       console.error('Error canceling subscription:', error);
-      alert('Failed to cancel subscription via Paystack. Please try again.');
+      setError('Failed to cancel subscription. Please try again.');
     } finally {
-      setCanceling(false);
+      setLoading(false);
     }
   };
 
@@ -885,6 +859,15 @@ const Subscription: React.FC = () => {
                 <div className="flex items-center">
                   <FaTimesCircle className="text-red-400 mr-2" />
                   <span className="text-red-800">{error}</span>
+                </div>
+              </div>
+            )}
+
+            {success && (
+              <div className="mb-6 bg-green-50 border border-green-200 rounded-lg p-4">
+                <div className="flex items-center">
+                  <FaCheckCircle className="text-green-400 mr-2" />
+                  <span className="text-green-800">{success}</span>
                 </div>
               </div>
             )}
@@ -1206,16 +1189,15 @@ const Subscription: React.FC = () => {
                   setCancelFeedback('');
                 }}
                 className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
-                disabled={canceling}
               >
                 Keep Subscription
               </button>
               <button
                 onClick={confirmCancelSubscription}
-                disabled={canceling || !cancelReason.trim()}
+                disabled={!cancelReason.trim()}
                 className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {canceling ? (
+                {loading ? (
                   <div className="flex items-center justify-center">
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                     Canceling...
