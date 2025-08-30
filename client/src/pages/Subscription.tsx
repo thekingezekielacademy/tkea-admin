@@ -77,12 +77,32 @@ const Subscription: React.FC = () => {
     try {
       setLoading(true);
       
+      // Debug: Check user authentication
+      console.log('🔍 Debug: User object:', user);
+      console.log('🔍 Debug: User ID:', user.id);
+      
+      // Check if user session is fully loaded
+      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+      console.log('🔍 Debug: Auth context:', { user: authUser, error: authError });
+      
+      if (authError || !authUser) {
+        console.log('⚠️ Auth not ready, waiting...');
+        // Wait a bit and try again
+        setTimeout(() => fetchSubscriptionStatus(), 1000);
+        return;
+      }
+      
       // Fetch from Supabase first
       const { data: supabaseData, error: supabaseError } = await supabase
         .from('user_subscriptions')
         .select('*')
         .eq('user_id', user.id)
+        .eq('status', 'active')  // Add status filter like Profile.tsx
+        .order('created_at', { ascending: false })  // Add ordering like Profile.tsx
+        .limit(1)  // Add limit like Profile.tsx
         .single();
+
+      console.log('🔍 Debug: Supabase response:', { data: supabaseData, error: supabaseError });
 
       if (supabaseData && !supabaseError) {
         // Use real Supabase data - this is the source of truth

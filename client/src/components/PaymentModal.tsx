@@ -40,8 +40,30 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
       });
 
       if (paymentInit.success) {
-        // Step 2: Redirect to Paystack payment page
-        window.location.href = paymentInit.authorization_url;
+        // Step 2: Open Paystack in a popup window
+        const popup = window.open(
+          paymentInit.authorization_url,
+          'paystack_payment',
+          'width=500,height=600,scrollbars=yes,resizable=yes,status=yes,toolbar=no,menubar=no'
+        );
+
+        // Check if popup was blocked
+        if (!popup) {
+          setError('Popup blocked! Please allow popups and try again.');
+          return;
+        }
+
+        // Monitor popup for completion
+        const checkClosed = setInterval(() => {
+          if (popup.closed) {
+            clearInterval(checkClosed);
+            // Payment completed, refresh subscription status
+            onSuccess();
+          }
+        }, 1000);
+
+        // Close modal after opening popup
+        onClose();
       } else {
         throw new Error('Payment initialization failed');
       }

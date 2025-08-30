@@ -193,28 +193,37 @@ class PaystackService {
   // Save subscription to database
   async saveSubscriptionToDatabase(userId: string, paystackData: any) {
     try {
+      console.log('💾 Saving subscription to database:', { userId, paystackData });
+      
       const { data, error } = await supabase
         .from('user_subscriptions')
         .upsert({
           user_id: userId,
-          paystack_subscription_id: paystackData.subscription_code,
-          paystack_customer_code: paystackData.customer.customer_code,
-          plan_name: paystackData.plan.plan_name || 'Monthly Membership',
-          status: paystackData.status,
-          amount: paystackData.plan.amount,
-          currency: paystackData.plan.currency,
-          start_date: paystackData.created_at,
-          next_payment_date: paystackData.next_payment_date,
+          paystack_subscription_id: paystackData.subscription_code || paystackData.id,
+          paystack_customer_code: paystackData.customer?.customer_code || userId,
+          plan_name: paystackData.plan?.plan_name || 'Monthly Membership',
+          status: paystackData.status || 'active',
+          amount: paystackData.plan?.amount || 250000,
+          currency: paystackData.plan?.currency || 'NGN',
+          billing_cycle: 'monthly',
+          start_date: paystackData.created_at || new Date().toISOString(),
+          next_payment_date: paystackData.next_payment_date || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+        }, {
+          onConflict: 'user_id'
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Database subscription save error:', error);
+        throw error;
+      }
       
+      console.log('✅ Subscription saved to database:', data);
       return {
         success: true,
         data,
       };
     } catch (error) {
-      console.error('Database subscription save error:', error);
+      console.error('💥 Database subscription save error:', error);
       throw error;
     }
   }

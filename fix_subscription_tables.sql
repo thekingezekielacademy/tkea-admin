@@ -101,8 +101,7 @@ CREATE TRIGGER update_user_trials_updated_at
 
 -- 10. Verify the tables are properly set up
 SELECT 
-    table_name, 
-    row_security 
+    table_name
 FROM information_schema.tables 
 WHERE table_name IN ('user_subscriptions', 'user_trials');
 
@@ -123,3 +122,11 @@ WHERE tablename IN ('user_subscriptions', 'user_trials');
 -- This should return 0 rows for an unauthenticated user
 SELECT COUNT(*) FROM user_subscriptions;
 SELECT COUNT(*) FROM user_trials;
+
+-- 13. Verify RLS is enabled (alternative method)
+SELECT 
+    schemaname,
+    tablename,
+    rowsecurity
+FROM pg_tables 
+WHERE tablename IN ('user_subscriptions', 'user_trials');
