@@ -129,7 +129,6 @@ CREATE INDEX IF NOT EXISTS idx_user_subscriptions_paystack_id ON user_subscripti
 
 -- Subscription payments indexes
 CREATE INDEX IF NOT EXISTS idx_subscription_payments_user_id ON subscription_payments(user_id);
-CREATE INDEX IF NOT EXISTS idx_subscription_payments_subscription_id ON subscription_payments(subscription_id);
 CREATE INDEX IF NOT EXISTS idx_subscription_payments_paystack_ref ON subscription_payments(paystack_reference);
 
 -- User lesson progress indexes
