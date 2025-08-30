@@ -148,18 +148,44 @@ const Subscription: React.FC = () => {
         return; // Exit early, don't check localStorage
       }
 
-      // Only check localStorage if Supabase has no data
+      // If Supabase has no data or there's an error, clear any existing subscription
+      if (supabaseError) {
+        console.log('❌ No subscription found in database or access denied');
+        setSubscription(null);
+        // Clear any stale localStorage data
+        localStorage.removeItem('subscription');
+        return;
+      }
+
+      // Only check localStorage if Supabase has no data (not an error)
       const localSubscription = localStorage.getItem('subscription');
       if (localSubscription) {
         try {
           const parsed = JSON.parse(localSubscription);
-          setSubscription(parsed);
+          // Only use localStorage if it's recent (within last 24 hours)
+          const subscriptionDate = new Date(parsed.created_at);
+          const now = new Date();
+          const hoursDiff = (now.getTime() - subscriptionDate.getTime()) / (1000 * 60 * 60);
+          
+          if (hoursDiff < 24) {
+            setSubscription(parsed);
+          } else {
+            // Clear stale data
+            localStorage.removeItem('subscription');
+            setSubscription(null);
+          }
         } catch (e) {
           console.error('Error parsing localStorage subscription:', e);
+          localStorage.removeItem('subscription');
+          setSubscription(null);
         }
+      } else {
+        setSubscription(null);
       }
     } catch (error) {
       console.error('Error fetching subscription:', error);
+      setSubscription(null);
+      localStorage.removeItem('subscription');
     } finally {
       setLoading(false);
     }
