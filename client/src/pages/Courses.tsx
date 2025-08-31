@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { FaSearch, FaClock, FaUser, FaBook, FaTag, FaLock, FaUnlock, FaGraduationCap } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -7,6 +7,9 @@ import { supabase } from '../lib/supabase';
 import secureStorage from '../utils/secureStorage';
 import TrialManager from '../utils/trialManager';
 import DashboardSidebar from '../components/DashboardSidebar';
+import SEOHead from '../components/SEO/SEOHead';
+import { generateCourseStructuredData } from '../components/SEO/StructuredData';
+import { BreadcrumbPageWrapper } from '../components/SEO/Breadcrumbs';
 
 interface Course {
   id: string;
@@ -635,12 +638,19 @@ const Courses: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <BreadcrumbPageWrapper
+      title="Digital Marketing Courses - King Ezekiel Academy"
+      description="Master digital marketing with our comprehensive courses designed for beginners and professionals. Learn SEO, social media, e-commerce, and more from industry experts."
+      breadcrumbs={[
+        { name: 'Home', url: '/' },
+        { name: 'Courses', url: '/courses' }
+      ]}
+    >
       {/* Sidebar - Only show when user is signed in */}
       {user && <DashboardSidebar />}
       
       {/* Main Content */}
-                   <div className={`${getSidebarMargin()} transition-all duration-300 ease-in-out`}>
+      <div className={`${getSidebarMargin()} transition-all duration-300 ease-in-out`}>
         <div className="pt-16">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
         {/* Header */}
@@ -1059,7 +1069,7 @@ const Courses: React.FC = () => {
           </div>
         </div>
       </div>
-    </div>
+    </BreadcrumbPageWrapper>
   );
 };
 

@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { FaSearch, FaClock, FaUser, FaTags, FaFolder, FaArrowRight } from 'react-icons/fa';
+import { BreadcrumbPageWrapper } from '../components/SEO/Breadcrumbs';
+import { generateWebSiteStructuredData } from '../components/SEO/StructuredData';
 
 interface BlogPost {
   id: string;
@@ -220,7 +222,14 @@ const Blog: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-16">
+    <BreadcrumbPageWrapper
+      title="Digital Marketing Blog - King Ezekiel Academy"
+      description="Discover insights, tips, and strategies to help you master digital skills and grow your business. Expert advice from industry professionals."
+      breadcrumbs={[
+        { name: 'Home', url: '/' },
+        { name: 'Blog', url: '/blog' }
+      ]}
+    >
       {/* Hero Section */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="text-center">
@@ -479,7 +488,7 @@ const Blog: React.FC = () => {
           </>
         )}
       </div>
-    </div>
+    </BreadcrumbPageWrapper>
   );
 };
 

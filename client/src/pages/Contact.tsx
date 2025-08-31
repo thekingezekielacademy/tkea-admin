@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { FaEnvelope, FaMapMarkerAlt, FaClock, FaFacebook, FaInstagram, FaTelegram, FaSpinner } from 'react-icons/fa';
+import { FaEnvelope, FaPhone, FaMapMarkerAlt, FaClock, FaFacebook, FaTwitter, FaInstagram, FaLinkedin, FaYoutube, FaTelegram, FaSpinner } from 'react-icons/fa';
+import { BreadcrumbPageWrapper } from '../components/SEO/Breadcrumbs';
+import { generateLocalBusinessStructuredData } from '../components/SEO/StructuredData';
 import { secureLog } from '../utils/secureLogger';
 import { contactService } from '../services/contactService';
 
@@ -63,7 +65,14 @@ const Contact: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-16">
+    <BreadcrumbPageWrapper
+      title="Contact Us - King Ezekiel Academy"
+      description="Get in touch with King Ezekiel Academy. Ready to start your digital marketing journey? We'd love to hear from you."
+      breadcrumbs={[
+        { name: 'Home', url: '/' },
+        { name: 'Contact', url: '/contact' }
+      ]}
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Header */}
         <div className="text-center mb-16">
@@ -266,7 +275,7 @@ const Contact: React.FC = () => {
 
 
       </div>
-    </div>
+    </BreadcrumbPageWrapper>
   );
 };
 
