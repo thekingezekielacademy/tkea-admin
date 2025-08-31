@@ -1,6 +1,5 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { HelmetProvider } from 'react-helmet-async';
 import { AuthProvider } from './contexts/AuthContext';
 import { SidebarProvider } from './contexts/SidebarContext';
 import Navbar from './components/Navbar';
@@ -49,10 +48,9 @@ import './App.css';
 
 function App() {
   return (
-    <HelmetProvider>
-      <AuthProvider>
-        <SidebarProvider>
-          <Router>
+    <AuthProvider>
+      <SidebarProvider>
+        <Router>
           <ScrollToTop />
           <div className="App">
             <Navbar />
@@ -104,7 +102,6 @@ function App() {
         </Router>
       </SidebarProvider>
     </AuthProvider>
-    </HelmetProvider>
   );
 }
 
