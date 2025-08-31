@@ -10,6 +10,7 @@ import DashboardSidebar from '../components/DashboardSidebar';
 import SEOHead from '../components/SEO/SEOHead';
 import { generateCourseStructuredData } from '../components/SEO/StructuredData';
 import { BreadcrumbPageWrapper } from '../components/SEO/Breadcrumbs';
+import { useFacebookPixel } from '../hooks/useFacebookPixel';
 
 interface Course {
   id: string;
@@ -48,6 +49,7 @@ const Courses: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { isExpanded, isMobile } = useSidebar();
+  const { trackCourseView, trackSearch, trackLead } = useFacebookPixel();
 
   // Calculate dynamic margin based on sidebar state
   const getSidebarMargin = () => {

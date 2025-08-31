@@ -2,10 +2,12 @@ import React, { useState } from 'react';
 import { FaEnvelope, FaPhone, FaMapMarkerAlt, FaClock, FaFacebook, FaTwitter, FaInstagram, FaLinkedin, FaYoutube, FaTelegram, FaSpinner } from 'react-icons/fa';
 import { BreadcrumbPageWrapper } from '../components/SEO/Breadcrumbs';
 import { generateLocalBusinessStructuredData } from '../components/SEO/StructuredData';
+import { useFacebookPixel } from '../hooks/useFacebookPixel';
 import { secureLog } from '../utils/secureLogger';
 import { contactService } from '../services/contactService';
 
 const Contact: React.FC = () => {
+  const { trackContact, trackLead } = useFacebookPixel();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -50,6 +52,19 @@ const Contact: React.FC = () => {
           email: '',
           subject: '',
           message: ''
+        });
+        
+        // Track contact form submission
+        trackContact('contact_form', {
+          contact_name: formData.name,
+          contact_email: formData.email,
+          contact_subject: formData.subject
+        });
+        
+        // Track lead generation
+        trackLead('contact_form', 0, {
+          lead_source: 'contact_form',
+          contact_subject: formData.subject
         });
       } else {
         setSubmitStatus('error');
