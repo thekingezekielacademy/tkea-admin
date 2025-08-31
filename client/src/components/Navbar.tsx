@@ -54,7 +54,7 @@ const Navbar: React.FC = () => {
   const { isExpanded, isMobile } = useSidebar();
   
   // Check if we're on a page with sidebar
-  const hasSidebar = ['/dashboard', '/dashboard-new', '/profile', '/achievements', '/subscription'].includes(location.pathname) || 
+  const hasSidebar = ['/dashboard', '/dashboard-new', '/profile', '/achievements', '/subscription', '/levels', '/certificates', '/assessments', '/resume', '/rooms', '/affiliates'].includes(location.pathname) || 
                      (location.pathname === '/courses' && user);
 
   // Calculate dynamic margin and width based on sidebar state (desktop only)

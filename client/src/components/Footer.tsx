@@ -14,7 +14,7 @@ const Footer: React.FC = () => {
   const { isExpanded, isMobile } = useSidebar();
   
   // Check if we're on a page with sidebar
-  const hasSidebar = ['/dashboard', '/dashboard-new', '/profile', '/achievements', '/subscription'].includes(location.pathname) || 
+  const hasSidebar = ['/dashboard', '/dashboard-new', '/profile', '/achievements', '/subscription', '/levels', '/certificates', '/assessments', '/resume', '/rooms', '/affiliates'].includes(location.pathname) || 
                      (location.pathname === '/courses' && user);
 
   // Calculate dynamic margin and width based on sidebar state (desktop only)
@@ -25,7 +25,7 @@ const Footer: React.FC = () => {
   };
 
   return (
-    <footer className={`bg-gradient-to-br from-primary-50 to-secondary-50 text-primary-900 transition-all duration-300 ease-in-out ${getSidebarMargin()}`}>
+    <footer className={`bg-gradient-to-br from-primary-50 to-secondary-50 text-primary-900 transition-all duration-300 ease-in-out relative z-50 ${getSidebarMargin()}`}>
       <div className={`${hasSidebar ? 'w-full' : 'max-w-7xl mx-auto'} px-4 sm:px-6 lg:px-8 py-16`}>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
           {/* Brand Section */}
