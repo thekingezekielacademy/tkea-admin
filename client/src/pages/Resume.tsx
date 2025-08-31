@@ -107,17 +107,38 @@ const Resume: React.FC = () => {
             </div>
           </div>
 
-          {/* Call to Action */}
+          {/* Resume Builder Preview */}
           <div className="text-center">
             <div className="bg-gradient-to-r from-primary-500 to-secondary-500 rounded-xl sm:rounded-2xl p-6 sm:p-8 text-white">
-              <h3 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4">Ready to Build Your Résumé?</h3>
-              <p className="text-base sm:text-lg opacity-90 mb-4 sm:mb-6">
-                While we're building the résumé builder, start building your skills 
-                with our courses and prepare to showcase your expertise when the tool launches.
+              <h3 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4">📄 Resume Builder Preview</h3>
+              <p className="text-base sm:text-lg opacity-90 mb-6">
+                See the powerful tools that will help you create winning resumes and land your dream job
               </p>
-              <button className="bg-white text-primary-600 px-6 sm:px-8 py-2.5 sm:py-3 rounded-lg sm:rounded-xl font-semibold hover:bg-gray-100 transition-colors text-sm sm:text-base">
-                Start Learning
-              </button>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                {[
+                  { metric: 'ATS', label: 'Optimized', description: 'Pass tracking systems' },
+                  { metric: '20+', label: 'Templates', description: 'Professional designs' },
+                  { metric: 'LinkedIn', label: 'Integration', description: 'Auto-sync data' },
+                  { metric: '3+', label: 'Formats', description: 'PDF, Word, Text' }
+                ].map((item, index) => (
+                  <div key={index} className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20 hover:bg-white/20 transition-all duration-300">
+                    <div className="text-2xl sm:text-3xl font-bold text-white mb-2">{item.metric}</div>
+                    <div className="text-sm text-white/80 mb-1">{item.label}</div>
+                    <div className="text-xs text-white/60">{item.description}</div>
+                  </div>
+                ))}
+              </div>
+              
+              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+                <div className="text-sm text-white/80 mb-2">💡 What You'll Create:</div>
+                <div className="text-base font-semibold text-white">
+                  Professional resumes + ATS optimization + Career branding + <span className="text-yellow-300 font-bold">Job success</span>
+                </div>
+                <div className="text-xs text-white/60 mt-2">
+                  *Coming soon - Start your courses now to be ready when the resume builder launches!
+                </div>
+              </div>
             </div>
           </div>
         </div>

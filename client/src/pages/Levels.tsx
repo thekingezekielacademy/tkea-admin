@@ -107,17 +107,37 @@ const Levels: React.FC = () => {
             </div>
           </div>
 
-          {/* Call to Action */}
+          {/* Level Progression Preview */}
           <div className="text-center">
             <div className="bg-gradient-to-r from-primary-500 to-secondary-500 rounded-xl sm:rounded-2xl p-6 sm:p-8 text-white shadow-lg">
-              <h3 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4">Ready to Level Up?</h3>
-              <p className="text-base sm:text-lg opacity-90 mb-4 sm:mb-6">
-                Stay tuned for the launch of our revolutionary level system. 
-                It's time to take your learning to the next level!
+              <h3 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4">🚀 Level Progression Preview</h3>
+              <p className="text-base sm:text-lg opacity-90 mb-6">
+                See the incredible journey and rewards that await you in our level system
               </p>
-              <div className="inline-flex items-center space-x-2 bg-white/20 rounded-full px-4 py-2 text-sm">
-                <FaRocket className="w-4 h-4" />
-                <span>Launching Soon</span>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                {[
+                  { metric: '5', label: 'Progressive Levels', description: 'Foundation to Master' },
+                  { metric: '50+', label: 'Unlockable Courses', description: 'New content per level' },
+                  { metric: '100+', label: 'Achievement Badges', description: 'Recognition system' },
+                  { metric: '∞', label: 'Growth Potential', description: 'Unlimited advancement' }
+                ].map((item, index) => (
+                  <div key={index} className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20 hover:bg-white/20 transition-all duration-300">
+                    <div className="text-2xl sm:text-3xl font-bold text-white mb-2">{item.metric}</div>
+                    <div className="text-sm text-white/80 mb-1">{item.label}</div>
+                    <div className="text-xs text-white/60">{item.description}</div>
+                  </div>
+                ))}
+              </div>
+              
+              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+                <div className="text-sm text-white/80 mb-2">💡 What You'll Unlock:</div>
+                <div className="text-base font-semibold text-white">
+                  New courses + Exclusive content + Community access + <span className="text-yellow-300 font-bold">Career advancement</span>
+                </div>
+                <div className="text-xs text-white/60 mt-2">
+                  *Coming soon - Start your courses now to be ready when levels launch!
+                </div>
               </div>
             </div>
           </div>

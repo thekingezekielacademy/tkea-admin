@@ -106,17 +106,38 @@ const Assessments: React.FC = () => {
             </div>
           </div>
 
-          {/* Call to Action */}
+          {/* Assessment Platform Preview */}
           <div className="text-center">
             <div className="bg-gradient-to-r from-primary-500 to-secondary-500 rounded-xl sm:rounded-2xl p-6 sm:p-8 text-white">
-              <h3 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4">Ready to Test Your Knowledge?</h3>
-              <p className="text-base sm:text-lg opacity-90 mb-4 sm:mb-6">
-                While we're building the assessment platform, start learning with our courses 
-                and prepare to demonstrate your skills when assessments launch.
+              <h3 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4">🎯 Assessment Platform Preview</h3>
+              <p className="text-base sm:text-lg opacity-90 mb-6">
+                See the powerful features that will revolutionize how you test and validate your skills
               </p>
-              <button className="bg-white text-primary-600 px-6 sm:px-8 py-2.5 sm:py-3 rounded-lg sm:rounded-xl font-semibold hover:bg-gray-100 transition-colors text-sm sm:text-base">
-                Start Learning
-              </button>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                {[
+                  { metric: 'AI', label: 'Adaptive Testing', description: 'Personalized questions' },
+                  { metric: '100+', label: 'Question Types', description: 'Multiple formats' },
+                  { metric: 'Real-time', label: 'Analytics', description: 'Instant feedback' },
+                  { metric: '24/7', label: 'Availability', description: 'Test anytime' }
+                ].map((item, index) => (
+                  <div key={index} className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20 hover:bg-white/20 transition-all duration-300">
+                    <div className="text-2xl sm:text-3xl font-bold text-white mb-2">{item.metric}</div>
+                    <div className="text-sm text-white/80 mb-1">{item.label}</div>
+                    <div className="text-xs text-white/60">{item.description}</div>
+                  </div>
+                ))}
+              </div>
+              
+              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+                <div className="text-sm text-white/80 mb-2">💡 What You'll Experience:</div>
+                <div className="text-base font-semibold text-white">
+                  Personalized testing + Smart feedback + Progress tracking + <span className="text-yellow-300 font-bold">Skill validation</span>
+                </div>
+                <div className="text-xs text-white/60 mt-2">
+                  *Coming soon - Start your courses now to be ready when assessments launch!
+                </div>
+              </div>
             </div>
           </div>
         </div>

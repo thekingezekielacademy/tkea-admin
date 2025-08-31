@@ -16,8 +16,8 @@ const Affiliates: React.FC = () => {
               💰 Affiliate Program
             </h1>
             <p className="text-base sm:text-lg lg:text-xl text-secondary-600 max-w-2xl mx-auto px-2">
-              Earn NGN 1,000 for every subscribed referral you bring! Join our affiliate program 
-              and turn your network into a source of passive income.
+              Earn NGN 1,000 per month for every subscribed referral you bring! Join our affiliate program 
+              and turn your network into a source of passive income for 12 months per referral.
             </p>
           </div>
 
@@ -40,8 +40,8 @@ const Affiliates: React.FC = () => {
               </div>
               <h3 className="text-lg sm:text-xl font-semibold text-secondary-900 mb-3 sm:mb-4">Referral Rewards</h3>
               <p className="text-sm sm:text-base text-secondary-600 leading-relaxed">
-                Earn NGN 1,000 for every person you refer who subscribes to our platform. 
-                Your earnings continue for a full year after each referral joins.
+                Earn NGN 1,000 per month for every person you refer who subscribes to our platform. 
+                Your earnings continue for 12 months after each referral joins, as long as they stay subscribed.
               </p>
             </div>
 
@@ -51,8 +51,8 @@ const Affiliates: React.FC = () => {
               </div>
               <h3 className="text-lg sm:text-xl font-semibold text-secondary-900 mb-3 sm:mb-4">Passive Income</h3>
               <p className="text-sm sm:text-base text-secondary-600 leading-relaxed">
-                Build a sustainable income stream as your referrals continue to use our platform. 
-                The more people you help, the more you earn month after month.
+                Build a sustainable income stream as your referrals stay subscribed to our platform. 
+                Earn NGN 1,000 monthly for each active referral, creating consistent passive income.
               </p>
             </div>
 
@@ -86,8 +86,8 @@ const Affiliates: React.FC = () => {
               {[
                 { step: '1', action: 'Sign Up', description: 'Join our affiliate program and get your unique referral link', color: 'from-green-100 to-green-200' },
                 { step: '2', action: 'Share', description: 'Share your referral link with friends, family, and professional network', color: 'from-blue-100 to-blue-200' },
-                { step: '3', action: 'Earn', description: 'Get NGN 1,000 for each referral who subscribes', color: 'from-purple-100 to-purple-200' },
-                { step: '4', action: 'Grow', description: 'Continue earning for 12 months after each referral joins', color: 'from-orange-100 to-orange-200' }
+                { step: '3', action: 'Earn', description: 'Get NGN 1,000 monthly for each referral who subscribes', color: 'from-purple-100 to-purple-200' },
+                { step: '4', action: 'Grow', description: 'Continue earning monthly for 12 months as long as referrals stay subscribed', color: 'from-orange-100 to-orange-200' }
               ].map((item, index) => (
                 <div key={index} className="flex items-center space-x-3 sm:space-x-4 p-3 sm:p-4 rounded-lg sm:rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors">
                   <div className={`w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br ${item.color} rounded-full flex items-center justify-center text-white font-bold text-xs sm:text-sm flex-shrink-0`}>
@@ -114,22 +114,45 @@ const Affiliates: React.FC = () => {
               <h3 className="text-lg sm:text-xl font-bold mb-2">Exclusive to Subscribers</h3>
               <p className="text-sm sm:text-base opacity-90">
                 Our affiliate program is open only to active subscribers. 
-                You must have an active subscription to participate and earn rewards.
+                You must have an active subscription to participate and earn NGN 1,000 monthly per referral.
               </p>
             </div>
           </div>
 
-          {/* Call to Action */}
+          {/* Potential Earnings Calculator */}
           <div className="text-center">
             <div className="bg-gradient-to-r from-primary-500 to-secondary-500 rounded-xl sm:rounded-2xl p-6 sm:p-8 text-white">
-              <h3 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4">Ready to Start Earning?</h3>
-              <p className="text-base sm:text-lg opacity-90 mb-4 sm:mb-6">
-                While we're building the affiliate platform, start building your network 
-                and prepare to earn when the program launches.
+              <h3 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4">💰 Potential Earnings Calculator</h3>
+              <p className="text-base sm:text-lg opacity-90 mb-6">
+                See how much you could earn with our affiliate program
               </p>
-              <button className="bg-white text-primary-600 px-6 sm:px-8 py-2.5 sm:py-3 rounded-lg sm:rounded-xl font-semibold hover:bg-gray-100 transition-colors text-sm sm:text-base">
-                Get Started
-              </button>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                {[
+                  { referrals: 10, months: 12, total: 120000 },
+                  { referrals: 25, months: 12, total: 300000 },
+                  { referrals: 50, months: 12, total: 600000 },
+                  { referrals: 75, months: 12, total: 900000 },
+                  { referrals: 100, months: 12, total: 1200000 }
+                ].map((item, index) => (
+                  <div key={index} className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20 hover:bg-white/20 transition-all duration-300">
+                    <div className="text-2xl sm:text-3xl font-bold text-white mb-2">{item.referrals}</div>
+                    <div className="text-sm text-white/80 mb-1">referrals</div>
+                    <div className="text-xs text-white/60 mb-2">× {item.months} months</div>
+                    <div className="text-lg sm:text-xl font-bold text-yellow-300">NGN {item.total.toLocaleString()}</div>
+                  </div>
+                ))}
+              </div>
+              
+              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+                <div className="text-sm text-white/80 mb-2">💡 Example Calculation:</div>
+                <div className="text-base font-semibold text-white">
+                  100 referrals × NGN 1,000 × 12 months = <span className="text-yellow-300 font-bold">NGN 1,200,000</span>
+                </div>
+                <div className="text-xs text-white/60 mt-2">
+                  *Only available to subscribed users who stay subscribed
+                </div>
+              </div>
             </div>
           </div>
         </div>

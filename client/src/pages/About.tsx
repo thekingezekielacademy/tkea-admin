@@ -1,5 +1,5 @@
 import React from 'react';
-import { FaGraduationCap, FaUsers, FaStar, FaClock, FaAward, FaHeart, FaLightbulb, FaHandshake } from 'react-icons/fa';
+import { FaGraduationCap, FaUsers, FaStar, FaAward, FaHeart, FaLightbulb, FaHandshake } from 'react-icons/fa';
 
 const About: React.FC = () => {
   return (
@@ -108,7 +108,7 @@ const About: React.FC = () => {
               <h3 className="text-xl font-semibold text-gray-900 mb-4">Integrity</h3>
               <p className="text-gray-600">
                 We conduct ourselves with honesty, transparency, and ethical behavior in 
-                all our interactions.
+                all our interactions and decisions.
               </p>
             </div>
             
@@ -118,82 +118,176 @@ const About: React.FC = () => {
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-4">Community</h3>
               <p className="text-gray-600">
-                We foster a supportive learning community where everyone feels valued, 
-                respected, and empowered to succeed.
+                We foster a supportive learning community where students can grow together 
+                and support each other's success.
               </p>
             </div>
           </div>
         </div>
 
-        {/* History */}
-        <div className="bg-white rounded-2xl shadow-xl p-8 mb-20">
-          <h2 className="text-3xl font-bold text-gray-900 text-center mb-8">Our Journey – From Vision to Impact</h2>
-          <div className="space-y-8 max-w-4xl mx-auto">
-            <div>
-              <h3 className="text-xl font-semibold text-primary-900 mb-2">2021 – Humble Beginnings</h3>
-              <p className="text-gray-700 leading-relaxed">
-                In 2021, I began my professional journey at Hagital Consulting, where the CEO, Pastor Yomi Omiyale, and his wife, Mrs. Debra Omiyale, welcomed me as an intern. Under their mentorship, I gained hands-on experience in Digital Marketing, E-commerce, and Information Marketing. This period laid the foundation for my skills and work ethic, and it remains one of the most formative seasons of my life.
-              </p>
-            </div>
-            <div>
-              <h3 className="text-xl font-semibold text-primary-900 mb-2">2022 – Stepping Out in Faith</h3>
-              <p className="text-gray-700 leading-relaxed">
-                After a full year of learning, I felt called to pursue my own path. With nothing but a vision to enlighten and educate, I left Hagital Consulting with heartfelt goodbyes and a deep belief that knowledge is light and many are in darkness. That same year, God gave me a dream, and I created my first set of courses, including Digital Marketing 101, which sold over 20,000 digital copies in 2022 alone.
-              </p>
-            </div>
-            <div>
-              <h3 className="text-xl font-semibold text-primary-900 mb-2">2022 – 2024 – Building Momentum</h3>
-              <div className="space-y-2 text-gray-700 leading-relaxed">
-                <p>Over the next two years, I developed over 40 practical courses and sold more than 60,000 copies to 40,000+ students, generating tens of millions in revenue.</p>
-                <ul className="list-disc list-inside space-y-1">
-                  <li>Trained over 10,000 people for free via Telegram & WhatsApp through the K.E. Development Movement.</li>
+        {/* Journey */}
+        <div className="mb-20">
+          <h2 className="text-3xl font-bold text-gray-900 text-center mb-12">Our Journey</h2>
+          <div className="bg-white rounded-2xl shadow-xl p-8">
+            <div className="space-y-8">
+              <div>
+                <h3 className="text-xl font-semibold text-primary-900 mb-2">2021 – The Beginning</h3>
+                <p className="text-gray-700 leading-relaxed">
+                  Started with a simple mission: to make quality digital marketing education accessible to everyone. 
+                  I began by creating free content on social media, sharing practical knowledge that people could 
+                  immediately apply to their businesses.
+                </p>
+              </div>
+              
+              <div>
+                <h3 className="text-xl font-semibold text-primary-900 mb-2">2022-2024 – Growth & Impact</h3>
+                <p className="text-gray-700 leading-relaxed mb-4">
+                  During this period, I achieved several significant milestones:
+                </p>
+                <ul className="list-disc list-inside text-gray-700 space-y-2 ml-4">
+                  <li>Created and sold over 30 practical courses on digital marketing.</li>
+                  <li>Built a community of over 40,000 students across various platforms.</li>
+                  <li>Generated over ₦50 million in revenue through course sales and consulting.</li>
                   <li>Grew my Telegram channel to 8,000 active subscribers.</li>
                   <li>Reached over 500,000 views on YouTube with 9,000+ subscribers (all students).</li>
                   <li>Spent over ₦15 million on advertisements, reaching 5.7 million people across Nigeria.</li>
                 </ul>
               </div>
-            </div>
-            <div>
-              <h3 className="text-xl font-semibold text-primary-900 mb-2">2025 – A Bigger Vision</h3>
-              <p className="text-gray-700 leading-relaxed">
-                Even after all these milestones, I saw a gap in the educational sector. People don’t just need affordable, high-quality knowledge — they also need a space to ask questions, connect with mentors, and grow together. This led me to design my next chapter: affordable, precise, and practical education with ongoing support for every learner — The King Ezekiel Academy.
-              </p>
+              
+              <div>
+                <h3 className="text-xl font-semibold text-primary-900 mb-2">2025 – A Bigger Vision</h3>
+                <p className="text-gray-700 leading-relaxed">
+                  Even after all these milestones, I saw a gap in the educational sector. People don't just need affordable, high-quality knowledge — they also need a space to ask questions, connect with mentors, and grow together. This led me to design my next chapter: affordable, precise, and practical education with ongoing support for every learner — The King Ezekiel Academy.
+                </p>
+              </div>
             </div>
           </div>
         </div>
 
         {/* Team */}
-        <div>
-          <h2 className="text-3xl font-bold text-gray-900 text-center mb-12">Our Leadership Team</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="bg-white rounded-xl shadow-lg p-6 text-center">
-              <div className="w-24 h-24 bg-gray-200 rounded-full mx-auto mb-4"></div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Dr. Sarah Johnson</h3>
-              <p className="text-primary-600 mb-4">Founder & CEO</p>
-              <p className="text-gray-600 text-sm">
-                Education expert with 15+ years of experience in digital learning and 
-                curriculum development.
-              </p>
-            </div>
+        <div className="relative">
+          {/* Background decoration */}
+          <div className="absolute inset-0 bg-gradient-to-br from-primary-50 via-white to-secondary-50 rounded-3xl"></div>
+          
+          <div className="relative z-10">
+            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 text-center mb-4">Meet the Team</h2>
+            <p className="text-xl text-gray-600 text-center mb-16 max-w-3xl mx-auto">
+              Meet the passionate educators and digital marketing experts behind King Ezekiel Academy
+            </p>
             
-            <div className="bg-white rounded-xl shadow-lg p-6 text-center">
-              <div className="w-24 h-24 bg-gray-200 rounded-full mx-auto mb-4"></div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Michael Chen</h3>
-              <p className="text-primary-600 mb-4">Chief Technology Officer</p>
-              <p className="text-gray-600 text-sm">
-                Tech innovator passionate about creating cutting-edge learning platforms 
-                and digital experiences.
-              </p>
-            </div>
-            
-            <div className="bg-white rounded-xl shadow-lg p-6 text-center">
-              <div className="w-24 h-24 bg-gray-200 rounded-full mx-auto mb-4"></div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Emily Rodriguez</h3>
-              <p className="text-primary-600 mb-4">Head of Education</p>
-              <p className="text-gray-600 text-sm">
-                Curriculum specialist dedicated to developing engaging, effective learning 
-                experiences for all students.
-              </p>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 max-w-7xl mx-auto px-4">
+              {/* King Ezekiel */}
+              <div className="group bg-white rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 border border-gray-100 overflow-hidden">
+                <div className="relative">
+                  {/* Profile Image */}
+                  <div className="w-full h-80 relative overflow-hidden">
+                    <img 
+                      src="/img/kingezekiel.jpg" 
+                      alt="King Ezekiel - CEO & Founder"
+                      className="w-full h-full object-cover"
+                    />
+                    {/* Overlay gradient */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+                  </div>
+                  
+                  {/* Floating badge */}
+                  <div className="absolute top-4 right-4 bg-primary-600 text-white px-4 py-2 rounded-full text-sm font-semibold shadow-lg">
+                    CEO & Founder
+                  </div>
+                </div>
+                
+                <div className="p-8">
+                  <h3 className="text-3xl font-bold text-gray-900 mb-3 text-center">King Ezekiel</h3>
+                  <p className="text-primary-600 mb-6 text-lg font-semibold text-center">Digital Marketing Expert & Educator</p>
+                  
+                  <div className="space-y-4 text-gray-700 leading-relaxed">
+                    <p>
+                      King Ezekiel is a dedicated educator and expert in Digital Marketing, and Digital Marketing Consultant. 
+                      Through his K.E. Development movement, he has trained over 10,000 people for free, building a reputation 
+                      for accessible, high-quality education.
+                    </p>
+                    <p>
+                      With a thriving community of over 11,000 subscribers on both YouTube and Telegram, he shares valuable 
+                      insights that have generated over 500,000 views. As the creator of over 30 practical courses, he has 
+                      successfully mentored over 40,000 students and sold more than 60,000 copies in 4 years.
+                    </p>
+                  </div>
+                  
+                  {/* Stats */}
+                  <div className="grid grid-cols-3 gap-4 mt-8 pt-6 border-t border-gray-100">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-primary-600">10,000+</div>
+                      <div className="text-sm text-gray-600">Students Trained</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-primary-600">30+</div>
+                      <div className="text-sm text-gray-600">Courses Created</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-primary-600">500K+</div>
+                      <div className="text-sm text-gray-600">YouTube Views</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Blessing Adima */}
+              <div className="group bg-white rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 border border-gray-100 overflow-hidden">
+                <div className="relative">
+                  {/* Profile Image */}
+                  <div className="w-full h-80 relative overflow-hidden">
+                    <img 
+                      src="/img/blessingadima.jpg" 
+                      alt="Blessing Adima - Digital Marketing Expert"
+                      className="w-full h-full object-cover"
+                    />
+                    {/* Overlay gradient */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+                  </div>
+                  
+                  {/* Floating badge */}
+                  <div className="absolute top-4 right-4 bg-secondary-600 text-white px-4 py-2 rounded-full text-sm font-semibold shadow-lg">
+                    Digital Marketer
+                  </div>
+                </div>
+                
+                <div className="p-8">
+                  <h3 className="text-3xl font-bold text-gray-900 mb-3 text-center">Blessing Adima</h3>
+                  <p className="text-secondary-600 mb-6 text-lg font-semibold text-center">Digital Marketing Expert & Business Coach</p>
+                  
+                  <div className="space-y-4 text-gray-700 leading-relaxed">
+                    <p>
+                      Blessing Adima is a Digital Marketing Expert and Business Coach with over 3 years of experience helping 
+                      individuals and businesses harness the power of digital tools to grow, scale, and achieve measurable results.
+                    </p>
+                    <p>
+                      She is passionate about digital transformation and has trained thousands of entrepreneurs, business owners, 
+                      and professionals on how to leverage social media, online marketing, and digital strategies to attract 
+                      clients and increase revenue.
+                    </p>
+                    <p>
+                      Blessing specializes in social media marketing, online advertising, brand growth strategies, and digital 
+                      monetization, with a mission to equip people with the right skills to thrive in today's fast-paced digital economy.
+                    </p>
+                  </div>
+                  
+                  {/* Stats */}
+                  <div className="grid grid-cols-3 gap-4 mt-8 pt-6 border-t border-gray-100">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-secondary-600">3+</div>
+                      <div className="text-sm text-gray-600">Years Experience</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-secondary-600">1000+</div>
+                      <div className="text-sm text-gray-600">Entrepreneurs Trained</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-secondary-600">100%</div>
+                      <div className="text-sm text-gray-600">Digital Focus</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>

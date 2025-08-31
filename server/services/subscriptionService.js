@@ -91,7 +91,7 @@ class SubscriptionService {
       const { data: subscription, error: subError } = await supabase
         .from('user_subscriptions')
         .insert({
-          user_id: userId,
+        user_id: userId,
           paystack_subscription_id: paystackData.subscription_code || paystackData.reference,
           paystack_customer_code: paystackData.customer_code || userId,
           plan_name: paystackData.plan_name || 'Monthly Membership',
@@ -100,8 +100,8 @@ class SubscriptionService {
           currency: 'NGN',
           start_date: new Date().toISOString(),
           next_payment_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
         })
         .select()
         .single();

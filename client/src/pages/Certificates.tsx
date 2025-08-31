@@ -106,17 +106,38 @@ const Certificates: React.FC = () => {
             </div>
           </div>
 
-          {/* Call to Action */}
+          {/* Certification System Preview */}
           <div className="text-center">
             <div className="bg-gradient-to-r from-primary-500 to-secondary-500 rounded-xl sm:rounded-2xl p-6 sm:p-8 text-white">
-              <h3 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4">Ready to Earn Your Credentials?</h3>
-              <p className="text-base sm:text-lg opacity-90 mb-4 sm:mb-6">
-                While we're building the certification system, start building your skills 
-                with our comprehensive courses and prepare for your future credentials.
+              <h3 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4">🏆 Certification System Preview</h3>
+              <p className="text-base sm:text-lg opacity-90 mb-6">
+                See the prestigious credentials and recognition system that will boost your career
               </p>
-              <button className="bg-white text-primary-600 px-6 sm:px-8 py-2.5 sm:py-3 rounded-lg sm:rounded-xl font-semibold hover:bg-gray-100 transition-colors text-sm sm:text-base">
-                Start Learning
-              </button>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                {[
+                  { metric: '4', label: 'Certificate Levels', description: 'Foundation to Master' },
+                  { metric: '100%', label: 'Industry Recognized', description: 'Employer approved' },
+                  { metric: 'Verifiable', label: 'Digital Badges', description: 'LinkedIn ready' },
+                  { metric: 'Global', label: 'Recognition', description: 'Worldwide acceptance' }
+                ].map((item, index) => (
+                  <div key={index} className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20 hover:bg-white/20 transition-all duration-300">
+                    <div className="text-2xl sm:text-3xl font-bold text-white mb-2">{item.metric}</div>
+                    <div className="text-sm text-white/80 mb-1">{item.label}</div>
+                    <div className="text-xs text-white/60">{item.description}</div>
+                  </div>
+                ))}
+              </div>
+              
+              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+                <div className="text-sm text-white/80 mb-2">💡 What You'll Achieve:</div>
+                <div className="text-base font-semibold text-white">
+                  Industry credentials + Skill validation + Career advancement + <span className="text-yellow-300 font-bold">Professional recognition</span>
+                </div>
+                <div className="text-xs text-white/60 mt-2">
+                  *Coming soon - Start your courses now to be ready when certifications launch!
+                </div>
+              </div>
             </div>
           </div>
         </div>
