@@ -7,7 +7,7 @@
  * Replace 'YOUR_PIXEL_ID' with your actual Facebook Pixel ID
  */
 
-export const FACEBOOK_PIXEL_ID = 'YOUR_PIXEL_ID'; // Replace with actual Pixel ID
+export const FACEBOOK_PIXEL_ID = '1991898708291767'; // King Ezekiel Academy Pixel ID
 
 // Pixel initialization options
 export const PIXEL_OPTIONS = {

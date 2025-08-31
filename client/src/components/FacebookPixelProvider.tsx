@@ -1,7 +1,6 @@
 import React, { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import ReactPixel from 'react-facebook-pixel';
-import { FACEBOOK_PIXEL_ID, PIXEL_OPTIONS } from '../config/facebookPixel';
+import { FACEBOOK_PIXEL_ID } from '../config/facebookPixel';
 
 /**
  * Facebook Pixel Provider Component
@@ -12,18 +11,10 @@ import { FACEBOOK_PIXEL_ID, PIXEL_OPTIONS } from '../config/facebookPixel';
 const FacebookPixelProvider: React.FC = () => {
   const location = useLocation();
 
-  // Initialize Facebook Pixel
+  // Track page views on route changes using standard fbq
   useEffect(() => {
-    if (FACEBOOK_PIXEL_ID !== 'YOUR_PIXEL_ID') {
-      ReactPixel.init(FACEBOOK_PIXEL_ID, undefined, PIXEL_OPTIONS);
-      ReactPixel.pageView();
-    }
-  }, []);
-
-  // Track page views on route changes
-  useEffect(() => {
-    if (FACEBOOK_PIXEL_ID !== 'YOUR_PIXEL_ID') {
-      ReactPixel.pageView();
+    if (typeof window !== 'undefined' && (window as any).fbq) {
+      (window as any).fbq('track', 'PageView');
     }
   }, [location.pathname]);
 
