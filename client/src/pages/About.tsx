@@ -1,9 +1,21 @@
 import React from 'react';
+import SEOHead from '../components/SEO/SEOHead';
+import { generatePersonStructuredData } from '../components/SEO/StructuredData';
 import { FaGraduationCap, FaUsers, FaStar, FaAward, FaHeart, FaLightbulb, FaHandshake } from 'react-icons/fa';
 
 const About: React.FC = () => {
   return (
-    <div className="min-h-screen bg-gray-50 pt-16">
+    <>
+      <SEOHead
+        title="About King Ezekiel Academy"
+        description="Learn about our mission to democratize digital marketing education. Founded by King Ezekiel, we've trained over 10,000 students worldwide with a 95% success rate."
+        keywords="about us, King Ezekiel, digital marketing expert, education platform, mission, vision, success stories, Nigeria, Africa"
+        canonical="/about"
+        ogImage="/img/og-about.jpg"
+        ogType="website"
+        structuredData={generatePersonStructuredData()}
+      />
+      <div className="min-h-screen bg-gray-50 pt-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Hero Section */}
         <div className="text-center mb-16">
@@ -293,6 +305,7 @@ const About: React.FC = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 

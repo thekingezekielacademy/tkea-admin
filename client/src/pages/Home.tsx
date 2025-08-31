@@ -1,11 +1,23 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import SEOHead from '../components/SEO/SEOHead';
+import { generateOrganizationStructuredData } from '../components/SEO/StructuredData';
 import HeroSection from '../components/HeroSection';
 import { FaGraduationCap, FaStar, FaClock, FaUsers, FaLaptopCode, FaChartBar, FaPalette, FaCheck, FaRocket, FaAward, FaHeart, FaArrowRight } from 'react-icons/fa';
 
 const Home: React.FC = () => {
   return (
-    <div className="min-h-screen bg-white">
+    <>
+      <SEOHead
+        title="Digital Marketing Education Platform"
+        description="Transform your career with comprehensive digital marketing courses. Learn from industry experts and join 10,000+ successful students. Start your 7-day FREE trial today!"
+        keywords="digital marketing courses, online education, business growth, entrepreneurship, Nigeria, Africa, free trial, subscription"
+        canonical="/"
+        ogImage="/img/og-home.jpg"
+        ogType="website"
+        structuredData={generateOrganizationStructuredData()}
+      />
+      <div className="min-h-screen bg-white">
       {/* Hero Section */}
       <HeroSection />
 
@@ -275,6 +287,7 @@ const Home: React.FC = () => {
         </div>
       </section>
     </div>
+    </>
   );
 };
 
