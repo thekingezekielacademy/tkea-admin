@@ -1,6 +1,5 @@
 import { useEffect, useCallback } from 'react';
 import ReactPixel from 'react-facebook-pixel';
-import { useLocation } from 'react-router-dom';
 import {
   FACEBOOK_PIXEL_ID,
   PIXEL_OPTIONS,
@@ -24,22 +23,8 @@ import {
  * for King Ezekiel Academy's education platform.
  */
 export const useFacebookPixel = () => {
-  const location = useLocation();
-
-  // Initialize Facebook Pixel
-  useEffect(() => {
-    if (FACEBOOK_PIXEL_ID !== 'YOUR_PIXEL_ID') {
-      ReactPixel.init(FACEBOOK_PIXEL_ID, undefined, PIXEL_OPTIONS);
-      ReactPixel.pageView();
-    }
-  }, []);
-
-  // Track page views on route changes
-  useEffect(() => {
-    if (FACEBOOK_PIXEL_ID !== 'YOUR_PIXEL_ID') {
-      ReactPixel.pageView();
-    }
-  }, [location.pathname]);
+  // Note: Page view tracking is now handled by FacebookPixelProvider component
+  // This hook only provides tracking functions for specific events
 
   // Standard page view tracking
   const trackPageView = useCallback(() => {

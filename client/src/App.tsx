@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { SidebarProvider } from './contexts/SidebarContext';
 import { initializeServiceWorker } from './utils/serviceWorker';
-import { useFacebookPixel } from './hooks/useFacebookPixel';
+import FacebookPixelProvider from './components/FacebookPixelProvider';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import NetworkStatus from './components/NetworkStatus';
@@ -49,9 +49,6 @@ import Affiliates from './pages/Affiliates';
 import './App.css';
 
 function App() {
-  // Initialize Facebook Pixel tracking
-  useFacebookPixel();
-
   useEffect(() => {
     // Initialize service worker for caching and performance
     initializeServiceWorker();
@@ -61,6 +58,7 @@ function App() {
     <AuthProvider>
       <SidebarProvider>
         <Router>
+          <FacebookPixelProvider />
           <ScrollToTop />
           <div className="App">
             <Navbar />

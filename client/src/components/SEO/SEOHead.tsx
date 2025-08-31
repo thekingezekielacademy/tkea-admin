@@ -78,6 +78,9 @@ const SEOHead: React.FC<SEOHeadProps> = ({
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       <meta name="theme-color" content="#1f2937" />
       
+      {/* Facebook Domain Verification */}
+      <meta name="facebook-domain-verification" content="c3qxn9yu9frspb8s9tceoh01uap0tr" />
+      
       {/* Structured Data (JSON-LD) */}
       {structuredData && (
         <script type="application/ld+json">
