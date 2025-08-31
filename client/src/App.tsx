@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { SidebarProvider } from './contexts/SidebarContext';
+import { initializeServiceWorker } from './utils/serviceWorker';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import NetworkStatus from './components/NetworkStatus';
@@ -47,6 +48,11 @@ import Affiliates from './pages/Affiliates';
 import './App.css';
 
 function App() {
+  useEffect(() => {
+    // Initialize service worker for caching and performance
+    initializeServiceWorker();
+  }, []);
+
   return (
     <AuthProvider>
       <SidebarProvider>

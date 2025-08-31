@@ -13,6 +13,9 @@ export { default as SEODashboard } from './SEODashboard';
 export { default as SEOAnalytics } from './SEOAnalytics';
 export { default as PerformanceDashboard } from './PerformanceDashboard';
 
+// Navigation Components
+export { default as Breadcrumbs, BreadcrumbPageWrapper } from './Breadcrumbs';
+
 // Structured Data
 export * from './StructuredData';
 
