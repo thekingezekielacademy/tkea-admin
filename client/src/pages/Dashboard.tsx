@@ -832,7 +832,7 @@ const Dashboard: React.FC = () => {
                  <div className={`${getSidebarMargin()} transition-all duration-300 ease-in-out`}>
         {/* Header */}
         <div className="bg-white shadow-sm border-b pt-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 leading-tight">
@@ -859,7 +859,7 @@ const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6 py-8">
         {/* Admin Status Banner */}
         {isAdmin && (
           <div className="mb-6 sm:mb-8 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl shadow-sm border border-purple-200 p-4 sm:p-6">
@@ -1181,9 +1181,9 @@ const Dashboard: React.FC = () => {
                   <span className="ml-3 text-gray-600">Loading recommendations...</span>
                 </div>
               ) : recommendedCourses.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   {recommendedCourses.map((course) => (
-                    <div key={course.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                    <div key={course.id} className="border rounded-lg p-6 hover:shadow-md transition-shadow">
                       <div className="flex items-start space-x-4">
                         <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">
                           {course.title.split(' ').map(word => word[0]).join('')}
@@ -1257,8 +1257,8 @@ const Dashboard: React.FC = () => {
             <div className="bg-white rounded-xl shadow-sm border p-6">
               <h2 className="text-xl font-bold text-gray-900 mb-6">Your Standing</h2>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-6">
                   <div className="flex items-center space-x-3 mb-3">
                     <FaCrown className="text-yellow-500 text-xl" />
                     <h4 className="font-semibold text-gray-900">Class Ranking</h4>
@@ -1267,7 +1267,7 @@ const Dashboard: React.FC = () => {
                   <p className="text-sm text-gray-600">You're ahead of most learners in your batch!</p>
                 </div>
 
-                <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-lg p-4">
+                <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-lg p-6">
                   <div className="flex items-center space-x-3 mb-3">
                     <FaUsers className="text-blue-500 text-xl" />
                     <h4 className="font-semibold text-gray-900">Community</h4>

@@ -222,21 +222,21 @@ const Blog: React.FC = () => {
   return (
     <>
       <SEOHead
-        title="Digital Marketing Blog - King Ezekiel Academy"
-        description="Discover insights, tips, and strategies to help you master digital skills and grow your business. Expert advice from industry professionals."
+      title="Digital Marketing Blog - King Ezekiel Academy"
+      description="Discover insights, tips, and strategies to help you master digital skills and grow your business. Expert advice from industry professionals."
       />
       
       <div className="min-h-screen bg-gray-50 pt-16">
-        {/* Hero Section */}
+      {/* Hero Section */}
         <section className="bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 text-white py-16 sm:py-20">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6">
               Digital Marketing Blog
-            </h1>
+          </h1>
             <p className="text-xl sm:text-2xl text-blue-100 max-w-3xl mx-auto">
-              Discover insights, tips, and strategies to help you master digital skills and grow your business
-            </p>
-          </div>
+            Discover insights, tips, and strategies to help you master digital skills and grow your business
+          </p>
+        </div>
         </section>
 
         {/* Search and Filters */}
@@ -246,13 +246,13 @@ const Blog: React.FC = () => {
               <div className="flex-1">
                 <div className="relative">
                   <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                  <input
-                    type="text"
+                <input
+                  type="text"
                     placeholder="Search articles..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
                 </div>
               </div>
               <button
@@ -274,7 +274,7 @@ const Blog: React.FC = () => {
               <option value="">All Categories</option>
               {getUniqueCategories().map((category) => (
                 <option key={category} value={category}>
-                  {category}
+                     {category}
                 </option>
               ))}
             </select>
@@ -286,7 +286,7 @@ const Blog: React.FC = () => {
               <option value="">All Tags</option>
               {getUniqueTags().map((tag) => (
                 <option key={tag} value={tag}>
-                  {tag}
+                    {tag}
                 </option>
               ))}
             </select>
@@ -295,13 +295,13 @@ const Blog: React.FC = () => {
 
         {/* Blog Posts Grid */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
-          {loading && currentPage === 1 ? (
+        {loading && currentPage === 1 ? (
             <div className="text-center py-12">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
               <p className="text-gray-600">Loading blog posts...</p>
-            </div>
+          </div>
           ) : error ? (
-            <div className="text-center py-12">
+          <div className="text-center py-12">
               <p className="text-red-600 mb-4">{error}</p>
               <button
                 onClick={() => window.location.reload()}
@@ -324,25 +324,25 @@ const Blog: React.FC = () => {
               >
                 Clear Filters
               </button>
-            </div>
-          ) : (
-            <>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {blogPosts.map((post) => (
                   <article key={post.id} className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
-                    {/* Featured Image */}
-                    {post.featured_image_url && (
+                  {/* Featured Image */}
+                  {post.featured_image_url && (
                       <div className="w-full h-48 relative overflow-hidden">
-                        <img
-                          src={post.featured_image_url}
-                          alt={post.title}
+                      <img 
+                        src={post.featured_image_url} 
+                        alt={post.title}
                           className="w-full h-full object-cover"
                         />
-                      </div>
-                    )}
+                    </div>
+                  )}
 
-                    {/* Content */}
-                    <div className="p-6">
+                  {/* Content */}
+                  <div className="p-6">
                       {/* Categories */}
                       {post.categories.length > 0 && (
                         <div className="flex flex-wrap gap-2 mb-3">
@@ -358,55 +358,55 @@ const Blog: React.FC = () => {
                       )}
 
                       {/* Title */}
-                      <h2 className="text-xl font-bold text-gray-900 mb-3 line-clamp-2">
-                        {post.title}
-                      </h2>
-
+                    <h2 className="text-xl font-bold text-gray-900 mb-3 line-clamp-2">
+                      {post.title}
+                    </h2>
+                    
                       {/* Excerpt */}
                       <p className="text-gray-600 mb-4 line-clamp-3">
                         {post.excerpt}
                       </p>
 
-                      {/* Meta Information */}
-                      <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
-                        <div className="flex items-center gap-2">
+                    {/* Meta Information */}
+                    <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
+                      <div className="flex items-center gap-2">
                           <FaCalendar className="w-4 h-4" />
-                          <span>{getReadingTime(post.content)} min read</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <FaUser className="w-4 h-4" />
+                        <span>{getReadingTime(post.content)} min read</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <FaUser className="w-4 h-4" />
                           <span>Admin</span>
                         </div>
-                      </div>
+                    </div>
 
-                      {/* Read More Button */}
+                    {/* Read More Button */}
                       <Link
                         to={`/blog/${post.slug}`}
-                        className="w-full inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
-                      >
-                        Read Article
+                      className="w-full inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                    >
+                      Read Article
                         <FaEye className="w-4 h-4 ml-2" />
                       </Link>
-                    </div>
-                  </article>
-                ))}
-              </div>
+                  </div>
+                </article>
+              ))}
+            </div>
 
-              {/* Load More Button */}
-              {hasMore && (
-                <div className="text-center mt-12">
-                  <button
+            {/* Load More Button */}
+            {hasMore && (
+              <div className="text-center mt-12">
+                <button
                     onClick={() => setCurrentPage(prev => prev + 1)}
-                    disabled={loading}
+                  disabled={loading}
                     className="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
-                  >
-                    {loading ? 'Loading...' : 'Load More Posts'}
-                  </button>
-                </div>
-              )}
-            </>
-          )}
-        </div>
+                >
+                  {loading ? 'Loading...' : 'Load More Posts'}
+                </button>
+              </div>
+            )}
+          </>
+        )}
+      </div>
       </div>
     </>
   );
