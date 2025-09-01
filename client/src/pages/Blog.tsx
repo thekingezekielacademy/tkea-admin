@@ -222,22 +222,22 @@ const Blog: React.FC = () => {
   return (
     <>
       <SEOHead
-      title="Digital Marketing Blog - King Ezekiel Academy"
-      description="Discover insights, tips, and strategies to help you master digital skills and grow your business. Expert advice from industry professionals."
+        title="Blog - King Ezekiel Academy"
+        description="Discover insights, tips, and strategies to help you master digital skills and grow your business. Expert advice from industry professionals."
       />
       
       <div className="min-h-screen bg-gray-50 pt-16">
-      {/* Hero Section */}
-        <section className="bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 text-white py-16 sm:py-20">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6">
-              Digital Marketing Blog
-          </h1>
-            <p className="text-xl sm:text-2xl text-blue-100 max-w-3xl mx-auto">
-            Discover insights, tips, and strategies to help you master digital skills and grow your business
-          </p>
+        {/* Header */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="text-center mb-16">
+            <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+              Blog
+            </h1>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              Discover insights, tips, and strategies to help you master digital skills and grow your business.
+            </p>
+          </div>
         </div>
-        </section>
 
         {/* Search and Filters */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
