@@ -10,11 +10,14 @@ import {
   FaTrophy, 
   FaCog, 
   FaSignOutAlt,
-  FaBars,
-  FaTimes,
-  FaChartLine,
-  FaStar,
-  FaCrown
+  FaCertificate,
+  FaFileAlt,
+  FaComments,
+  FaClipboardCheck,
+  FaShareAlt,
+  FaCreditCard,
+  FaChevronLeft,
+  FaChevronRight
 } from 'react-icons/fa';
 
 interface SidebarItem {
@@ -74,37 +77,37 @@ const DashboardSidebar: React.FC = () => {
     {
       id: 'certificates',
       label: 'Certificates',
-      icon: <FaCrown className="w-5 h-5" />,
+      icon: <FaCertificate className="w-5 h-5" />,
       path: '/certificates'
     },
     {
       id: 'resume',
       label: 'Résumé',
-      icon: <FaChartLine className="w-5 h-5" />,
+      icon: <FaFileAlt className="w-5 h-5" />,
       path: '/resume'
     },
     {
       id: 'rooms',
       label: 'Rooms: Q&A',
-      icon: <FaBars className="w-5 h-5" />,
+      icon: <FaComments className="w-5 h-5" />,
       path: '/rooms'
     },
     {
       id: 'assessments',
       label: 'Assessments',
-      icon: <FaBars className="w-5 h-5" />,
+      icon: <FaClipboardCheck className="w-5 h-5" />,
       path: '/assessments'
     },
     {
       id: 'affiliates',
       label: 'Affiliates',
-      icon: <FaBars className="w-5 h-5" />,
+      icon: <FaShareAlt className="w-5 h-5" />,
       path: '/affiliates'
     },
     {
       id: 'subscription',
       label: 'Subscription',
-      icon: <FaBars className="w-5 h-5" />,
+      icon: <FaCreditCard className="w-5 h-5" />,
       path: '/subscription'
     },
     {
@@ -163,7 +166,7 @@ const DashboardSidebar: React.FC = () => {
             className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
             title={isExpanded ? 'Collapse Sidebar' : 'Expand Sidebar'}
           >
-            {isExpanded ? <FaTimes className="w-4 h-4" /> : <FaBars className="w-4 h-4" />}
+            {isExpanded ? <FaChevronLeft className="w-4 h-4" /> : <FaChevronRight className="w-4 h-4" />}
           </button>
         </div>
 
