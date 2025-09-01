@@ -9,7 +9,6 @@ import TrialManager from '../utils/trialManager';
 import DashboardSidebar from '../components/DashboardSidebar';
 import SEOHead from '../components/SEO/SEOHead';
 import { generateCourseStructuredData } from '../components/SEO/StructuredData';
-import { BreadcrumbPageWrapper } from '../components/SEO/Breadcrumbs';
 import { useFacebookPixel } from '../hooks/useFacebookPixel';
 
 interface Course {
@@ -640,16 +639,12 @@ const Courses: React.FC = () => {
   };
 
   return (
-    <BreadcrumbPageWrapper
-      title="Digital Marketing Courses - King Ezekiel Academy"
-      description="Master digital marketing with our comprehensive courses designed for beginners and professionals. Learn SEO, social media, e-commerce, and more from industry experts."
-      breadcrumbs={[
-        { name: 'Home', url: '/' },
-        { name: 'Courses', url: '/courses' }
-      ]}
-    >
-      {/* Sidebar - Only show when user is signed in */}
-      {user && <DashboardSidebar />}
+    <div className="min-h-screen bg-gray-50">
+      <SEOHead
+        title="Digital Marketing Courses - King Ezekiel Academy"
+        description="Master digital marketing with our comprehensive courses designed for beginners and professionals. Learn SEO, social media, e-commerce, and more from industry experts."
+      />
+      <DashboardSidebar />
       
       {/* Main Content */}
       <div className={`${getSidebarMargin()} transition-all duration-300 ease-in-out`}>
@@ -1071,7 +1066,7 @@ const Courses: React.FC = () => {
           </div>
         </div>
       </div>
-    </BreadcrumbPageWrapper>
+    </div>
   );
 };
 
