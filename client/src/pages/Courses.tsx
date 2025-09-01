@@ -654,7 +654,7 @@ const Courses: React.FC = () => {
       {/* Main Content */}
       <div className={`${getSidebarMargin()} transition-all duration-300 ease-in-out`}>
         <div className="pt-16">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+          <div className={`mx-auto py-8 sm:py-12 ${isExpanded ? 'max-w-7xl px-4 sm:px-6 lg:px-8' : 'max-w-full px-6 sm:px-8 lg:px-12'}`}>
         {/* Header */}
         <div className="text-center mb-6 sm:mb-8">
           <div className="flex items-center justify-center gap-2 sm:gap-4 mb-3 sm:mb-4">
@@ -808,7 +808,7 @@ const Courses: React.FC = () => {
 
 
         {/* Search and Filters */}
-        <div className="mb-6 sm:mb-8">
+        <div className={`mb-6 sm:mb-8 ${isExpanded ? 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8' : 'max-w-full mx-auto px-6 sm:px-8 lg:px-12'}`}>
           {/* Search Bar - Full Width on Mobile */}
           <div className="mb-4 sm:mb-6">
             <div className="relative">
@@ -946,7 +946,7 @@ const Courses: React.FC = () => {
 
         {/* Courses Grid */}
         {!loading && !error && (
-          <>
+          <div className={`${isExpanded ? 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8' : 'max-w-full mx-auto px-6 sm:px-8 lg:px-12'}`}>
             {/* Shuffle Indicator */}
             <div className="col-span-full mb-4 text-center">
               <div className="inline-flex items-center space-x-2 bg-gradient-to-r from-purple-100 to-pink-100 border border-purple-200 rounded-full px-4 py-2">
@@ -955,7 +955,7 @@ const Courses: React.FC = () => {
               </div>
             </div>
             
-            <div className="col-span-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
+            <div className="col-span-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
           {filteredCourses.map(course => (
             <div key={course.id} className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300">
               <div className="relative">
@@ -1028,12 +1028,12 @@ const Courses: React.FC = () => {
             </div>
           ))}
             </div>
-          </>
+          </div>
         )}
 
         {/* Load More Button */}
         {hasMore && !loading && !error && (
-          <div className="text-center mt-6 sm:mt-8">
+          <div className={`text-center mt-6 sm:mt-8 ${isExpanded ? 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8' : 'max-w-full mx-auto px-6 sm:px-8 lg:px-12'}`}>
             <button
               onClick={loadMoreCourses}
               disabled={loadingMore}
@@ -1060,7 +1060,7 @@ const Courses: React.FC = () => {
         )}
 
         {filteredCourses.length === 0 && !loading && !error && (
-          <div className="text-center py-8 sm:py-12">
+          <div className={`text-center py-8 sm:py-12 ${isExpanded ? 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8' : 'max-w-full mx-auto px-6 sm:px-8 lg:px-12'}`}>
             <p className="text-gray-500 text-base sm:text-lg">No courses found matching your criteria.</p>
           </div>
         )}
