@@ -88,8 +88,20 @@ export class TrialManager {
           console.log('✅ Found trial status in database:', status);
           return status;
         }
+        
+        // Log specific error details for debugging
+        if (error) {
+          console.warn('Database query error:', error.message, error.details, error.hint);
+          
+          // Handle specific error codes
+          if (error.code === 'PGRST116') {
+            console.log('No trial found in database, checking localStorage fallback');
+          } else if (error.code === '406') {
+            console.warn('API not acceptable - possible RLS policy issue, using localStorage fallback');
+          }
+        }
       } catch (dbError) {
-        console.log('Database query failed, checking localStorage fallback');
+        console.log('Database query failed, checking localStorage fallback:', dbError);
       }
 
       // Fallback to localStorage

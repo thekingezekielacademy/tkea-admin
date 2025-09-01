@@ -25,7 +25,9 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   },
   global: {
     headers: {
-      'X-Client-Info': 'king-ezekiel-academy'
+      'X-Client-Info': 'king-ezekiel-academy',
+      'Accept': 'application/json',
+      'Content-Type': 'application/json'
     }
   },
   realtime: {

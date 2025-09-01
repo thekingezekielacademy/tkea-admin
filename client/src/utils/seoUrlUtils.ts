@@ -159,7 +159,7 @@ export const validateSeoUrl = (url: string): { isValid: boolean; issues: string[
   }
 
   // Check for special characters
-  if (/[^a-zA-Z0-9\-_\/]/.test(url)) {
+  if (/[^a-zA-Z0-9\-_/]/.test(url)) {
     issues.push('URL contains special characters');
   }
 

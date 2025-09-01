@@ -4,18 +4,28 @@ import { useLocation } from 'react-router-dom';
 // Enhanced ScrollToTop component for mobile and desktop navigation
 const ScrollToTop: React.FC = () => {
   const { pathname } = useLocation();
+  
+  // Check if we're in development mode
+  const isDevelopment = process.env.NODE_ENV === 'development';
 
   useEffect(() => {
-    console.log('🔄 ScrollToTop triggered for pathname:', pathname);
+    // Only log in development
+    if (isDevelopment) {
+      console.log('🔄 ScrollToTop triggered for pathname:', pathname);
+    }
     
     // Use a longer delay for mobile devices to ensure route change is complete
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     const delay = isMobile ? 300 : 150;
     
-    console.log('📱 Device type:', isMobile ? 'Mobile' : 'Desktop', 'Delay:', delay + 'ms');
+    if (isDevelopment) {
+      console.log('📱 Device type:', isMobile ? 'Mobile' : 'Desktop', 'Delay:', delay + 'ms');
+    }
     
     const scrollToTop = () => {
-      console.log('🎯 Attempting to scroll to top...');
+      if (isDevelopment) {
+        console.log('🎯 Attempting to scroll to top...');
+      }
       
       // Method 1: Standard scrollTo
       window.scrollTo(0, 0);
@@ -47,7 +57,9 @@ const ScrollToTop: React.FC = () => {
         // Fallback if scrollIntoView fails
       }
       
-      console.log('✅ Scroll to top completed');
+      if (isDevelopment) {
+        console.log('✅ Scroll to top completed');
+      }
     };
 
     const timer = setTimeout(() => {
@@ -57,20 +69,24 @@ const ScrollToTop: React.FC = () => {
       // Second attempt for mobile devices
       if (isMobile) {
         setTimeout(() => {
-          console.log('🔄 Second scroll attempt for mobile...');
+          if (isDevelopment) {
+            console.log('🔄 Second scroll attempt for mobile...');
+          }
           scrollToTop();
         }, 100);
         
         // Third attempt for stubborn mobile devices
         setTimeout(() => {
-          console.log('🔄 Third scroll attempt for mobile...');
+          if (isDevelopment) {
+            console.log('🔄 Third scroll attempt for mobile...');
+          }
           scrollToTop();
         }, 300);
       }
     }, delay);
 
     return () => clearTimeout(timer);
-  }, [pathname]);
+  }, [pathname, isDevelopment]);
 
   return null;
 };

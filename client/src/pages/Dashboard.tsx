@@ -286,9 +286,18 @@ const Dashboard: React.FC = () => {
           
           setTrialStatus(dbTrialStatus);
           secureLog('✅ Found trial status in database:', dbTrialStatus);
+        } else if (error) {
+          // Handle specific error codes
+          if (error.code === 'PGRST116') {
+            secureLog('No trial found in database for user');
+          } else if (error.code === '406') {
+            secureLog('⚠️ API not acceptable (406) - possible RLS policy issue, using localStorage fallback');
+          } else {
+            secureLog('❌ Database trial query error:', error.message);
+          }
         }
       } catch (dbError) {
-        secureLog('Database table user_trials not available yet');
+        secureLog('Database table user_trials not available yet or query failed:', dbError);
       }
     } catch (error) {
       secureError('Error in fetchTrialStatus:', error);

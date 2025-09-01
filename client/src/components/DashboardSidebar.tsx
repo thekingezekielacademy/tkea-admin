@@ -1,26 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useSidebar } from '../contexts/SidebarContext';
 import './DashboardSidebar.css';
 import { 
   FaHome, 
   FaBook, 
+  FaGraduationCap, 
   FaTrophy, 
-  FaUser, 
-  FaStar, 
-  FaCertificate, 
-  FaPlay, 
-  FaComments, 
-  FaClipboardCheck, 
-  FaShareAlt, 
   FaCog, 
-  FaSignOutAlt, 
-  FaChevronLeft, 
-  FaChevronRight,
-  FaGraduationCap,
-  FaFileAlt,
-  FaCreditCard
+  FaSignOutAlt,
+  FaBars,
+  FaTimes,
+  FaChartLine,
+  FaStar,
+  FaCrown
 } from 'react-icons/fa';
 
 interface SidebarItem {
@@ -80,37 +74,37 @@ const DashboardSidebar: React.FC = () => {
     {
       id: 'certificates',
       label: 'Certificates',
-      icon: <FaCertificate className="w-5 h-5" />,
+      icon: <FaCrown className="w-5 h-5" />,
       path: '/certificates'
     },
     {
       id: 'resume',
       label: 'Résumé',
-      icon: <FaFileAlt className="w-5 h-5" />,
+      icon: <FaChartLine className="w-5 h-5" />,
       path: '/resume'
     },
     {
       id: 'rooms',
       label: 'Rooms: Q&A',
-      icon: <FaComments className="w-5 h-5" />,
+      icon: <FaBars className="w-5 h-5" />,
       path: '/rooms'
     },
     {
       id: 'assessments',
       label: 'Assessments',
-      icon: <FaClipboardCheck className="w-5 h-5" />,
+      icon: <FaBars className="w-5 h-5" />,
       path: '/assessments'
     },
     {
       id: 'affiliates',
       label: 'Affiliates',
-      icon: <FaShareAlt className="w-5 h-5" />,
+      icon: <FaBars className="w-5 h-5" />,
       path: '/affiliates'
     },
     {
       id: 'subscription',
       label: 'Subscription',
-      icon: <FaCreditCard className="w-5 h-5" />,
+      icon: <FaBars className="w-5 h-5" />,
       path: '/subscription'
     },
     {
@@ -169,7 +163,7 @@ const DashboardSidebar: React.FC = () => {
             className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
             title={isExpanded ? 'Collapse Sidebar' : 'Expand Sidebar'}
           >
-            {isExpanded ? <FaChevronLeft className="w-4 h-4" /> : <FaChevronRight className="w-4 h-4" />}
+            {isExpanded ? <FaTimes className="w-4 h-4" /> : <FaBars className="w-4 h-4" />}
           </button>
         </div>
 

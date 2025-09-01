@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { FaArrowLeft, FaShare, FaClock, FaUser, FaTags, FaFolder, FaCalendar, FaEye, FaCopy, FaCheck, FaTwitter, FaFacebook, FaLinkedin, FaWhatsapp } from 'react-icons/fa';
+import { FaCalendar, FaUser, FaEye, FaArrowLeft, FaClock, FaTags, FaFolder, FaCopy, FaCheck, FaTwitter, FaFacebook, FaLinkedin, FaWhatsapp } from 'react-icons/fa';
 import { supabase } from '../lib/supabase';
 import DOMPurify from 'dompurify';
 import { secureLog, secureError } from '../utils/secureLogger';
+import SEOHead from '../components/SEO/SEOHead';
+import { generateBlogPostStructuredData } from '../components/SEO/StructuredData';
 
 interface BlogPostData {
   id: string;
@@ -31,13 +33,7 @@ const BlogPost: React.FC = () => {
   const [blogPost, setBlogPost] = useState<BlogPostData | null>(null);
   const [copied, setCopied] = useState(false);
 
-  useEffect(() => {
-    if (slug) {
-      fetchBlogPost();
-    }
-  }, [slug]);
-
-  const fetchBlogPost = async () => {
+  const fetchBlogPost = useCallback(async () => {
     try {
       setLoading(true);
       const { data: posts, error: postError } = await supabase
@@ -76,7 +72,13 @@ const BlogPost: React.FC = () => {
       setError('Failed to load blog post');
       setLoading(false);
     }
-  };
+  }, [slug]);
+
+  useEffect(() => {
+    if (slug) {
+      fetchBlogPost();
+    }
+  }, [slug, fetchBlogPost]);
 
   const formatBlogContent = (content: string) => {
     // First sanitize the content
@@ -179,7 +181,6 @@ const BlogPost: React.FC = () => {
 
   const shareToSocial = (platform: string) => {
     const url = encodeURIComponent(window.location.href);
-    const title = encodeURIComponent(blogPost?.title || 'Check out this blog post');
     const text = encodeURIComponent(blogPost?.excerpt || 'Interesting read from King Ezekiel Academy');
     
     let shareUrl = '';

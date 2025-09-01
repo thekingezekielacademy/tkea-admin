@@ -238,7 +238,7 @@ export const initializeServiceWorker = async (): Promise<void> => {
 };
 
 // Export for use in other files
-export default {
+const serviceWorkerUtils = {
   registerServiceWorker,
   unregisterServiceWorker,
   clearAllCaches,
@@ -248,3 +248,5 @@ export default {
   monitorServiceWorkerPerformance,
   initializeServiceWorker
 };
+
+export default serviceWorkerUtils;

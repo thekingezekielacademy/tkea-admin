@@ -23,14 +23,16 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [showControls, setShowControls] = useState(true);
   const [isHovered, setIsHovered] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   // Reset loading state when src changes
   useEffect(() => {
@@ -45,7 +47,7 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
       
       // Set up video source using YouTube's direct stream URL
       const videoId = src.includes('youtube.com') || src.includes('youtu.be') 
-        ? src.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/)?.[1] || src
+        ? src.match(/(?:youtube\.com\/(?:[^/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?/\s]{11})/)?.[1] || src
         : src;
       
 
@@ -139,71 +141,41 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
                  onEnded?.();
                }
              }
-           } else if (data.event === 'onReady') {
-             // Player is ready, get video duration
-             iframe.contentWindow?.postMessage(
-               '{"event":"command","func":"getDuration","args":""}',
-               '*'
-             );
-           } else if (data.event === 'onReady' && data.info) {
-             // Video duration received
-             setDuration(data.info);
-           } else if (data.event === 'onReady' && typeof data.info === 'number') {
-             // Current time received
-             setCurrentTime(data.info);
-           } else if (data.event === 'onStateChange' && data.info === 1) {
-             // Video is playing, start syncing time
-             if (iframe.contentWindow) {
-               // Get current time every second while playing
-               const timeSyncInterval = setInterval(() => {
-                 iframe.contentWindow?.postMessage(
-                   '{"event":"command","func":"getCurrentTime","args":""}',
-                   '*'
-                 );
-               }, 1000);
-               
-               // Store the interval for cleanup
-               if (intervalRef.current) {
-                 clearInterval(intervalRef.current);
-               }
-               intervalRef.current = timeSyncInterval;
-             }
-           } else if (data.event === 'onReady' && typeof data.info === 'number' && data.info > 0 && data.info < 10000) {
-             // Current time received (between 0 and 10 hours)
-             setCurrentTime(data.info);
            }
-         } catch (e) {
+         } catch (error) {
            // Ignore parsing errors
          }
        };
        
-       // Add message listener for YouTube player communication
+       // Add message listener
        window.addEventListener('message', handleMessage);
        
-       // Set up timer to sync with YouTube player time
-       intervalRef.current = setInterval(() => {
-         if (isPlaying && iframe.contentWindow) {
-           // Get current time from YouTube player
-           iframe.contentWindow.postMessage(
-             '{"event":"command","func":"getCurrentTime","args":""}',
-             '*'
-           );
+       // Set up interval for progress updates
+       const interval = setInterval(() => {
+         if (iframe.contentWindow) {
+           iframe.contentWindow.postMessage('{"event":"command","func":"getCurrentTime","args":""}', '*');
          }
        }, 1000);
        
-       // Set a default duration (will be updated when video loads)
-       setDuration(600); // 10 minutes default
-      
-             // Cleanup
+       // Store interval reference
+       intervalRef.current = interval;
+       
+       // Set up hover timeout
+       const hoverTimeout = setTimeout(() => {
+         // Auto-hide controls after 3 seconds
+       }, 3000);
+       
+       // Store hover timeout reference
+       hoverTimeoutRef.current = hoverTimeout;
+       
+       // Cleanup function
        return () => {
-         if (intervalRef.current) {
-           clearInterval(intervalRef.current);
-         }
-         if (hoverTimeoutRef.current) {
-           clearTimeout(hoverTimeoutRef.current);
-         }
+         clearInterval(intervalRef.current);
+         clearTimeout(hoverTimeoutRef.current);
          window.removeEventListener('message', handleMessage);
-         if (containerRef.current && iframe.parentNode?.parentNode) {
+         // Store containerRef.current in a variable to avoid stale closure
+         const container = containerRef.current;
+         if (container && iframe.parentNode?.parentNode) {
            iframe.parentNode.parentNode.removeChild(iframe.parentNode);
          }
        };
@@ -298,8 +270,6 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
       );
     }
   };
-
-  const [isFullscreen, setIsFullscreen] = useState(false);
 
   const toggleFullscreen = () => {
     // Check if we're on iOS Safari

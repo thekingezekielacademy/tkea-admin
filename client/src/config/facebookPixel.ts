@@ -231,7 +231,7 @@ export const getContactEventParams = (
 };
 
 // Export default configuration
-export default {
+const facebookPixelConfig = {
   FACEBOOK_PIXEL_ID,
   PIXEL_OPTIONS,
   FB_PIXEL_EVENTS,
@@ -247,3 +247,5 @@ export default {
   getSearchEventParams,
   getContactEventParams
 };
+
+export default facebookPixelConfig;
