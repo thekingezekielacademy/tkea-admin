@@ -21,10 +21,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     
     if (!paystackSecretKey) {
       console.error('PAYSTACK_SECRET_KEY not configured');
+      console.error('Available environment variables:', Object.keys(process.env).filter(key => key.includes('PAYSTACK')));
       return res.status(500).json({ 
-        error: 'Server configuration error. Please contact support.' 
+        error: 'Server configuration error. PAYSTACK_SECRET_KEY not found.',
+        availableEnvVars: Object.keys(process.env).filter(key => key.includes('PAYSTACK'))
       });
     }
+
+    console.log('🔧 API Route Debug:', {
+      subscriptionId,
+      paystackSubscriptionId,
+      hasSecretKey: !!paystackSecretKey,
+      secretKeyPrefix: paystackSecretKey?.substring(0, 10) + '...'
+    });
 
     // Call Paystack API to cancel subscription
     const paystackResponse = await fetch('https://api.paystack.co/subscription/disable', {
@@ -34,7 +43,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        code: paystackSubscriptionId,
+        token: paystackSubscriptionId, // Paystack expects 'token' not 'code'
       }),
     });
 

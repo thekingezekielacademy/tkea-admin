@@ -97,7 +97,7 @@ class SubscriptionService {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          code: paystackSubscriptionId,
+          token: paystackSubscriptionId, // Paystack expects 'token' not 'code'
         }),
       });
 
