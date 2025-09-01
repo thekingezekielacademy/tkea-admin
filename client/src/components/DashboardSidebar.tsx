@@ -10,6 +10,7 @@ import {
   FaTrophy, 
   FaCog, 
   FaSignOutAlt,
+  FaStar,
   FaCertificate,
   FaFileAlt,
   FaComments,
