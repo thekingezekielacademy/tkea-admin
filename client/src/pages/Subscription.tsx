@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase';
 import DashboardSidebar from '../components/DashboardSidebar';
 import PaymentModal from '../components/PaymentModal';
 import secureStorage from '../utils/secureStorage';
+import { subscriptionService } from '../services/subscriptionService';
 import DOMPurify from 'dompurify';
 import { 
   FaCreditCard, 
@@ -791,42 +792,34 @@ const Subscription: React.FC = () => {
 
       console.log('🔒 Canceling Paystack subscription:', subscription.paystack_subscription_id);
 
-      // Call Paystack directly to cancel subscription
-      const response = await fetch(`https://api.paystack.co/subscription/disable`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${process.env.REACT_APP_PAYSTACK_SECRET_KEY || 'sk_test_...'}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          code: subscription.paystack_subscription_id,
-        }),
-      });
+      // Use the subscription service for secure cancellation
+      const result = await subscriptionService.cancelSubscription(
+        subscription.id,
+        subscription.paystack_subscription_id
+      );
 
-      if (!response.ok) {
-        throw new Error(`Paystack API error: ${response.status}`);
-      }
-
-      const result = await response.json();
-      
-      if (result.status) {
+      if (result.success) {
         // Update local subscription status
         setSubscription(prev => prev ? { ...prev, status: 'canceled' } : null);
-        setSuccess('Subscription cancelled successfully');
+        setSuccess(result.message);
         
         // Update database status
-        await supabase
-          .from('user_subscriptions')
-          .update({ status: 'canceled' })
-          .eq('id', subscription.id);
-          
-        console.log('✅ Subscription cancelled successfully');
+        const dbUpdateSuccess = await subscriptionService.updateSubscriptionStatus(
+          subscription.id,
+          'canceled'
+        );
+        
+        if (dbUpdateSuccess) {
+          console.log('✅ Subscription cancelled successfully and database updated');
+        } else {
+          console.warn('⚠️ Subscription cancelled but database update failed');
+        }
       } else {
-        throw new Error(result.message || 'Failed to cancel subscription');
+        throw new Error(result.message);
       }
     } catch (error) {
       console.error('Error canceling subscription:', error);
-      setError('Failed to cancel subscription. Please try again.');
+      setError(error instanceof Error ? error.message : 'Failed to cancel subscription. Please try again.');
     } finally {
       setLoading(false);
     }
