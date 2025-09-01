@@ -654,7 +654,7 @@ const Courses: React.FC = () => {
       {/* Main Content */}
       <div className={`${getSidebarMargin()} transition-all duration-300 ease-in-out`}>
         <div className="pt-16">
-          <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6 py-8 sm:py-12">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
         {/* Header */}
         <div className="text-center mb-6 sm:mb-8">
           <div className="flex items-center justify-center gap-2 sm:gap-4 mb-3 sm:mb-4">
@@ -681,7 +681,7 @@ const Courses: React.FC = () => {
               </button>
             )}
           </div>
-          <p className="text-base sm:text-lg md:text-xl text-gray-600 max-w-3xl mx-auto px-1 sm:px-0 leading-relaxed">
+          <p className="text-base sm:text-lg md:text-xl text-gray-600 max-w-3xl mx-auto px-2 sm:px-0 leading-relaxed">
             Master the most in-demand digital skills with our comprehensive courses. Start free and upgrade to access all courses.
           </p>
         </div>
