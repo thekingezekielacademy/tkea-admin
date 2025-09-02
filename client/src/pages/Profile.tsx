@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase';
 import secureStorage from '../utils/secureStorage';
 import DashboardSidebar from '../components/DashboardSidebar';
 import { FaEdit, FaEnvelope, FaUser, FaImage, FaKey, FaSave, FaTimes, FaCreditCard, FaHistory } from 'react-icons/fa';
+import subscriptionService from '../services/subscriptionService';
 
 declare global {
   interface Window {
@@ -958,14 +959,35 @@ const Profile: React.FC = () => {
                   <div className="flex justify-between gap-2">
                     <button onClick={() => setCancelStep(1)} className="px-4 py-2 border rounded">Back</button>
                     <button
-                      onClick={() => {
+                      onClick={async () => {
                         try {
-                          localStorage.setItem('subscription_active', 'false');
-                          localStorage.removeItem('subscription_ref');
-                          localStorage.removeItem('subscription_next_renewal');
-                          setSubActive(false);
-                          setMessage('Subscription canceled. You will retain access until the end of the current billing period.');
-                        } catch {}
+                          if (subscription?.paystack_subscription_id) {
+                            // Use the real subscription service to cancel
+                            const result = await subscriptionService.cancelSubscription(
+                              subscription.id,
+                              subscription.paystack_subscription_id
+                            );
+                            
+                            if (result.success) {
+                              setMessage('Subscription canceled successfully. You will retain access until the end of your current billing period.');
+                              setSubActive(false);
+                              // Update local subscription status
+                              setSubscription(prev => prev ? { ...prev, status: 'canceled' } : null);
+                            } else {
+                              setError(result.message || 'Failed to cancel subscription. Please try again.');
+                            }
+                          } else {
+                            // Fallback to localStorage for backward compatibility
+                            localStorage.setItem('subscription_active', 'false');
+                            localStorage.removeItem('subscription_ref');
+                            localStorage.removeItem('subscription_next_renewal');
+                            setSubActive(false);
+                            setMessage('Subscription canceled. You will retain access until the end of your current billing period.');
+                          }
+                        } catch (error) {
+                          console.error('Error canceling subscription:', error);
+                          setError('Failed to cancel subscription. Please try again.');
+                        }
                         setShowCancelFlow(false);
                         setShowManageSubscription(false);
                       }}
@@ -975,7 +997,7 @@ const Profile: React.FC = () => {
                       Confirm Cancel
                     </button>
                   </div>
-                  <p className="text-xs text-gray-500">Note: In production, cancellation should be processed with your payment provider and verified on your server.</p>
+                  <p className="text-xs text-gray-500">Note: Subscription cancellation is now processed through our secure backend API and verified with Paystack.</p>
                 </div>
               )}
             </div>

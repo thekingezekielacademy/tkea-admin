@@ -47,15 +47,15 @@ class SubscriptionService {
   async cancelSubscription(subscriptionId: string, paystackSubscriptionId: string): Promise<CancelSubscriptionResponse> {
     try {
       // First, try to cancel through our backend API
-      const response = await fetch(`${this.baseUrl}/subscriptions/cancel`, {
+      const response = await fetch(`${this.baseUrl}/paystack/cancel-subscription`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${await this.getAuthToken()}`,
         },
         body: JSON.stringify({
-          subscriptionId,
-          paystackSubscriptionId,
+          subscriptionId: paystackSubscriptionId, // The endpoint expects subscriptionId
+          reason: 'User requested cancellation', // Add required reason parameter
         }),
       });
 
