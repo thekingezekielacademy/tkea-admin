@@ -89,4 +89,21 @@ echo "🔨 Building React app..."
 cd client && npm run build
 cd ..
 
+# Ensure images are copied to build directory
+echo "📁 Ensuring images are in build directory..."
+if [ -d "client/public/img" ]; then
+    echo "✅ Source img directory exists"
+    if [ -d "client/build/img" ]; then
+        echo "✅ Build img directory exists"
+        ls -la client/build/img/
+    else
+        echo "❌ Build img directory missing, creating it..."
+        mkdir -p client/build/img
+        cp -r client/public/img/* client/build/img/
+        echo "✅ Images copied to build directory"
+    fi
+else
+    echo "❌ Source img directory not found"
+fi
+
 echo "✅ Build completed!"
