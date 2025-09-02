@@ -3,9 +3,6 @@
   "version": "1.0.0",
   "description": "King Ezekiel Academy - React + Node.js + Supabase Application",
   "main": "server/index.js",
-  "engines": {
-    "node": "18.x"
-  },
   "scripts": {
     "start": "node server/index.js",
     "server": "nodemon server/index.js",
