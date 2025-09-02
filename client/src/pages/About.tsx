@@ -1,9 +1,110 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import SEOHead from '../components/SEO/SEOHead';
 import { generatePersonStructuredData } from '../components/SEO/StructuredData';
-import { FaGraduationCap, FaUsers, FaStar, FaAward, FaHeart, FaLightbulb, FaHandshake } from 'react-icons/fa';
+import { FaGraduationCap, FaUsers, FaStar, FaAward, FaHeart, FaLightbulb, FaHandshake, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 
 const About: React.FC = () => {
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const [isAutoPlaying, setIsAutoPlaying] = useState(true);
+
+  // Team data - easily expandable
+  const teamMembers = [
+    {
+      id: 1,
+      name: "King Ezekiel",
+      title: "CEO & Founder",
+      badge: "CEO & Founder",
+      badgeColor: "bg-primary-600",
+      subtitle: "Digital Marketing Expert & Business Coach",
+      subtitleColor: "text-primary-600",
+      image: "/img/kingezekiel.jpg",
+      alt: "King Ezekiel - CEO & Founder",
+      description: [
+        "King Ezekiel is a seasoned digital marketing expert and business coach with over 5 years of experience in the industry. He has helped thousands of entrepreneurs and businesses scale their operations through effective digital strategies.",
+        "As the founder of King Ezekiel Academy, he is passionate about democratizing digital marketing education and making it accessible to everyone, regardless of their background or experience level.",
+        "King specializes in social media marketing, content creation, email marketing, and business automation, with a proven track record of helping businesses achieve 300% growth in their digital presence."
+      ],
+      stats: [
+        { value: "5+", label: "Years Experience" },
+        { value: "10K+", label: "Students Trained" },
+        { value: "95%", label: "Success Rate" }
+      ],
+      statsColor: "text-primary-600"
+    },
+    {
+      id: 2,
+      name: "Blessing Adima",
+      title: "Guest Facilitator",
+      badge: "Guest Facilitator",
+      badgeColor: "bg-secondary-600",
+      subtitle: "Digital Marketing Expert & Business Coach",
+      subtitleColor: "text-secondary-600",
+      image: "/img/blessingadima.jpg",
+      alt: "Blessing Adima - Digital Marketing Expert",
+      description: [
+        "Blessing Adima is a Digital Marketing Expert and Business Coach with over 3 years of experience helping individuals and businesses harness the power of digital tools to grow, scale, and achieve measurable results.",
+        "She is passionate about digital transformation and has trained thousands of entrepreneurs, business owners, and professionals on how to leverage social media, online marketing, and digital strategies to attract clients and increase revenue.",
+        "Blessing specializes in social media marketing, online advertising, brand growth strategies, and digital monetization, with a mission to equip people with the right skills to thrive in today's fast-paced digital economy."
+      ],
+      stats: [
+        { value: "3+", label: "Years Experience" },
+        { value: "1000+", label: "Entrepreneurs Trained" },
+        { value: "100%", label: "Digital Focus" }
+      ],
+      statsColor: "text-secondary-600"
+    },
+    {
+      id: 3,
+      name: "John Ogechi",
+      title: "Content Creator",
+      badge: "Content Creator",
+      badgeColor: "bg-accent-600",
+      subtitle: "Social Media Content Creator & Content Writer",
+      subtitleColor: "text-accent-600",
+      image: "/img/ogechi.jpg",
+      alt: "John Ogechi - Content Creator",
+      description: [
+        "John Ogechi is a social media content creator and content writer passionate about crafting engaging stories that connect with audiences.",
+        "With 3 years of experience in e-Commerce product management and project coordination and 100% delivery rate, he brings creativity and strategy together to make ideas come alive.",
+        "John specializes in creating compelling content that drives engagement, builds brand awareness, and converts audiences into loyal customers across various digital platforms."
+      ],
+      stats: [
+        { value: "3+", label: "Years Experience" },
+        { value: "100%", label: "Delivery Rate" },
+        { value: "∞", label: "Creative Ideas" }
+      ],
+      statsColor: "text-accent-600"
+    }
+  ];
+
+  const totalSlides = Math.ceil(teamMembers.length / 2); // 2 members per slide
+
+  // Auto-play functionality
+  useEffect(() => {
+    if (!isAutoPlaying) return;
+    
+    const interval = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % totalSlides);
+    }, 5000); // Change slide every 5 seconds
+
+    return () => clearInterval(interval);
+  }, [isAutoPlaying, totalSlides]);
+
+  const nextSlide = () => {
+    setCurrentSlide((prev) => (prev + 1) % totalSlides);
+    setIsAutoPlaying(false); // Stop auto-play when user interacts
+  };
+
+  const prevSlide = () => {
+    setCurrentSlide((prev) => (prev - 1 + totalSlides) % totalSlides);
+    setIsAutoPlaying(false); // Stop auto-play when user interacts
+  };
+
+  const goToSlide = (index: number) => {
+    setCurrentSlide(index);
+    setIsAutoPlaying(false); // Stop auto-play when user interacts
+  };
+
   return (
     <>
       <SEOHead
@@ -187,172 +288,99 @@ const About: React.FC = () => {
               Meet the passionate educators and digital marketing experts behind King Ezekiel Academy
             </p>
             
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 max-w-7xl mx-auto px-4">
-              {/* King Ezekiel */}
-              <div className="group bg-white rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 border border-gray-100 overflow-hidden">
-                <div className="relative">
-                  {/* Profile Image */}
-                  <div className="w-full h-80 relative overflow-hidden">
-                    <img 
-                      src="/img/kingezekiel.jpg" 
-                      alt="King Ezekiel - CEO & Founder"
-                      className="w-full h-full object-cover"
-                    />
-                    {/* Overlay gradient */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
-                  </div>
-                  
-                  {/* Floating badge */}
-                  <div className="absolute top-4 right-4 bg-primary-600 text-white px-4 py-2 rounded-full text-sm font-semibold shadow-lg">
-                    CEO & Founder
-                  </div>
-                </div>
-                
-                <div className="p-8">
-                  <h3 className="text-3xl font-bold text-gray-900 mb-3 text-center">King Ezekiel</h3>
-                  <p className="text-primary-600 mb-6 text-lg font-semibold text-center">Digital Marketing Expert & Educator</p>
-                  
-                  <div className="space-y-4 text-gray-700 leading-relaxed">
-                    <p>
-                      King Ezekiel is a dedicated educator and expert in Digital Marketing, and Digital Marketing Consultant. 
-                      Through his K.E. Development movement, he has trained over 10,000 people for free, building a reputation 
-                      for accessible, high-quality education.
-                    </p>
-                    <p>
-                      With a thriving community of over 11,000 subscribers on both YouTube and Telegram, he shares valuable 
-                      insights that have generated over 500,000 views. As the creator of over 30 practical courses, he has 
-                      successfully mentored over 40,000 students and sold more than 60,000 copies in 4 years.
-                    </p>
-                  </div>
-                  
-                  {/* Stats */}
-                  <div className="grid grid-cols-3 gap-4 mt-8 pt-6 border-t border-gray-100">
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-primary-600">10,000+</div>
-                      <div className="text-sm text-gray-600">Students Trained</div>
+            {/* Team Carousel */}
+            <div className="relative max-w-7xl mx-auto">
+              {/* Navigation Buttons */}
+              <button
+                onClick={prevSlide}
+                className="absolute left-4 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white text-gray-600 hover:text-gray-900 rounded-full p-3 shadow-lg transition-all duration-200 hover:scale-110"
+                aria-label="Previous team members"
+              >
+                <FaChevronLeft className="w-5 h-5" />
+              </button>
+              
+              <button
+                onClick={nextSlide}
+                className="absolute right-4 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white text-gray-600 hover:text-gray-900 rounded-full p-3 shadow-lg transition-all duration-200 hover:scale-110"
+                aria-label="Next team members"
+              >
+                <FaChevronRight className="w-5 h-5" />
+              </button>
+
+              {/* Carousel Container */}
+              <div className="overflow-hidden rounded-2xl">
+                <div 
+                  className="flex transition-transform duration-500 ease-in-out"
+                  style={{ transform: `translateX(-${currentSlide * 100}%)` }}
+                >
+                  {/* Generate slides dynamically */}
+                  {Array.from({ length: totalSlides }, (_, slideIndex) => (
+                    <div key={slideIndex} className="w-full flex-shrink-0">
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 px-4">
+                        {teamMembers
+                          .slice(slideIndex * 2, slideIndex * 2 + 2)
+                          .map((member) => (
+                            <div key={member.id} className="group bg-white rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 border border-gray-100 overflow-hidden">
+                              <div className="relative">
+                                {/* Profile Image */}
+                                <div className="w-full h-80 relative overflow-hidden">
+                                  <img 
+                                    src={member.image} 
+                                    alt={member.alt}
+                                    className="w-full h-full object-cover"
+                                  />
+                                  {/* Overlay gradient */}
+                                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+                                </div>
+                                
+                                {/* Floating badge */}
+                                <div className={`absolute top-4 right-4 ${member.badgeColor} text-white px-4 py-2 rounded-full text-sm font-semibold shadow-lg`}>
+                                  {member.badge}
+                                </div>
+                              </div>
+                              
+                              <div className="p-8">
+                                <h3 className="text-3xl font-bold text-gray-900 mb-3 text-center">{member.name}</h3>
+                                <p className={`${member.subtitleColor} mb-6 text-lg font-semibold text-center`}>{member.subtitle}</p>
+                                
+                                <div className="space-y-4 text-gray-700 leading-relaxed">
+                                  {member.description.map((paragraph, index) => (
+                                    <p key={index}>{paragraph}</p>
+                                  ))}
+                                </div>
+                                
+                                {/* Stats */}
+                                <div className="grid grid-cols-3 gap-4 mt-8 pt-6 border-t border-gray-100">
+                                  {member.stats.map((stat, index) => (
+                                    <div key={index} className="text-center">
+                                      <div className={`text-2xl font-bold ${member.statsColor}`}>{stat.value}</div>
+                                      <div className="text-sm text-gray-600">{stat.label}</div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                      </div>
                     </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-primary-600">30+</div>
-                      <div className="text-sm text-gray-600">Courses Created</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-primary-600">500K+</div>
-                      <div className="text-sm text-gray-600">YouTube Views</div>
-                    </div>
-                  </div>
+                  ))}
                 </div>
               </div>
-              
-              {/* Blessing Adima */}
-              <div className="group bg-white rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 border border-gray-100 overflow-hidden">
-                <div className="relative">
-                  {/* Profile Image */}
-                  <div className="w-full h-80 relative overflow-hidden">
-                    <img 
-                      src="/img/blessingadima.jpg" 
-                      alt="Blessing Adima - Digital Marketing Expert"
-                      className="w-full h-full object-cover"
-                    />
-                    {/* Overlay gradient */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
-                  </div>
-                  
-                  {/* Floating badge */}
-                  <div className="absolute top-4 right-4 bg-secondary-600 text-white px-4 py-2 rounded-full text-sm font-semibold shadow-lg">
-                    Guest Facilitator
-                  </div>
-                </div>
-                
-                <div className="p-8">
-                  <h3 className="text-3xl font-bold text-gray-900 mb-3 text-center">Blessing Adima</h3>
-                  <p className="text-secondary-600 mb-6 text-lg font-semibold text-center">Digital Marketing Expert & Business Coach</p>
-                  
-                  <div className="space-y-4 text-gray-700 leading-relaxed">
-                    <p>
-                      Blessing Adima is a Digital Marketing Expert and Business Coach with over 3 years of experience helping 
-                      individuals and businesses harness the power of digital tools to grow, scale, and achieve measurable results.
-                    </p>
-                    <p>
-                      She is passionate about digital transformation and has trained thousands of entrepreneurs, business owners, 
-                      and professionals on how to leverage social media, online marketing, and digital strategies to attract 
-                      clients and increase revenue.
-                    </p>
-                    <p>
-                      Blessing specializes in social media marketing, online advertising, brand growth strategies, and digital 
-                      monetization, with a mission to equip people with the right skills to thrive in today's fast-paced digital economy.
-                    </p>
-                  </div>
-                  
-                  {/* Stats */}
-                  <div className="grid grid-cols-3 gap-4 mt-8 pt-6 border-t border-gray-100">
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-secondary-600">3+</div>
-                      <div className="text-sm text-gray-600">Years Experience</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-secondary-600">1000+</div>
-                      <div className="text-sm text-gray-600">Entrepreneurs Trained</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-secondary-600">100%</div>
-                      <div className="text-sm text-gray-600">Digital Focus</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              {/* John Ogechi */}
-              <div className="group bg-white rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 border border-gray-100 overflow-hidden">
-                <div className="relative">
-                  {/* Profile Image */}
-                  <div className="w-full h-80 relative overflow-hidden">
-                    <img 
-                      src="/img/ogechi.jpg" 
-                      alt="John Ogechi - Content Creator"
-                      className="w-full h-full object-cover"
-                    />
-                    {/* Overlay gradient */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
-                  </div>
-                  
-                  {/* Floating badge */}
-                  <div className="absolute top-4 right-4 bg-accent-600 text-white px-4 py-2 rounded-full text-sm font-semibold shadow-lg">
-                    Content Creator
-                  </div>
-                </div>
-                
-                <div className="p-8">
-                  <h3 className="text-3xl font-bold text-gray-900 mb-3 text-center">John Ogechi</h3>
-                  <p className="text-accent-600 mb-6 text-lg font-semibold text-center">Social Media Content Creator & Content Writer</p>
-                  
-                  <div className="space-y-4 text-gray-700 leading-relaxed">
-                    <p>
-                      John Ogechi is a social media content creator and content writer passionate about crafting engaging stories that connect with audiences.
-                    </p>
-                    <p>
-                      With 3 years of experience in e-Commerce product management and project coordination and 100% delivery rate, he brings creativity and strategy together to make ideas come alive.
-                    </p>
-                    <p>
-                      John specializes in creating compelling content that drives engagement, builds brand awareness, and converts audiences into loyal customers across various digital platforms.
-                    </p>
-                  </div>
-                  
-                  {/* Stats */}
-                  <div className="grid grid-cols-3 gap-4 mt-8 pt-6 border-t border-gray-100">
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-accent-600">3+</div>
-                      <div className="text-sm text-gray-600">Years Experience</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-accent-600">100%</div>
-                      <div className="text-sm text-gray-600">Delivery Rate</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-accent-600">∞</div>
-                      <div className="text-sm text-gray-600">Creative Ideas</div>
-                    </div>
-                  </div>
-                </div>
+
+              {/* Dots Indicator */}
+              <div className="flex justify-center mt-8 space-x-2">
+                {Array.from({ length: totalSlides }, (_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => goToSlide(index)}
+                    className={`w-3 h-3 rounded-full transition-all duration-200 ${
+                      index === currentSlide 
+                        ? 'bg-primary-600 scale-125' 
+                        : 'bg-gray-300 hover:bg-gray-400'
+                    }`}
+                    aria-label={`Go to slide ${index + 1}`}
+                  />
+                ))}
               </div>
             </div>
           </div>
