@@ -300,6 +300,60 @@ const About: React.FC = () => {
                   </div>
                 </div>
               </div>
+              
+              {/* John Ogechi */}
+              <div className="group bg-white rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 border border-gray-100 overflow-hidden">
+                <div className="relative">
+                  {/* Profile Image */}
+                  <div className="w-full h-80 relative overflow-hidden">
+                    <img 
+                      src="/img/ogechi.jpg" 
+                      alt="John Ogechi - Content Creator"
+                      className="w-full h-full object-cover"
+                    />
+                    {/* Overlay gradient */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+                  </div>
+                  
+                  {/* Floating badge */}
+                  <div className="absolute top-4 right-4 bg-accent-600 text-white px-4 py-2 rounded-full text-sm font-semibold shadow-lg">
+                    Content Creator
+                  </div>
+                </div>
+                
+                <div className="p-8">
+                  <h3 className="text-3xl font-bold text-gray-900 mb-3 text-center">John Ogechi</h3>
+                  <p className="text-accent-600 mb-6 text-lg font-semibold text-center">Social Media Content Creator & Content Writer</p>
+                  
+                  <div className="space-y-4 text-gray-700 leading-relaxed">
+                    <p>
+                      John Ogechi is a social media content creator and content writer passionate about crafting engaging stories that connect with audiences.
+                    </p>
+                    <p>
+                      With 3 years of experience in e-Commerce product management and project coordination and 100% delivery rate, he brings creativity and strategy together to make ideas come alive.
+                    </p>
+                    <p>
+                      John specializes in creating compelling content that drives engagement, builds brand awareness, and converts audiences into loyal customers across various digital platforms.
+                    </p>
+                  </div>
+                  
+                  {/* Stats */}
+                  <div className="grid grid-cols-3 gap-4 mt-8 pt-6 border-t border-gray-100">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-accent-600">3+</div>
+                      <div className="text-sm text-gray-600">Years Experience</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-accent-600">100%</div>
+                      <div className="text-sm text-gray-600">Delivery Rate</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-accent-600">∞</div>
+                      <div className="text-sm text-gray-600">Creative Ideas</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
