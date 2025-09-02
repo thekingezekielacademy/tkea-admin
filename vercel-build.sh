@@ -91,8 +91,11 @@ cd ..
 
 # Ensure images are copied to build directory
 echo "📁 Ensuring images are in build directory..."
+echo "Current directory: $(pwd)"
+echo "Checking for client/public/img..."
 if [ -d "client/public/img" ]; then
-    echo "✅ Source img directory exists"
+    echo "✅ Source img directory exists at client/public/img"
+    ls -la client/public/img/
     if [ -d "client/build/img" ]; then
         echo "✅ Build img directory exists"
         ls -la client/build/img/
@@ -101,24 +104,15 @@ if [ -d "client/public/img" ]; then
         mkdir -p client/build/img
         cp -r client/public/img/* client/build/img/
         echo "✅ Images copied to build directory"
+        ls -la client/build/img/
     fi
 else
-    echo "❌ Source img directory not found, checking current directory..."
-    pwd
-    ls -la
-    if [ -d "public/img" ]; then
-        echo "✅ Found img directory in public/"
-        if [ -d "build/img" ]; then
-            echo "✅ Build img directory exists"
-            ls -la build/img/
-        else
-            echo "❌ Build img directory missing, creating it..."
-            mkdir -p build/img
-            cp -r public/img/* build/img/
-            echo "✅ Images copied to build directory"
-        fi
+    echo "❌ client/public/img not found, checking client/public..."
+    if [ -d "client/public" ]; then
+        echo "✅ client/public exists, listing contents:"
+        ls -la client/public/
     else
-        echo "❌ No img directory found anywhere"
+        echo "❌ client/public not found"
     fi
 fi
 
