@@ -43,7 +43,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        token: paystackSubscriptionId, // Paystack expects 'token' not 'code'
+        code: paystackSubscriptionId, // Paystack expects 'code' parameter
       }),
     });
 

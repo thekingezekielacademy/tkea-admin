@@ -71,6 +71,8 @@ class SubscriptionService {
       // If backend API fails, try direct Paystack call as fallback
       // (This should be removed once backend is properly set up)
       console.warn('Backend API failed, trying direct Paystack call as fallback');
+      console.warn('Backend API response status:', response.status);
+      console.warn('Backend API response:', await response.text());
       return await this.cancelSubscriptionDirect(paystackSubscriptionId);
     } catch (error) {
       console.error('Error in subscription service:', error);
@@ -97,7 +99,7 @@ class SubscriptionService {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          token: paystackSubscriptionId, // Paystack expects 'token' not 'code'
+          code: paystackSubscriptionId, // Paystack expects 'code' parameter
         }),
       });
 
