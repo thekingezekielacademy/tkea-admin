@@ -103,7 +103,23 @@ if [ -d "client/public/img" ]; then
         echo "✅ Images copied to build directory"
     fi
 else
-    echo "❌ Source img directory not found"
+    echo "❌ Source img directory not found, checking current directory..."
+    pwd
+    ls -la
+    if [ -d "public/img" ]; then
+        echo "✅ Found img directory in public/"
+        if [ -d "build/img" ]; then
+            echo "✅ Build img directory exists"
+            ls -la build/img/
+        else
+            echo "❌ Build img directory missing, creating it..."
+            mkdir -p build/img
+            cp -r public/img/* build/img/
+            echo "✅ Images copied to build directory"
+        fi
+    else
+        echo "❌ No img directory found anywhere"
+    fi
 fi
 
 echo "✅ Build completed!"
