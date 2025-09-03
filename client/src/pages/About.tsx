@@ -17,7 +17,7 @@ const About: React.FC = () => {
       badgeColor: "bg-primary-600",
       subtitle: "Digital Marketing Expert & Business Coach",
       subtitleColor: "text-primary-600",
-      image: "/img/kingezekiel.jpg",
+      image: "/img/kingezekiel.jpg?v=1.0.2",
       alt: "King Ezekiel - CEO & Founder",
       description: [
         "King Ezekiel is a seasoned digital marketing expert and business coach with over 5 years of experience in the industry. He has helped thousands of entrepreneurs and businesses scale their operations through effective digital strategies.",
@@ -39,7 +39,7 @@ const About: React.FC = () => {
       badgeColor: "bg-secondary-600",
       subtitle: "Digital Marketing Expert & Business Coach",
       subtitleColor: "text-secondary-600",
-      image: "/img/blessingadima.jpg",
+      image: "/img/blessingadima.jpg?v=1.0.2",
       alt: "Blessing Adima - Digital Marketing Expert",
       description: [
         "Blessing Adima is a Digital Marketing Expert and Business Coach with over 3 years of experience helping individuals and businesses harness the power of digital tools to grow, scale, and achieve measurable results.",
@@ -61,7 +61,7 @@ const About: React.FC = () => {
       badgeColor: "bg-accent-600",
       subtitle: "Social Media Content Creator & Content Writer",
       subtitleColor: "text-accent-600",
-      image: "/img/ogechi.jpg",
+      image: "/img/ogechi.jpg?v=1.0.2",
       alt: "John Ogechi - Content Creator",
       description: [
         "John Ogechi is a social media content creator and content writer passionate about crafting engaging stories that connect with audiences.",
@@ -342,6 +342,22 @@ const About: React.FC = () => {
                                     src={member.image} 
                                     alt={member.alt}
                                     className="w-full h-full object-cover"
+                                    loading="eager"
+                                    decoding="async"
+                                    crossOrigin="anonymous"
+                                    style={{
+                                      imageRendering: 'auto',
+                                      WebkitImageRendering: 'auto'
+                                    }}
+                                    onError={(e) => {
+                                      console.log('Image failed to load:', member.image);
+                                      // Try with cache busting
+                                      const originalSrc = member.image.split('?')[0];
+                                      e.currentTarget.src = originalSrc + '?t=' + Date.now() + '&retry=1';
+                                    }}
+                                    onLoad={() => {
+                                      console.log('Image loaded successfully:', member.image);
+                                    }}
                                   />
                                   {/* Overlay gradient */}
                                   <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>

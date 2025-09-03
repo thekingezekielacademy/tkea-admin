@@ -9,12 +9,12 @@
  * - Background sync
  */
 
-const CACHE_NAME = 'king-ezekiel-academy-v1.0.1';
-const STATIC_CACHE = 'static-cache-v2';
-const DYNAMIC_CACHE = 'dynamic-cache-v2';
+const CACHE_NAME = 'king-ezekiel-academy-v1.0.2';
+const STATIC_CACHE = 'static-cache-v3';
+const DYNAMIC_CACHE = 'dynamic-cache-v3';
 
 // Add cache versioning
-const CACHE_VERSION = '1.0.1';
+const CACHE_VERSION = '1.0.2';
 const STATIC_CACHE_VERSIONED = `${STATIC_CACHE}-${CACHE_VERSION}`;
 const DYNAMIC_CACHE_VERSIONED = `${DYNAMIC_CACHE}-${CACHE_VERSION}`;
 
