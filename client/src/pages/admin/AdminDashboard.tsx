@@ -54,137 +54,200 @@ const AdminDashboard: React.FC = () => {
         .from('profiles')
         .select('*', { count: 'exact', head: true });
 
-      if (usersError) throw usersError;
+      if (usersError) {
+        console.warn('Error fetching total users:', usersError);
+      }
 
       // Fetch total courses count
       const { count: totalCourses, error: coursesError } = await supabase
         .from('courses')
         .select('*', { count: 'exact', head: true });
 
-      if (coursesError) throw coursesError;
+      if (coursesError) {
+        console.warn('Error fetching total courses:', coursesError);
+      }
 
       // Fetch total lessons count
       const { count: totalLessons, error: lessonsError } = await supabase
         .from('lessons')
         .select('*', { count: 'exact', head: true });
 
-      if (lessonsError) throw lessonsError;
+      if (lessonsError) {
+        console.warn('Error fetching total lessons:', lessonsError);
+      }
 
       // Fetch active users (users with activity in last 30 days)
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
       
-      const { count: activeUsers, error: activeUsersError } = await supabase
-        .from('profiles')
-        .select('*', { count: 'exact', head: true })
-        .gte('last_activity_date', thirtyDaysAgo.toISOString().split('T')[0]);
+      let activeUsers = totalUsers || 0; // Default to total users if query fails
+      try {
+        const { count, error: activeUsersError } = await supabase
+          .from('profiles')
+          .select('*', { count: 'exact', head: true })
+          .gte('last_activity_date', thirtyDaysAgo.toISOString().split('T')[0]);
 
-      if (activeUsersError) throw activeUsersError;
+        if (activeUsersError) {
+          console.warn('Error fetching active users (column may not exist):', activeUsersError);
+        } else {
+          activeUsers = count || 0;
+        }
+      } catch (err) {
+        console.warn('Error fetching active users:', err);
+      }
 
       // Fetch subscribed users count
-      const { count: subscribedUsers, error: subscribedError } = await supabase
-        .from('user_subscriptions')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'active');
-
-      if (subscribedError) throw subscribedError;
+      let subscribedUsers = 0;
+      try {
+        const { count, error: subscribedError } = await supabase
+          .from('user_subscriptions')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'active');
+        
+        if (subscribedError) {
+          console.warn('Error fetching subscribed users:', subscribedError);
+        } else {
+          subscribedUsers = count || 0;
+        }
+      } catch (err) {
+        console.warn('Table user_subscriptions may not exist:', err);
+      }
 
       // Fetch subscription growth (compare current month vs last month)
       const currentMonth = new Date();
       const lastMonth = new Date();
       lastMonth.setMonth(lastMonth.getMonth() - 1);
       
-      const { count: currentMonthSubs, error: currentSubsError } = await supabase
-        .from('user_subscriptions')
-        .select('*', { count: 'exact', head: true })
-        .gte('created_at', new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).toISOString());
+      let subscriptionGrowth = 0;
+      try {
+        const { count: currentMonthSubs, error: currentSubsError } = await supabase
+          .from('user_subscriptions')
+          .select('*', { count: 'exact', head: true })
+          .gte('created_at', new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).toISOString());
 
-      const { count: lastMonthSubs, error: lastSubsError } = await supabase
-        .from('user_subscriptions')
-        .select('*', { count: 'exact', head: true })
-        .gte('created_at', new Date(lastMonth.getFullYear(), lastMonth.getMonth(), 1).toISOString())
-        .lt('created_at', new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).toISOString());
+        const { count: lastMonthSubs, error: lastSubsError } = await supabase
+          .from('user_subscriptions')
+          .select('*', { count: 'exact', head: true })
+          .gte('created_at', new Date(lastMonth.getFullYear(), lastMonth.getMonth(), 1).toISOString())
+          .lt('created_at', new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).toISOString());
 
-      if (currentSubsError || lastSubsError) throw currentSubsError || lastSubsError;
-
-      const subscriptionGrowth = lastMonthSubs > 0 
-        ? ((currentMonthSubs - lastMonthSubs) / lastMonthSubs) * 100 
-        : currentMonthSubs > 0 ? 100 : 0;
+        if (currentSubsError || lastSubsError) {
+          console.warn('Error fetching subscription growth:', currentSubsError || lastSubsError);
+        } else {
+          subscriptionGrowth = lastMonthSubs > 0 
+            ? ((currentMonthSubs - lastMonthSubs) / lastMonthSubs) * 100 
+            : currentMonthSubs > 0 ? 100 : 0;
+        }
+      } catch (err) {
+        console.warn('Error calculating subscription growth:', err);
+      }
 
       // Fetch monthly enrollments
-      const { count: monthlyEnrollments, error: enrollmentsError } = await supabase
-        .from('user_courses')
-        .select('*', { count: 'exact', head: true })
-        .gte('enrolled_at', new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).toISOString());
+      let monthlyEnrollments = 0;
+      let enrollmentGrowth = 0;
+      try {
+        const { count, error: enrollmentsError } = await supabase
+          .from('user_courses')
+          .select('*', { count: 'exact', head: true })
+          .gte('created_at', new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).toISOString());
 
-      if (enrollmentsError) throw enrollmentsError;
+        if (enrollmentsError) {
+          console.warn('Error fetching monthly enrollments:', enrollmentsError);
+        } else {
+          monthlyEnrollments = count || 0;
+        }
 
-      // Fetch enrollment growth
-      const { count: lastMonthEnrollments, error: lastEnrollmentsError } = await supabase
-        .from('user_courses')
-        .select('*', { count: 'exact', head: true })
-        .gte('enrolled_at', new Date(lastMonth.getFullYear(), lastMonth.getMonth(), 1).toISOString())
-        .lt('enrolled_at', new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).toISOString());
+        // Fetch enrollment growth
+        const { count: lastMonthEnrollments, error: lastEnrollmentsError } = await supabase
+          .from('user_courses')
+          .select('*', { count: 'exact', head: true })
+          .gte('created_at', new Date(lastMonth.getFullYear(), lastMonth.getMonth(), 1).toISOString())
+          .lt('created_at', new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).toISOString());
 
-      if (lastEnrollmentsError) throw lastEnrollmentsError;
-
-      const enrollmentGrowth = lastMonthEnrollments > 0 
-        ? ((monthlyEnrollments - lastMonthEnrollments) / lastMonthEnrollments) * 100 
-        : monthlyEnrollments > 0 ? 100 : 0;
+        if (lastEnrollmentsError) {
+          console.warn('Error fetching enrollment growth:', lastEnrollmentsError);
+        } else {
+          enrollmentGrowth = lastMonthEnrollments > 0 
+            ? ((monthlyEnrollments - lastMonthEnrollments) / lastMonthEnrollments) * 100 
+            : monthlyEnrollments > 0 ? 100 : 0;
+        }
+      } catch (err) {
+        console.warn('Table user_courses may not exist:', err);
+      }
 
       // Fetch completion rate
-      const { count: completedCourses, error: completedError } = await supabase
-        .from('user_courses')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'completed');
+      let completionRate = 0;
+      let averageProgress = 0;
+      try {
+        const { count: completedCourses, error: completedError } = await supabase
+          .from('user_courses')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'completed');
 
-      if (completedError) throw completedError;
+        if (completedError) {
+          console.warn('Error fetching completed courses:', completedError);
+        } else {
+          completionRate = monthlyEnrollments > 0 
+            ? (completedCourses / monthlyEnrollments) * 100 
+            : 0;
+        }
 
-      const completionRate = monthlyEnrollments > 0 
-        ? (completedCourses / monthlyEnrollments) * 100 
-        : 0;
+        // Fetch average progress
+        const { data: progressData, error: progressError } = await supabase
+          .from('user_courses')
+          .select('progress_percentage');
 
-      // Fetch average progress
-      const { data: progressData, error: progressError } = await supabase
-        .from('user_courses')
-        .select('progress_percentage');
-
-      if (progressError) throw progressError;
-
-      const averageProgress = progressData && progressData.length > 0
-        ? progressData.reduce((sum, course) => sum + (course.progress_percentage || 0), 0) / progressData.length
-        : 0;
+        if (progressError) {
+          console.warn('Error fetching progress data:', progressError);
+        } else {
+          averageProgress = progressData && progressData.length > 0
+            ? progressData.reduce((sum, course) => sum + (course.progress_percentage || 0), 0) / progressData.length
+            : 0;
+        }
+      } catch (err) {
+        console.warn('Error fetching completion and progress data:', err);
+      }
 
       // Fetch revenue this month
-      const { data: paymentsData, error: paymentsError } = await supabase
-        .from('subscription_payments')
-        .select('amount')
-        .eq('status', 'success')
-        .gte('paid_at', new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).toISOString());
+      let revenueThisMonth = 0;
+      let revenueGrowth = 0;
+      try {
+        const { data: paymentsData, error: paymentsError } = await supabase
+          .from('subscription_payments')
+          .select('amount')
+          .eq('status', 'success')
+          .gte('paid_at', new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).toISOString());
 
-      if (paymentsError) throw paymentsError;
+        if (paymentsError) {
+          console.warn('Error fetching payments data:', paymentsError);
+        } else {
+          revenueThisMonth = paymentsData 
+            ? paymentsData.reduce((sum, payment) => sum + (payment.amount || 0), 0) / 100 // Convert from kobo to NGN
+            : 0;
+        }
 
-      const revenueThisMonth = paymentsData 
-        ? paymentsData.reduce((sum, payment) => sum + (payment.amount || 0), 0) / 100 // Convert from kobo to NGN
-        : 0;
+        // Fetch revenue growth
+        const { data: lastMonthPayments, error: lastPaymentsError } = await supabase
+          .from('subscription_payments')
+          .select('amount')
+          .eq('status', 'success')
+          .gte('paid_at', new Date(lastMonth.getFullYear(), lastMonth.getMonth(), 1).toISOString())
+          .lt('paid_at', new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).toISOString());
 
-      // Fetch revenue growth
-      const { data: lastMonthPayments, error: lastPaymentsError } = await supabase
-        .from('subscription_payments')
-        .select('amount')
-        .eq('status', 'success')
-        .gte('paid_at', new Date(lastMonth.getFullYear(), lastMonth.getMonth(), 1).toISOString())
-        .lt('paid_at', new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).toISOString());
+        if (lastPaymentsError) {
+          console.warn('Error fetching last month payments:', lastPaymentsError);
+        } else {
+          const lastMonthRevenue = lastMonthPayments 
+            ? lastMonthPayments.reduce((sum, payment) => sum + (payment.amount || 0), 0) / 100
+            : 0;
 
-      if (lastPaymentsError) throw lastPaymentsError;
-
-      const lastMonthRevenue = lastMonthPayments 
-        ? lastMonthPayments.reduce((sum, payment) => sum + (payment.amount || 0), 0) / 100
-        : 0;
-
-      const revenueGrowth = lastMonthRevenue > 0 
-        ? ((revenueThisMonth - lastMonthRevenue) / lastMonthRevenue) * 100 
-        : revenueThisMonth > 0 ? 100 : 0;
+          revenueGrowth = lastMonthRevenue > 0 
+            ? ((revenueThisMonth - lastMonthRevenue) / lastMonthRevenue) * 100 
+            : revenueThisMonth > 0 ? 100 : 0;
+        }
+      } catch (err) {
+        console.warn('Table subscription_payments may not exist:', err);
+      }
 
       setStats({
         totalUsers: totalUsers || 0,
@@ -202,7 +265,7 @@ const AdminDashboard: React.FC = () => {
       });
     } catch (err) {
       console.error('Error fetching dashboard stats:', err);
-      setError('Failed to load dashboard statistics');
+      setError('Some dashboard statistics could not be loaded. This may be due to missing database tables. Basic statistics are still available.');
     } finally {
       setLoading(false);
     }
