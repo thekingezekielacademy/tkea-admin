@@ -89,31 +89,7 @@ echo "🔨 Building React app..."
 cd client && npm run build
 cd ..
 
-# Ensure images are copied to build directory
-echo "📁 Ensuring images are in build directory..."
-echo "Current directory: $(pwd)"
-echo "Checking for client/public/img..."
-if [ -d "client/public/img" ]; then
-    echo "✅ Source img directory exists at client/public/img"
-    ls -la client/public/img/
-    if [ -d "client/build/img" ]; then
-        echo "✅ Build img directory exists"
-        ls -la client/build/img/
-    else
-        echo "❌ Build img directory missing, creating it..."
-        mkdir -p client/build/img
-        cp -r client/public/img/* client/build/img/
-        echo "✅ Images copied to build directory"
-        ls -la client/build/img/
-    fi
-else
-    echo "❌ client/public/img not found, checking client/public..."
-    if [ -d "client/public" ]; then
-        echo "✅ client/public exists, listing contents:"
-        ls -la client/public/
-    else
-        echo "❌ client/public not found"
-    fi
-fi
+# Images are now properly committed to git and will be available in the build
+echo "✅ Images are committed to git and will be available in the build"
 
 echo "✅ Build completed!"
