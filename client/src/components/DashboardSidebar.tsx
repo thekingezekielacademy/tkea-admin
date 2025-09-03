@@ -70,10 +70,10 @@ const DashboardSidebar: React.FC = () => {
       path: '/achievements'
     },
     {
-      id: 'levels',
-      label: 'Levels',
+      id: 'diploma',
+      label: 'Diploma',
       icon: <FaStar className="w-5 h-5" />,
-      path: '/levels'
+      path: '/diploma'
     },
     {
       id: 'certificates',

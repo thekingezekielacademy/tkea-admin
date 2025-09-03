@@ -77,7 +77,21 @@ const About: React.FC = () => {
     }
   ];
 
-  const totalSlides = Math.ceil(teamMembers.length / 2); // 2 members per slide
+  // Responsive slides: 1 on mobile, 2 on desktop
+  const [isMobile, setIsMobile] = useState(false);
+  
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 1024); // lg breakpoint
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+  
+  const membersPerSlide = isMobile ? 1 : 2;
+  const totalSlides = Math.ceil(teamMembers.length / membersPerSlide);
 
   // Auto-play functionality
   useEffect(() => {
@@ -316,9 +330,9 @@ const About: React.FC = () => {
                   {/* Generate slides dynamically */}
                   {Array.from({ length: totalSlides }, (_, slideIndex) => (
                     <div key={slideIndex} className="w-full flex-shrink-0">
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 px-4">
+                      <div className={`grid gap-12 px-4 ${isMobile ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-2'}`}>
                         {teamMembers
-                          .slice(slideIndex * 2, slideIndex * 2 + 2)
+                          .slice(slideIndex * membersPerSlide, slideIndex * membersPerSlide + membersPerSlide)
                           .map((member) => (
                             <div key={member.id} className="group bg-white rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 border border-gray-100 overflow-hidden">
                               <div className="relative">

@@ -40,7 +40,7 @@ import Blog from './pages/Blog';
 import BlogPost from './pages/BlogPost';
 import Privacy from './pages/Privacy';
 import Terms from './pages/Terms';
-import Levels from './pages/Levels';
+import Diploma from './pages/Diploma';
 import Certificates from './pages/Certificates';
 import Assessments from './pages/Assessments';
 import Resume from './pages/Resume';
@@ -93,7 +93,7 @@ function App() {
               <Route path="/subscription" element={<ProtectedRoute><Subscription /></ProtectedRoute>} />
               <Route path="/payment/verify" element={<PaymentVerification />} />
               <Route path="/achievements" element={<ProtectedRoute><Achievements /></ProtectedRoute>} />
-              <Route path="/levels" element={<ProtectedRoute><Levels /></ProtectedRoute>} />
+              <Route path="/diploma" element={<ProtectedRoute><Diploma /></ProtectedRoute>} />
               <Route path="/certificates" element={<ProtectedRoute><Certificates /></ProtectedRoute>} />
               <Route path="/assessments" element={<ProtectedRoute><Assessments /></ProtectedRoute>} />
               <Route path="/resume" element={<ProtectedRoute><Resume /></ProtectedRoute>} />

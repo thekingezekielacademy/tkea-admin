@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 40" width="32" height="32">
+  <!-- Background circle for favicon -->
+  <circle cx="20" cy="20" r="18" fill="#1e3a8a" stroke="#1e40af" stroke-width="2"/>
+  
+  <!-- Letter K -->
+  <path d="M8 6 L8 34 L12 34 L20 22 L28 34 L32 34 L22 20 L32 6 L28 6 L20 18 L12 6 Z" fill="white"/>
+  
+  <!-- Letter E (stylized with bars) -->
+  <rect x="36" y="6" width="16" height="4" fill="white"/>
+  <rect x="36" y="16" width="10" height="4" fill="white"/>
+  <rect x="36" y="26" width="16" height="4" fill="white"/>
+  
+  <!-- Letter A -->
+  <path d="M58 34 L66 6 L70 6 L78 34 L74 34 L72 28 L60 28 L58 34 Z M62 24 L70 24 L66 10 L62 24 Z" fill="white"/>
+</svg>
