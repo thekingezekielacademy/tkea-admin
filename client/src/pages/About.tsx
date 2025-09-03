@@ -346,9 +346,8 @@ const About: React.FC = () => {
                                     decoding="async"
                                     crossOrigin="anonymous"
                                     style={{
-                                      imageRendering: 'auto',
-                                      WebkitImageRendering: 'auto'
-                                    }}
+                                      imageRendering: 'auto'
+                                    } as React.CSSProperties}
                                     onError={(e) => {
                                       console.log('Image failed to load:', member.image);
                                       // Try with cache busting
