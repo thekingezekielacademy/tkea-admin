@@ -134,9 +134,19 @@ const AdminDashboard: React.FC = () => {
         if (currentSubsError || lastSubsError) {
           console.warn('Error fetching subscription growth:', currentSubsError || lastSubsError);
         } else {
-          subscriptionGrowth = lastMonthSubs > 0 
-            ? ((currentMonthSubs - lastMonthSubs) / lastMonthSubs) * 100 
-            : currentMonthSubs > 0 ? 100 : 0;
+          // Calculate subscription growth with proper validation
+          if (lastMonthSubs > 0) {
+            subscriptionGrowth = ((currentMonthSubs - lastMonthSubs) / lastMonthSubs) * 100;
+          } else if (currentMonthSubs > 0) {
+            subscriptionGrowth = 100; // 100% growth from 0 to current amount
+          } else {
+            subscriptionGrowth = 0; // No growth if both are 0
+          }
+
+          // Ensure the result is a valid number
+          if (isNaN(subscriptionGrowth) || !isFinite(subscriptionGrowth)) {
+            subscriptionGrowth = 0;
+          }
         }
       } catch (err) {
         console.warn('Error calculating subscription growth:', err);
@@ -167,9 +177,19 @@ const AdminDashboard: React.FC = () => {
         if (lastEnrollmentsError) {
           console.warn('Error fetching enrollment growth:', lastEnrollmentsError);
         } else {
-          enrollmentGrowth = lastMonthEnrollments > 0 
-            ? ((monthlyEnrollments - lastMonthEnrollments) / lastMonthEnrollments) * 100 
-            : monthlyEnrollments > 0 ? 100 : 0;
+          // Calculate enrollment growth with proper validation
+          if (lastMonthEnrollments > 0) {
+            enrollmentGrowth = ((monthlyEnrollments - lastMonthEnrollments) / lastMonthEnrollments) * 100;
+          } else if (monthlyEnrollments > 0) {
+            enrollmentGrowth = 100; // 100% growth from 0 to current amount
+          } else {
+            enrollmentGrowth = 0; // No growth if both are 0
+          }
+
+          // Ensure the result is a valid number
+          if (isNaN(enrollmentGrowth) || !isFinite(enrollmentGrowth)) {
+            enrollmentGrowth = 0;
+          }
         }
       } catch (err) {
         console.warn('Table user_courses may not exist:', err);
@@ -187,9 +207,17 @@ const AdminDashboard: React.FC = () => {
         if (completedError) {
           console.warn('Error fetching completed courses:', completedError);
         } else {
-          completionRate = monthlyEnrollments > 0 
-            ? (completedCourses / monthlyEnrollments) * 100 
-            : 0;
+          // Calculate completion rate with proper validation
+          if (monthlyEnrollments > 0) {
+            completionRate = (completedCourses / monthlyEnrollments) * 100;
+          } else {
+            completionRate = 0;
+          }
+
+          // Ensure the result is a valid number
+          if (isNaN(completionRate) || !isFinite(completionRate)) {
+            completionRate = 0;
+          }
         }
 
         // Fetch average progress
@@ -200,9 +228,21 @@ const AdminDashboard: React.FC = () => {
         if (progressError) {
           console.warn('Error fetching progress data:', progressError);
         } else {
-          averageProgress = progressData && progressData.length > 0
-            ? progressData.reduce((sum, course) => sum + (course.progress_percentage || 0), 0) / progressData.length
-            : 0;
+          // Calculate average progress with proper validation
+          if (progressData && progressData.length > 0) {
+            const totalProgress = progressData.reduce((sum, course) => {
+              const progress = course.progress_percentage || 0;
+              return sum + (isNaN(progress) ? 0 : progress);
+            }, 0);
+            averageProgress = totalProgress / progressData.length;
+          } else {
+            averageProgress = 0;
+          }
+
+          // Ensure the result is a valid number
+          if (isNaN(averageProgress) || !isFinite(averageProgress)) {
+            averageProgress = 0;
+          }
         }
       } catch (err) {
         console.warn('Error fetching completion and progress data:', err);
@@ -241,9 +281,19 @@ const AdminDashboard: React.FC = () => {
             ? lastMonthPayments.reduce((sum, payment) => sum + (payment.amount || 0), 0) / 100
             : 0;
 
-          revenueGrowth = lastMonthRevenue > 0 
-            ? ((revenueThisMonth - lastMonthRevenue) / lastMonthRevenue) * 100 
-            : revenueThisMonth > 0 ? 100 : 0;
+          // Calculate revenue growth with proper validation
+          if (lastMonthRevenue > 0) {
+            revenueGrowth = ((revenueThisMonth - lastMonthRevenue) / lastMonthRevenue) * 100;
+          } else if (revenueThisMonth > 0) {
+            revenueGrowth = 100; // 100% growth from 0 to current amount
+          } else {
+            revenueGrowth = 0; // No growth if both are 0
+          }
+
+          // Ensure the result is a valid number
+          if (isNaN(revenueGrowth) || !isFinite(revenueGrowth)) {
+            revenueGrowth = 0;
+          }
         }
       } catch (err) {
         console.warn('Table subscription_payments may not exist:', err);
