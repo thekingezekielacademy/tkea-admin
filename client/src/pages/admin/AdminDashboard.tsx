@@ -70,33 +70,135 @@ const AdminDashboard: React.FC = () => {
 
       if (lessonsError) throw lessonsError;
 
-      // For now, set active users as total users (you can modify this logic)
-      const activeUsers = totalUsers || 0;
+      // Fetch active users (users with activity in last 30 days)
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      
+      const { count: activeUsers, error: activeUsersError } = await supabase
+        .from('profiles')
+        .select('*', { count: 'exact', head: true })
+        .gte('last_activity_date', thirtyDaysAgo.toISOString().split('T')[0]);
 
-      // Mock analytics data - in real app, these would come from your database
-      // You can replace these with actual database queries
-      const subscribedUsers = Math.floor((totalUsers || 0) * 0.35); // 35% subscription rate
-      const subscriptionGrowth = 12.5; // 12.5% increase from last month
-      const monthlyEnrollments = Math.floor((totalUsers || 0) * 0.28); // 28% enrollment rate
-      const enrollmentGrowth = 8.3; // 8.3% increase from last month
-      const completionRate = 67.2; // 67.2% completion rate
-      const averageProgress = 73.8; // 73.8% average progress
-      const revenueThisMonth = subscribedUsers * 2500; // ₦2,500 per subscription
-      const revenueGrowth = 15.7; // 15.7% increase from last month
+      if (activeUsersError) throw activeUsersError;
+
+      // Fetch subscribed users count
+      const { count: subscribedUsers, error: subscribedError } = await supabase
+        .from('user_subscriptions')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'active');
+
+      if (subscribedError) throw subscribedError;
+
+      // Fetch subscription growth (compare current month vs last month)
+      const currentMonth = new Date();
+      const lastMonth = new Date();
+      lastMonth.setMonth(lastMonth.getMonth() - 1);
+      
+      const { count: currentMonthSubs, error: currentSubsError } = await supabase
+        .from('user_subscriptions')
+        .select('*', { count: 'exact', head: true })
+        .gte('created_at', new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).toISOString());
+
+      const { count: lastMonthSubs, error: lastSubsError } = await supabase
+        .from('user_subscriptions')
+        .select('*', { count: 'exact', head: true })
+        .gte('created_at', new Date(lastMonth.getFullYear(), lastMonth.getMonth(), 1).toISOString())
+        .lt('created_at', new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).toISOString());
+
+      if (currentSubsError || lastSubsError) throw currentSubsError || lastSubsError;
+
+      const subscriptionGrowth = lastMonthSubs > 0 
+        ? ((currentMonthSubs - lastMonthSubs) / lastMonthSubs) * 100 
+        : currentMonthSubs > 0 ? 100 : 0;
+
+      // Fetch monthly enrollments
+      const { count: monthlyEnrollments, error: enrollmentsError } = await supabase
+        .from('user_courses')
+        .select('*', { count: 'exact', head: true })
+        .gte('enrolled_at', new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).toISOString());
+
+      if (enrollmentsError) throw enrollmentsError;
+
+      // Fetch enrollment growth
+      const { count: lastMonthEnrollments, error: lastEnrollmentsError } = await supabase
+        .from('user_courses')
+        .select('*', { count: 'exact', head: true })
+        .gte('enrolled_at', new Date(lastMonth.getFullYear(), lastMonth.getMonth(), 1).toISOString())
+        .lt('enrolled_at', new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).toISOString());
+
+      if (lastEnrollmentsError) throw lastEnrollmentsError;
+
+      const enrollmentGrowth = lastMonthEnrollments > 0 
+        ? ((monthlyEnrollments - lastMonthEnrollments) / lastMonthEnrollments) * 100 
+        : monthlyEnrollments > 0 ? 100 : 0;
+
+      // Fetch completion rate
+      const { count: completedCourses, error: completedError } = await supabase
+        .from('user_courses')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'completed');
+
+      if (completedError) throw completedError;
+
+      const completionRate = monthlyEnrollments > 0 
+        ? (completedCourses / monthlyEnrollments) * 100 
+        : 0;
+
+      // Fetch average progress
+      const { data: progressData, error: progressError } = await supabase
+        .from('user_courses')
+        .select('progress_percentage');
+
+      if (progressError) throw progressError;
+
+      const averageProgress = progressData && progressData.length > 0
+        ? progressData.reduce((sum, course) => sum + (course.progress_percentage || 0), 0) / progressData.length
+        : 0;
+
+      // Fetch revenue this month
+      const { data: paymentsData, error: paymentsError } = await supabase
+        .from('subscription_payments')
+        .select('amount')
+        .eq('status', 'success')
+        .gte('paid_at', new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).toISOString());
+
+      if (paymentsError) throw paymentsError;
+
+      const revenueThisMonth = paymentsData 
+        ? paymentsData.reduce((sum, payment) => sum + (payment.amount || 0), 0) / 100 // Convert from kobo to NGN
+        : 0;
+
+      // Fetch revenue growth
+      const { data: lastMonthPayments, error: lastPaymentsError } = await supabase
+        .from('subscription_payments')
+        .select('amount')
+        .eq('status', 'success')
+        .gte('paid_at', new Date(lastMonth.getFullYear(), lastMonth.getMonth(), 1).toISOString())
+        .lt('paid_at', new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).toISOString());
+
+      if (lastPaymentsError) throw lastPaymentsError;
+
+      const lastMonthRevenue = lastMonthPayments 
+        ? lastMonthPayments.reduce((sum, payment) => sum + (payment.amount || 0), 0) / 100
+        : 0;
+
+      const revenueGrowth = lastMonthRevenue > 0 
+        ? ((revenueThisMonth - lastMonthRevenue) / lastMonthRevenue) * 100 
+        : revenueThisMonth > 0 ? 100 : 0;
 
       setStats({
         totalUsers: totalUsers || 0,
         totalCourses: totalCourses || 0,
         totalLessons: totalLessons || 0,
-        activeUsers,
-        subscribedUsers,
-        subscriptionGrowth,
-        monthlyEnrollments,
-        enrollmentGrowth,
-        completionRate,
-        averageProgress,
-        revenueThisMonth,
-        revenueGrowth
+        activeUsers: activeUsers || 0,
+        subscribedUsers: subscribedUsers || 0,
+        subscriptionGrowth: Math.round(subscriptionGrowth * 10) / 10, // Round to 1 decimal
+        monthlyEnrollments: monthlyEnrollments || 0,
+        enrollmentGrowth: Math.round(enrollmentGrowth * 10) / 10,
+        completionRate: Math.round(completionRate * 10) / 10,
+        averageProgress: Math.round(averageProgress * 10) / 10,
+        revenueThisMonth: Math.round(revenueThisMonth),
+        revenueGrowth: Math.round(revenueGrowth * 10) / 10
       });
     } catch (err) {
       console.error('Error fetching dashboard stats:', err);
@@ -374,7 +476,7 @@ const AdminDashboard: React.FC = () => {
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">User Growth</span>
                   <div className="flex items-center">
-                    <span className="text-sm font-medium text-green-600">+{Math.round((stats.totalUsers * 0.15))}</span>
+                    <span className="text-sm font-medium text-green-600">+{stats.monthlyEnrollments}</span>
                     <svg className="w-4 h-4 ml-1 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
                     </svg>
@@ -383,7 +485,7 @@ const AdminDashboard: React.FC = () => {
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">Course Growth</span>
                   <div className="flex items-center">
-                    <span className="text-sm font-medium text-green-600">+{Math.round((stats.totalCourses * 0.25))}</span>
+                    <span className="text-sm font-medium text-green-600">+{stats.enrollmentGrowth}%</span>
                     <svg className="w-4 h-4 ml-1 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
                     </svg>
