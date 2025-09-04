@@ -120,7 +120,7 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
             width: '100%',
             height: '100%',
             playerVars: {
-              autoplay: autoplay ? 1 : 0,
+              autoplay: 0, // Disable autoplay on mobile to prevent issues
               controls: 0,
               modestbranding: 1,
               rel: 0,
@@ -130,7 +130,8 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
               fs: 0,
               disablekb: 1,
               playsinline: 1,
-              origin: window.location.origin
+              origin: window.location.origin,
+              enablejsapi: 1
             },
             events: {
               onReady: (event: any) => {
@@ -148,6 +149,11 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
                     // Keep default speeds
                   }
                 }
+                
+                // Debug mobile playback
+                console.log('Mobile device detected:', /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
+                console.log('Video ID:', videoId);
+                console.log('Player instance:', playerRef.current);
               },
               onStateChange: (event: any) => {
                 // YouTube player state: -1 (unstarted), 0 (ended), 1 (playing), 2 (paused), 3 (buffering), 5 (video cued)
@@ -454,21 +460,6 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
           hoverTimeoutRef.current = setTimeout(() => {
             setIsHovered(false);
           }, 3000); // 3 seconds for touch devices (mobile users need more time)
-        }}
-        onClick={() => {
-          // Toggle controls on tap for mobile users
-          if (window.innerWidth <= 768) {
-            if (hoverTimeoutRef.current) {
-              clearTimeout(hoverTimeoutRef.current);
-            }
-            setIsHovered(!isHovered);
-            if (isHovered) {
-              // If controls are visible, hide them after 3 seconds
-              hoverTimeoutRef.current = setTimeout(() => {
-                setIsHovered(false);
-              }, 3000);
-            }
-          }
         }}
       >
         <div className="relative w-full" style={{ paddingTop: '56.25%', position: 'relative', overflow: 'hidden' }}>
