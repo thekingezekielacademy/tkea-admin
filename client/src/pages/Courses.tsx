@@ -281,8 +281,11 @@ const Courses: React.FC = () => {
       if (selectedSort === 'latest' || selectedSort === 'most-enrolled') {
         // For latest and most-enrolled, limit to 10 courses total
         query = query.limit(10);
+      } else if (selectedCategory !== 'all' || selectedLevel !== 'all') {
+        // For filtered results (category or level), show all courses in that filter
+        // No pagination limit - show all matching courses
       } else {
-        // For all courses, use pagination
+        // For all courses (no filters), use pagination
         query = query.range(page * COURSES_PER_PAGE, (page + 1) * COURSES_PER_PAGE - 1);
       }
 
@@ -348,8 +351,11 @@ const Courses: React.FC = () => {
           if (selectedSort === 'latest' || selectedSort === 'most-enrolled') {
             // For latest and most-enrolled, limit to 10 courses total
             retryQuery = retryQuery.limit(10);
+          } else if (selectedCategory !== 'all' || selectedLevel !== 'all') {
+            // For filtered results (category or level), show all courses in that filter
+            // No pagination limit - show all matching courses
           } else {
-            // For all courses, use pagination
+            // For all courses (no filters), use pagination
             retryQuery = retryQuery.range(page * COURSES_PER_PAGE, (page + 1) * COURSES_PER_PAGE - 1);
           }
 
@@ -390,6 +396,8 @@ const Courses: React.FC = () => {
                     // Check if there are more courses
         if (selectedSort === 'latest' || selectedSort === 'most-enrolled') {
           setHasMore(false); // No pagination for latest/most-enrolled
+        } else if (selectedCategory !== 'all' || selectedLevel !== 'all') {
+          setHasMore(false); // No pagination for filtered results - show all courses
         } else {
           setHasMore(retryData.length === COURSES_PER_PAGE);
         }
@@ -439,6 +447,8 @@ const Courses: React.FC = () => {
         // Check if there are more courses
         if (selectedSort === 'latest' || selectedSort === 'most-enrolled') {
           setHasMore(false); // No pagination for latest/most-enrolled
+        } else if (selectedCategory !== 'all' || selectedLevel !== 'all') {
+          setHasMore(false); // No pagination for filtered results - show all courses
         } else {
           setHasMore(data.length === COURSES_PER_PAGE);
         }
