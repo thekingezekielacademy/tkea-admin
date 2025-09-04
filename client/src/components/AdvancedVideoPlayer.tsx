@@ -442,7 +442,7 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
         onMouseLeave={() => {
           hoverTimeoutRef.current = setTimeout(() => {
             setIsHovered(false);
-          }, 50); // 50ms delay before hiding (ultra fast)
+          }, 2000); // 2 seconds delay before hiding (gives users time to interact)
         }}
         onTouchStart={() => {
           if (hoverTimeoutRef.current) {
@@ -453,7 +453,22 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
         onTouchEnd={() => {
           hoverTimeoutRef.current = setTimeout(() => {
             setIsHovered(false);
-          }, 150); // 150ms for touch devices
+          }, 3000); // 3 seconds for touch devices (mobile users need more time)
+        }}
+        onClick={() => {
+          // Toggle controls on tap for mobile users
+          if (window.innerWidth <= 768) {
+            if (hoverTimeoutRef.current) {
+              clearTimeout(hoverTimeoutRef.current);
+            }
+            setIsHovered(!isHovered);
+            if (isHovered) {
+              // If controls are visible, hide them after 3 seconds
+              hoverTimeoutRef.current = setTimeout(() => {
+                setIsHovered(false);
+              }, 3000);
+            }
+          }
         }}
       >
         <div className="relative w-full" style={{ paddingTop: '56.25%', position: 'relative', overflow: 'hidden' }}>
@@ -500,16 +515,27 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
               }
             }
             
-            /* Hide controls in fullscreen on mobile */
+            /* Keep controls visible in fullscreen on mobile */
             @media (max-width: 768px) {
               .video-container:fullscreen .controls-overlay {
-                opacity: 0 !important;
-                pointer-events: none !important;
+                opacity: 1 !important;
+                pointer-events: auto !important;
+                z-index: 60 !important;
               }
               
               .video-container:-webkit-full-screen .controls-overlay {
-                opacity: 0 !important;
-                pointer-events: none !important;
+                opacity: 1 !important;
+                pointer-events: auto !important;
+                z-index: 60 !important;
+              }
+              
+              /* Ensure YouTube iframe is properly hidden in fullscreen */
+              .video-container:fullscreen iframe {
+                z-index: 1 !important;
+              }
+              
+              .video-container:-webkit-full-screen iframe {
+                z-index: 1 !important;
               }
             }
           `}</style>
