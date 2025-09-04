@@ -257,6 +257,11 @@ const Courses: React.FC = () => {
           )
         `);
 
+      // Apply category filtering
+      if (selectedCategory !== 'all') {
+        query = query.eq('category', selectedCategory);
+      }
+
       // Apply sorting based on selected option
       if (selectedSort === 'latest') {
         query = query.order('created_at', { ascending: false });
@@ -313,6 +318,11 @@ const Courses: React.FC = () => {
                 order_index
               )
             `);
+
+          // Apply category filtering
+          if (selectedCategory !== 'all') {
+            retryQuery = retryQuery.eq('category', selectedCategory);
+          }
 
           // Apply sorting based on selected option
           if (selectedSort === 'latest') {
@@ -523,6 +533,14 @@ const Courses: React.FC = () => {
     }
   };
 
+  // Handle category change
+  const handleCategoryChange = (newCategory: string) => {
+    setSelectedCategory(newCategory);
+    setCurrentPage(0);
+    setHasMore(true);
+    fetchCourses(0, false);
+  };
+
   // Handle sort change
   const handleSortChange = (newSort: string) => {
     setSelectedSort(newSort);
@@ -558,10 +576,21 @@ const Courses: React.FC = () => {
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
-  // Categories are hardcoded since they don't exist in DB yet
+  // Define all available categories with proper labels
   const categories = [
     { value: 'all', label: 'All Categories' },
-    { value: 'general', label: 'General' }
+    { value: 'business-entrepreneurship', label: 'Business & Entrepreneurship' },
+    { value: 'branding-public-relations', label: 'Branding & Public Relations' },
+    { value: 'content-communication', label: 'Content & Communication' },
+    { value: 'digital-advertising', label: 'Digital Advertising' },
+    { value: 'email-seo-strategies', label: 'Email & SEO Strategies' },
+    { value: 'ui-ux-design', label: 'UI/UX Design' },
+    { value: 'visual-communication', label: 'Visual Communication' },
+    { value: 'video-editing-creation', label: 'Video Editing & Creation' },
+    { value: 'data-science-analytics', label: 'Data Science & Analytics' },
+    { value: 'artificial-intelligence-cloud', label: 'AI & Cloud Computing' },
+    { value: 'project-workflow-management', label: 'Project & Workflow Management' },
+    { value: 'information-security', label: 'Information Security' }
   ];
 
   // Sorting options
@@ -840,7 +869,7 @@ const Courses: React.FC = () => {
             {/* Category Filter */}
             <select
               value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
+              onChange={(e) => handleCategoryChange(e.target.value)}
               className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-xs sm:text-sm"
             >
               {categories.map(category => (
