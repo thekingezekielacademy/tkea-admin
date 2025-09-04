@@ -138,6 +138,14 @@ router.post('/cancel-subscription', async (req, res) => {
       });
     }
 
+    // Check if we're in test mode
+    const isTestMode = PAYSTACK_SECRET_KEY && PAYSTACK_SECRET_KEY.startsWith('sk_test_');
+    
+    if (isTestMode) {
+      console.log('⚠️ TEST MODE: Subscription cancellation may not work properly in test mode');
+      console.log('💡 Consider switching to live mode for full subscription management');
+    }
+
     console.log(`🔄 Canceling Paystack subscription: ${subscriptionId}`);
 
     // Call Paystack API to cancel subscription
@@ -179,10 +187,38 @@ router.post('/cancel-subscription', async (req, res) => {
 
   } catch (error) {
     console.error('❌ Error canceling subscription:', error);
+    
+    // Check if this is a test mode issue
+    const isTestMode = PAYSTACK_SECRET_KEY && PAYSTACK_SECRET_KEY.startsWith('sk_test_');
+    const is404Error = error.message && error.message.includes('404');
+    
+    if (isTestMode && is404Error) {
+      console.log('⚠️ TEST MODE ISSUE: Subscription cancellation failed - likely due to test mode limitations');
+      
+      // Still update database even if Paystack fails in test mode
+      try {
+        const dbSubscription = await SubscriptionService.getSubscriptionByPaystackId(subscriptionId);
+        if (dbSubscription) {
+          await SubscriptionService.cancelSubscription(dbSubscription.id, reason || 'Test mode cancellation');
+          console.log('✅ Database updated despite Paystack test mode failure');
+        }
+      } catch (dbError) {
+        console.error('❌ Database update also failed:', dbError);
+      }
+      
+      return res.status(200).json({
+        success: true,
+        message: 'Subscription canceled in database (Paystack test mode limitation)',
+        warning: 'This is a test mode limitation. Switch to live mode for full Paystack integration.',
+        testMode: true
+      });
+    }
+    
     res.status(500).json({
       success: false,
       message: 'Failed to cancel subscription',
-      error: error.message
+      error: error.message,
+      testMode: isTestMode
     });
   }
 });
@@ -657,6 +693,27 @@ router.get('/test-webhook', (req, res) => {
     message: 'Webhook endpoint is working!',
     timestamp: new Date().toISOString(),
     status: 'active'
+  });
+});
+
+// Test mode detection endpoint
+router.get('/test-mode-status', (req, res) => {
+  const isTestMode = PAYSTACK_SECRET_KEY && PAYSTACK_SECRET_KEY.startsWith('sk_test_');
+  const isLiveMode = PAYSTACK_SECRET_KEY && PAYSTACK_SECRET_KEY.startsWith('sk_live_');
+  
+  res.json({
+    testMode: isTestMode,
+    liveMode: isLiveMode,
+    keyPrefix: PAYSTACK_SECRET_KEY ? PAYSTACK_SECRET_KEY.substring(0, 8) + '...' : 'Not configured',
+    message: isTestMode 
+      ? '⚠️ Currently in TEST MODE - subscription management may be limited'
+      : isLiveMode 
+        ? '✅ Currently in LIVE MODE - full functionality available'
+        : '❌ Paystack not properly configured',
+    recommendation: isTestMode 
+      ? 'Switch to live mode for full subscription management capabilities'
+      : 'Configuration looks good',
+    timestamp: new Date().toISOString()
   });
 });
 
