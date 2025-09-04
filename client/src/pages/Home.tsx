@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import SEOHead from '../components/SEO/SEOHead';
 import { generateOrganizationStructuredData } from '../components/SEO/StructuredData';
 import HeroSection from '../components/HeroSection';
+import MiniMeetTheTeam from '../components/MiniMeetTheTeam';
 import { FaGraduationCap, FaStar, FaClock, FaUsers, FaLaptopCode, FaChartBar, FaPalette, FaCheck, FaRocket, FaAward, FaHeart, FaArrowRight } from 'react-icons/fa';
 
 const Home: React.FC = () => {
@@ -286,6 +287,9 @@ const Home: React.FC = () => {
           </div>
         </div>
       </section>
+
+      {/* Mini Meet the Team Section */}
+      <MiniMeetTheTeam />
     </div>
     </>
   );
