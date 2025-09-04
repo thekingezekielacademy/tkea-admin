@@ -30,13 +30,21 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
   const [volume, setVolume] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [showControls, setShowControls] = useState(true);
   const [isHovered, setIsHovered] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showFullscreenMessage, setShowFullscreenMessage] = useState(true);
+  const [playbackRate, setPlaybackRate] = useState(1);
+  const [showSpeedMenu, setShowSpeedMenu] = useState(false);
 
   // Reset loading state when src changes
   useEffect(() => {
     setIsLoading(true);
+    setShowFullscreenMessage(true);
+    // Hide fullscreen message after 5 seconds
+    const timer = setTimeout(() => {
+      setShowFullscreenMessage(false);
+    }, 5000);
+    return () => clearTimeout(timer);
   }, [src]);
 
 
@@ -325,6 +333,43 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
     }
   };
 
+  const handleSpeedChange = (speed: number) => {
+    setPlaybackRate(speed);
+    setShowSpeedMenu(false);
+    
+    // Set playback rate on YouTube player
+    if (iframeRef.current?.contentWindow) {
+      iframeRef.current.contentWindow.postMessage(
+        `{"event":"command","func":"setPlaybackRate","args":[${speed}]}`,
+        '*'
+      );
+    }
+  };
+
+  const handleSeekForward = () => {
+    const newTime = Math.min(currentTime + 10, duration);
+    setCurrentTime(newTime);
+    
+    if (iframeRef.current?.contentWindow) {
+      iframeRef.current.contentWindow.postMessage(
+        `{"event":"command","func":"seekTo","args":[${newTime}, true]}`,
+        '*'
+      );
+    }
+  };
+
+  const handleSeekBackward = () => {
+    const newTime = Math.max(currentTime - 10, 0);
+    setCurrentTime(newTime);
+    
+    if (iframeRef.current?.contentWindow) {
+      iframeRef.current.contentWindow.postMessage(
+        `{"event":"command","func":"seekTo","args":[${newTime}, true]}`,
+        '*'
+      );
+    }
+  };
+
   // Handle fullscreen change events and keyboard shortcuts
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -346,11 +391,18 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
       }
     };
 
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showSpeedMenu) {
+        setShowSpeedMenu(false);
+      }
+    };
+
     document.addEventListener('fullscreenchange', handleFullscreenChange);
     document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
     document.addEventListener('mozfullscreenchange', handleFullscreenChange);
     document.addEventListener('MSFullscreenChange', handleFullscreenChange);
     document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('click', handleClickOutside);
 
     return () => {
       document.removeEventListener('fullscreenchange', handleFullscreenChange);
@@ -358,8 +410,9 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
       document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
       document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
       document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('click', handleClickOutside);
     };
-  }, []);
+  }, [showSpeedMenu]);
 
 
 
@@ -456,6 +509,13 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
               }
             }
           `}</style>
+          {/* Fullscreen Experience Message */}
+          {showFullscreenMessage && (
+            <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-50 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-full text-sm font-medium shadow-lg animate-pulse">
+              📱 Experience is better on full screen landscape mode
+            </div>
+          )}
+
           {/* Mobile fullscreen button */}
           <button 
             onClick={toggleFullscreen}
@@ -512,17 +572,52 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
                 border: 2px solid white;
               }
               
-              /* Mobile optimizations */
-              @media (max-width: 768px) {
-                .slider::-webkit-slider-thumb {
-                  height: 20px;
-                  width: 20px;
-                }
-                .slider::-moz-range-thumb {
-                  height: 20px;
-                  width: 20px;
-                }
+                          /* Mobile optimizations */
+            @media (max-width: 768px) {
+              .slider::-webkit-slider-thumb {
+                height: 20px;
+                width: 20px;
               }
+              .slider::-moz-range-thumb {
+                height: 20px;
+                width: 20px;
+              }
+              
+              /* Larger touch targets for mobile */
+              .controls-overlay button {
+                min-width: 44px;
+                min-height: 44px;
+                padding: 8px;
+              }
+              
+              /* Better spacing for mobile controls */
+              .controls-overlay {
+                padding: 12px 16px 8px 16px;
+              }
+              
+              /* Optimize progress bar for touch */
+              .slider {
+                height: 6px;
+                margin: 8px 0;
+              }
+            }
+            
+            /* Laptop/Desktop optimizations */
+            @media (min-width: 1024px) {
+              .controls-overlay {
+                padding: 16px 20px 12px 20px;
+              }
+              
+              .controls-overlay button:hover {
+                transform: scale(1.1);
+                transition: transform 0.2s ease;
+              }
+              
+              /* Enhanced hover effects */
+              .controls-overlay button {
+                transition: all 0.2s ease;
+              }
+            }
             `}
           </style>
           {/* Custom title overlay */}
@@ -583,7 +678,18 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
             
             {/* Control buttons */}
             <div className="flex items-center justify-between text-white">
-              <div className="flex items-center space-x-3 md:space-x-4">
+              <div className="flex items-center space-x-2 md:space-x-4">
+                {/* Seek Backward Button */}
+                <button 
+                  onClick={handleSeekBackward}
+                  className="hover:text-blue-400 transition-colors p-1 md:p-0"
+                  title="Rewind 10s"
+                >
+                  <svg className="w-4 h-4 md:w-5 md:h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M8.445 14.832A1 1 0 0010 14v-2.798l5.445 3.63A1 1 0 0017 14V6a1 1 0 00-1.555-.832L10 8.798V6a1 1 0 00-1.555-.832l-6 4a1 1 0 000 1.664l6 4z" />
+                  </svg>
+                </button>
+
                 <button 
                   onClick={togglePlay} 
                   className={`hover:text-blue-400 transition-colors transition-opacity p-1 md:p-0 ${
@@ -600,6 +706,45 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
                     </svg>
                   )}
                 </button>
+
+                {/* Seek Forward Button */}
+                <button 
+                  onClick={handleSeekForward}
+                  className="hover:text-blue-400 transition-colors p-1 md:p-0"
+                  title="Forward 10s"
+                >
+                  <svg className="w-4 h-4 md:w-5 md:h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M4.555 5.168A1 1 0 003 6v8a1 1 0 001.555.832L10 11.202V14a1 1 0 001.555.832l6-4a1 1 0 000-1.664l-6-4A1 1 0 0010 6v2.798l-5.445-3.63z" />
+                  </svg>
+                </button>
+                
+                {/* Speed Control Button */}
+                <div className="relative">
+                  <button 
+                    onClick={() => setShowSpeedMenu(!showSpeedMenu)}
+                    className="hover:text-blue-400 transition-colors p-1 md:p-0 text-xs md:text-sm font-medium"
+                    title="Playback Speed"
+                  >
+                    {playbackRate}x
+                  </button>
+                  
+                  {/* Speed Menu */}
+                  {showSpeedMenu && (
+                    <div className="absolute bottom-8 left-0 bg-black bg-opacity-90 rounded-lg p-2 space-y-1 min-w-[80px]">
+                      {[0.5, 0.75, 1, 1.25, 1.5, 2, 3, 4, 5].map((speed) => (
+                        <button
+                          key={speed}
+                          onClick={() => handleSpeedChange(speed)}
+                          className={`w-full text-left px-2 py-1 rounded text-xs hover:bg-blue-600 transition-colors ${
+                            playbackRate === speed ? 'bg-blue-600 text-white' : 'text-gray-300'
+                          }`}
+                        >
+                          {speed}x
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
                 
                 <div className="flex items-center space-x-2">
                   <button 
@@ -630,27 +775,34 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
                     }}
                   />
                 </div>
-                
 
               </div>
               
-              <button 
-                onClick={toggleFullscreen} 
-                className="hover:text-blue-400 transition-colors p-1 md:p-0 group"
-                title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
-              >
-                {isFullscreen ? (
-                  // Exit fullscreen icon (compress)
-                  <svg className="w-4 h-4 md:w-5 md:h-5" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M3 4a1 1 0 011-1h4a1 1 0 010 2H6.414l2.293 2.293a1 1 0 11-1.414 1.414L5 6.414V8a1 1 0 01-2 0V4zm9 1a1 1 0 010-2h4a1 1 0 011 1v4a1 1 0 01-2 0V6.414l-2.293 2.293a1 1 0 11-1.414-1.414L13.586 5H12z" clipRule="evenodd" />
-                  </svg>
-                ) : (
-                  // Enter fullscreen icon (expand)
-                  <svg className="w-4 h-4 md:w-5 md:h-5" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M3 4a1 1 0 011-1h4a1 1 0 010 2H6.414l2.293 2.293a1 1 0 11-1.414 1.414L5 6.414V8a1 1 0 01-2 0V4zm9 1a1 1 0 010-2h4a1 1 0 011 1v4a1 1 0 01-2 0V6.414l-2.293 2.293a1 1 0 11-1.414-1.414L13.586 5H12z" clipRule="evenodd" />
-                  </svg>
-                )}
-              </button>
+              <div className="flex items-center space-x-2">
+                {/* Desktop Fullscreen Button */}
+                <button 
+                  onClick={toggleFullscreen} 
+                  className="hidden md:block hover:text-blue-400 transition-colors p-1 group"
+                  title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
+                >
+                  {isFullscreen ? (
+                    // Exit fullscreen icon (compress)
+                    <svg className="w-4 h-4 md:w-5 md:h-5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M3 4a1 1 0 011-1h4a1 1 0 010 2H6.414l2.293 2.293a1 1 0 11-1.414 1.414L5 6.414V8a1 1 0 01-2 0V4zm9 1a1 1 0 010-2h4a1 1 0 011 1v4a1 1 0 01-2 0V6.414l-2.293 2.293a1 1 0 11-1.414-1.414L13.586 5H12z" clipRule="evenodd" />
+                    </svg>
+                  ) : (
+                    // Enter fullscreen icon (expand)
+                    <svg className="w-4 h-4 md:w-5 md:h-5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M3 4a1 1 0 011-1h4a1 1 0 010 2H6.414l2.293 2.293a1 1 0 11-1.414 1.414L5 6.414V8a1 1 0 01-2 0V4zm9 1a1 1 0 010-2h4a1 1 0 011 1v4a1 1 0 01-2 0V6.414l-2.293 2.293a1 1 0 11-1.414-1.414L13.586 5H12z" clipRule="evenodd" />
+                    </svg>
+                  )}
+                </button>
+
+                {/* Time Display */}
+                <div className="text-xs md:text-sm text-gray-300 font-mono">
+                  {Math.floor(currentTime / 60)}:{(Math.floor(currentTime % 60)).toString().padStart(2, '0')} / {Math.floor(duration / 60)}:{(Math.floor(duration % 60)).toString().padStart(2, '0')}
+                </div>
+              </div>
             </div>
           </div>
         </div>
