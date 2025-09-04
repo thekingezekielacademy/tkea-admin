@@ -262,6 +262,11 @@ const Courses: React.FC = () => {
         query = query.eq('category', selectedCategory);
       }
 
+      // Apply level filtering
+      if (selectedLevel !== 'all') {
+        query = query.eq('level', selectedLevel);
+      }
+
       // Apply sorting based on selected option
       if (selectedSort === 'latest') {
         query = query.order('created_at', { ascending: false });
@@ -322,6 +327,11 @@ const Courses: React.FC = () => {
           // Apply category filtering
           if (selectedCategory !== 'all') {
             retryQuery = retryQuery.eq('category', selectedCategory);
+          }
+
+          // Apply level filtering
+          if (selectedLevel !== 'all') {
+            retryQuery = retryQuery.eq('level', selectedLevel);
           }
 
           // Apply sorting based on selected option
@@ -536,6 +546,14 @@ const Courses: React.FC = () => {
   // Handle category change
   const handleCategoryChange = (newCategory: string) => {
     setSelectedCategory(newCategory);
+    setCurrentPage(0);
+    setHasMore(true);
+    fetchCourses(0, false);
+  };
+
+  // Handle level change
+  const handleLevelChange = (newLevel: string) => {
+    setSelectedLevel(newLevel);
     setCurrentPage(0);
     setHasMore(true);
     fetchCourses(0, false);
@@ -880,7 +898,7 @@ const Courses: React.FC = () => {
             {/* Level Filter */}
             <select
               value={selectedLevel}
-              onChange={(e) => setSelectedLevel(e.target.value)}
+              onChange={(e) => handleLevelChange(e.target.value)}
               className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-xs sm:text-sm"
             >
               {levels.map(level => (
@@ -918,7 +936,7 @@ const Courses: React.FC = () => {
                 <span className="inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                   {levels.find(l => l.value === selectedLevel)?.label}
                   <button
-                    onClick={() => setSelectedLevel('all')}
+                    onClick={() => handleLevelChange('all')}
                     className="ml-1.5 sm:ml-2 text-blue-600 hover:text-blue-800"
                   >
                     ×
@@ -940,7 +958,10 @@ const Courses: React.FC = () => {
                 onClick={() => {
                   setSelectedCategory('all');
                   setSelectedLevel('all');
-                  handleSortChange('all');
+                  setSelectedSort('all');
+                  setCurrentPage(0);
+                  setHasMore(true);
+                  fetchCourses(0, false);
                 }}
                 className="text-xs sm:text-sm text-gray-600 hover:text-gray-800 underline"
               >
