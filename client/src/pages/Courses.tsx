@@ -57,6 +57,23 @@ const Courses: React.FC = () => {
     return isExpanded ? 'ml-64' : 'ml-16'; // Desktop: expanded=256px, collapsed=64px
   };
 
+  // Ensure sidebar margin is always applied when user is logged in
+  const getMainContentClasses = () => {
+    const baseClasses = 'transition-all duration-300 ease-in-out';
+    const marginClass = getSidebarMargin();
+    return `${baseClasses} ${marginClass}`.trim();
+  };
+
+  // Debug sidebar state
+  useEffect(() => {
+    console.log('Sidebar Debug:', {
+      user: !!user,
+      isMobile,
+      isExpanded,
+      margin: getSidebarMargin()
+    });
+  }, [user, isMobile, isExpanded]);
+
   // Check database subscription status
   const checkDatabaseSubscription = async () => {
     if (!user?.id) return;
@@ -647,7 +664,7 @@ const Courses: React.FC = () => {
       <DashboardSidebar />
       
       {/* Main Content */}
-      <div className={`${getSidebarMargin()} transition-all duration-300 ease-in-out`}>
+      <div className={getMainContentClasses()} style={{ minHeight: '100vh' }}>
         <div className="pt-16">
           <div className={`mx-auto py-8 sm:py-12 ${isExpanded ? 'max-w-7xl px-2 sm:px-6 lg:px-8' : 'max-w-full px-2 sm:px-8 lg:px-12'}`}>
         {/* Header */}
