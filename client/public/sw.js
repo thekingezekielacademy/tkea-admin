@@ -9,12 +9,12 @@
  * - Background sync
  */
 
-const CACHE_NAME = 'king-ezekiel-academy-v1.0.2';
-const STATIC_CACHE = 'static-cache-v3';
-const DYNAMIC_CACHE = 'dynamic-cache-v3';
+const CACHE_NAME = 'king-ezekiel-academy-v1.0.3';
+const STATIC_CACHE = 'static-cache-v4';
+const DYNAMIC_CACHE = 'dynamic-cache-v4';
 
 // Add cache versioning
-const CACHE_VERSION = '1.0.2';
+const CACHE_VERSION = '1.0.3';
 const STATIC_CACHE_VERSIONED = `${STATIC_CACHE}-${CACHE_VERSION}`;
 const DYNAMIC_CACHE_VERSIONED = `${DYNAMIC_CACHE}-${CACHE_VERSION}`;
 
@@ -38,7 +38,8 @@ const STATIC_FILES = [
 const API_CACHE_PATTERNS = [
   /\/api\/courses/,
   /\/api\/blog/,
-  /\/api\/categories/
+  /\/api\/categories/,
+  /\/api\/paystack/
 ];
 
 // Install event - cache static files
@@ -174,12 +175,24 @@ async function handleStaticAsset(request) {
 
 // Handle API requests
 async function handleApiRequest(request) {
+  const url = new URL(request.url);
+  
+  // Don't cache dynamic endpoints that change frequently
+  const noCacheEndpoints = [
+    '/api/paystack/test-mode-status',
+    '/api/paystack/cancel-subscription'
+  ];
+  
+  const shouldNotCache = noCacheEndpoints.some(endpoint => 
+    url.pathname.includes(endpoint)
+  );
+  
   try {
     // Try network first for API requests
     const networkResponse = await fetch(request);
     
-    if (networkResponse.ok) {
-      // Cache successful API responses only if not already cached
+    if (networkResponse.ok && !shouldNotCache) {
+      // Cache successful API responses only if not already cached and not in no-cache list
       const cache = await caches.open(DYNAMIC_CACHE_VERSIONED);
       const existingResponse = await cache.match(request);
       if (!existingResponse) {
@@ -189,10 +202,12 @@ async function handleApiRequest(request) {
     
     return networkResponse;
   } catch (error) {
-    // If network fails, try cache
-    const cachedResponse = await caches.match(request);
-    if (cachedResponse) {
-      return cachedResponse;
+    // If network fails, try cache (but not for no-cache endpoints)
+    if (!shouldNotCache) {
+      const cachedResponse = await caches.match(request);
+      if (cachedResponse) {
+        return cachedResponse;
+      }
     }
     
     // Return offline response
