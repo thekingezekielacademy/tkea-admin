@@ -120,7 +120,7 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
             width: '100%',
             height: '100%',
             playerVars: {
-              autoplay: 0, // Disable autoplay on mobile to prevent issues
+              autoplay: 0,
               controls: 0,
               modestbranding: 1,
               rel: 0,
@@ -131,7 +131,17 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
               disablekb: 1,
               playsinline: 1,
               origin: window.location.origin,
-              enablejsapi: 1
+              enablejsapi: 1,
+              // Additional parameters for complete discretion
+              start: 0,
+              end: 0,
+              loop: 0,
+              playlist: '',
+              // Hide YouTube branding completely
+              widget_referrer: window.location.origin,
+              // Prevent YouTube suggestions and branding
+              hl: 'en',
+              cc_lang_pref: 'en'
             },
             events: {
               onReady: (event: any) => {
@@ -457,9 +467,39 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
           setIsHovered(true);
         }}
         onTouchEnd={() => {
-          hoverTimeoutRef.current = setTimeout(() => {
-            setIsHovered(false);
-          }, 3000); // 3 seconds for touch devices (mobile users need more time)
+          // For mobile, keep controls visible longer and add tap-to-toggle
+          if (window.innerWidth <= 768) {
+            // On mobile, controls stay visible for 5 seconds
+            hoverTimeoutRef.current = setTimeout(() => {
+              setIsHovered(false);
+            }, 5000);
+          } else {
+            // On desktop, 2 seconds
+            hoverTimeoutRef.current = setTimeout(() => {
+              setIsHovered(false);
+            }, 2000);
+          }
+        }}
+        onClick={(e) => {
+          // Mobile-specific tap behavior
+          if (window.innerWidth <= 768) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            if (hoverTimeoutRef.current) {
+              clearTimeout(hoverTimeoutRef.current);
+            }
+            
+            // Toggle controls on tap
+            setIsHovered(!isHovered);
+            
+            // If showing controls, hide them after 5 seconds
+            if (!isHovered) {
+              hoverTimeoutRef.current = setTimeout(() => {
+                setIsHovered(false);
+              }, 5000);
+            }
+          }
         }}
       >
         <div className="relative w-full" style={{ paddingTop: '56.25%', position: 'relative', overflow: 'hidden' }}>
@@ -529,7 +569,83 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
                 z-index: 1 !important;
               }
             }
+            
+            /* Complete YouTube branding removal */
+            iframe[src*="youtube.com"] {
+              /* Hide YouTube logo and branding */
+              position: relative;
+            }
+            
+            /* Hide YouTube watermark and branding elements */
+            .video-container iframe {
+              /* Ensure iframe doesn't show YouTube branding */
+              border: none !important;
+              outline: none !important;
+              position: relative;
+            }
+            
+            /* Hide YouTube logo overlay */
+            .video-container::after {
+              content: '';
+              position: absolute;
+              top: 0;
+              right: 0;
+              width: 100px;
+              height: 40px;
+              background: black;
+              z-index: 5;
+              pointer-events: none;
+            }
+            
+            /* Hide YouTube channel name and branding */
+            .video-container::before {
+              content: '';
+              position: absolute;
+              bottom: 0;
+              right: 0;
+              width: 200px;
+              height: 30px;
+              background: black;
+              z-index: 5;
+              pointer-events: none;
+            }
+            
+            /* Mobile-specific control improvements */
+            @media (max-width: 768px) {
+              .controls-overlay {
+                background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.4) 50%, transparent 100%) !important;
+                padding: 20px 10px 10px 10px !important;
+              }
+              
+              .controls-overlay button {
+                min-height: 44px !important;
+                min-width: 44px !important;
+                padding: 8px !important;
+                font-size: 16px !important;
+              }
+              
+              .controls-overlay input[type="range"] {
+                height: 8px !important;
+                -webkit-appearance: none !important;
+              }
+              
+              .controls-overlay input[type="range"]::-webkit-slider-thumb {
+                height: 20px !important;
+                width: 20px !important;
+                -webkit-appearance: none !important;
+                background: #3B82F6 !important;
+                border-radius: 50% !important;
+                cursor: pointer !important;
+              }
+            }
           `}</style>
+          {/* YouTube Branding Blocker Overlay */}
+          <div className="absolute inset-0 z-10 pointer-events-none">
+            {/* Cover any YouTube branding that might appear */}
+            <div className="absolute top-0 right-0 w-20 h-8 bg-black opacity-0"></div>
+            <div className="absolute bottom-0 right-0 w-32 h-6 bg-black opacity-0"></div>
+          </div>
+
           {/* Fullscreen Experience Message */}
           {showFullscreenMessage && (
             <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-50 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-full text-sm font-medium shadow-lg animate-pulse">
@@ -678,7 +794,7 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
           </div>
           
           {/* Custom controls overlay */}
-          <div className={`absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black via-black to-transparent px-3 pb-0 pt-2 z-30 transition-opacity duration-75 controls-overlay ${
+          <div className={`absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black via-black to-transparent px-3 pb-0 pt-2 z-30 transition-opacity duration-300 controls-overlay ${
             isLoading ? 'opacity-100' : (isPlaying ? (isHovered ? 'opacity-100' : 'opacity-0') : 'opacity-100')
           }`}>
             {/* Progress bar */}
