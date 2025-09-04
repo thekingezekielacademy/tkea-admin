@@ -1,5 +1,13 @@
 import React, { useEffect, useRef, useState } from "react";
 
+// YouTube Player API types
+declare global {
+  interface Window {
+    YT: any;
+    onYouTubeIframeAPIReady: () => void;
+  }
+}
+
 interface AdvancedVideoPlayerProps {
   src: string; // YouTube video ID or direct video URL
   type?: "youtube" | "video";
@@ -21,9 +29,9 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const iframeRef = useRef<HTMLIFrameElement>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const playerRef = useRef<any>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -35,6 +43,31 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
   const [showFullscreenMessage, setShowFullscreenMessage] = useState(true);
   const [playbackRate, setPlaybackRate] = useState(1);
   const [showSpeedMenu, setShowSpeedMenu] = useState(false);
+  const [availableSpeeds, setAvailableSpeeds] = useState<number[]>([0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2]);
+
+  // Load YouTube Player API
+  useEffect(() => {
+    const loadYouTubeAPI = () => {
+      if (window.YT && window.YT.Player) {
+        return Promise.resolve();
+      }
+      
+      return new Promise<void>((resolve) => {
+        const script = document.createElement('script');
+        script.src = 'https://www.youtube.com/iframe_api';
+        script.onload = () => {
+          window.onYouTubeIframeAPIReady = () => {
+            resolve();
+          };
+        };
+        document.head.appendChild(script);
+      });
+    };
+
+    if (type === 'youtube') {
+      loadYouTubeAPI();
+    }
+  }, [type]);
 
   // Reset loading state when src changes
   useEffect(() => {
@@ -49,9 +82,8 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
 
 
   useEffect(() => {
-    if (type === "youtube" && videoRef.current) {
+    if (type === "youtube") {
       // Create a sophisticated YouTube bypass system
-      const video = videoRef.current;
       
       // Set up video source using YouTube's direct stream URL
       const videoId = src.includes('youtube.com') || src.includes('youtu.be') 
@@ -60,133 +92,112 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
       
 
       
-      // Create a hidden iframe for the actual YouTube stream
-      const iframe = document.createElement('iframe');
-      iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=${autoplay ? 1 : 0}&controls=0&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&cc_load_policy=0&fs=0&disablekb=1&playsinline=1&enablejsapi=1&origin=${window.location.origin}`;
+      // Create a div for the YouTube player
+      const playerDiv = document.createElement('div');
+      playerDiv.id = `youtube-player-${Date.now()}`;
+      playerDiv.style.position = 'absolute';
+      playerDiv.style.top = '0';
+      playerDiv.style.left = '0';
+      playerDiv.style.width = '100%';
+      playerDiv.style.height = '100%';
+      playerDiv.style.zIndex = '0';
+      playerDiv.style.borderRadius = '0';
+      playerDiv.style.overflow = 'hidden';
       
-      // Set loading state when iframe starts loading
-      setIsLoading(true);
-      
-      // Listen for iframe load event
-      iframe.onload = () => {
-        setIsLoading(false);
-      };
-      iframe.style.position = 'absolute';
-      iframe.style.top = '0';
-      iframe.style.left = '0';
-      iframe.style.width = '100%';
-      iframe.style.height = '100%';
-      iframe.style.zIndex = '0'; // Lower z-index so it stays behind everything
-      iframe.style.opacity = '1'; // Fully visible now
-      iframe.style.pointerEvents = 'none';
-              iframe.style.borderRadius = '0'; // No border radius to eliminate spacing
-        iframe.style.overflow = 'hidden'; // Ensure it doesn't overflow
-        iframe.style.maxWidth = '100%'; // Ensure it doesn't exceed container width
-        iframe.style.maxHeight = '100%'; // Ensure it doesn't exceed container height
-        iframe.style.objectFit = 'cover'; // Fill the container completely
-      iframe.frameBorder = '0';
-      iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
-      
-      // Store reference to iframe
-      iframeRef.current = iframe;
-      
-      // Create a wrapper div to contain the iframe
-      const iframeWrapper = document.createElement('div');
-      iframeWrapper.style.position = 'absolute';
-      iframeWrapper.style.top = '0';
-      iframeWrapper.style.left = '0';
-      iframeWrapper.style.width = '100%';
-      iframeWrapper.style.height = '100%';
-      iframeWrapper.style.overflow = 'hidden';
-              iframeWrapper.style.borderRadius = '0';
-      iframeWrapper.style.zIndex = '0';
-      
-      // Add iframe to wrapper
-      iframeWrapper.appendChild(iframe);
-      
-      // Add the wrapper to the container
+      // Add player div to container
       if (containerRef.current) {
-        containerRef.current.appendChild(iframeWrapper);
+        containerRef.current.appendChild(playerDiv);
       }
       
-             // Set up our custom video element without a source (we don't need it)
-       video.muted = true;
-       video.volume = 0;
+      // Set loading state
+      setIsLoading(true);
       
-             // Event listeners for our custom player
-       video.addEventListener('play', () => {
-         setIsPlaying(true);
-         onPlay?.();
-         // Trigger the hidden YouTube iframe to play
-         iframe.contentWindow?.postMessage('{"event":"command","func":"playVideo","args":""}', '*');
-       });
-       
-       video.addEventListener('pause', () => {
-         setIsPlaying(false);
-         onPause?.();
-         // Trigger the hidden YouTube iframe to pause
-         iframe.contentWindow?.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
-       });
-       
-       video.addEventListener('ended', () => {
-         setIsPlaying(false);
-         onEnded?.();
-       });
-       
-       // Listen for YouTube player state changes
-       const handleMessage = (event: MessageEvent) => {
-         try {
-           const data = JSON.parse(event.data);
-           if (data.event === 'onStateChange') {
-             // YouTube player state: -1 (unstarted), 0 (ended), 1 (playing), 2 (paused), 3 (buffering), 5 (video cued)
-             if (data.info === 1) {
-               setIsPlaying(true);
-               onPlay?.();
-             } else if (data.info === 2 || data.info === 0) {
-               setIsPlaying(false);
-               onPause?.();
-               if (data.info === 0) {
-                 onEnded?.();
-               }
-             }
-           }
-         } catch (error) {
-           // Ignore parsing errors
-         }
-       };
-       
-       // Add message listener
-       window.addEventListener('message', handleMessage);
-       
-       // Set up interval for progress updates
-       const interval = setInterval(() => {
-         if (iframe.contentWindow) {
-           iframe.contentWindow.postMessage('{"event":"command","func":"getCurrentTime","args":""}', '*');
-         }
-       }, 1000);
-       
-       // Store interval reference
-       intervalRef.current = interval;
-       
-       // Set up hover timeout
-       const hoverTimeout = setTimeout(() => {
-         // Auto-hide controls after 3 seconds
-       }, 3000);
-       
-       // Store hover timeout reference
-       hoverTimeoutRef.current = hoverTimeout;
-       
-       // Cleanup function
-       return () => {
-         clearInterval(intervalRef.current);
-         clearTimeout(hoverTimeoutRef.current);
-         window.removeEventListener('message', handleMessage);
-         // Store containerRef.current in a variable to avoid stale closure
-         const container = containerRef.current;
-         if (container && iframe.parentNode?.parentNode) {
-           iframe.parentNode.parentNode.removeChild(iframe.parentNode);
-         }
-       };
+      // Initialize YouTube Player
+      const initPlayer = () => {
+        if (window.YT && window.YT.Player) {
+          playerRef.current = new window.YT.Player(playerDiv.id, {
+            videoId: videoId,
+            width: '100%',
+            height: '100%',
+            playerVars: {
+              autoplay: autoplay ? 1 : 0,
+              controls: 0,
+              modestbranding: 1,
+              rel: 0,
+              showinfo: 0,
+              iv_load_policy: 3,
+              cc_load_policy: 0,
+              fs: 0,
+              disablekb: 1,
+              playsinline: 1,
+              origin: window.location.origin
+            },
+            events: {
+              onReady: (event: any) => {
+                setIsLoading(false);
+                console.log('YouTube player ready');
+                
+                // Check available playback rates for this video
+                if (playerRef.current && playerRef.current.getAvailablePlaybackRates) {
+                  try {
+                    const rates = playerRef.current.getAvailablePlaybackRates();
+                    console.log('Available playback rates:', rates);
+                    setAvailableSpeeds(rates);
+                  } catch (error) {
+                    console.warn('Could not get available playback rates:', error);
+                    // Keep default speeds
+                  }
+                }
+              },
+              onStateChange: (event: any) => {
+                // YouTube player state: -1 (unstarted), 0 (ended), 1 (playing), 2 (paused), 3 (buffering), 5 (video cued)
+                if (event.data === 1) {
+                  setIsPlaying(true);
+                  onPlay?.();
+                } else if (event.data === 2 || event.data === 0) {
+                  setIsPlaying(false);
+                  onPause?.();
+                  if (event.data === 0) {
+                    onEnded?.();
+                  }
+                }
+              }
+            }
+          });
+        } else {
+          // Fallback: retry after a short delay
+          setTimeout(initPlayer, 100);
+        }
+      };
+      
+      // Initialize player
+      initPlayer();
+      
+      // Set up interval for progress updates
+      const interval = setInterval(() => {
+        if (playerRef.current && playerRef.current.getCurrentTime) {
+          const currentTime = playerRef.current.getCurrentTime();
+          const duration = playerRef.current.getDuration();
+          setCurrentTime(currentTime);
+          setDuration(duration);
+        }
+      }, 1000);
+      
+      // Store interval reference
+      intervalRef.current = interval;
+      
+      // Cleanup function
+      return () => {
+        clearInterval(intervalRef.current);
+        if (playerRef.current && playerRef.current.destroy) {
+          playerRef.current.destroy();
+        }
+        // Store containerRef.current in a variable to avoid stale closure
+        const container = containerRef.current;
+        if (container && playerDiv.parentNode) {
+          container.removeChild(playerDiv);
+        }
+      };
     }
     }, [src, type, autoplay, onPlay, onPause, onEnded]);
   
@@ -206,26 +217,16 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
   }, []);
   
   const togglePlay = () => {
-    if (isPlaying) {
-      // Pause the YouTube video
-      if (iframeRef.current?.contentWindow) {
-        iframeRef.current.contentWindow.postMessage(
-          '{"event":"command","func":"pauseVideo","args":""}',
-          '*'
-        );
+    if (playerRef.current) {
+      if (isPlaying) {
+        playerRef.current.pauseVideo();
+        setIsPlaying(false);
+        onPause?.();
+      } else {
+        playerRef.current.playVideo();
+        setIsPlaying(true);
+        onPlay?.();
       }
-      setIsPlaying(false);
-      onPause?.();
-    } else {
-      // Play the YouTube video
-      if (iframeRef.current?.contentWindow) {
-        iframeRef.current.contentWindow.postMessage(
-          '{"event":"command","func":"playVideo","args":""}',
-          '*'
-        );
-      }
-      setIsPlaying(true);
-      onPlay?.();
     }
   };
 
@@ -234,11 +235,8 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
     setCurrentTime(newTime);
     
     // Seek the YouTube player to the new time
-    if (iframeRef.current?.contentWindow) {
-      iframeRef.current.contentWindow.postMessage(
-        `{"event":"command","func":"seekTo","args":[${newTime}, true]}`,
-        '*'
-      );
+    if (playerRef.current && playerRef.current.seekTo) {
+      playerRef.current.seekTo(newTime, true);
     }
   };
 
@@ -249,20 +247,14 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
     // If unmuting, update the YouTube player volume
     if (isMuted && newVolume > 0) {
       setIsMuted(false);
-      if (iframeRef.current?.contentWindow) {
-        iframeRef.current.contentWindow.postMessage(
-          '{"event":"command","func":"unMute","args":""}',
-          '*'
-        );
+      if (playerRef.current && playerRef.current.unMute) {
+        playerRef.current.unMute();
       }
     }
     
     // Set volume on YouTube player
-    if (iframeRef.current?.contentWindow) {
-      iframeRef.current.contentWindow.postMessage(
-        `{"event":"command","func":"setVolume","args":[${newVolume * 100}]}`,
-        '*'
-      );
+    if (playerRef.current && playerRef.current.setVolume) {
+      playerRef.current.setVolume(newVolume * 100);
     }
   };
 
@@ -271,11 +263,12 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
     setIsMuted(newMutedState);
     
     // Mute/unmute the YouTube player
-    if (iframeRef.current?.contentWindow) {
-      iframeRef.current.contentWindow.postMessage(
-        `{"event":"command","func":"${newMutedState ? 'mute' : 'unMute'}","args":""}`,
-        '*'
-      );
+    if (playerRef.current) {
+      if (newMutedState) {
+        playerRef.current.mute();
+      } else {
+        playerRef.current.unMute();
+      }
     }
   };
 
@@ -338,11 +331,24 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
     setShowSpeedMenu(false);
     
     // Set playback rate on YouTube player
-    if (iframeRef.current?.contentWindow) {
-      iframeRef.current.contentWindow.postMessage(
-        `{"event":"command","func":"setPlaybackRate","args":[${speed}]}`,
-        '*'
-      );
+    if (playerRef.current && playerRef.current.setPlaybackRate) {
+      try {
+        playerRef.current.setPlaybackRate(speed);
+        console.log(`Set playback rate to: ${speed}x`);
+        
+        // Check if the actual rate was set correctly
+        setTimeout(() => {
+          if (playerRef.current && playerRef.current.getPlaybackRate) {
+            const actualRate = playerRef.current.getPlaybackRate();
+            if (actualRate !== speed) {
+              console.warn(`Requested ${speed}x but got ${actualRate}x - speed may not be supported`);
+              setPlaybackRate(actualRate);
+            }
+          }
+        }, 100);
+      } catch (error) {
+        console.error('Error setting playback rate:', error);
+      }
     }
   };
 
@@ -350,11 +356,8 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
     const newTime = Math.min(currentTime + 10, duration);
     setCurrentTime(newTime);
     
-    if (iframeRef.current?.contentWindow) {
-      iframeRef.current.contentWindow.postMessage(
-        `{"event":"command","func":"seekTo","args":[${newTime}, true]}`,
-        '*'
-      );
+    if (playerRef.current && playerRef.current.seekTo) {
+      playerRef.current.seekTo(newTime, true);
     }
   };
 
@@ -362,11 +365,8 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
     const newTime = Math.max(currentTime - 10, 0);
     setCurrentTime(newTime);
     
-    if (iframeRef.current?.contentWindow) {
-      iframeRef.current.contentWindow.postMessage(
-        `{"event":"command","func":"seekTo","args":[${newTime}, true]}`,
-        '*'
-      );
+    if (playerRef.current && playerRef.current.seekTo) {
+      playerRef.current.seekTo(newTime, true);
     }
   };
 
@@ -393,7 +393,11 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
 
     const handleClickOutside = (event: MouseEvent) => {
       if (showSpeedMenu) {
-        setShowSpeedMenu(false);
+        const target = event.target as Element;
+        // Don't close if clicking on the speed menu or speed button
+        if (!target.closest('.speed-menu') && !target.closest('[data-speed-control]')) {
+          setShowSpeedMenu(false);
+        }
       }
     };
 
@@ -724,24 +728,38 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
                     onClick={() => setShowSpeedMenu(!showSpeedMenu)}
                     className="hover:text-blue-400 transition-colors p-1 md:p-0 text-xs md:text-sm font-medium"
                     title="Playback Speed"
+                    data-speed-control
                   >
                     {playbackRate}x
                   </button>
                   
                   {/* Speed Menu */}
                   {showSpeedMenu && (
-                    <div className="absolute bottom-8 left-0 bg-black bg-opacity-90 rounded-lg p-2 space-y-1 min-w-[80px]">
-                      {[0.5, 0.75, 1, 1.25, 1.5, 2, 3, 4, 5].map((speed) => (
+                    <div className="speed-menu absolute bottom-8 left-0 bg-black bg-opacity-90 rounded-lg p-2 space-y-1 min-w-[80px] z-50">
+                      {availableSpeeds.map((speed) => (
                         <button
                           key={speed}
-                          onClick={() => handleSpeedChange(speed)}
-                          className={`w-full text-left px-2 py-1 rounded text-xs hover:bg-blue-600 transition-colors ${
-                            playbackRate === speed ? 'bg-blue-600 text-white' : 'text-gray-300'
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleSpeedChange(speed);
+                          }}
+                          className={`w-full text-left px-2 py-1 rounded text-xs transition-colors cursor-pointer ${
+                            playbackRate === speed 
+                              ? 'bg-blue-600 text-white hover:bg-blue-700' 
+                              : 'text-gray-300 hover:bg-blue-600 hover:text-white'
                           }`}
+                          style={{ pointerEvents: 'auto' }}
+                          data-speed-control
                         >
                           {speed}x
                         </button>
                       ))}
+                      {availableSpeeds.length <= 8 && (
+                        <div className="text-xs text-gray-400 px-2 py-1 border-t border-gray-600 mt-1">
+                          Max: {Math.max(...availableSpeeds)}x
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
