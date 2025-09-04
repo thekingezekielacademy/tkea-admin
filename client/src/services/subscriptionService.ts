@@ -46,7 +46,9 @@ class SubscriptionService {
    */
   async cancelSubscription(subscriptionId: string, paystackSubscriptionId: string): Promise<CancelSubscriptionResponse> {
     try {
-      // First, try to cancel through our backend API
+      console.log('🚫 Cancelling subscription via secure backend API');
+      
+      // Use secure backend API for subscription cancellation
       const response = await fetch(`${this.baseUrl}/paystack/cancel-subscription`, {
         method: 'POST',
         headers: {
@@ -54,13 +56,14 @@ class SubscriptionService {
           'Authorization': `Bearer ${await this.getAuthToken()}`,
         },
         body: JSON.stringify({
-          subscriptionId: paystackSubscriptionId, // The endpoint expects subscriptionId
-          reason: 'User requested cancellation', // Add required reason parameter
+          subscriptionId: paystackSubscriptionId,
+          reason: 'User requested cancellation',
         }),
       });
 
       if (response.ok) {
         const result = await response.json();
+        console.log('✅ Subscription cancelled successfully via backend API');
         return {
           success: true,
           message: result.message || 'Subscription cancelled successfully',
@@ -68,14 +71,16 @@ class SubscriptionService {
         };
       }
 
-      // If backend API fails, try direct Paystack call as fallback
-      // (This should be removed once backend is properly set up)
-      console.warn('Backend API failed, trying direct Paystack call as fallback');
-      console.warn('Backend API response status:', response.status);
-      console.warn('Backend API response:', await response.text());
-      return await this.cancelSubscriptionDirect(paystackSubscriptionId);
+      // Handle API errors gracefully
+      const errorText = await response.text();
+      console.error('❌ Backend API error:', response.status, errorText);
+      
+      return {
+        success: false,
+        message: `Failed to cancel subscription: ${response.status} - ${errorText}`,
+      };
     } catch (error) {
-      console.error('Error in subscription service:', error);
+      console.error('💥 Error in subscription service:', error);
       return {
         success: false,
         message: 'Failed to cancel subscription. Please contact support.',
@@ -83,49 +88,8 @@ class SubscriptionService {
     }
   }
 
-  /**
-   * Direct Paystack cancellation (fallback method)
-   * @param paystackSubscriptionId - The Paystack subscription code
-   * @returns Promise<CancelSubscriptionResponse>
-   */
-  private async cancelSubscriptionDirect(paystackSubscriptionId: string): Promise<CancelSubscriptionResponse> {
-    try {
-      // This should only be used as a fallback
-      // In production, this should be removed and only backend API used
-      const response = await fetch(`https://api.paystack.co/subscription/disable`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${process.env.REACT_APP_PAYSTACK_SECRET_KEY || 'sk_test_...'}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          code: paystackSubscriptionId, // Paystack expects 'code' parameter
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(`Paystack API error: ${response.status} - ${errorData.message || 'Unknown error'}`);
-      }
-
-      const result = await response.json();
-      
-      if (result.status) {
-        return {
-          success: true,
-          message: 'Subscription cancelled successfully',
-        };
-      } else {
-        throw new Error(result.message || 'Failed to cancel subscription');
-      }
-    } catch (error) {
-      console.error('Direct Paystack cancellation failed:', error);
-      return {
-        success: false,
-        message: error instanceof Error ? error.message : 'Failed to cancel subscription',
-      };
-    }
-  }
+  // Note: Direct Paystack API calls removed for security
+  // All Paystack operations now go through secure backend API
 
   /**
    * Get authentication token for API calls

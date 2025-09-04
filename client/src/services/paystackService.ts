@@ -1,9 +1,18 @@
 // Paystack Service - Secure Subscription Management
 import { supabase } from '../lib/supabase';
 
-// Paystack configuration - TEMPORARILY HARDCODED
-const PAYSTACK_PUBLIC_KEY = process.env.REACT_APP_PAYSTACK_PUBLIC_KEY || 'pk_test_021c63210a1910a260b520b8bfa97cce19e996d8';
-const PAYSTACK_PLAN_CODE = process.env.REACT_APP_PAYSTACK_PLAN_CODE || 'PLN_fx0dayx3idr67x1';
+// Paystack configuration - Use environment variables for security
+const PAYSTACK_PUBLIC_KEY = process.env.REACT_APP_PAYSTACK_PUBLIC_KEY;
+const PAYSTACK_PLAN_CODE = process.env.REACT_APP_PAYSTACK_PLAN_CODE;
+
+// Validate required environment variables
+if (!PAYSTACK_PUBLIC_KEY) {
+  console.error('❌ CRITICAL: REACT_APP_PAYSTACK_PUBLIC_KEY environment variable is required');
+}
+
+if (!PAYSTACK_PLAN_CODE) {
+  console.error('❌ CRITICAL: REACT_APP_PAYSTACK_PLAN_CODE environment variable is required');
+}
 
 export interface PaystackTransaction {
   id: string;
@@ -83,25 +92,38 @@ class PaystackService {
     }
   }
 
-  // Create recurring subscription
+  // Create recurring subscription via server endpoint
   async createSubscription(email: string, customerCode: string) {
     try {
-      const response = await fetch('https://api.paystack.co/subscription', {
+      console.log('🚀 Creating subscription via server endpoint');
+      
+      // Use the correct API endpoint for both dev and production
+      const apiEndpoint = process.env.NODE_ENV === 'production' 
+        ? '/api/paystack/create-subscription'
+        : 'http://localhost:5000/api/paystack/create-subscription';
+      
+      const response = await fetch(apiEndpoint, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${PAYSTACK_PUBLIC_KEY}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          customer: customerCode,
-          plan: PAYSTACK_PLAN_CODE,
-          start_date: new Date().toISOString(),
-        }),
+          customerCode,
+          email,
+          userId: (await supabase.auth.getUser()).data.user?.id
+        })
       });
 
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Server API Error Response:', errorText);
+        throw new Error(`Server API error: ${response.status} - ${errorText}`);
+      }
+
       const result = await response.json();
+      console.log('✅ Subscription created successfully via server:', result);
       
-      if (result.status) {
+      if (result.success) {
         return {
           success: true,
           subscription: result.data,
@@ -110,48 +132,81 @@ class PaystackService {
         throw new Error(result.message || 'Subscription creation failed');
       }
     } catch (error) {
-      console.error('Paystack subscription creation error:', error);
+      console.error('💥 Paystack subscription creation error:', error);
       throw error;
     }
   }
 
-  // Verify payment
+  // Verify payment via server endpoint
   async verifyPayment(reference: string) {
     try {
-      const response = await fetch(`https://api.paystack.co/transaction/verify/${reference}`, {
+      console.log('🔍 Verifying payment via server endpoint');
+      
+      // Use the correct API endpoint for both dev and production
+      const apiEndpoint = process.env.NODE_ENV === 'production' 
+        ? '/api/paystack/verify-payment'
+        : 'http://localhost:5000/api/paystack/verify-payment';
+      
+      const response = await fetch(apiEndpoint, {
+        method: 'POST',
         headers: {
-          'Authorization': `Bearer ${PAYSTACK_PUBLIC_KEY}`,
+          'Content-Type': 'application/json',
         },
+        body: JSON.stringify({
+          reference
+        })
       });
 
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Server API Error Response:', errorText);
+        throw new Error(`Server API error: ${response.status} - ${errorText}`);
+      }
+
       const result = await response.json();
+      console.log('✅ Payment verified successfully via server:', result);
       
-      if (result.status && result.data.status === 'success') {
+      if (result.success) {
         return {
           success: true,
           transaction: result.data,
         };
       } else {
-        throw new Error('Payment verification failed');
+        throw new Error(result.message || 'Payment verification failed');
       }
     } catch (error) {
-      console.error('Paystack payment verification error:', error);
+      console.error('💥 Paystack payment verification error:', error);
       throw error;
     }
   }
 
-  // Get subscription details
+  // Get subscription details via server endpoint
   async getSubscription(subscriptionId: string) {
     try {
-      const response = await fetch(`https://api.paystack.co/subscription/${subscriptionId}`, {
+      console.log('📊 Fetching subscription via server endpoint');
+      
+      // Use the correct API endpoint for both dev and production
+      const apiEndpoint = process.env.NODE_ENV === 'production' 
+        ? `/api/paystack/subscription/${subscriptionId}`
+        : `http://localhost:5000/api/paystack/subscription/${subscriptionId}`;
+      
+      const response = await fetch(apiEndpoint, {
+        method: 'GET',
         headers: {
-          'Authorization': `Bearer ${PAYSTACK_PUBLIC_KEY}`,
-        },
+          'Content-Type': 'application/json',
+        }
       });
 
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Server API Error Response:', errorText);
+        throw new Error(`Server API error: ${response.status} - ${errorText}`);
+      }
+
       const result = await response.json();
+      console.log('✅ Subscription fetched successfully via server:', result);
       
-      if (result.status) {
+      if (result.success) {
         return {
           success: true,
           subscription: result.data,
@@ -160,37 +215,51 @@ class PaystackService {
         throw new Error(result.message || 'Failed to fetch subscription');
       }
     } catch (error) {
-      console.error('Paystack subscription fetch error:', error);
+      console.error('💥 Paystack subscription fetch error:', error);
       throw error;
     }
   }
 
-  // Cancel subscription
+  // Cancel subscription via server endpoint
   async cancelSubscription(subscriptionId: string) {
     try {
-      const response = await fetch(`https://api.paystack.co/subscription/disable`, {
+      console.log('🚫 Cancelling subscription via server endpoint');
+      
+      // Use the correct API endpoint for both dev and production
+      const apiEndpoint = process.env.NODE_ENV === 'production' 
+        ? '/api/paystack/cancel-subscription'
+        : 'http://localhost:5000/api/paystack/cancel-subscription';
+      
+      const response = await fetch(apiEndpoint, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${PAYSTACK_PUBLIC_KEY}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          code: subscriptionId,
-        }),
+          subscriptionId,
+          reason: 'User requested cancellation'
+        })
       });
 
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Server API Error Response:', errorText);
+        throw new Error(`Server API error: ${response.status} - ${errorText}`);
+      }
+
       const result = await response.json();
+      console.log('✅ Subscription cancelled successfully via server:', result);
       
-      if (result.status) {
+      if (result.success) {
         return {
           success: true,
-          message: 'Subscription cancelled successfully',
+          message: result.message || 'Subscription cancelled successfully',
         };
       } else {
         throw new Error(result.message || 'Subscription cancellation failed');
       }
     } catch (error) {
-      console.error('Paystack subscription cancellation error:', error);
+      console.error('💥 Paystack subscription cancellation error:', error);
       throw error;
     }
   }

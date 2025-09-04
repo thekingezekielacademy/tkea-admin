@@ -21,10 +21,27 @@ export default async function handler(req, res) {
 
     console.log(`🚀 Initializing Paystack payment for: ${email}, Amount: ${amount}`);
 
-    // Paystack Configuration
-    const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY || 'sk_test_43f8fe41b8ba7fa57b6b3d24a5e7dbf6f45ce1f9';
-    const PAYSTACK_PLAN_CODE = process.env.PAYSTACK_PLAN_CODE || 'PLN_fx0dayx3idr67x1';
+    // Paystack Configuration - Use environment variables for security
+    const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY || process.env.REACT_APP_PAYSTACK_SECRET_KEY;
+    const PAYSTACK_PLAN_CODE = process.env.PAYSTACK_PLAN_CODE || process.env.REACT_APP_PAYSTACK_PLAN_CODE;
     const PAYSTACK_BASE_URL = 'https://api.paystack.co';
+
+    // Validate required environment variables
+    if (!PAYSTACK_SECRET_KEY) {
+      console.error('❌ CRITICAL: PAYSTACK_SECRET_KEY environment variable is required');
+      return res.status(500).json({
+        success: false,
+        message: 'Paystack configuration error: Secret key not found'
+      });
+    }
+
+    if (!PAYSTACK_PLAN_CODE) {
+      console.error('❌ CRITICAL: PAYSTACK_PLAN_CODE environment variable is required');
+      return res.status(500).json({
+        success: false,
+        message: 'Paystack configuration error: Plan code not found'
+      });
+    }
 
     // Call Paystack API to initialize payment
     const response = await fetch(`${PAYSTACK_BASE_URL}/transaction/initialize`, {

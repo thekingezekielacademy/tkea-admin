@@ -1,11 +1,48 @@
 const express = require('express');
+const crypto = require('crypto');
 const router = express.Router();
 const SubscriptionService = require('../services/subscriptionService');
 
-// Paystack Configuration
-const PAYSTACK_SECRET_KEY = 'sk_test_43f8fe41b8ba7fa57b6b3d24a5e7dbf6f45ce1f9';
-const PAYSTACK_PLAN_CODE = 'PLN_fx0dayx3idr67x1';
+// Paystack Configuration - Use environment variables for security
+const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY || process.env.REACT_APP_PAYSTACK_SECRET_KEY;
+const PAYSTACK_PLAN_CODE = process.env.PAYSTACK_PLAN_CODE || process.env.REACT_APP_PAYSTACK_PLAN_CODE;
+const PAYSTACK_WEBHOOK_SECRET = process.env.PAYSTACK_WEBHOOK_SECRET || process.env.REACT_APP_PAYSTACK_WEBHOOK_SECRET;
 const PAYSTACK_BASE_URL = 'https://api.paystack.co';
+
+// Validate required environment variables
+if (!PAYSTACK_SECRET_KEY) {
+  console.error('❌ CRITICAL: PAYSTACK_SECRET_KEY environment variable is required');
+  throw new Error('Paystack secret key not configured');
+}
+
+if (!PAYSTACK_PLAN_CODE) {
+  console.error('❌ CRITICAL: PAYSTACK_PLAN_CODE environment variable is required');
+  throw new Error('Paystack plan code not configured');
+}
+
+if (!PAYSTACK_WEBHOOK_SECRET) {
+  console.error('⚠️ WARNING: PAYSTACK_WEBHOOK_SECRET environment variable is not set - webhook verification disabled');
+}
+
+// Helper function to verify webhook signature
+const verifyWebhookSignature = (payload, signature) => {
+  if (!PAYSTACK_WEBHOOK_SECRET) {
+    console.warn('⚠️ Webhook secret not configured - skipping signature verification');
+    return true; // Allow in development if no secret is set
+  }
+
+  try {
+    const hash = crypto
+      .createHmac('sha512', PAYSTACK_WEBHOOK_SECRET)
+      .update(payload, 'utf8')
+      .digest('hex');
+    
+    return hash === signature;
+  } catch (error) {
+    console.error('❌ Error verifying webhook signature:', error);
+    return false;
+  }
+};
 
 // Helper function to make authenticated Paystack requests
 const makePaystackRequest = async (endpoint, method = 'GET', body = null) => {
@@ -464,12 +501,25 @@ function generateCSV(billingHistory) {
 // Webhook endpoint for Paystack notifications
 router.post('/webhook', async (req, res) => {
   try {
+    // Verify webhook signature for security
+    const signature = req.headers['x-paystack-signature'];
+    const payload = JSON.stringify(req.body);
+    
+    if (!verifyWebhookSignature(payload, signature)) {
+      console.error('❌ Invalid webhook signature - rejecting request');
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Invalid webhook signature' 
+      });
+    }
+
     const { event, data } = req.body;
 
     // Enhanced logging for production debugging
     console.log('🔔 ===== PAYSTACK WEBHOOK RECEIVED =====');
     console.log(`📅 Timestamp: ${new Date().toISOString()}`);
     console.log(`🎯 Event: ${event}`);
+    console.log(`🔐 Signature Verified: ✅`);
     console.log(`📊 Data:`, JSON.stringify(data, null, 2));
     console.log('🔔 ======================================');
 
