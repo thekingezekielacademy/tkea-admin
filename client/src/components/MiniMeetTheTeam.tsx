@@ -69,23 +69,23 @@ const MiniMeetTheTeam: React.FC = () => {
     },
     {
       id: 3,
-      name: "Ogechi",
-      title: "Guest Facilitator",
-      badge: "Guest Facilitator",
+      name: "John Ogechi",
+      title: "Content Creator",
+      badge: "Content Creator",
       badgeColor: "bg-accent-600",
-      subtitle: "Digital Marketing Expert & Business Coach",
+      subtitle: "Social Media Content Creator & Content Writer",
       subtitleColor: "text-accent-600",
       image: "/img/ogechi.jpg?v=1.0.2",
-      alt: "Ogechi - Digital Marketing Expert",
+      alt: "John Ogechi - Content Creator",
       description: [
-        "Ogechi is a Digital Marketing Expert and Business Coach with over 2 years of experience in helping individuals and businesses leverage digital tools for growth and success.",
-        "She is passionate about empowering entrepreneurs and business owners with the knowledge and skills needed to thrive in the digital economy.",
-        "Ogechi specializes in social media marketing, content creation, and digital strategy development, with a focus on helping businesses build strong online presence and achieve their goals."
+        "John Ogechi is a social media content creator and content writer passionate about crafting engaging stories that connect with audiences.",
+        "With 3 years of experience in e-Commerce product management and project coordination and 100% delivery rate, he brings creativity and strategy together to make ideas come alive.",
+        "John specializes in creating compelling content that drives engagement, builds brand awareness, and converts audiences into loyal customers across various digital platforms."
       ],
       stats: [
-        { value: "2+", label: "Years Experience" },
-        { value: "3K+", label: "Students Trained" },
-        { value: "88%", label: "Success Rate" }
+        { value: "3+", label: "Years Experience" },
+        { value: "100%", label: "Delivery Rate" },
+        { value: "∞", label: "Creative Ideas" }
       ],
       statsColor: "text-accent-600"
     }
