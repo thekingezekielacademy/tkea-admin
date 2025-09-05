@@ -269,10 +269,15 @@ const Courses: React.FC = () => {
           )
         `);
 
+
       // Apply category filtering
       if (selectedCategory !== 'all') {
+        console.log('🔍 Filtering by category:', selectedCategory);
         query = query.eq('category', selectedCategory);
+      } else {
+        console.log('🔍 No category filter applied');
       }
+
 
       // Apply level filtering
       if (selectedLevel !== 'all') {
@@ -303,7 +308,17 @@ const Courses: React.FC = () => {
 
       const { data, error: fetchError } = await query;
       
-      // console.log(`📊 Supabase response for page ${page}:`, { data, error: fetchError });
+      console.log(`📊 Supabase response for page ${page}:`, { 
+        dataCount: data?.length || 0, 
+        error: fetchError,
+        selectedCategory,
+        selectedLevel,
+        selectedSort
+      });
+      
+      if (data && data.length > 0) {
+        console.log('🔍 Sample course categories:', data.map(c => c.category));
+      }
       
       if (fetchError) {
         console.error('❌ Supabase error:', fetchError);
@@ -567,6 +582,7 @@ const Courses: React.FC = () => {
 
   // Handle category change
   const handleCategoryChange = (newCategory: string) => {
+    console.log('🔍 Category changed to:', newCategory);
     setSelectedCategory(newCategory);
     setCurrentPage(0);
     setHasMore(true);
