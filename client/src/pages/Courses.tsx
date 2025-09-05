@@ -648,12 +648,11 @@ const Courses: React.FC = () => {
   ];
 
   const filteredCourses = courses.filter(course => {
+    // Only filter by search term since category and level filtering is done at database level
     const matchesSearch = course.title.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
                          (course.description && course.description.toLowerCase().includes(debouncedSearchTerm.toLowerCase()));
-    const matchesCategory = selectedCategory === 'all' || course.category === selectedCategory;
-    const matchesLevel = selectedLevel === 'all' || course.level === selectedLevel;
     
-    return matchesSearch && matchesCategory && matchesLevel;
+    return matchesSearch;
   });
 
   const getCategoryIcon = (category: string) => {
