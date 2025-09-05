@@ -27,7 +27,7 @@ const STATIC_FILES = [
   '/manifest.json',
   '/favicon.ico',
   '/favicon.svg',
-  '/img/og-default.jpg',
+  '/img/linkpreview_image.jpg',
   '/img/og-home.jpg',
   '/img/og-about.jpg',
   '/img/kingezekiel.jpg',

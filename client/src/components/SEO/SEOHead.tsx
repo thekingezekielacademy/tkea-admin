@@ -30,7 +30,7 @@ const SEOHead: React.FC<SEOHeadProps> = ({
   description,
   keywords,
   canonical,
-  ogImage = '/img/og-default.jpg',
+  ogImage = '/img/linkpreview_image.jpg',
   ogType = 'website',
   twitterCard = 'summary_large_image',
   structuredData,

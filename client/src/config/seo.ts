@@ -123,7 +123,7 @@ export const defaultSEO: PageSEOConfig = {
   title: 'Digital Marketing Education Platform',
   description: 'Learn digital marketing, social media, e-commerce, and business growth strategies from industry experts. Join thousands of successful entrepreneurs and professionals.',
   keywords: 'digital marketing, social media marketing, e-commerce, business growth, online education, digital skills, entrepreneurship, Nigeria, Africa',
-  ogImage: '/img/og-default.jpg',
+  ogImage: '/img/linkpreview_image.jpg',
   ogType: 'website',
   twitterCard: 'summary_large_image'
 };
@@ -174,7 +174,7 @@ export const pageSEOConfigs: Record<string, PageSEOConfig> = {
     title: 'Privacy Policy',
     description: 'Learn how we protect your privacy and handle your personal information. Our commitment to data security and user privacy.',
     keywords: 'privacy policy, data protection, user privacy, GDPR, data security',
-    ogImage: '/img/og-default.jpg',
+    ogImage: '/img/linkpreview_image.jpg',
     ogType: 'website'
   },
   
@@ -182,7 +182,7 @@ export const pageSEOConfigs: Record<string, PageSEOConfig> = {
     title: 'Terms of Service',
     description: 'Read our terms of service and user agreement. Understanding your rights and responsibilities when using our platform.',
     keywords: 'terms of service, user agreement, legal, rights, responsibilities, platform usage',
-    ogImage: '/img/og-default.jpg',
+    ogImage: '/img/linkpreview_image.jpg',
     ogType: 'website'
   }
 };
