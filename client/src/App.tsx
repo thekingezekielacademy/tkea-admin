@@ -3,7 +3,6 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { SidebarProvider } from './contexts/SidebarContext';
 import { initializeServiceWorker } from './utils/serviceWorker';
-import { EnvironmentValidator } from './utils/envValidator';
 import FacebookPixelProvider from './components/FacebookPixelProvider';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
@@ -58,9 +57,6 @@ function App() {
     // Initialize monitoring first
     webVitals.startMonitoring();
     analytics.initialize();
-    
-    // Validate environment variables
-    EnvironmentValidator.logValidation();
     
     // Initialize service worker for caching and performance
     initializeServiceWorker();

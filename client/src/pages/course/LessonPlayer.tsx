@@ -124,6 +124,8 @@ const LessonPlayer: React.FC = () => {
           }
           
           if (foundVideo) {
+            console.log('🎥 Found video:', foundVideo);
+            console.log('🔗 Video link from database:', foundVideo.link);
             setCurrentVideo(foundVideo);
             setCurrentLessonIndex(sortedVideos.findIndex((v: any) => v.id === foundVideo.id));
           } else {

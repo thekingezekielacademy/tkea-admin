@@ -50,19 +50,17 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
   useEffect(() => {
     const loadYouTubeAPI = () => {
       if (window.YT && window.YT.Player) {
-        return Promise.resolve();
+        return;
       }
       
-      return new Promise<void>((resolve) => {
-        const script = document.createElement('script');
-        script.src = 'https://www.youtube.com/iframe_api';
-        script.onload = () => {
-          window.onYouTubeIframeAPIReady = () => {
-            resolve();
-          };
+      const script = document.createElement('script');
+      script.src = 'https://www.youtube.com/iframe_api';
+      script.onload = () => {
+        window.onYouTubeIframeAPIReady = () => {
+          console.log('YouTube API loaded');
         };
-        document.head.appendChild(script);
-      });
+      };
+      document.head.appendChild(script);
     };
 
     if (type === 'youtube') {
@@ -90,6 +88,9 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
       const videoId = src.includes('youtube.com') || src.includes('youtu.be') 
         ? src.match(/(?:youtube\.com\/(?:[^/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?/\s]{11})/)?.[1] || src
         : src;
+      
+      console.log('🎬 AdvancedVideoPlayer - Source URL:', src);
+      console.log('🎬 AdvancedVideoPlayer - Extracted Video ID:', videoId);
       
 
       
@@ -122,33 +123,27 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
             height: '100%',
             playerVars: {
               autoplay: 0,
-              controls: 0,
+              controls: 1,
               modestbranding: 1,
               rel: 0,
               showinfo: 0,
               iv_load_policy: 3,
               cc_load_policy: 0,
-              fs: 0,
-              disablekb: 1,
+              fs: 1,
+              disablekb: 0,
               playsinline: 1,
-              origin: 'https://www.youtube.com',
               enablejsapi: 1,
-              // Additional parameters for complete discretion
-              start: 0,
-              end: 0,
-              loop: 0,
-              playlist: '',
-              // Hide YouTube branding completely
-              widget_referrer: window.location.origin,
-              // Prevent YouTube suggestions and branding
-              hl: 'en',
-              cc_lang_pref: 'en'
+              origin: window.location.origin
             },
             events: {
               onReady: (event: any) => {
-                setIsLoading(false);
-                setIsPlayerReady(true);
                 console.log('YouTube player ready');
+                // Add a small delay to ensure player is fully ready
+                setTimeout(() => {
+                  setIsLoading(false);
+                  setIsPlayerReady(true);
+                  console.log('YouTube player fully ready');
+                }, 500);
                 
                 // Check available playback rates for this video
                 if (playerRef.current && playerRef.current.getAvailablePlaybackRates) {
@@ -178,6 +173,24 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
                   if (event.data === 0) {
                     onEnded?.();
                   }
+                }
+              },
+              onError: (event: any) => {
+                console.error('YouTube player error:', event.data);
+                setIsLoading(false);
+                // Common error codes: 2 (invalid video), 5 (HTML5 player error), 100 (video not found), 150 (video restricted)
+                if (event.data === 2) {
+                  console.error('❌ Invalid video ID or video not available');
+                } else if (event.data === 5) {
+                  console.error('❌ HTML5 player error');
+                } else if (event.data === 100) {
+                  console.error('❌ Video not found or private');
+                } else if (event.data === 150) {
+                  console.error('❌ Video is restricted or unavailable. Check if the video is public and not region-locked.');
+                  console.error('❌ Video ID causing error:', videoId);
+                  console.error('❌ Source URL:', src);
+                } else {
+                  console.error('❌ Unknown YouTube error:', event.data);
                 }
               }
             }
