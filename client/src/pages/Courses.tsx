@@ -269,15 +269,10 @@ const Courses: React.FC = () => {
           )
         `);
 
-
       // Apply category filtering
       if (selectedCategory !== 'all') {
-        console.log('🔍 Filtering by category:', selectedCategory);
         query = query.eq('category', selectedCategory);
-      } else {
-        console.log('🔍 No category filter applied');
       }
-
 
       // Apply level filtering
       if (selectedLevel !== 'all') {
@@ -308,17 +303,7 @@ const Courses: React.FC = () => {
 
       const { data, error: fetchError } = await query;
       
-      console.log(`📊 Supabase response for page ${page}:`, { 
-        dataCount: data?.length || 0, 
-        error: fetchError,
-        selectedCategory,
-        selectedLevel,
-        selectedSort
-      });
-      
-      if (data && data.length > 0) {
-        console.log('🔍 Sample course categories:', data.map(c => c.category));
-      }
+      // console.log(`📊 Supabase response for page ${page}:`, { data, error: fetchError });
       
       if (fetchError) {
         console.error('❌ Supabase error:', fetchError);
@@ -582,7 +567,6 @@ const Courses: React.FC = () => {
 
   // Handle category change
   const handleCategoryChange = (newCategory: string) => {
-    console.log('🔍 Category changed to:', newCategory);
     setSelectedCategory(newCategory);
     setCurrentPage(0);
     setHasMore(true);
@@ -623,14 +607,16 @@ const Courses: React.FC = () => {
     // });
   }, [user?.id, hasTrialAccess, databaseSubscriptionStatus]);
 
-  // Debounce search term to prevent excessive filtering
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearchTerm(searchTerm);
-    }, 300);
 
-    return () => clearTimeout(timer);
-  }, [searchTerm]);
+  // Watch for filter changes and refetch courses
+  useEffect(() => {
+    if (selectedCategory !== 'all' || selectedLevel !== 'all' || selectedSort !== 'all') {
+      fetchCourses(0, false);
+    }
+  }, [selectedCategory, selectedLevel, selectedSort]);
+
+  // Debounce search term to prevent excessive filtering
+
 
   // Define all available categories with proper labels
   const categories = [
