@@ -269,6 +269,12 @@ const Dashboard: React.FC = () => {
           .eq('is_active', true)
           .single();
 
+        // Handle 406 errors gracefully (RLS policy issues)
+        if (error && (error.code === 'PGRST116' || error.message?.includes('406'))) {
+          console.log('Database table user_trials not available yet or RLS policy issue');
+          return;
+        }
+
         if (!error && trialData) {
           const now = new Date();
           const endDate = new Date(trialData.end_date);
@@ -570,11 +576,11 @@ const Dashboard: React.FC = () => {
                 completedLessons: 0, // Will be updated with real data
                 category: 'General',
                 instructor: 'King Ezekiel Academy',
-                rating: 4.8,
-                enrolledStudents: 1247,
-                image: '/api/placeholder/300/200'
-              });
-              
+    rating: 4.8,
+    enrolledStudents: 1247,
+    image: '/api/placeholder/300/200'
+  });
+
               // Try to fetch actual course details and video count
               try {
                 const { data: courseData } = await supabase
@@ -641,12 +647,12 @@ const Dashboard: React.FC = () => {
       const recommended = availableCourses.slice(0, 2).map(course => ({
         id: course.id,
         title: course.title,
-        progress: 0,
+      progress: 0,
         totalLessons: 0, // We'll fetch this if needed
-        completedLessons: 0,
+      completedLessons: 0,
         category: course.level || 'General',
         instructor: 'King Ezekiel Academy',
-        rating: 4.7,
+      rating: 4.7,
         enrolledStudents: 1000,
         image: course.cover_photo_url || '/api/placeholder/300/200'
       }));
@@ -693,11 +699,11 @@ const Dashboard: React.FC = () => {
     // Badge: First Steps (complete first lesson)
     if (userStats.xp > 0) {
       newBadges.push({
-        id: '1',
+      id: '1',
         name: 'First Steps',
         description: 'Complete your first lesson',
         icon: '🎯',
-        earned: true,
+      earned: true,
         earnedDate: 'Today'
       });
     }
@@ -705,11 +711,11 @@ const Dashboard: React.FC = () => {
     // Badge: Week Warrior (7+ day streak)
     if (userStats.streak_count >= 7) {
       newBadges.push({
-        id: '2',
+      id: '2',
         name: 'Week Warrior',
         description: 'Learn for 7 days in a row',
-        icon: '🔥',
-        earned: true,
+      icon: '🔥',
+      earned: true,
         earnedDate: 'Today'
       });
     } else {
@@ -726,11 +732,11 @@ const Dashboard: React.FC = () => {
     // Badge: Course Master (complete a course)
     if (currentCourse.progress >= 100) {
       newBadges.push({
-        id: '3',
+      id: '3',
         name: 'Course Master',
         description: 'Complete a full course',
         icon: '🏆',
-        earned: true,
+      earned: true,
         earnedDate: 'Today'
       });
     } else {
@@ -738,8 +744,8 @@ const Dashboard: React.FC = () => {
         id: '3',
         name: 'Course Master',
         description: 'Complete a full course',
-        icon: '🏆',
-        earned: false,
+      icon: '🏆',
+      earned: false,
         progress: currentCourse.progress
       });
     }
@@ -807,7 +813,7 @@ const Dashboard: React.FC = () => {
 
 
   if (isLoading) {
-    return (
+  return (
       <div className="min-h-screen bg-gray-50">
         {/* Sidebar */}
         <DashboardSidebar />
@@ -830,7 +836,7 @@ const Dashboard: React.FC = () => {
       
       {/* Main Content */}
                  <div className={`${getSidebarMargin()} transition-all duration-300 ease-in-out`}>
-        {/* Header */}
+      {/* Header */}
         <div className="bg-white shadow-sm border-b pt-16">
         <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6 py-4">
           <div className="flex items-center justify-between">
@@ -942,44 +948,44 @@ const Dashboard: React.FC = () => {
                 </div>
               ) : currentCourse ? (
                 <>
-                  {/* Current Course Progress */}
-                  <div className="mb-6">
-                    <div className="flex items-center justify-between mb-3">
-                      <h3 className="font-semibold text-gray-900">{currentCourse.title}</h3>
+              {/* Current Course Progress */}
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="font-semibold text-gray-900">{currentCourse.title}</h3>
                       <div className="flex items-center space-x-2">
                         <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
                           {currentCourse.category}
                         </span>
-                        <span className="text-sm text-gray-600">
+                  <span className="text-sm text-gray-600">
                           {currentCourse.completedLessons}/{currentCourse.totalLessons} videos
-                        </span>
-                      </div>
+                  </span>
+                </div>
                     </div>
                     
                     {/* Progress Bar */}
                     <div className="relative mb-3">
-                      <div className="w-full bg-gray-200 rounded-full h-3">
-                        <div 
-                          className={`h-3 rounded-full ${getProgressColor(currentCourse.progress)} transition-all duration-300`}
-                          style={{ width: `${currentCourse.progress}%` }}
-                        ></div>
-                      </div>
+                  <div className="w-full bg-gray-200 rounded-full h-3">
+                    <div 
+                      className={`h-3 rounded-full ${getProgressColor(currentCourse.progress)} transition-all duration-300`}
+                      style={{ width: `${currentCourse.progress}%` }}
+                    ></div>
+                  </div>
                     </div>
                     
                     {/* Progress Details */}
                     <div className="flex justify-between items-center mb-4">
                       <div className="flex items-center space-x-4">
-                        <span className="text-sm text-gray-600">
+                    <span className="text-sm text-gray-600">
                           <strong>{currentCourse.progress}%</strong> complete
-                        </span>
+                    </span>
                         <span className="text-sm text-gray-500">
                           {currentCourse.totalLessons - currentCourse.completedLessons} videos remaining
                         </span>
                       </div>
-                      <span className="text-sm text-green-600 font-medium">
+                    <span className="text-sm text-green-600 font-medium">
                         {currentCourse.progress > 0 ? 'Keep going! 🚀' : 'Start watching! 🎬'}
-                      </span>
-                    </div>
+                    </span>
+                  </div>
                     
                     {/* Course Stats */}
                     <div className="grid grid-cols-3 gap-4 bg-gray-50 rounded-lg p-3">
@@ -1018,16 +1024,16 @@ const Dashboard: React.FC = () => {
                         </span>
                         <FaArrowRight className="text-sm" />
                       </button>
-                    </div>
-                  </div>
+                </div>
+              </div>
 
-                  {/* Next Milestone */}
-                  <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-4 border border-blue-200">
-                    <div className="flex items-center space-x-3">
-                      <FaTrophy className="text-yellow-500 text-xl" />
-                      <div>
-                        <h4 className="font-semibold text-gray-900">Next Milestone</h4>
-                        <p className="text-sm text-gray-600">
+              {/* Next Milestone */}
+              <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-4 border border-blue-200">
+                <div className="flex items-center space-x-3">
+                  <FaTrophy className="text-yellow-500 text-xl" />
+                  <div>
+                    <h4 className="font-semibold text-gray-900">Next Milestone</h4>
+                    <p className="text-sm text-gray-600">
                           {currentCourse.progress >= 100 ? (
                             "🎉 Course completed! You've earned the 'Course Master' badge!"
                           ) : currentCourse.progress >= 75 ? (
@@ -1039,10 +1045,10 @@ const Dashboard: React.FC = () => {
                           ) : (
                             "Watch your first video to earn the 'First Steps' badge!"
                           )}
-                        </p>
-                      </div>
-                    </div>
+                    </p>
                   </div>
+                </div>
+              </div>
                 </>
               ) : (
                 <div className="text-center py-8">
@@ -1182,26 +1188,26 @@ const Dashboard: React.FC = () => {
                 </div>
               ) : recommendedCourses.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  {recommendedCourses.map((course) => (
+                {recommendedCourses.map((course) => (
                     <div key={course.id} className="border rounded-lg p-6 hover:shadow-md transition-shadow">
-                      <div className="flex items-start space-x-4">
-                        <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">
-                          {course.title.split(' ').map(word => word[0]).join('')}
+                    <div className="flex items-start space-x-4">
+                      <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">
+                        {course.title.split(' ').map(word => word[0]).join('')}
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-gray-900 mb-1">{course.title}</h3>
+                        <p className="text-sm text-gray-600 mb-2">{course.instructor}</p>
+                        <div className="flex items-center space-x-4 text-sm">
+                          <span className="flex items-center space-x-1">
+                            <FaStar className="text-yellow-400" />
+                            <span>{course.rating}</span>
+                          </span>
+                          <span className="flex items-center space-x-1">
+                            <FaUsers className="text-gray-400" />
+                            <span>{course.enrolledStudents}</span>
+                          </span>
                         </div>
-                        <div className="flex-1">
-                          <h3 className="font-semibold text-gray-900 mb-1">{course.title}</h3>
-                          <p className="text-sm text-gray-600 mb-2">{course.instructor}</p>
-                          <div className="flex items-center space-x-4 text-sm">
-                            <span className="flex items-center space-x-1">
-                              <FaStar className="text-yellow-400" />
-                              <span>{course.rating}</span>
-                            </span>
-                            <span className="flex items-center space-x-1">
-                              <FaUsers className="text-gray-400" />
-                              <span>{course.enrolledStudents}</span>
-                            </span>
-                          </div>
-                          <div className="mt-3">
+                        <div className="mt-3">
                             <button 
                               onClick={() => {
                                 if (trialStatus.isExpired && !subActive) {
@@ -1217,13 +1223,13 @@ const Dashboard: React.FC = () => {
                               }`}
                             >
                               {trialStatus.isExpired && !subActive ? 'Upgrade to Access' : 'Start Learning'}
-                            </button>
-                          </div>
+                          </button>
                         </div>
                       </div>
                     </div>
-                  ))}
-                </div>
+                  </div>
+                ))}
+              </div>
               ) : (
                 <div className="text-center py-8">
                   <div className="text-gray-400 mb-4">
@@ -1320,14 +1326,14 @@ const Dashboard: React.FC = () => {
                   </div>
                 </div>
               ) : (
-                <div className="bg-orange-50 rounded-lg p-3 mb-4">
-                  <p className="text-sm text-orange-800">
+              <div className="bg-orange-50 rounded-lg p-3 mb-4">
+                <p className="text-sm text-orange-800">
                     🔥 You've learned {userStats.streak_count} days in a row. Keep it up!
                   </p>
                   <p className="text-xs text-orange-700 mt-1">
                     Daily streak bonus: +{userStats.streak_count * 10} XP
-                  </p>
-                </div>
+                </p>
+              </div>
               )}
 
               <div className="bg-gray-50 rounded-lg p-3">
@@ -1373,16 +1379,16 @@ const Dashboard: React.FC = () => {
               <h3 className="font-semibold text-gray-900 mb-4">Experience Points</h3>
               
               {userStats.xp === 0 ? (
-                <div className="text-center mb-4">
+              <div className="text-center mb-4">
                   <div className="text-3xl font-bold text-gray-400 mb-2">
                     Level 1
-                  </div>
+                </div>
                   <p className="text-sm text-gray-600 mb-2">0 total XP</p>
                   <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-lg p-3 border border-green-200">
                     <p className="text-xs text-green-800 font-medium">
                       🎯 Complete your first lesson to earn 50 XP and unlock your potential!
                     </p>
-                  </div>
+              </div>
                 </div>
               ) : (
                 <div className="text-center mb-4">
@@ -1421,7 +1427,7 @@ const Dashboard: React.FC = () => {
               <div className="flex items-center space-x-3 mb-4">
                 <FaCrown className="text-yellow-500 text-xl" />
                 <h3 className="font-semibold text-gray-900">Subscription</h3>
-              </div>
+                </div>
               
               {trialStatus.isActive && !subActive ? (
                 <div className="text-center mb-4">
@@ -1452,8 +1458,8 @@ const Dashboard: React.FC = () => {
                       Subscribe to start learning!
                     </p>
                   </div>
-                </div>
-              )}
+              </div>
+            )}
               
               <button 
                 onClick={() => navigate('/subscription')}
@@ -1474,9 +1480,9 @@ const Dashboard: React.FC = () => {
                 <h3 className="font-semibold text-gray-900 mb-2">Continue Learning</h3>
                 {currentCourse ? (
                   <>
-                    <p className="text-sm text-gray-600 mb-4">
-                      Pick up where you left off in {currentCourse.title}
-                    </p>
+                <p className="text-sm text-gray-600 mb-4">
+                  Pick up where you left off in {currentCourse.title}
+                </p>
                     <button 
                       onClick={() => {
                         if (trialStatus.isExpired && !subActive) {
@@ -1492,7 +1498,7 @@ const Dashboard: React.FC = () => {
                       }`}
                     >
                       {trialStatus.isExpired && !subActive ? 'Upgrade to Access' : 'Resume Course'}
-                    </button>
+                </button>
                   </>
                 ) : (
                   <>
@@ -1567,10 +1573,10 @@ const Dashboard: React.FC = () => {
                     Access complete profile settings, bio, and subscription management
                   </p>
                 </div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
         </div>
       </div>
     </div>

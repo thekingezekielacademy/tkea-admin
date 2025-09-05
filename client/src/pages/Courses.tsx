@@ -66,17 +66,23 @@ const Courses: React.FC = () => {
 
   // Debug sidebar state
   useEffect(() => {
-    console.log('Sidebar Debug:', {
-      user: !!user,
-      isMobile,
-      isExpanded,
-      margin: getSidebarMargin()
-    });
+    // console.log('Sidebar Debug:', {
+    //   user: !!user,
+    //   isMobile,
+    //   isExpanded,
+    //   margin: getSidebarMargin(),
+    // });
   }, [user, isMobile, isExpanded]);
 
   // Check database subscription status
   const checkDatabaseSubscription = async () => {
     if (!user?.id) return;
+    
+    // Wait for auth to be fully loaded
+    if (!supabase.auth.getUser()) {
+      console.log('Auth not ready, skipping subscription check');
+      return;
+    }
     
     try {
       const { data, error } = await supabase
@@ -89,16 +95,16 @@ const Courses: React.FC = () => {
         .single();
       
       if (!error && data) {
-        console.log('✅ Found active subscription in database:', data);
+        // console.log('✅ Found active subscription in database:', data);
         setDatabaseSubscriptionStatus(true);
         return true;
       } else {
-        console.log('❌ No active subscription found in database');
+        // console.log('❌ No active subscription found in database');
         setDatabaseSubscriptionStatus(false);
         return false;
       }
     } catch (error) {
-      console.log('⚠️ Database subscription check failed (table may not exist yet):', error);
+      // console.log('⚠️ Database subscription check failed (table may not exist yet):', error);
       setDatabaseSubscriptionStatus(false);
       return false;
     }
@@ -108,19 +114,25 @@ const Courses: React.FC = () => {
   const checkTrialAccess = async () => {
     if (!user?.id) return;
     
+    // Wait for auth to be fully loaded
+    if (!supabase.auth.getUser()) {
+      console.log('Auth not ready, skipping trial check');
+      return;
+    }
+    
     // CRITICAL: If user has an active subscription (any source), they should NOT have trial access
     const isSubscribed = databaseSubscriptionStatus || 
                         secureStorage.isSubscriptionActive() || 
                         localStorage.getItem('subscription_active') === 'true';
     
     if (isSubscribed) {
-      console.log('✅ User has active subscription (secureStorage, localStorage, or database), no trial access needed');
+      // console.log('✅ User has active subscription (secureStorage, localStorage, or database), no trial access needed');
       setHasTrialAccess(false);
       
       // Clear any existing trial data from localStorage since user is subscribed
       const existingTrial = localStorage.getItem('user_trial_status');
       if (existingTrial) {
-        console.log('🗑️ Clearing localStorage trial data for subscribed user');
+        // console.log('🗑️ Clearing localStorage trial data for subscribed user');
         localStorage.removeItem('user_trial_status');
       }
       return;
@@ -141,10 +153,10 @@ const Courses: React.FC = () => {
           
           const hasAccess = parsedTrial.isActive && daysRemaining > 0;
           setHasTrialAccess(hasAccess);
-          console.log('Trial access check from localStorage:', hasAccess, 'days remaining:', daysRemaining);
+          // console.log('Trial access check from localStorage:', hasAccess, 'days remaining:', daysRemaining);
           return;
         } catch (parseError) {
-          console.log('Failed to parse localStorage trial data');
+          // console.log('Failed to parse localStorage trial data');
         }
       }
       
@@ -178,11 +190,11 @@ const Courses: React.FC = () => {
         // Save to localStorage
         localStorage.setItem('user_trial_status', JSON.stringify(newTrialStatus));
         setHasTrialAccess(true);
-        console.log('✅ Initialized trial for new user in Courses:', newTrialStatus);
+        // console.log('✅ Initialized trial for new user in Courses:', newTrialStatus);
       } else {
         // User is older than 7 days, no trial
         setHasTrialAccess(false);
-        console.log('User is older than 7 days, no trial available');
+        // console.log('User is older than 7 days, no trial available');
       }
       
       // Try database query as well (for when table exists)
@@ -191,10 +203,10 @@ const Courses: React.FC = () => {
         // Only set trial access if user is NOT subscribed
         if (!isSubscribed) {
           setHasTrialAccess(trialAccess);
-          console.log('Trial access check from database:', trialAccess);
+          // console.log('Trial access check from database:', trialAccess);
         }
       } catch (dbError) {
-        console.log('Database table user_trials not available yet');
+        // console.log('Database table user_trials not available yet');
       }
     } catch (error) {
       console.error('Error in checkTrialAccess:', error);
@@ -225,22 +237,22 @@ const Courses: React.FC = () => {
         setLoadingMore(true);
       }
       
-      console.log(`🔍 Fetching courses page ${page}...`);
+      // console.log(`🔍 Fetching courses page ${page}...`);
       
       // For non-authenticated users, we can still fetch courses for viewing
       // Only require authentication for actual course access
       if (!user) {
-        console.log('👤 Guest user fetching courses - allowing read-only access');
+        // console.log('👤 Guest user fetching courses - allowing read-only access');
       } else {
         // First, refresh the session to ensure we have a valid token
         const { data: sessionData, error: sessionError } = await supabase.auth.refreshSession();
         
         if (sessionError) {
-          console.log('⚠️ Session refresh failed, trying to get current session:', sessionError);
+          // console.log('⚠️ Session refresh failed, trying to get current session:', sessionError);
           // If refresh fails, try to get current session
           const { data: currentSession } = await supabase.auth.getSession();
           if (!currentSession.session) {
-            console.log('⚠️ No valid session found for authenticated user');
+            // console.log('⚠️ No valid session found for authenticated user');
           }
         }
       }
@@ -291,14 +303,14 @@ const Courses: React.FC = () => {
 
       const { data, error: fetchError } = await query;
       
-      console.log(`📊 Supabase response for page ${page}:`, { data, error: fetchError });
+      // console.log(`📊 Supabase response for page ${page}:`, { data, error: fetchError });
       
       if (fetchError) {
         console.error('❌ Supabase error:', fetchError);
         
         // Handle specific authentication errors
         if (fetchError.code === 'PGRST303' || fetchError.message?.includes('JWT expired')) {
-          console.log('🔄 JWT expired, attempting to refresh session...');
+          // console.log('🔄 JWT expired, attempting to refresh session...');
           
           // Try to refresh the session and retry
           const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
@@ -366,7 +378,7 @@ const Courses: React.FC = () => {
           }
           
           if (retryData) {
-            console.log(`✅ Courses data received after refresh for page ${page}:`, retryData);
+            // console.log(`✅ Courses data received after refresh for page ${page}:`, retryData);
                               const transformedCourses = retryData.map(course => ({
                     ...course,
                     // Add real data from videos
@@ -384,7 +396,7 @@ const Courses: React.FC = () => {
             const finalCourses = append ? transformedCourses : shuffleArray(transformedCourses);
             
             if (!append) {
-              console.log('🎲 Courses shuffled for fresh random order!');
+              // console.log('🎲 Courses shuffled for fresh random order!');
             }
             
             if (append) {
@@ -413,10 +425,10 @@ const Courses: React.FC = () => {
       }
       
       if (data) {
-        console.log(`✅ Courses data received for page ${page}:`, data);
-        console.log(`🔍 Sample course data:`, data[0]);
-        console.log(`🔍 Sample course_videos:`, data[0]?.course_videos);
-        console.log(`🔍 Sample category:`, data[0]?.category);
+        // console.log(`✅ Courses data received for page ${page}:`, data);
+        // console.log(`🔍 Sample course data:`, data[0]);
+        // console.log(`🔍 Sample course_videos:`, data[0]?.course_videos);
+        // console.log(`🔍 Sample category:`, data[0]?.category);
                           // Transform data to match our interface
                   const transformedCourses = data.map(course => ({
                     ...course,
@@ -435,7 +447,7 @@ const Courses: React.FC = () => {
         const finalCourses = append ? transformedCourses : shuffleArray(transformedCourses);
         
         if (!append) {
-          console.log('🎲 Courses shuffled for fresh random order!');
+          // console.log('🎲 Courses shuffled for fresh random order!');
         }
         
         if (append) {
@@ -454,10 +466,10 @@ const Courses: React.FC = () => {
         }
         setCurrentPage(page);
         
-        console.log(`🔄 Transformed courses for page ${page}:`, transformedCourses);
-        console.log(`📊 Has more courses: ${data.length === COURSES_PER_PAGE}`);
+        // console.log(`🔄 Transformed courses for page ${page}:`, transformedCourses);
+        // console.log(`📊 Has more courses: ${data.length === COURSES_PER_PAGE}`);
       } else {
-        console.log(`⚠️ No data received from Supabase for page ${page}`);
+        // console.log(`⚠️ No data received from Supabase for page ${page}`);
         if (!append) setCourses([]);
         setHasMore(false);
       }
@@ -587,12 +599,12 @@ const Courses: React.FC = () => {
 
   // Debug logging for trial access
   useEffect(() => {
-    console.log('🔍 Trial access debug:', {
-      user: user?.id,
-      hasTrialAccess,
-      subActive: databaseSubscriptionStatus || secureStorage.isSubscriptionActive(),
-      trialStatus: localStorage.getItem('user_trial_status')
-    });
+    // console.log('🔍 Trial access debug:', {
+    //   user: user?.id,
+    //   hasTrialAccess,
+    //   subActive: databaseSubscriptionStatus || secureStorage.isSubscriptionActive(),
+    //   trialStatus: localStorage.getItem('user_trial_status')
+    // });
   }, [user?.id, hasTrialAccess, databaseSubscriptionStatus]);
 
   // Debounce search term to prevent excessive filtering

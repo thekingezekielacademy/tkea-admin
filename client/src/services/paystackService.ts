@@ -1,17 +1,15 @@
 // Paystack Service - Secure Subscription Management
 import { supabase } from '../lib/supabase';
+import { ErrorHandler } from '../utils/errorHandler';
+import { logInfo, logError, logApiCall } from '../utils/performanceLogger';
 
-// Paystack configuration - Use environment variables for security
+// API Configuration - Use secure server-side endpoints
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://app.thekingezekielacademy.com/api';
 const PAYSTACK_PUBLIC_KEY = process.env.REACT_APP_PAYSTACK_PUBLIC_KEY;
-const PAYSTACK_PLAN_CODE = process.env.REACT_APP_PAYSTACK_PLAN_CODE;
 
 // Validate required environment variables
 if (!PAYSTACK_PUBLIC_KEY) {
   console.error('❌ CRITICAL: REACT_APP_PAYSTACK_PUBLIC_KEY environment variable is required');
-}
-
-if (!PAYSTACK_PLAN_CODE) {
-  console.error('❌ CRITICAL: REACT_APP_PAYSTACK_PLAN_CODE environment variable is required');
 }
 
 export interface PaystackTransaction {
@@ -45,16 +43,13 @@ export interface SubscriptionData {
 class PaystackService {
   // Initialize Paystack payment
   async initializePayment(email: string, amount: number, metadata: any = {}) {
+    const startTime = performance.now();
+    
     try {
-      console.log('🚀 Initializing Paystack payment via server endpoint');
+      logInfo('Initializing Paystack payment via secure server endpoint', { email, amount }, 'PaystackService', 'initializePayment');
       
-      // Use the correct API endpoint for both dev and production
-      const apiEndpoint = process.env.NODE_ENV === 'production' 
-        ? '/api/paystack/initialize-payment'
-        : 'http://localhost:5000/api/paystack/initialize-payment';
-      
-      // Call our server endpoint instead of Paystack directly
-      const response = await fetch(apiEndpoint, {
+      // Use secure API endpoint
+      const response = await fetch(`${API_BASE_URL}/paystack/secure-payment/initialize`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -62,20 +57,26 @@ class PaystackService {
         body: JSON.stringify({
           email,
           amount,
-          metadata
+          reference: `KEA_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          metadata: {
+            ...metadata,
+            source: 'king-ezekiel-academy',
+            timestamp: new Date().toISOString()
+          }
         })
       });
 
-      console.log('📡 Server API Response Status:', response.status);
+      const duration = performance.now() - startTime;
+      logApiCall('POST', '/paystack/secure-payment/initialize', response.status, duration);
       
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('❌ Server API Error Response:', errorText);
-        throw new Error(`Server API error: ${response.status} - ${errorText}`);
+        logError('Secure API Error Response', { status: response.status, error: errorText }, 'PaystackService', 'initializePayment');
+        throw new Error(`Secure API error: ${response.status} - ${errorText}`);
       }
 
       const result = await response.json();
-      console.log('✅ Payment initialized successfully via server:', result);
+      logInfo('Payment initialized successfully via secure server', { success: result.success }, 'PaystackService', 'initializePayment');
       
       if (result.success) {
         return {
@@ -87,7 +88,11 @@ class PaystackService {
         throw new Error(result.message || 'Payment initialization failed');
       }
     } catch (error) {
-      console.error('💥 Paystack payment initialization error:', error);
+      ErrorHandler.handleApiError(error, {
+        component: 'PaystackService',
+        action: 'initializePayment',
+        metadata: { email, amount }
+      });
       throw error;
     }
   }
@@ -220,35 +225,29 @@ class PaystackService {
     }
   }
 
-  // Cancel subscription via server endpoint
+  // Cancel subscription via secure server endpoint
   async cancelSubscription(subscriptionId: string) {
     try {
-      console.log('🚫 Cancelling subscription via server endpoint');
+      console.log('🚫 Cancelling subscription via secure server endpoint');
       
-      // Use the correct API endpoint for both dev and production
-      const apiEndpoint = process.env.NODE_ENV === 'production' 
-        ? '/api/paystack/cancel-subscription'
-        : 'http://localhost:5000/api/paystack/cancel-subscription';
-      
-      const response = await fetch(apiEndpoint, {
+      const response = await fetch(`${API_BASE_URL}/paystack/secure-payment/cancel-subscription`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          subscriptionId,
-          reason: 'User requested cancellation'
+          subscription_code: subscriptionId
         })
       });
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('❌ Server API Error Response:', errorText);
-        throw new Error(`Server API error: ${response.status} - ${errorText}`);
+        console.error('❌ Secure API Error Response:', errorText);
+        throw new Error(`Secure API error: ${response.status} - ${errorText}`);
       }
 
       const result = await response.json();
-      console.log('✅ Subscription cancelled successfully via server:', result);
+      console.log('✅ Subscription cancelled successfully via secure server:', result);
       
       if (result.success) {
         return {

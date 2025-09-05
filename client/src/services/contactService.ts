@@ -42,7 +42,7 @@ export const contactService = {
     try {
       // This would typically use a service like EmailJS, SendGrid, or similar
       // For now, we'll simulate success
-      console.log('Contact form data (email fallback):', formData);
+      // console.log('Contact form data (email fallback):', formData);
       
       return {
         success: true,

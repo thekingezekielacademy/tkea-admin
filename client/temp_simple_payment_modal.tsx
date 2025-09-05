@@ -4,43 +4,18 @@ import { FaTimes, FaCreditCard, FaCheckCircle, FaExclamationTriangle } from 'rea
 interface PaymentModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSuccess?: () => void;
-  user?: any;
+  user: any;
   planName: string;
   amount: number;
 }
 
-// Extend Window interface for Paystack
-declare global {
-  interface Window {
-    PaystackPop: any;
-  }
-}
-
-const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onSuccess, user, planName, amount }) => {
+const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, user, planName, amount }) => {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
-  const [paystackLoaded, setPaystackLoaded] = useState(false);
   const [paymentState, setPaymentState] = useState<{
     status: 'idle' | 'processing' | 'success' | 'error';
     error?: string;
   }>({ status: 'idle' });
-
-  // Load Paystack script
-  useEffect(() => {
-    if (isOpen && !window.PaystackPop) {
-      const script = document.createElement('script');
-      script.src = 'https://js.paystack.co/v1/inline.js';
-      script.onload = () => setPaystackLoaded(true);
-      script.onerror = () => {
-        console.error('Failed to load Paystack script');
-        setPaymentState(prev => ({ ...prev, error: 'Payment system unavailable' }));
-      };
-      document.head.appendChild(script);
-    } else if (window.PaystackPop) {
-      setPaystackLoaded(true);
-    }
-  }, [isOpen]);
 
   useEffect(() => {
     if (isOpen && user?.email) {
@@ -54,61 +29,26 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onSuccess,
       return;
     }
 
-    if (!paystackLoaded) {
-      setPaymentState({ status: 'error', error: 'Payment system is loading, please wait...' });
-      return;
-    }
-
     setLoading(true);
     setPaymentState({ status: 'processing' });
 
     try {
-      const paystackPublicKey = process.env.REACT_APP_PAYSTACK_PUBLIC_KEY;
-      
-      if (!paystackPublicKey) {
-        throw new Error('Payment system not configured');
-      }
-
-      const handler = window.PaystackPop.setup({
-        key: paystackPublicKey,
-        email: email.trim(),
-        amount: amount * 100, // Convert to kobo
-        currency: 'NGN',
-        ref: `TKE_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        metadata: {
-          user_id: user?.id || 'anonymous',
-          plan_name: planName,
-          platform: 'web',
-          timestamp: new Date().toISOString(),
-        },
-        callback: function(response: any) {
-          console.log('✅ Payment successful:', response);
-          setPaymentState({ status: 'success' });
-          
-          // Call onSuccess if provided
-          if (onSuccess) {
-            onSuccess();
-          }
-          
-          // Close modal after success
-          setTimeout(() => {
-            onClose();
-          }, 2000);
-        },
-        onClose: function() {
-          console.log('❌ Payment cancelled by user');
-          setPaymentState({ status: 'idle' });
-          setLoading(false);
-        }
-      });
-
-      handler.openIframe();
+      // Simple payment simulation
+      setTimeout(() => {
+        setPaymentState({ status: 'success' });
+        setLoading(false);
+        
+        // Close modal after success
+        setTimeout(() => {
+          onClose();
+        }, 2000);
+      }, 3000);
 
     } catch (error) {
       console.error('Payment error:', error);
       setPaymentState({ 
         status: 'error', 
-        error: error.message || 'Payment failed. Please try again.' 
+        error: 'Payment failed. Please try again.' 
       });
       setLoading(false);
     }
@@ -158,15 +98,6 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onSuccess,
             </div>
           </div>
 
-          {!paystackLoaded && (
-            <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
-              <div className="flex items-center">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-500 mr-2"></div>
-                <span className="text-sm text-yellow-700">Loading payment system...</span>
-              </div>
-            </div>
-          )}
-
           {paymentState.status === 'error' && (
             <div className="bg-red-50 border border-red-200 rounded-md p-3">
               <div className="flex items-center">
@@ -195,7 +126,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onSuccess,
             </button>
             <button
               onClick={handlePayment}
-              disabled={loading || !email.trim() || !paystackLoaded}
+              disabled={loading || !email.trim()}
               className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
             >
               {loading ? (

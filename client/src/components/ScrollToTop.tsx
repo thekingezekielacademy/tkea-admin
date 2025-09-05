@@ -11,7 +11,7 @@ const ScrollToTop: React.FC = () => {
   useEffect(() => {
     // Only log in development
     if (isDevelopment) {
-      console.log('🔄 ScrollToTop triggered for pathname:', pathname);
+      // console.log('🔄 ScrollToTop triggered for pathname:', pathname);
     }
     
     // Use a longer delay for mobile devices to ensure route change is complete
@@ -19,12 +19,12 @@ const ScrollToTop: React.FC = () => {
     const delay = isMobile ? 300 : 150;
     
     if (isDevelopment) {
-      console.log('📱 Device type:', isMobile ? 'Mobile' : 'Desktop', 'Delay:', delay + 'ms');
+      // console.log('📱 Device type:', isMobile ? 'Mobile' : 'Desktop', 'Delay:', delay + 'ms');
     }
     
     const scrollToTop = () => {
       if (isDevelopment) {
-        console.log('🎯 Attempting to scroll to top...');
+        // console.log('🎯 Attempting to scroll to top...');
       }
       
       // Method 1: Standard scrollTo
@@ -58,7 +58,7 @@ const ScrollToTop: React.FC = () => {
       }
       
       if (isDevelopment) {
-        console.log('✅ Scroll to top completed');
+        // console.log('✅ Scroll to top completed');
       }
     };
 
@@ -70,7 +70,7 @@ const ScrollToTop: React.FC = () => {
       if (isMobile) {
         setTimeout(() => {
           if (isDevelopment) {
-            console.log('🔄 Second scroll attempt for mobile...');
+            // console.log('🔄 Second scroll attempt for mobile...');
           }
           scrollToTop();
         }, 100);
@@ -78,7 +78,7 @@ const ScrollToTop: React.FC = () => {
         // Third attempt for stubborn mobile devices
         setTimeout(() => {
           if (isDevelopment) {
-            console.log('🔄 Third scroll attempt for mobile...');
+            // console.log('🔄 Third scroll attempt for mobile...');
           }
           scrollToTop();
         }, 300);

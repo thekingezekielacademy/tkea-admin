@@ -3,13 +3,18 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { SidebarProvider } from './contexts/SidebarContext';
 import { initializeServiceWorker } from './utils/serviceWorker';
+import { EnvironmentValidator } from './utils/envValidator';
 import FacebookPixelProvider from './components/FacebookPixelProvider';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
-import NetworkStatus from './components/NetworkStatus';
+// import NetworkStatus from './components/NetworkStatus';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminRoute from './components/AdminRoute';
 import ScrollToTop from './components/ScrollToTop';
+import SafeErrorBoundary from './components/SafeErrorBoundary';
+import webVitals from './utils/webVitals';
+import analytics from './utils/analytics';
+import './utils/sentry'; // Initialize Sentry first
 import Home from './pages/Home';
 import Courses from './pages/Courses';
 import About from './pages/About';
@@ -50,20 +55,28 @@ import './App.css';
 
 function App() {
   useEffect(() => {
+    // Initialize monitoring first
+    webVitals.startMonitoring();
+    analytics.initialize();
+    
+    // Validate environment variables
+    EnvironmentValidator.logValidation();
+    
     // Initialize service worker for caching and performance
     initializeServiceWorker();
   }, []);
 
   return (
-    <AuthProvider>
-      <SidebarProvider>
-        <Router>
-          <FacebookPixelProvider />
-          <ScrollToTop />
-          <div className="App">
-            <Navbar />
-            <NetworkStatus />
-            <main>
+    <SafeErrorBoundary>
+      <AuthProvider>
+        <SidebarProvider>
+          <Router>
+            <FacebookPixelProvider />
+            <ScrollToTop />
+            <div className="App">
+              <Navbar />
+              {/* <NetworkStatus /> */}
+              <main>
               <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/courses" element={<Courses />} />
@@ -110,6 +123,7 @@ function App() {
         </Router>
       </SidebarProvider>
     </AuthProvider>
+    </SafeErrorBoundary>
   );
 }
 

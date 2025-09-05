@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { ErrorHandler } from '../utils/errorHandler';
 
 export interface CourseProgress {
   id: string;
@@ -317,10 +318,21 @@ export class ProgressService {
         .eq('user_id', userId)
         .order('earned_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        // Handle table not found error gracefully
+        if (error.code === 'PGRST116' || error.message?.includes('relation "user_achievements" does not exist')) {
+          console.log('ℹ️ user_achievements table not found, returning empty array');
+          return [];
+        }
+        throw error;
+      }
       return data || [];
     } catch (error) {
-      console.error('Error fetching user achievements:', error);
+      ErrorHandler.handleDatabaseError(error, {
+        component: 'ProgressService',
+        action: 'getUserAchievements',
+        userId
+      });
       return [];
     }
   }

@@ -43,10 +43,10 @@ export class TrialManager {
           .insert(trialData);
 
         if (error) {
-          console.log('Could not save trial to database, using localStorage fallback');
+          // console.log('Could not save trial to database, using localStorage fallback');
         }
       } catch (dbError) {
-        console.log('Database not available, using localStorage fallback');
+        // console.log('Database not available, using localStorage fallback');
       }
 
       // Always save to localStorage as fallback
@@ -61,7 +61,7 @@ export class TrialManager {
 
       localStorage.setItem(this.TRIAL_STORAGE_KEY, JSON.stringify(trialStatus));
       
-      console.log('✅ Trial initialized for user:', userId, trialStatus);
+      // console.log('✅ Trial initialized for user:', userId, trialStatus);
       return trialStatus;
     } catch (error) {
       console.error('Failed to initialize trial:', error);
@@ -85,23 +85,23 @@ export class TrialManager {
 
         if (!error && trialData) {
           const status = this.calculateTrialStatus(trialData.start_date, trialData.end_date);
-          console.log('✅ Found trial status in database:', status);
+          // console.log('✅ Found trial status in database:', status);
           return status;
         }
         
         // Log specific error details for debugging
         if (error) {
-          console.warn('Database query error:', error.message, error.details, error.hint);
+          // console.warn('Database query error:', error.message, error.details, error.hint);
           
           // Handle specific error codes
           if (error.code === 'PGRST116') {
-            console.log('No trial found in database, checking localStorage fallback');
+            // console.log('No trial found in database, checking localStorage fallback');
           } else if (error.code === '406') {
-            console.warn('API not acceptable - possible RLS policy issue, using localStorage fallback');
+            // console.warn('API not acceptable - possible RLS policy issue, using localStorage fallback');
           }
         }
       } catch (dbError) {
-        console.log('Database query failed, checking localStorage fallback:', dbError);
+        // console.log('Database query failed, checking localStorage fallback:', dbError);
       }
 
       // Fallback to localStorage
@@ -115,10 +115,10 @@ export class TrialManager {
           // Update localStorage with recalculated status
           localStorage.setItem(this.TRIAL_STORAGE_KEY, JSON.stringify(updatedStatus));
           
-          console.log('✅ Using localStorage trial status:', updatedStatus);
+          // console.log('✅ Using localStorage trial status:', updatedStatus);
           return updatedStatus;
         } catch (parseError) {
-          console.log('Failed to parse localStorage trial data');
+          // console.log('Failed to parse localStorage trial data');
         }
       }
 
@@ -132,7 +132,7 @@ export class TrialManager {
         isExpired: true
       };
 
-      console.log('No trial found for user:', userId);
+      // console.log('No trial found for user:', userId);
       return noTrialStatus;
     } catch (error) {
       console.error('Failed to get trial status:', error);
@@ -235,16 +235,16 @@ export class TrialManager {
           .eq('is_active', true);
 
         if (error) {
-          console.log('Could not update trial in database');
+          // console.log('Could not update trial in database');
         }
       } catch (dbError) {
-        console.log('Database not available for trial extension');
+        // console.log('Database not available for trial extension');
       }
 
       // Update localStorage
       localStorage.setItem(this.TRIAL_STORAGE_KEY, JSON.stringify(updatedStatus));
       
-      console.log('✅ Trial extended for user:', userId, 'by', additionalDays, 'days');
+      // console.log('✅ Trial extended for user:', userId, 'by', additionalDays, 'days');
       return updatedStatus;
     } catch (error) {
       console.error('Failed to extend trial:', error);
@@ -270,16 +270,16 @@ export class TrialManager {
           .eq('is_active', true);
 
         if (error) {
-          console.log('Could not end trial in database');
+          // console.log('Could not end trial in database');
         }
       } catch (dbError) {
-        console.log('Database not available for ending trial');
+        // console.log('Database not available for ending trial');
       }
 
       // Remove from localStorage
       localStorage.removeItem(this.TRIAL_STORAGE_KEY);
       
-      console.log('✅ Trial ended for user:', userId);
+      // console.log('✅ Trial ended for user:', userId);
     } catch (error) {
       console.error('Failed to end trial:', error);
       throw error;
@@ -337,7 +337,7 @@ export class TrialManager {
       };
       
       localStorage.setItem(this.TRIAL_STORAGE_KEY, JSON.stringify(newTrialStatus));
-      console.log('✅ Trial reset for testing:', newTrialStatus);
+      // console.log('✅ Trial reset for testing:', newTrialStatus);
     } catch (error) {
       console.error('Failed to reset trial for testing:', error);
     }

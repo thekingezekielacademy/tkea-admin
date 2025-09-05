@@ -1059,16 +1059,7 @@ const Subscription: React.FC = () => {
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-semibold text-gray-900">Quick Actions</h2>
                 <div className="flex space-x-3">
-                  {/* Debug info - remove this in production */}
-                  {process.env.NODE_ENV === 'development' && (
-                    <div className="text-xs text-gray-500 mr-4">
-                      Debug: Status={subscription?.status}, 
-                      CancelAtPeriodEnd={subscription?.cancel_at_period_end?.toString()}, 
-                      LocalStorage={localStorage.getItem('subscription_canceled')}
-                    </div>
-                  )}
-                  
-                  {subscription && subscription.status === 'active' && !subscription.cancel_at_period_end && (
+{subscription && subscription.status === 'active' && !subscription.cancel_at_period_end && (
                     <button
                       onClick={handleCancelSubscription}
                       className="text-red-600 hover:text-red-700 text-sm font-medium px-4 py-2 border border-red-200 rounded-lg hover:bg-red-50 transition-colors"
@@ -1227,6 +1218,7 @@ const Subscription: React.FC = () => {
           // Refresh subscription data
           fetchSubscriptionStatus();
         }}
+        user={user}
         planName="Monthly Membership"
         amount={2500}
       />

@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useSidebar } from '../contexts/SidebarContext';
 import { supabase } from '../lib/supabase';
 import DashboardSidebar from '../components/DashboardSidebar';
+import ErrorBoundary from '../components/ErrorBoundary';
 import { ProgressService } from '../services/progressService';
 import { 
   FaTrophy, 
@@ -546,28 +547,31 @@ const Achievements: React.FC = () => {
 
   if (loading) {
     return (
+      <ErrorBoundary>
+        <div className="min-h-screen bg-gray-50">
+          {/* Sidebar */}
+          <DashboardSidebar />
+          
+          {/* Main Content */}
+                       <div className={`${getSidebarMargin()} transition-all duration-300 ease-in-out flex items-center justify-center min-h-screen pt-16`}>
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <p className="text-gray-600">Loading your achievements...</p>
+            </div>
+          </div>
+        </div>
+      </ErrorBoundary>
+    );
+  }
+
+  return (
+    <ErrorBoundary>
       <div className="min-h-screen bg-gray-50">
         {/* Sidebar */}
         <DashboardSidebar />
         
         {/* Main Content */}
-                     <div className={`${getSidebarMargin()} transition-all duration-300 ease-in-out flex items-center justify-center min-h-screen pt-16`}>
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading your achievements...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Sidebar */}
-      <DashboardSidebar />
-      
-      {/* Main Content */}
-                 <div className={`${getSidebarMargin()} transition-all duration-300 ease-in-out`}>
+                   <div className={`${getSidebarMargin()} transition-all duration-300 ease-in-out`}>
         {/* Header */}
         <div className="bg-white shadow-sm border-b pt-16">
           <div className="px-4 sm:px-6 lg:px-8 py-6">
@@ -914,8 +918,9 @@ const Achievements: React.FC = () => {
             </div>
           </div>
         </div>
+        </div>
       </div>
-    </div>
+    </ErrorBoundary>
   );
 };
 
