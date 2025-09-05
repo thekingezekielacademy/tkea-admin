@@ -130,7 +130,7 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
               fs: 0,
               disablekb: 1,
               playsinline: 1,
-              origin: window.location.origin,
+              origin: 'https://www.youtube.com',
               enablejsapi: 1,
               // Additional parameters for complete discretion
               start: 0,
@@ -233,7 +233,7 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
   }, []);
   
   const togglePlay = () => {
-    if (playerRef.current) {
+    if (playerRef.current && typeof playerRef.current.playVideo === 'function') {
       if (isPlaying) {
         playerRef.current.pauseVideo();
         setIsPlaying(false);
@@ -243,6 +243,8 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
         setIsPlaying(true);
         onPlay?.();
       }
+    } else {
+      console.warn('YouTube player not ready or playVideo method not available');
     }
   };
 

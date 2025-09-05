@@ -303,7 +303,7 @@ const Courses: React.FC = () => {
 
       const { data, error: fetchError } = await query;
       
-      // console.log(`📊 Supabase response for page ${page}:`, { data, error: fetchError });
+      //  data, error: fetchError });
       
       if (fetchError) {
         console.error('❌ Supabase error:', fetchError);
@@ -607,7 +607,6 @@ const Courses: React.FC = () => {
     // });
   }, [user?.id, hasTrialAccess, databaseSubscriptionStatus]);
 
-
   // Watch for filter changes and refetch courses
   useEffect(() => {
     if (selectedCategory !== 'all' || selectedLevel !== 'all' || selectedSort !== 'all') {
@@ -616,7 +615,6 @@ const Courses: React.FC = () => {
   }, [selectedCategory, selectedLevel, selectedSort]);
 
   // Debounce search term to prevent excessive filtering
-
 
   // Define all available categories with proper labels
   const categories = [
@@ -887,8 +885,6 @@ const Courses: React.FC = () => {
           </div>
         )}
 
-
-
         {/* Search and Filters */}
         <div className={`mb-6 sm:mb-8 ${isExpanded ? 'max-w-7xl mx-auto px-2 sm:px-6 lg:px-8' : 'max-w-full mx-auto px-2 sm:px-8 lg:px-12'}`}>
           {/* Search Bar - Full Width on Mobile */}
@@ -1149,9 +1145,6 @@ const Courses: React.FC = () => {
             <p className="text-gray-500 text-base sm:text-lg">No courses found matching your criteria.</p>
           </div>
         )}
-
-
-
 
           </div>
         </div>
