@@ -279,6 +279,11 @@ const Courses: React.FC = () => {
         query = query.eq('level', selectedLevel);
       }
 
+      // Apply search filtering
+      if (debouncedSearchTerm) {
+        query = query.or(`title.ilike.%${debouncedSearchTerm}%,description.ilike.%${debouncedSearchTerm}%`);
+      }
+
       // Apply sorting based on selected option
       if (selectedSort === 'latest') {
         query = query.order('created_at', { ascending: false });
@@ -347,6 +352,11 @@ const Courses: React.FC = () => {
           // Apply level filtering
           if (selectedLevel !== 'all') {
             retryQuery = retryQuery.eq('level', selectedLevel);
+          }
+
+          // Apply search filtering
+          if (debouncedSearchTerm) {
+            retryQuery = retryQuery.or(`title.ilike.%${debouncedSearchTerm}%,description.ilike.%${debouncedSearchTerm}%`);
           }
 
           // Apply sorting based on selected option
@@ -609,12 +619,17 @@ const Courses: React.FC = () => {
 
   // Watch for filter changes and refetch courses
   useEffect(() => {
-    if (selectedCategory !== 'all' || selectedLevel !== 'all' || selectedSort !== 'all') {
-      fetchCourses(0, false);
-    }
-  }, [selectedCategory, selectedLevel, selectedSort]);
+    fetchCourses(0, false);
+  }, [selectedCategory, selectedLevel, selectedSort, debouncedSearchTerm]);
 
   // Debounce search term to prevent excessive filtering
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
   // Define all available categories with proper labels
   const categories = [
@@ -659,13 +674,8 @@ const Courses: React.FC = () => {
       })
   ];
 
-  const filteredCourses = courses.filter(course => {
-    // Only filter by search term since category and level filtering is done at database level
-    const matchesSearch = course.title.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
-                         (course.description && course.description.toLowerCase().includes(debouncedSearchTerm.toLowerCase()));
-    
-    return matchesSearch;
-  });
+  // All filtering is now done at the database level
+  const filteredCourses = courses;
 
   const getCategoryIcon = (category: string) => {
     switch (category) {

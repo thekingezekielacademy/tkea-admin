@@ -33,7 +33,7 @@ const DefaultFallback = () => (
 
 const SafeErrorBoundary: React.FC<SafeErrorBoundaryProps> = ({ children }) => {
   return (
-    <Sentry.ErrorBoundary fallback={DefaultFallback}>
+    <Sentry.ErrorBoundary fallback={DefaultFallback} showDialog={false}>
       {children}
     </Sentry.ErrorBoundary>
   );
