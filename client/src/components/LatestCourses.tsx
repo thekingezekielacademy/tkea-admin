@@ -20,6 +20,17 @@ const LatestCourses: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1024);
+
+  // Handle window resize for responsive carousel
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowWidth(window.innerWidth);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Fetch latest 10 courses
   useEffect(() => {
@@ -147,15 +158,26 @@ const LatestCourses: React.FC = () => {
     );
   };
 
+  // Get number of slides per view based on screen size
+  const getSlidesPerView = () => {
+    if (windowWidth < 640) return 1; // Mobile: 1 slide
+    if (windowWidth < 1024) return 2; // Tablet: 2 slides
+    return 3; // Desktop: 3 slides
+  };
+
   const nextSlide = () => {
+    const slidesPerView = getSlidesPerView();
+    const maxIndex = Math.max(0, courses.length - slidesPerView);
     setCurrentIndex((prevIndex) => 
-      prevIndex === Math.max(0, courses.length - 3) ? 0 : prevIndex + 1
+      prevIndex >= maxIndex ? 0 : prevIndex + 1
     );
   };
 
   const prevSlide = () => {
+    const slidesPerView = getSlidesPerView();
+    const maxIndex = Math.max(0, courses.length - slidesPerView);
     setCurrentIndex((prevIndex) => 
-      prevIndex === 0 ? Math.max(0, courses.length - 3) : prevIndex - 1
+      prevIndex === 0 ? maxIndex : prevIndex - 1
     );
   };
 
@@ -210,7 +232,7 @@ const LatestCourses: React.FC = () => {
         {/* Carousel */}
         <div className="relative">
           {/* Navigation Buttons */}
-          {courses.length > 3 && (
+          {courses.length > getSlidesPerView() && (
             <>
               <button
                 onClick={prevSlide}
@@ -229,20 +251,22 @@ const LatestCourses: React.FC = () => {
             </>
           )}
 
-          {/* Courses Grid */}
+          {/* Courses Grid - Mobile Optimized */}
           <div className="overflow-hidden">
             <div 
               className="flex transition-transform duration-300 ease-in-out"
-              style={{ transform: `translateX(-${currentIndex * (100 / 3)}%)` }}
+              style={{ 
+                transform: `translateX(-${currentIndex * (100 / getSlidesPerView())}%)` 
+              }}
             >
               {courses.map((course) => (
-                <div key={course.id} className="w-1/3 flex-shrink-0 px-2 sm:px-3">
+                <div key={course.id} className="w-full sm:w-1/2 lg:w-1/3 flex-shrink-0 px-2 sm:px-3">
                   <div className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 h-full">
                     <div className="relative">
                       <img 
                         src={course.cover_photo_url || 'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=400&h=250&fit=crop'} 
                         alt={course.title}
-                        className="w-full h-32 sm:h-40 object-cover"
+                        className="w-full h-40 sm:h-36 lg:h-40 object-cover"
                       />
                       <div className="absolute top-2 right-2">
                         {getLevelBadge(course.level)}
@@ -253,31 +277,24 @@ const LatestCourses: React.FC = () => {
                       </div>
                     </div>
                     
-                    <div className="p-3 sm:p-4">
-                      <h3 className="text-sm sm:text-base font-semibold text-gray-900 mb-2 line-clamp-2 leading-tight">
+                    <div className="p-4 sm:p-4">
+                      <h3 className="text-base sm:text-sm lg:text-base font-semibold text-gray-900 mb-2 line-clamp-2 leading-tight">
                         {course.title}
                       </h3>
-                      <p className="text-xs sm:text-sm text-gray-600 mb-3 line-clamp-2">
+                      <p className="text-sm sm:text-xs lg:text-sm text-gray-600 mb-3 line-clamp-2">
                         {course.description || 'No description available'}
                       </p>
                       
-                      <div className="flex items-center justify-between text-xs sm:text-sm text-gray-500 mb-3">
+                      <div className="flex items-center justify-between text-sm sm:text-xs lg:text-sm text-gray-500">
                         <div className="flex items-center space-x-1">
-                          <FaClock className="h-3 w-3" />
+                          <FaClock className="h-3 w-3 sm:h-3 sm:w-3" />
                           <span>{course.duration}</span>
                         </div>
                         <div className="flex items-center space-x-1">
-                          <FaBook className="h-3 w-3" />
+                          <FaBook className="h-3 w-3 sm:h-3 sm:w-3" />
                           <span>{course.lessons} lessons</span>
                         </div>
                       </div>
-                      
-                      <Link
-                        to={`/course/${course.id}/overview`}
-                        className="block w-full bg-primary-600 text-white text-center py-2 rounded-lg hover:bg-primary-700 transition-colors duration-200 text-xs sm:text-sm font-medium"
-                      >
-                        View Course
-                      </Link>
                     </div>
                   </div>
                 </div>
@@ -286,14 +303,14 @@ const LatestCourses: React.FC = () => {
           </div>
 
           {/* Dots Indicator */}
-          {courses.length > 3 && (
+          {courses.length > getSlidesPerView() && (
             <div className="flex justify-center mt-6 space-x-2">
-              {Array.from({ length: Math.ceil(courses.length / 3) }).map((_, index) => (
+              {Array.from({ length: Math.ceil(courses.length / getSlidesPerView()) }).map((_, index) => (
                 <button
                   key={index}
                   onClick={() => setCurrentIndex(index)}
                   className={`w-2 h-2 rounded-full transition-colors duration-200 ${
-                    index === Math.floor(currentIndex / 3) ? 'bg-primary-600' : 'bg-gray-300'
+                    index === Math.floor(currentIndex / getSlidesPerView()) ? 'bg-primary-600' : 'bg-gray-300'
                   }`}
                   aria-label={`Go to slide ${index + 1}`}
                 />
