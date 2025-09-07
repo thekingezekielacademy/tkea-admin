@@ -4,6 +4,7 @@ import SEOHead from '../components/SEO/SEOHead';
 import { generateOrganizationStructuredData } from '../components/SEO/StructuredData';
 import HeroSection from '../components/HeroSection';
 import MiniMeetTheTeam from '../components/MiniMeetTheTeam';
+import LatestCourses from '../components/LatestCourses';
 import { FaGraduationCap, FaStar, FaClock, FaUsers, FaLaptopCode, FaChartBar, FaPalette, FaCheck, FaRocket, FaAward, FaHeart, FaArrowRight } from 'react-icons/fa';
 
 const Home: React.FC = () => {
@@ -107,6 +108,9 @@ const Home: React.FC = () => {
           </div>
         </div>
       </section>
+
+      {/* Latest Courses Section */}
+      <LatestCourses />
 
       {/* About Section */}
       <section className="py-12 sm:py-16 lg:py-20 bg-white">
