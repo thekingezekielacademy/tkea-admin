@@ -74,6 +74,28 @@ const About: React.FC = () => {
         { value: "∞", label: "Creative Ideas" }
       ],
       statsColor: "text-accent-600"
+    },
+    {
+      id: 4,
+      name: "Honour Mokobia",
+      title: "Guest Facilitator",
+      badge: "Guest Facilitator",
+      badgeColor: "bg-purple-600",
+      subtitle: "Video Editor & Motion Graphics Designer",
+      subtitleColor: "text-purple-600",
+      image: "/img/honour.jpeg?v=1.0.2",
+      alt: "Honour Mokobia - Video Editor & Motion Graphics Designer",
+      description: [
+        "Honour Mokobia is the creative force behind THE MIRACLE EDITOR Brand, a visionary video editor and motion graphics designer who has revolutionized how brands tell their stories through compelling visual content.",
+        "With over 4 years of expertise in creative motion design and video editing, Honour has helped numerous top-tier brands gain unprecedented visibility and market their products through innovative visual storytelling.",
+        "Her mastery of motion graphics, video editing, and creative direction has earned her recognition as one of the industry's most sought-after visual content creators, with a proven track record of transforming brand narratives into engaging, conversion-driven visual experiences."
+      ],
+      stats: [
+        { value: "4+", label: "Years Experience" },
+        { value: "25+", label: "Brands Helped" },
+        { value: "100%", label: "Creative Excellence" }
+      ],
+      statsColor: "text-purple-600"
     }
   ];
 
