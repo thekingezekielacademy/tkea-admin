@@ -178,11 +178,14 @@ const AdminAddCourseWizard: React.FC = () => {
         try {
           const fileExt = courseData.coverPhoto.name.split('.').pop();
           const fileName = `${Date.now()}.${fileExt}`;
-          const filePath = fileName;
+          const filePath = `course-covers/${fileName}`;
 
           const { error: uploadError } = await supabase.storage
             .from('course-covers')
-            .upload(filePath, courseData.coverPhoto);
+            .upload(filePath, courseData.coverPhoto, {
+              contentType: courseData.coverPhoto.type,
+              upsert: false
+            });
 
           if (uploadError) {
             console.warn('Cover photo upload failed, continuing without it:', uploadError.message);
