@@ -102,7 +102,7 @@ const MiniMeetTheTeam: React.FC = () => {
       description: [
         "Honour Mokobia is the creative force behind THE MIRACLE EDITOR Brand, a visionary video editor and motion graphics designer who has revolutionized how brands tell their stories through compelling visual content.",
         "With over 4 years of expertise in creative motion design and video editing, Honour has helped numerous top-tier brands gain unprecedented visibility and market their products through innovative visual storytelling.",
-        "Her mastery of motion graphics, video editing, and creative direction has earned her recognition as one of the industry's most sought-after visual content creators, with a proven track record of transforming brand narratives into engaging, conversion-driven visual experiences."
+        "His mastery of motion graphics, video editing, and creative direction has earned him recognition as one of the industry's most sought-after visual content creators, with a proven track record of transforming brand narratives into engaging, conversion-driven visual experiences."
       ],
       stats: [
         { value: "4+", label: "Years Experience" },
