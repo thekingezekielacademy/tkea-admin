@@ -294,7 +294,7 @@ const DashboardNew: React.FC = () => {
             id,
             title,
             description,
-            cover_photo_url,
+            cover_url,
             playlist_url,
             category,
             instructor,
@@ -321,7 +321,7 @@ const DashboardNew: React.FC = () => {
           instructor: item.courses?.instructor || 'Instructor',
           rating: item.courses?.rating || 0,
           enrolledStudents: item.courses?.enrolled_students || 0,
-          image: item.courses?.cover_photo_url || '/default-course-image.jpg'
+          image: item.courses?.cover_url || '/default-course-image.jpg'
         }));
 
         setEnrolledCourses(transformedCourses);

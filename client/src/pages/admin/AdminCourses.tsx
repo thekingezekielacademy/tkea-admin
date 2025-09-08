@@ -3,21 +3,6 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 
-// Utility function to handle both old and new image URL formats
-const getImageUrl = (url: string | null | undefined): string => {
-  if (!url) return '';
-  
-  // If URL has the old double path format, try to fix it
-  if (url.includes('/course-covers/course-covers/')) {
-    // Try the corrected single path first
-    const correctedUrl = url.replace('/course-covers/course-covers/', '/course-covers/');
-    return correctedUrl;
-  }
-  
-  // For new files with single path, return as is
-  return url;
-};
-
 interface Course {
   id: string;
   title: string;
@@ -346,7 +331,7 @@ const AdminCourses: React.FC = () => {
                           <div className="flex items-center">
                             <div className="flex-shrink-0 h-10 w-10">
                               {course.cover_photo_url ? (
-                                <img className="h-10 w-10 rounded-lg object-cover" src={getImageUrl(course.cover_photo_url)} alt={course.title} />
+                                <img className="h-10 w-10 rounded-lg object-cover" src={course.cover_photo_url} alt={course.title} />
                               ) : (
                                 <div className="h-10 w-10 rounded-lg bg-indigo-100 flex items-center justify-center">
                                   <svg className="h-6 w-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">

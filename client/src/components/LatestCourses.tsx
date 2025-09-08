@@ -3,21 +3,6 @@ import { Link } from 'react-router-dom';
 import { FaChevronLeft, FaChevronRight, FaClock, FaBook, FaGraduationCap, FaArrowRight } from 'react-icons/fa';
 import { supabase } from '../lib/supabase';
 
-// Utility function to handle both old and new image URL formats
-const getImageUrl = (url: string | null | undefined): string => {
-  if (!url) return 'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=400&h=250&fit=crop';
-  
-  // If URL has the old double path format, try to fix it
-  if (url.includes('/course-covers/course-covers/')) {
-    // Try the corrected single path first
-    const correctedUrl = url.replace('/course-covers/course-covers/', '/course-covers/');
-    return correctedUrl;
-  }
-  
-  // For new files with single path, return as is
-  return url;
-};
-
 interface Course {
   id: string;
   title: string;
@@ -279,7 +264,7 @@ const LatestCourses: React.FC = () => {
                   <div className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 h-full">
                     <div className="relative">
                       <img 
-                        src={getImageUrl(course.cover_photo_url)} 
+                        src={course.cover_photo_url || 'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=400&h=250&fit=crop'} 
                         alt={course.title}
                         className="w-full h-40 sm:h-36 lg:h-40 object-cover"
                       />

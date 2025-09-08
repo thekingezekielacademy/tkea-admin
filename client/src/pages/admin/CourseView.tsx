@@ -3,21 +3,6 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import AdvancedVideoPlayer from '../../components/AdvancedVideoPlayer';
 
-// Utility function to handle both old and new image URL formats
-const getImageUrl = (url: string | null | undefined): string => {
-  if (!url) return '';
-  
-  // If URL has the old double path format, try to fix it
-  if (url.includes('/course-covers/course-covers/')) {
-    // Try the corrected single path first
-    const correctedUrl = url.replace('/course-covers/course-covers/', '/course-covers/');
-    return correctedUrl;
-  }
-  
-  // For new files with single path, return as is
-  return url;
-};
-
 interface Video {
   id: string;
   name: string;
@@ -214,7 +199,7 @@ const CourseView: React.FC = () => {
                 {course.cover_photo_url ? (
                   <img 
                     className="h-48 w-full object-cover md:w-48" 
-                    src={getImageUrl(course.cover_photo_url)} 
+                    src={course.cover_photo_url} 
                     alt={course.title} 
                   />
                 ) : (

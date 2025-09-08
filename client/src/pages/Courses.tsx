@@ -11,21 +11,6 @@ import SEOHead from '../components/SEO/SEOHead';
 import { generateCourseStructuredData } from '../components/SEO/StructuredData';
 import { useFacebookPixel } from '../hooks/useFacebookPixel';
 
-// Utility function to handle both old and new image URL formats
-const getImageUrl = (url: string | null | undefined): string => {
-  if (!url) return 'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=400&h=250&fit=crop';
-  
-  // If URL has the old double path format, try to fix it
-  if (url.includes('/course-covers/course-covers/')) {
-    // Try the corrected single path first
-    const correctedUrl = url.replace('/course-covers/course-covers/', '/course-covers/');
-    return correctedUrl;
-  }
-  
-  // For new files with single path, return as is
-  return url;
-};
-
 interface Course {
   id: string;
   title: string;
@@ -412,7 +397,7 @@ const Courses: React.FC = () => {
                     instructor: 'King Ezekiel Academy', // Default instructor since it doesn't exist in DB
                     rating: 4.5, // Default rating since it doesn't exist in DB
                     students: 0, // Default students since it doesn't exist in DB
-                    cover_photo: getImageUrl(course.cover_photo_url),
+                    cover_photo: course.cover_photo_url || 'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=400&h=250&fit=crop',
                     lessons: course.course_videos?.length || 0
                   }));
             
@@ -463,7 +448,7 @@ const Courses: React.FC = () => {
                     instructor: 'King Ezekiel Academy', // Default instructor since it doesn't exist in DB
                     rating: 4.5, // Default rating since it doesn't exist in DB
                     students: 0, // Default students since it doesn't exist in DB
-                    cover_photo: getImageUrl(course.cover_photo_url),
+                    cover_photo: course.cover_photo_url || 'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=400&h=250&fit=crop',
                     lessons: course.course_videos?.length || 0
                   }));
         

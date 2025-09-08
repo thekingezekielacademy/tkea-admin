@@ -40,7 +40,6 @@ const EditCourse: React.FC = () => {
   const [newVideo, setNewVideo] = useState({ name: '', duration: '', link: '' });
   const [isDragOver, setIsDragOver] = useState(false);
   const [draggedVideoIndex, setDraggedVideoIndex] = useState<number | null>(null);
-  const [currentCoverImageUrl, setCurrentCoverImageUrl] = useState<string | null>(null);
 
   const fetchCourseData = useCallback(async () => {
     if (!courseId) return;
@@ -81,9 +80,6 @@ const EditCourse: React.FC = () => {
         coverPhoto: undefined,
         videos: videos || []
       });
-      
-      // Set current cover image URL for display
-      setCurrentCoverImageUrl(course.cover_photo_url || null);
     } catch (err) {
       console.error('Error fetching course:', err);
       setError('Failed to load course data');
@@ -265,7 +261,7 @@ const EditCourse: React.FC = () => {
           console.log('Uploading cover photo...');
           const fileExt = courseData.coverPhoto.name.split('.').pop();
           const fileName = `${Date.now()}.${fileExt}`;
-          const filePath = fileName;
+          const filePath = `course-covers/${fileName}`;
           
           const { error: uploadError } = await supabase.storage
             .from('course-covers')
@@ -279,8 +275,6 @@ const EditCourse: React.FC = () => {
               .getPublicUrl(filePath);
             coverPhotoUrl = publicUrl;
             console.log('Cover photo uploaded successfully:', coverPhotoUrl);
-            // Update the current cover image URL for immediate display
-            setCurrentCoverImageUrl(publicUrl);
           }
         } catch (uploadErr) {
           console.warn('Cover photo upload failed, continuing without it:', uploadErr);
@@ -387,10 +381,6 @@ const EditCourse: React.FC = () => {
       console.log('All videos updated successfully');
 
       setSuccess('Course updated successfully!');
-      
-      // Refresh course data to show updated image
-      await fetchCourseData();
-      
       setTimeout(() => {
         navigate('/admin/courses');
       }, 1500);
@@ -655,13 +645,6 @@ const EditCourse: React.FC = () => {
             
             {courseData.coverPhoto ? (
               <div>
-                <div className="mb-4">
-                  <img 
-                    src={URL.createObjectURL(courseData.coverPhoto)} 
-                    alt="New cover preview" 
-                    className="mx-auto h-32 w-48 object-cover rounded-lg border"
-                  />
-                </div>
                 <p className="text-sm text-gray-600 mb-2">Selected file: {courseData.coverPhoto.name}</p>
                 <button
                   onClick={() => setCourseData(prev => ({ ...prev, coverPhoto: undefined }))}
@@ -669,18 +652,6 @@ const EditCourse: React.FC = () => {
                 >
                   Remove file
                 </button>
-              </div>
-            ) : currentCoverImageUrl ? (
-              <div>
-                <div className="mb-4">
-                  <img 
-                    src={currentCoverImageUrl} 
-                    alt="Current cover" 
-                    className="mx-auto h-32 w-48 object-cover rounded-lg border"
-                  />
-                </div>
-                <p className="text-sm text-gray-600 mb-2">Current cover image</p>
-                <p className="text-xs text-gray-500">Upload a new image to replace this one</p>
               </div>
             ) : (
               <div>
