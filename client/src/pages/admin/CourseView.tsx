@@ -3,19 +3,6 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import AdvancedVideoPlayer from '../../components/AdvancedVideoPlayer';
 
-// Utility function to fix broken image URLs with double course-covers path
-const fixImageUrl = (url: string | null | undefined): string => {
-  if (!url) return '';
-  
-  // Check if URL has the double course-covers path issue
-  if (url.includes('/course-covers/course-covers/')) {
-    // Fix the double path by removing one instance
-    return url.replace('/course-covers/course-covers/', '/course-covers/');
-  }
-  
-  return url;
-};
-
 interface Video {
   id: string;
   name: string;
@@ -212,7 +199,7 @@ const CourseView: React.FC = () => {
                 {course.cover_photo_url ? (
                   <img 
                     className="h-48 w-full object-cover md:w-48" 
-                    src={fixImageUrl(course.cover_photo_url)} 
+                    src={course.cover_photo_url} 
                     alt={course.title} 
                   />
                 ) : (

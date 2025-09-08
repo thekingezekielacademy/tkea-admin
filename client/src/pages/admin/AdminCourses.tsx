@@ -3,19 +3,6 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 
-// Utility function to fix broken image URLs with double course-covers path
-const fixImageUrl = (url: string | null | undefined): string => {
-  if (!url) return '';
-  
-  // Check if URL has the double course-covers path issue
-  if (url.includes('/course-covers/course-covers/')) {
-    // Fix the double path by removing one instance
-    return url.replace('/course-covers/course-covers/', '/course-covers/');
-  }
-  
-  return url;
-};
-
 interface Course {
   id: string;
   title: string;
@@ -344,7 +331,7 @@ const AdminCourses: React.FC = () => {
                           <div className="flex items-center">
                             <div className="flex-shrink-0 h-10 w-10">
                               {course.cover_photo_url ? (
-                                <img className="h-10 w-10 rounded-lg object-cover" src={fixImageUrl(course.cover_photo_url)} alt={course.title} />
+                                <img className="h-10 w-10 rounded-lg object-cover" src={course.cover_photo_url} alt={course.title} />
                               ) : (
                                 <div className="h-10 w-10 rounded-lg bg-indigo-100 flex items-center justify-center">
                                   <svg className="h-6 w-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
