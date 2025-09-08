@@ -15,11 +15,9 @@ import { useFacebookPixel } from '../hooks/useFacebookPixel';
 const getImageUrl = (url: string | null | undefined): string => {
   if (!url) return 'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=400&h=250&fit=crop';
   
-  // If URL has the old double path format, try to fix it
+  // If URL has the old double path format, keep it as is (files exist there)
   if (url.includes('/course-covers/course-covers/')) {
-    // Try the corrected single path first
-    const correctedUrl = url.replace('/course-covers/course-covers/', '/course-covers/');
-    return correctedUrl;
+    return url; // Keep the double path for old files
   }
   
   // For new files with single path, return as is
