@@ -190,7 +190,7 @@ const MiniMeetTheTeam: React.FC = () => {
                             }}
                             onLoad={() => console.log(`Image loaded: ${member.name}`)}
                           />
-                          <div className={`absolute -top-2 -right-2 px-2 py-1 ${member.badgeColor} text-white text-xs font-semibold rounded-full`}>
+                          <div className={`absolute -bottom-2 -right-2 px-2 py-1 ${member.badgeColor} text-white text-xs font-semibold rounded-full`}>
                             {member.badge}
                           </div>
                         </div>
