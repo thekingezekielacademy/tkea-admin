@@ -148,7 +148,7 @@ const DashboardSidebar: React.FC = () => {
     <>
       {/* Sidebar */}
       <div className={`
-        fixed left-0 top-0 h-full bg-white border-r border-gray-200 shadow-lg z-40 transition-all duration-300 ease-in-out
+        fixed left-0 top-0 h-full bg-white border-r border-gray-200 shadow-lg z-60 transition-all duration-300 ease-in-out
         ${isCollapsed ? 'w-16' : 'w-64'}
         ${isMobileOpen ? 'translate-x-0' : 'translate-x-0'} /* Always visible on mobile */
       `}>
@@ -194,7 +194,18 @@ const DashboardSidebar: React.FC = () => {
                   {!isCollapsed && (
                     <div className="ml-3 flex-1 min-w-0">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium truncate">{item.label}</span>
+                        <span className="text-sm font-medium truncate">
+                          {item.label.includes('(soon...)') ? (
+                            <>
+                              {item.label.replace(' (soon...)', '')}
+                              <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800 border border-orange-200">
+                                soon...
+                              </span>
+                            </>
+                          ) : (
+                            item.label
+                          )}
+                        </span>
                       </div>
                     </div>
                   )}
