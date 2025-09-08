@@ -178,7 +178,7 @@ const AdminAddCourseWizard: React.FC = () => {
         try {
           const fileExt = courseData.coverPhoto.name.split('.').pop();
           const fileName = `${Date.now()}.${fileExt}`;
-          const filePath = `course-covers/${fileName}`;
+          const filePath = fileName;
 
           const { error: uploadError } = await supabase.storage
             .from('course-covers')
