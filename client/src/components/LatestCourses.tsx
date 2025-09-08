@@ -3,6 +3,19 @@ import { Link } from 'react-router-dom';
 import { FaChevronLeft, FaChevronRight, FaClock, FaBook, FaGraduationCap, FaArrowRight } from 'react-icons/fa';
 import { supabase } from '../lib/supabase';
 
+// Utility function to fix broken image URLs with double course-covers path
+const fixImageUrl = (url: string | null | undefined): string => {
+  if (!url) return 'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=400&h=250&fit=crop';
+  
+  // Check if URL has the double course-covers path issue
+  if (url.includes('/course-covers/course-covers/')) {
+    // Fix the double path by removing one instance
+    return url.replace('/course-covers/course-covers/', '/course-covers/');
+  }
+  
+  return url;
+};
+
 interface Course {
   id: string;
   title: string;
@@ -264,7 +277,7 @@ const LatestCourses: React.FC = () => {
                   <div className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 h-full">
                     <div className="relative">
                       <img 
-                        src={course.cover_photo_url || 'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=400&h=250&fit=crop'} 
+                        src={fixImageUrl(course.cover_photo_url)} 
                         alt={course.title}
                         className="w-full h-40 sm:h-36 lg:h-40 object-cover"
                       />
