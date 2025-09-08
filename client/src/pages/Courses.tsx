@@ -388,19 +388,22 @@ const Courses: React.FC = () => {
           }
           
           if (retryData) {
-            // console.log(`✅ Courses data received after refresh for page ${page}:`, retryData);
-                              const transformedCourses = retryData.map(course => ({
-                    ...course,
-                    // Add real data from videos
-                    category: course.category || 'general', // Use actual category from DB
-                    duration: calculateTotalDuration(course.course_videos || []),
-                    instructor: 'King Ezekiel Academy', // Default instructor since it doesn't exist in DB
-                    rating: 4.5, // Default rating since it doesn't exist in DB
-                    students: 0, // Default students since it doesn't exist in DB
-                    cover_photo: course.cover_photo_url || 'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=400&h=250&fit=crop',
-                    lessons: course.course_videos?.length || 0
-                  }));
+            console.log('🔍 Raw course data from database:', retryData);
+            console.log(' First course cover_photo_url:', retryData[0]?.cover_photo_url);
+            console.log(' First course cover_url:', retryData[0]?.cover_url);
             
+            const transformedCourses = retryData.map(course => ({
+              ...course,
+              category: course.category || 'general',
+              duration: calculateTotalDuration(course.course_videos || []),
+              instructor: 'King Ezekiel Academy',
+              rating: 4.5,
+              students: 0,
+              cover_photo: course.cover_photo_url || 'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=400&h=250&fit=crop',
+              lessons: course.course_videos?.length || 0
+            }));
+            
+            console.log(' Transformed course data:', transformedCourses[0]);
             // Apply shuffling only for the first page (not when appending for pagination)
             // This ensures fresh random order every time users visit the page
             const finalCourses = append ? transformedCourses : shuffleArray(transformedCourses);

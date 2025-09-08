@@ -12,7 +12,7 @@ class WebVitalsMonitor {
     this.config = config;
   }
 
-  private sendToAnalytics(metric: any) {
+  private sendToAnalytics = (metric: any) => {
     if (!this.config.enabled) return;
 
     // Send to your analytics endpoint
@@ -36,11 +36,11 @@ class WebVitalsMonitor {
     if (!this.config.enabled) return;
 
     try {
-      getCLS(this.sendToAnalytics);
-      getFID(this.sendToAnalytics);
-      getFCP(this.sendToAnalytics);
-      getLCP(this.sendToAnalytics);
-      getTTFB(this.sendToAnalytics);
+      getCLS(this.sendToAnalytics.bind(this));
+      getFID(this.sendToAnalytics.bind(this));
+      getFCP(this.sendToAnalytics.bind(this));
+      getLCP(this.sendToAnalytics.bind(this));
+      getTTFB(this.sendToAnalytics.bind(this));
     } catch (error) {
       // Silently fail - don't break the app
       console.warn('Web Vitals monitoring failed:', error);
