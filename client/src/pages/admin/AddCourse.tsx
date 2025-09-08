@@ -132,7 +132,7 @@ const AddCourse: React.FC = () => {
         .insert({
           title: title || 'Untitled Course',
           description: description || null,
-          cover_url: coverUrl,
+          cover_photo_url: coverUrl,
           playlist_url: playlistUrl,
           lessons_count: videos.length,
         })
