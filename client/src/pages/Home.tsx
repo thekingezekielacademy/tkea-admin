@@ -5,6 +5,7 @@ import { generateOrganizationStructuredData } from '../components/SEO/Structured
 import HeroSection from '../components/HeroSection';
 import MiniMeetTheTeam from '../components/MiniMeetTheTeam';
 import LatestCourses from '../components/LatestCourses';
+import PWAInstall from '../components/PWAInstall';
 import { FaGraduationCap, FaStar, FaClock, FaUsers, FaLaptopCode, FaChartBar, FaPalette, FaCheck, FaRocket, FaAward, FaHeart, FaArrowRight } from 'react-icons/fa';
 
 const Home: React.FC = () => {
@@ -22,6 +23,9 @@ const Home: React.FC = () => {
       <div className="min-h-screen bg-white">
       {/* Hero Section */}
       <HeroSection />
+
+      {/* PWA Install Section - Mobile Only */}
+      <PWAInstall />
 
       {/* Subscription Section */}
       <section className="py-12 sm:py-16 lg:py-20 bg-gradient-to-br from-primary-50 via-white to-secondary-50 relative overflow-hidden">

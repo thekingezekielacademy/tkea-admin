@@ -1,6 +1,7 @@
 {
   "short_name": "King Ezekiel Academy",
   "name": "King Ezekiel Academy - Modern Educational Platform",
+  "description": "Transform your career with comprehensive digital marketing courses. Learn from industry experts and join thousands of successful students.",
   "icons": [
     {
       "src": "favicon.svg",
@@ -35,6 +36,36 @@
   ],
   "start_url": "/",
   "display": "standalone",
+  "orientation": "portrait-primary",
   "theme_color": "#1e3a8a",
-  "background_color": "#ffffff"
+  "background_color": "#ffffff",
+  "scope": "/",
+  "lang": "en",
+  "categories": ["education", "productivity", "business"],
+  "shortcuts": [
+    {
+      "name": "Browse Courses",
+      "short_name": "Courses",
+      "description": "Browse all available courses",
+      "url": "/courses",
+      "icons": [
+        {
+          "src": "favicon.svg",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Dashboard",
+      "short_name": "Dashboard", 
+      "description": "Access your learning dashboard",
+      "url": "/dashboard",
+      "icons": [
+        {
+          "src": "favicon.svg",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ]
 }
