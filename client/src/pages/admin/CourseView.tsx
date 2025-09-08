@@ -7,9 +7,11 @@ import AdvancedVideoPlayer from '../../components/AdvancedVideoPlayer';
 const getImageUrl = (url: string | null | undefined): string => {
   if (!url) return '';
   
-  // If URL has the old double path format, keep it as is (files exist there)
+  // If URL has the old double path format, try to fix it
   if (url.includes('/course-covers/course-covers/')) {
-    return url; // Keep the double path for old files
+    // Try the corrected single path first
+    const correctedUrl = url.replace('/course-covers/course-covers/', '/course-covers/');
+    return correctedUrl;
   }
   
   // For new files with single path, return as is

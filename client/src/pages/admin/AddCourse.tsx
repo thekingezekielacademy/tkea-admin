@@ -120,7 +120,7 @@ const AddCourse: React.FC = () => {
       let coverUrl: string | null = null;
       if (coverFile) {
         const ext = coverFile.name.split('.').pop() || 'jpg';
-        const key = `covers/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+        const key = `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
         const { error: upErr } = await supabase.storage.from('course-covers').upload(key, coverFile, { upsert: false });
         if (upErr) throw upErr;
         const { data: pub } = supabase.storage.from('course-covers').getPublicUrl(key);
