@@ -71,37 +71,37 @@ const DashboardSidebar: React.FC = () => {
     },
     {
       id: 'diploma',
-      label: 'Diploma',
+      label: 'Diploma (soon...)',
       icon: <FaStar className="w-5 h-5" />,
       path: '/diploma'
     },
     {
       id: 'certificates',
-      label: 'Certificates',
+      label: 'Certificates (soon...)',
       icon: <FaCertificate className="w-5 h-5" />,
       path: '/certificates'
     },
     {
       id: 'resume',
-      label: 'Résumé',
+      label: 'Résumé (soon...)',
       icon: <FaFileAlt className="w-5 h-5" />,
       path: '/resume'
     },
     {
       id: 'rooms',
-      label: 'Rooms: Q&A',
+      label: 'Rooms: Q&A (soon...)',
       icon: <FaComments className="w-5 h-5" />,
       path: '/rooms'
     },
     {
       id: 'assessments',
-      label: 'Assessments',
+      label: 'Assessments (soon...)',
       icon: <FaClipboardCheck className="w-5 h-5" />,
       path: '/assessments'
     },
     {
       id: 'affiliates',
-      label: 'Affiliates',
+      label: 'Affiliates (soon...)',
       icon: <FaShareAlt className="w-5 h-5" />,
       path: '/affiliates'
     },
