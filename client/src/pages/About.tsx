@@ -96,6 +96,28 @@ const About: React.FC = () => {
         { value: "100%", label: "Creative Excellence" }
       ],
       statsColor: "text-purple-600"
+    },
+    {
+      id: 5,
+      name: "Precious Greg",
+      title: "Guest Facilitator",
+      badge: "Guest Facilitator",
+      badgeColor: "bg-pink-600",
+      subtitle: "Brand Marketing & Communications Strategist",
+      subtitleColor: "text-pink-600",
+      image: "/img/preciousgreg.jpeg?v=1.0.2",
+      alt: "Precious Greg - Brand Marketing & Communications Strategist",
+      description: [
+        "Precious Greg is a Brand Marketing & Communications Strategist and a Corporate Event Host, also known as 'The CopyTalker.' She's also a News Anchor at AI Media Corner, bringing her expertise in strategic brand positioning and market dominance to help businesses achieve their goals through high-converting marketing and communications campaigns.",
+        "As an Event Host, she helps businesses & individuals sell the idea of their event to the audience, through exquisite event organization, speech articulacy, audience engagement, stage management, and more to achieve the ultimate goal for the event. Her ability to connect with audiences and deliver compelling presentations makes her a sought-after facilitator.",
+        "She's an upper second class graduate of Educational Management from the University of Benin, where she served as campus ambassador for Cowrywise and Myllash Web Services and a member & Director at Junior Chambers International, UNIBEN Chapter. She also kick-started and was an Editor-in-chief for a student based Magazine under an independent NGO in the University."
+      ],
+      stats: [
+        { value: "5+", label: "Years Experience" },
+        { value: "100+", label: "Awards & Recognition" },
+        { value: "100%", label: "Event Excellence" }
+      ],
+      statsColor: "text-pink-600"
     }
   ];
 
