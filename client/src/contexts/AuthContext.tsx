@@ -69,6 +69,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       // console.log('fetchProfile called');
       
+      // Ensure we have a valid session before proceeding
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !sessionData.session) {
+        console.log('No valid session found during profile fetch');
+        setUser(null);
+        setIsAdmin(false);
+        setLoading(false);
+        setAuthLoading(false);
+        isFetchingRef.current = false;
+        return;
+      }
+      
       let userToUse = userId;
       
       // If no userId provided, try to get it from the current session
@@ -272,12 +284,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             debouncedFetchProfile(session.user.id);
           }
         } else if (event === 'TOKEN_REFRESHED') {
+          // Always update session on token refresh
+          setSession(session);
+          
           // Only fetch profile on token refresh if we don't have user data yet
           if (session?.user && !isFetchingRef.current && !user) {
             // console.log('Token refreshed, fetching profile...');
             debouncedFetchProfile(session.user.id);
-          } else {
-            // console.log('Token refreshed, but user data already exists, skipping profile fetch');
+          } else if (session?.user && user) {
+            // console.log('Token refreshed, user data exists, ensuring session is updated');
+            setSession(session);
           }
         } else if (event === 'SIGNED_OUT') {
           // console.log('User signed out, clearing state');
@@ -358,6 +374,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return { user: null, session: null, error: testError };
       }
       
+      // Clear any cached auth data that might be stale
+      try {
+        localStorage.removeItem('supabase-auth-token');
+        sessionStorage.removeItem('supabase-auth-token');
+      } catch (storageError) {
+        console.log('Could not clear cached auth data:', storageError);
+      }
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -369,6 +393,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // and admin status will be detected in the fetchProfile function
       if (data.user && !error) {
         // console.log('✅ Sign in successful! Checking for admin privileges...');
+        
+        // Ensure session is set immediately
+        setSession(data.session);
       }
       
       return { user: data.user, session: data.session, error };

@@ -152,11 +152,11 @@ const AdminCourses: React.FC = () => {
   };
 
   const handleEditCourse = (courseId: string) => {
-    navigate(`/admin/courses/${courseId}/edit`);
+    navigate(`/admin/edit-course/${courseId}`);
   };
 
   const handleViewCourse = (courseId: string) => {
-    navigate(`/admin/courses/${courseId}/view`);
+    navigate(`/admin/view-course/${courseId}`);
   };
 
   const handleDeleteCourse = async (courseId: string) => {
@@ -226,7 +226,7 @@ const AdminCourses: React.FC = () => {
               </div>
             </div>
             <button
-              onClick={() => navigate('/admin/courses/new')}
+              onClick={() => navigate('/admin/add-course')}
               className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
             >
               <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -33,8 +33,17 @@ export const registerServiceWorker = async (): Promise<void> => {
       // Handle service worker activation
       navigator.serviceWorker.addEventListener('controllerchange', () => {
         console.log('Service Worker activated');
-        // Reload page to use new service worker
-        window.location.reload();
+        // Only reload if not in the middle of authentication
+        const isAuthPage = window.location.pathname.includes('/signin') || 
+                          window.location.pathname.includes('/signup') ||
+                          window.location.pathname.includes('/forgot-password');
+        
+        if (!isAuthPage) {
+          // Small delay to allow auth state to stabilize
+          setTimeout(() => {
+            window.location.reload();
+          }, 1000);
+        }
       });
       
     } catch (error) {

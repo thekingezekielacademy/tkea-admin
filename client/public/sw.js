@@ -9,12 +9,12 @@
  * - Background sync
  */
 
-const CACHE_NAME = 'king-ezekiel-academy-v1.0.3';
-const STATIC_CACHE = 'static-cache-v4';
-const DYNAMIC_CACHE = 'dynamic-cache-v4';
+const CACHE_NAME = 'king-ezekiel-academy-v1.0.4';
+const STATIC_CACHE = 'static-cache-v5';
+const DYNAMIC_CACHE = 'dynamic-cache-v5';
 
 // Add cache versioning
-const CACHE_VERSION = '1.0.3';
+const CACHE_VERSION = '1.0.4';
 const STATIC_CACHE_VERSIONED = `${STATIC_CACHE}-${CACHE_VERSION}`;
 const DYNAMIC_CACHE_VERSIONED = `${DYNAMIC_CACHE}-${CACHE_VERSION}`;
 
@@ -40,6 +40,20 @@ const API_CACHE_PATTERNS = [
   /\/api\/blog/,
   /\/api\/categories/,
   /\/api\/paystack/
+];
+
+// Authentication endpoints that should NEVER be cached
+const AUTH_ENDPOINTS = [
+  /\/auth\/v1\//,
+  /\/auth\/v1\/token/,
+  /\/auth\/v1\/user/,
+  /\/auth\/v1\/logout/,
+  /\/auth\/v1\/refresh/,
+  /\/supabase\/auth\/v1\//,
+  /\/supabase\/auth\/v1\/token/,
+  /\/supabase\/auth\/v1\/user/,
+  /\/supabase\/auth\/v1\/logout/,
+  /\/supabase\/auth\/v1\/refresh/
 ];
 
 // Install event - cache static files
@@ -102,6 +116,12 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // CRITICAL: Never cache authentication requests
+  if (isAuthRequest(request)) {
+    event.respondWith(handleAuthRequest(request));
+    return;
+  }
+
   // Handle different types of requests
   if (isStaticAsset(request)) {
     event.respondWith(handleStaticAsset(request));
@@ -137,6 +157,12 @@ function isStaticAsset(request) {
 function isApiRequest(request) {
   const url = new URL(request.url);
   return API_CACHE_PATTERNS.some(pattern => pattern.test(url.pathname));
+}
+
+// Check if request is for authentication
+function isAuthRequest(request) {
+  const url = new URL(request.url);
+  return AUTH_ENDPOINTS.some(pattern => pattern.test(url.pathname));
 }
 
 // Check if request is for navigation
@@ -250,6 +276,20 @@ async function handleNavigationRequest(request) {
   }
 }
 
+// Handle authentication requests - NEVER cache these
+async function handleAuthRequest(request) {
+  try {
+    // Always fetch from network for auth requests
+    const networkResponse = await fetch(request);
+    
+    // Don't cache auth responses - they contain sensitive tokens
+    return networkResponse;
+  } catch (error) {
+    console.error('Service Worker: Auth request failed', error);
+    throw error;
+  }
+}
+
 // Handle other requests
 async function handleOtherRequest(request) {
   try {
@@ -304,41 +344,95 @@ async function doBackgroundSync() {
 self.addEventListener('push', (event) => {
   console.log('Service Worker: Push notification received');
   
-  const options = {
-    body: event.data ? event.data.text() : 'New notification from King Ezekiel Academy',
-    icon: '/img/logo.png',
-    badge: '/img/badge.png',
-    vibrate: [100, 50, 100],
-    data: {
-      dateOfArrival: Date.now(),
-      primaryKey: 1
-    },
+  let notificationData = {
+    title: 'King Ezekiel Academy',
+    body: 'New notification from King Ezekiel Academy',
+    icon: '/favicon.svg',
+    badge: '/favicon.svg',
+    tag: 'general',
+    requireInteraction: false,
     actions: [
       {
-        action: 'explore',
+        action: 'view',
         title: 'View',
-        icon: '/img/checkmark.png'
+        icon: '/favicon.svg'
       },
       {
-        action: 'close',
-        title: 'Close',
-        icon: '/img/xmark.png'
+        action: 'dismiss',
+        title: 'Dismiss',
+        icon: '/favicon.svg'
       }
     ]
   };
 
+  // Parse notification data if available
+  if (event.data) {
+    try {
+      const data = event.data.json();
+      notificationData = { ...notificationData, ...data };
+    } catch (error) {
+      // If not JSON, treat as text
+      notificationData.body = event.data.text();
+    }
+  }
+
+  const options = {
+    body: notificationData.body,
+    icon: notificationData.icon,
+    badge: notificationData.badge,
+    tag: notificationData.tag,
+    requireInteraction: notificationData.requireInteraction,
+    vibrate: [200, 100, 200],
+    data: {
+      dateOfArrival: Date.now(),
+      primaryKey: 1,
+      ...notificationData.data
+    },
+    actions: notificationData.actions
+  };
+
   event.waitUntil(
-    self.registration.showNotification('King Ezekiel Academy', options)
+    self.registration.showNotification(notificationData.title, options)
   );
 });
 
 // Notification click handling
 self.addEventListener('notificationclick', (event) => {
-  console.log('Service Worker: Notification clicked');
+  console.log('Service Worker: Notification clicked', event.action);
   
   event.notification.close();
 
-  if (event.action === 'explore') {
+  const action = event.action;
+  const notificationData = event.notification.data;
+
+  // Handle different notification actions
+  if (action === 'view' || action === 'continue' || action === 'learn' || action === 'explore') {
+    event.waitUntil(
+      clients.openWindow(notificationData.url || '/')
+    );
+  } else if (action === 'upgrade') {
+    event.waitUntil(
+      clients.openWindow('/subscription')
+    );
+  } else if (action === 'manage') {
+    event.waitUntil(
+      clients.openWindow('/profile')
+    );
+  } else if (action === 'certificate') {
+    event.waitUntil(
+      clients.openWindow('/achievements')
+    );
+  } else if (action === 'next') {
+    event.waitUntil(
+      clients.openWindow('/courses')
+    );
+  } else if (action === 'share') {
+    // Handle sharing logic
+    event.waitUntil(
+      clients.openWindow('/achievements')
+    );
+  } else {
+    // Default action - open app
     event.waitUntil(
       clients.openWindow('/')
     );

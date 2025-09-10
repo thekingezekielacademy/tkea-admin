@@ -21,7 +21,6 @@ import Contact from './pages/Contact';
 import SignIn from './pages/SignIn';
 import SignUp from './pages/SignUp';
 import Dashboard from './pages/Dashboard';
-import DashboardNew from './pages/DashboardNew';
 import ForgotPassword from './pages/ForgotPassword';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminAddCourseWizard from './pages/admin/AdminAddCourseWizard';
@@ -51,6 +50,7 @@ import Resume from './pages/Resume';
 import Rooms from './pages/Rooms';
 import Affiliates from './pages/Affiliates';
 import './App.css';
+import './styles/orientation.css'; // Import orientation CSS
 
 function App() {
   useEffect(() => {
@@ -60,6 +60,40 @@ function App() {
     
     // Initialize service worker for caching and performance
     initializeServiceWorker();
+  }, []);
+
+  // Handle PWA orientation changes
+  useEffect(() => {
+    const handleOrientationChange = () => {
+      // Force viewport refresh on orientation change for PWA
+      const viewport = document.querySelector('meta[name="viewport"]');
+      if (viewport) {
+        viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
+      }
+      
+      // Add orientation class to body for CSS targeting
+      if (window.orientation === 90 || window.orientation === -90) {
+        // Landscape
+        document.body.classList.add('landscape-mode');
+        document.body.classList.remove('portrait-mode');
+      } else {
+        // Portrait
+        document.body.classList.add('portrait-mode');
+        document.body.classList.remove('landscape-mode');
+      }
+    };
+
+    // Initial orientation check
+    handleOrientationChange();
+
+    // Listen for orientation changes
+    window.addEventListener('orientationchange', handleOrientationChange);
+    window.addEventListener('resize', handleOrientationChange);
+
+    return () => {
+      window.removeEventListener('orientationchange', handleOrientationChange);
+      window.removeEventListener('resize', handleOrientationChange);
+    };
   }, []);
 
   return (
@@ -84,41 +118,37 @@ function App() {
               <Route path="/terms" element={<Terms />} />
               <Route path="/signin" element={<SignIn />} />
               <Route path="/signup" element={<SignUp />} />
-              <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-              <Route path="/dashboard-with-sidebar" element={<ProtectedRoute><DashboardWithSidebar /></ProtectedRoute>} />
-              <Route path="/dashboard-new" element={<ProtectedRoute><DashboardNew /></ProtectedRoute>} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
-              <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
-              <Route path="/admin/courses" element={<AdminRoute><AdminCourses /></AdminRoute>} />
-              <Route path="/admin/courses/new" element={<AdminRoute><AdminAddCourseWizard /></AdminRoute>} />
-              <Route path="/admin/courses/:courseId/edit" element={<AdminRoute><EditCourse /></AdminRoute>} />
-              <Route path="/admin/courses/:courseId/view" element={<AdminRoute><CourseView /></AdminRoute>} />
-              <Route path="/admin/add-course" element={<AdminRoute><AddCourse /></AdminRoute>} />
-              <Route path="/admin/blog" element={<AdminRoute><AdminBlog /></AdminRoute>} />
-              <Route path="/admin/blog/new" element={<AdminRoute><AddBlogPost /></AdminRoute>} />
-                              <Route path="/admin/blog/:id/edit" element={<AdminRoute><AddBlogPost /></AdminRoute>} />
-                <Route path="/admin/blog/:id/view" element={<AdminRoute><ViewBlogPost /></AdminRoute>} />
+              <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
               <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-              <Route path="/subscription" element={<ProtectedRoute><Subscription /></ProtectedRoute>} />
-              <Route path="/payment/verify" element={<PaymentVerification />} />
               <Route path="/achievements" element={<ProtectedRoute><Achievements /></ProtectedRoute>} />
+              <Route path="/subscription" element={<ProtectedRoute><Subscription /></ProtectedRoute>} />
+              <Route path="/payment-verification" element={<ProtectedRoute><PaymentVerification /></ProtectedRoute>} />
+              <Route path="/dashboard-with-sidebar" element={<ProtectedRoute><DashboardWithSidebar /></ProtectedRoute>} />
+              <Route path="/course/:id" element={<ProtectedRoute><CourseOverview /></ProtectedRoute>} />
+              <Route path="/course/:id/lesson/:lessonId" element={<ProtectedRoute><LessonPlayer /></ProtectedRoute>} />
+              <Route path="/course/:id/complete" element={<ProtectedRoute><CourseComplete /></ProtectedRoute>} />
               <Route path="/diploma" element={<ProtectedRoute><Diploma /></ProtectedRoute>} />
               <Route path="/certificates" element={<ProtectedRoute><Certificates /></ProtectedRoute>} />
               <Route path="/assessments" element={<ProtectedRoute><Assessments /></ProtectedRoute>} />
               <Route path="/resume" element={<ProtectedRoute><Resume /></ProtectedRoute>} />
               <Route path="/rooms" element={<ProtectedRoute><Rooms /></ProtectedRoute>} />
               <Route path="/affiliates" element={<ProtectedRoute><Affiliates /></ProtectedRoute>} />
-              <Route path="/course/:id" element={<ProtectedRoute><CourseOverview /></ProtectedRoute>} />
-              <Route path="/course/:id/overview" element={<ProtectedRoute><CourseOverview /></ProtectedRoute>} />
-              <Route path="/course/:id/lesson/:lessonId" element={<ProtectedRoute><LessonPlayer /></ProtectedRoute>} />
-              <Route path="/course/:id/complete" element={<ProtectedRoute><CourseComplete /></ProtectedRoute>} />
-            </Routes>
-          </main>
-          <Footer />
-        </div>
-        </Router>
-      </SidebarProvider>
-    </AuthProvider>
+              <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+              <Route path="/admin/courses" element={<AdminRoute><AdminCourses /></AdminRoute>} />
+              <Route path="/admin/add-course" element={<AdminRoute><AdminAddCourseWizard /></AdminRoute>} />
+              <Route path="/admin/edit-course/:id" element={<AdminRoute><EditCourse /></AdminRoute>} />
+              <Route path="/admin/view-course/:id" element={<AdminRoute><CourseView /></AdminRoute>} />
+              <Route path="/admin/blog" element={<AdminRoute><AdminBlog /></AdminRoute>} />
+              <Route path="/admin/add-blog-post" element={<AdminRoute><AddBlogPost /></AdminRoute>} />
+              <Route path="/admin/view-blog-post/:id" element={<AdminRoute><ViewBlogPost /></AdminRoute>} />
+              </Routes>
+              </main>
+              <Footer />
+            </div>
+          </Router>
+        </SidebarProvider>
+      </AuthProvider>
     </SafeErrorBoundary>
   );
 }

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Upload</title>
+</head>
+<body>
+    <h1>Debug Supabase Upload</h1>
+    <input type="file" id="fileInput" accept="image/*">
+    <button onclick="uploadFile()">Upload</button>
+    <div id="result"></div>
+
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script>
+        const supabaseUrl = 'https://evqerkqiquwxqlizdqmg.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV2cWVya3FpcXV3eHFsemRxbWciLCJyb2xlIjoiYW5vbiIsImlhdCI6MTczNjQ0NzQ0MCwiZXhwIjoyMDUyMDIzNDQwfQ.8K8K8K8K8K8K8K8K8K8K8K8K8K8K8K8K8K8K8K8K8K';
+        
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+        async function uploadFile() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                alert('Please select a file');
+                return;
+            }
+
+            console.log('File details:', {
+                name: file.name,
+                type: file.type,
+                size: file.size
+            });
+
+            try {
+                const fileName = `test-${Date.now()}.${file.name.split('.').pop()}`;
+                const filePath = `course-covers/${fileName}`;
+
+                console.log('Uploading with NO extra parameters...');
+                const { data, error } = await supabase.storage
+                    .from('course-covers')
+                    .upload(filePath, file);
+
+                if (error) {
+                    console.error('Upload error:', error);
+                    document.getElementById('result').innerHTML = `Error: ${error.message}`;
+                } else {
+                    console.log('Upload success:', data);
+                    const { data: { publicUrl } } = supabase.storage
+                        .from('course-covers')
+                        .getPublicUrl(filePath);
+                    
+                    document.getElementById('result').innerHTML = `
+                        <p>Success! URL: <a href="${publicUrl}" target="_blank">${publicUrl}</a></p>
+                        <img src="${publicUrl}" style="max-width: 300px;">
+                    `;
+                }
+            } catch (err) {
+                console.error('Exception:', err);
+                document.getElementById('result').innerHTML = `Exception: ${err.message}`;
+            }
+        }
+    </script>
+</body>
+</html>

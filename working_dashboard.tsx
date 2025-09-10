@@ -451,7 +451,7 @@ const DashboardNew: React.FC = () => {
           {trialStatus.isActive && !subActive && (
             <TrialBanner
               trialStatus={trialStatus}
-              onSubscribe={() => navigate('/subscription')}
+              onSubscribe={() => navigate('/profile')}
             />
           )}
 
@@ -535,7 +535,7 @@ const DashboardNew: React.FC = () => {
                     <button 
                       onClick={() => {
                         if (trialStatus.isExpired && !subActive) {
-                          navigate('/subscription');
+                          navigate('/profile');
                         } else {
                           navigate(`/course/${currentCourse.id}/overview`);
                         }
@@ -563,7 +563,7 @@ const DashboardNew: React.FC = () => {
                     <button 
                       onClick={() => {
                         if (trialStatus.isExpired && !subActive) {
-                          navigate('/subscription');
+                          navigate('/profile');
                         } else {
                           navigate('/courses');
                         }
@@ -638,7 +638,7 @@ const DashboardNew: React.FC = () => {
                   {/* Manage Profile Button */}
                   <div className="pt-4">
                     <button 
-                      onClick={() => navigate('/subscription')}
+                      onClick={() => navigate('/profile')}
                       className="w-full bg-gradient-to-r from-primary-600 to-primary-700 text-white py-3 px-4 rounded-lg font-medium hover:from-primary-700 hover:to-primary-800 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 flex items-center justify-center space-x-2"
                     >
                       <FaUser className="text-sm" />

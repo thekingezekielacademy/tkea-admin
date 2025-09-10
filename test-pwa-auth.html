@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PWA Auth Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+        #results { margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <h1>PWA Authentication Test</h1>
+    
+    <div class="test-section info">
+        <h3>Test Instructions</h3>
+        <p>This page helps test PWA authentication issues. Follow these steps:</p>
+        <ol>
+            <li>Open this page in your PWA (not browser)</li>
+            <li>Try signing in through the PWA</li>
+            <li>Navigate to the Dashboard</li>
+            <li>Check if you get signed out</li>
+            <li>Run the tests below to diagnose issues</li>
+        </ol>
+    </div>
+
+    <div class="test-section">
+        <h3>Authentication Tests</h3>
+        <button onclick="testServiceWorker()">Test Service Worker</button>
+        <button onclick="testStorage()">Test Storage Access</button>
+        <button onclick="testSupabaseConnection()">Test Supabase Connection</button>
+        <button onclick="clearAllCaches()">Clear All Caches</button>
+        <button onclick="testAuthEndpoints()">Test Auth Endpoints</button>
+    </div>
+
+    <div id="results"></div>
+
+    <script>
+        function log(message, type = 'info') {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `test-section ${type}`;
+            div.innerHTML = `<strong>${new Date().toLocaleTimeString()}:</strong> ${message}`;
+            results.appendChild(div);
+        }
+
+        async function testServiceWorker() {
+            try {
+                if ('serviceWorker' in navigator) {
+                    const registration = await navigator.serviceWorker.ready;
+                    log(`✅ Service Worker is active: ${registration.active ? 'Yes' : 'No'}`, 'success');
+                    
+                    // Check if auth endpoints are being handled correctly
+                    const response = await fetch('/sw.js');
+                    const swContent = await response.text();
+                    if (swContent.includes('AUTH_ENDPOINTS')) {
+                        log('✅ Service Worker has auth endpoint protection', 'success');
+                    } else {
+                        log('❌ Service Worker missing auth endpoint protection', 'error');
+                    }
+                } else {
+                    log('❌ Service Worker not supported', 'error');
+                }
+            } catch (error) {
+                log(`❌ Service Worker test failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function testStorage() {
+            try {
+                // Test localStorage
+                const testKey = 'pwa-auth-test';
+                const testValue = 'test-value-' + Date.now();
+                
+                localStorage.setItem(testKey, testValue);
+                const retrieved = localStorage.getItem(testKey);
+                
+                if (retrieved === testValue) {
+                    log('✅ localStorage is working', 'success');
+                } else {
+                    log('❌ localStorage test failed', 'error');
+                }
+                
+                localStorage.removeItem(testKey);
+                
+                // Test sessionStorage
+                sessionStorage.setItem(testKey, testValue);
+                const sessionRetrieved = sessionStorage.getItem(testKey);
+                
+                if (sessionRetrieved === testValue) {
+                    log('✅ sessionStorage is working', 'success');
+                } else {
+                    log('❌ sessionStorage test failed', 'error');
+                }
+                
+                sessionStorage.removeItem(testKey);
+                
+            } catch (error) {
+                log(`❌ Storage test failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function testSupabaseConnection() {
+            try {
+                // This would need the actual Supabase client, but we can test the endpoint
+                const response = await fetch('https://your-supabase-url.supabase.co/rest/v1/', {
+                    headers: {
+                        'apikey': 'your-anon-key'
+                    }
+                });
+                
+                if (response.status === 200 || response.status === 401) {
+                    log('✅ Supabase endpoint is reachable', 'success');
+                } else {
+                    log(`⚠️ Supabase endpoint returned status: ${response.status}`, 'info');
+                }
+            } catch (error) {
+                log(`❌ Supabase connection test failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function clearAllCaches() {
+            try {
+                if ('caches' in window) {
+                    const cacheNames = await caches.keys();
+                    await Promise.all(
+                        cacheNames.map(cacheName => caches.delete(cacheName))
+                    );
+                    log(`✅ Cleared ${cacheNames.length} caches`, 'success');
+                } else {
+                    log('❌ Cache API not supported', 'error');
+                }
+            } catch (error) {
+                log(`❌ Cache clearing failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function testAuthEndpoints() {
+            try {
+                // Test if auth endpoints are being cached
+                const authUrls = [
+                    'https://your-supabase-url.supabase.co/auth/v1/token',
+                    'https://your-supabase-url.supabase.co/auth/v1/user'
+                ];
+                
+                for (const url of authUrls) {
+                    try {
+                        const response = await fetch(url, { method: 'HEAD' });
+                        log(`Auth endpoint ${url}: Status ${response.status}`, 'info');
+                    } catch (error) {
+                        log(`Auth endpoint ${url}: ${error.message}`, 'info');
+                    }
+                }
+            } catch (error) {
+                log(`❌ Auth endpoint test failed: ${error.message}`, 'error');
+            }
+        }
+
+        // Auto-run basic tests on load
+        window.addEventListener('load', () => {
+            log('PWA Auth Test Page Loaded', 'info');
+            testServiceWorker();
+            testStorage();
+        });
+    </script>
+</body>
+</html>

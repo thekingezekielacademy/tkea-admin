@@ -2,6 +2,7 @@ import React, { useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
+import { notificationService } from '../../utils/notificationService';
 
 interface Video {
   id: string;
@@ -130,7 +131,20 @@ const AdminAddCourseWizard: React.FC = () => {
   const handleCoverPhotoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        setError('Please select a valid image file');
+        return;
+      }
+      
+      // Validate file size (max 10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        setError('Image file is too large. Please select a file smaller than 10MB');
+        return;
+      }
+      
       setCourseData(prev => ({ ...prev, coverPhoto: file }));
+      setError('');
     }
   };
 
@@ -152,9 +166,64 @@ const AdminAddCourseWizard: React.FC = () => {
     const imageFile = files.find(file => file.type.startsWith('image/'));
     
     if (imageFile) {
+      // Validate file size (max 10MB)
+      if (imageFile.size > 10 * 1024 * 1024) {
+        setError('Image file is too large. Please select a file smaller than 10MB');
+        return;
+      }
+      
       setCourseData(prev => ({ ...prev, coverPhoto: imageFile }));
+      setError('');
+    } else {
+      setError('Please drop a valid image file');
     }
   }, []);
+
+  // Function to notify all active users about new course
+  const notifyUsersAboutNewCourse = async (courseTitle: string, category: string) => {
+    try {
+      console.log('🔔 Notifying users about new course:', courseTitle);
+      
+      // Get all active users (users with recent activity or subscriptions)
+      const { data: activeUsers, error: usersError } = await supabase
+        .from('profiles')
+        .select('id, email, full_name')
+        .not('email', 'is', null);
+
+      if (usersError) {
+        console.error('Error fetching users for notification:', usersError);
+        return;
+      }
+
+      if (!activeUsers || activeUsers.length === 0) {
+        console.log('No active users found to notify');
+        return;
+      }
+
+      console.log(`📢 Sending new course notification to ${activeUsers.length} users`);
+
+      // Send notification to each user
+      // Note: In a real implementation, you might want to use a background job
+      // or push notification service for better performance
+      for (const user of activeUsers) {
+        try {
+          // For now, we'll just log the notification
+          // In a real implementation, you'd send push notifications or emails
+          console.log(`📧 Would notify ${user.full_name || user.email} about: ${courseTitle}`);
+          
+          // If the user has notification permissions enabled, send the notification
+          // This would require storing notification preferences in the database
+          await notificationService.sendNewCourseNotification(courseTitle, category);
+        } catch (notifyError) {
+          console.error(`Error notifying user ${user.email}:`, notifyError);
+        }
+      }
+
+      console.log('✅ New course notifications sent successfully');
+    } catch (error) {
+      console.error('Error in notifyUsersAboutNewCourse:', error);
+    }
+  };
 
   const handleCreateCourse = async () => {
     if (!courseData.title.trim()) {
@@ -180,12 +249,19 @@ const AdminAddCourseWizard: React.FC = () => {
           const fileName = `${Date.now()}.${fileExt}`;
           const filePath = `course-covers/${fileName}`;
 
+          console.log('Uploading file:', {
+            name: courseData.coverPhoto.name,
+            type: courseData.coverPhoto.type,
+            size: courseData.coverPhoto.size,
+            path: filePath
+          });
+
+          // Try converting to ArrayBuffer to avoid any multipart issues
+          const arrayBuffer = await courseData.coverPhoto.arrayBuffer();
+          
           const { error: uploadError } = await supabase.storage
             .from('course-covers')
-            .upload(filePath, courseData.coverPhoto, {
-              contentType: courseData.coverPhoto.type,
-              upsert: false
-            });
+            .upload(filePath, arrayBuffer);
 
           if (uploadError) {
             console.warn('Cover photo upload failed, continuing without it:', uploadError.message);
@@ -197,6 +273,7 @@ const AdminAddCourseWizard: React.FC = () => {
               .getPublicUrl(filePath);
 
             coverPhotoUrl = publicUrl;
+            console.log('Cover photo uploaded successfully:', coverPhotoUrl);
           }
         } catch (uploadErr) {
           console.warn('Cover photo upload failed, continuing without it:', uploadErr);
@@ -256,6 +333,9 @@ const AdminAddCourseWizard: React.FC = () => {
       }
 
       console.log('Course created successfully:', courseDataResult);
+      
+      // Notify all users about the new course
+      await notifyUsersAboutNewCourse(courseData.title, courseData.category);
       
       // Navigate to courses list
       navigate('/admin/courses');

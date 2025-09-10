@@ -184,7 +184,7 @@ const CourseView: React.FC = () => {
               </div>
               <div className="flex space-x-3">
                 <button
-                  onClick={() => navigate(`/admin/courses/${courseId}/edit`)}
+                  onClick={() => navigate(`/admin/edit-course/${courseId}`)}
                   className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                 >
                   Edit Course

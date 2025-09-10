@@ -22,7 +22,7 @@ interface CourseData {
 const EditCourse: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { courseId } = useParams<{ courseId: string }>();
+  const { id: courseId } = useParams<{ id: string }>();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [courseData, setCourseData] = useState<CourseData>({
@@ -42,7 +42,12 @@ const EditCourse: React.FC = () => {
   const [draggedVideoIndex, setDraggedVideoIndex] = useState<number | null>(null);
 
   const fetchCourseData = useCallback(async () => {
-    if (!courseId) return;
+    if (!courseId) {
+      console.log('❌ No courseId provided');
+      return;
+    }
+    
+    console.log('🔍 Fetching course data for ID:', courseId);
     
     try {
       setLoading(true);
@@ -72,6 +77,14 @@ const EditCourse: React.FC = () => {
 
       if (videosError) throw videosError;
 
+      console.log('📚 Loaded course data:', {
+        title: course.title,
+        description: course.description,
+        level: course.level,
+        category: course.category,
+        videosCount: videos?.length || 0
+      });
+
       setCourseData({
         title: course.title || '',
         description: course.description || '',
@@ -89,10 +102,16 @@ const EditCourse: React.FC = () => {
   }, [courseId, user?.id, user?.role]);
 
   useEffect(() => {
+    console.log('🔍 EditCourse useEffect triggered:', {
+      courseId,
+      user: user?.id,
+      userRole: user?.role
+    });
+    
     if (courseId && user) {
       fetchCourseData();
     }
-  }, [courseId, user?.id, user?.role, fetchCourseData]);
+  }, [courseId, user?.id, user?.role]);
 
   const handleInputChange = (field: keyof CourseData, value: string) => {
     setCourseData(prev => ({ ...prev, [field]: value }));
@@ -184,14 +203,44 @@ const EditCourse: React.FC = () => {
     
     const files = e.dataTransfer.files;
     if (files.length > 0) {
-      setCourseData(prev => ({ ...prev, coverPhoto: files[0] }));
+      const file = files[0];
+      
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        setError('Please drop a valid image file');
+        return;
+      }
+      
+      // Validate file size (max 10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        setError('Image file is too large. Please select a file smaller than 10MB');
+        return;
+      }
+      
+      setCourseData(prev => ({ ...prev, coverPhoto: file }));
+      setError('');
     }
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files && files.length > 0) {
-      setCourseData(prev => ({ ...prev, coverPhoto: files[0] }));
+      const file = files[0];
+      
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        setError('Please select a valid image file');
+        return;
+      }
+      
+      // Validate file size (max 10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        setError('Image file is too large. Please select a file smaller than 10MB');
+        return;
+      }
+      
+      setCourseData(prev => ({ ...prev, coverPhoto: file }));
+      setError('');
     }
   };
 
@@ -263,12 +312,19 @@ const EditCourse: React.FC = () => {
           const fileName = `${Date.now()}.${fileExt}`;
           const filePath = `course-covers/${fileName}`;
           
+          console.log('Uploading file:', {
+            name: courseData.coverPhoto.name,
+            type: courseData.coverPhoto.type,
+            size: courseData.coverPhoto.size,
+            path: filePath
+          });
+          
+          // Try converting to ArrayBuffer to avoid any multipart issues
+          const arrayBuffer = await courseData.coverPhoto.arrayBuffer();
+          
           const { error: uploadError } = await supabase.storage
             .from('course-covers')
-            .upload(filePath, courseData.coverPhoto, {
-              contentType: courseData.coverPhoto.type,
-              upsert: false
-            });
+            .upload(filePath, arrayBuffer);
           
           if (uploadError) {
             console.warn('Cover photo upload failed, continuing without it:', uploadError.message);
@@ -396,7 +452,7 @@ const EditCourse: React.FC = () => {
     }
   };
 
-  if (loading && !courseData.title) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 pt-24">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -408,6 +464,16 @@ const EditCourse: React.FC = () => {
       </div>
     );
   }
+
+  // Debug: Log current course data
+  console.log('🎯 EditCourse render - courseData:', {
+    title: courseData.title,
+    description: courseData.description,
+    level: courseData.level,
+    category: courseData.category,
+    videosCount: courseData.videos.length,
+    loading
+  });
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 pt-24">
