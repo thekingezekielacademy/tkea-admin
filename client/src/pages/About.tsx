@@ -26,7 +26,7 @@ const About: React.FC = () => {
       ],
       stats: [
         { value: "5+", label: "Years Experience" },
-        { value: "10K+", label: "Students Trained" },
+        { value: "40K+", label: "Students Trained" },
         { value: "95%", label: "Success Rate" }
       ],
       statsColor: "text-primary-600"
@@ -327,8 +327,11 @@ const About: React.FC = () => {
               
               <div>
                 <h3 className="text-xl font-semibold text-primary-900 mb-2">2025 – A Bigger Vision</h3>
-                <p className="text-gray-700 leading-relaxed">
+                <p className="text-gray-700 leading-relaxed mb-4">
                   Even after all these milestones, I saw a gap in the educational sector. People don't just need affordable, high-quality knowledge — they also need a space to ask questions, connect with mentors, and grow together. This led me to design my next chapter: affordable, precise, and practical education with ongoing support for every learner — The King Ezekiel Academy.
+                </p>
+                <p className="text-gray-700 leading-relaxed">
+                  Now, we're taking this vision to the next level by bringing more professionals on board and doing this bigger and better. We're focused on delivering more professionalism, better explanations, and enhanced learning experiences that truly transform our students' lives and careers.
                 </p>
               </div>
             </div>

@@ -40,7 +40,7 @@ const MiniMeetTheTeam: React.FC = () => {
       ],
       stats: [
         { value: "5+", label: "Years Experience" },
-        { value: "10K+", label: "Students Trained" },
+        { value: "40K+", label: "Students Trained" },
         { value: "95%", label: "Success Rate" }
       ],
       statsColor: "text-primary-600"
