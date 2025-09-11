@@ -147,7 +147,7 @@ const FlutterwavePaymentModal: React.FC<FlutterwavePaymentModalProps> = ({ isOpe
 
       // Validate required fields with better extraction
       const customerName = user?.full_name || user?.name || user?.email?.split('@')[0] || 'Customer';
-      const customerEmail = email.trim();
+      const customerEmail = user?.email || email.trim();
       
       // Ensure customer name is properly formatted and not empty
       const formattedCustomerName = customerName.trim().substring(0, 50) || 'Customer';
@@ -162,7 +162,8 @@ const FlutterwavePaymentModal: React.FC<FlutterwavePaymentModalProps> = ({ isOpe
 
       // Enhanced validation with better error messages
       if (!customerEmail || customerEmail.trim().length < 4) {
-        throw new Error('Valid email address is required (minimum 4 characters)');
+        console.error('❌ Customer email validation failed:', { customerEmail, userEmail: user?.email, emailState: email });
+        throw new Error('Valid email address is required. Please ensure you are logged in or enter your email address.');
       }
 
       if (!formattedCustomerName || formattedCustomerName.trim().length < 2) {
