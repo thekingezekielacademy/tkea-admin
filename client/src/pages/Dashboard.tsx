@@ -128,25 +128,26 @@ const Dashboard: React.FC = () => {
         .eq('user_id', user.id)
         .eq('status', 'active')
         .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
+        .limit(1);
       
       if (subError) {
         secureLog('❌ Database subscription query error:', subError);
       }
       
-      if (!subError && subData) {
+      if (!subError && subData && subData.length > 0) {
+        const subscription = subData[0]; // Get first (most recent) subscription
+        
         // SECURITY: Check if subscription is actually active and not canceled
         const now = new Date();
-        const nextBillingDate = subData.next_billing_date ? new Date(subData.next_billing_date) : null;
-        const endDate = subData.end_date ? new Date(subData.end_date) : null;
+        const nextBillingDate = subscription.next_billing_date ? new Date(subscription.next_billing_date) : null;
+        const endDate = subscription.end_date ? new Date(subscription.end_date) : null;
         
         // Subscription is active if:
         // 1. Status is 'active' AND
         // 2. Not canceled at period end OR
         // 3. If canceled, still within the paid period
-        const isActuallyActive = subData.status === 'active' && 
-          (!subData.cancel_at_period_end || 
+        const isActuallyActive = subscription.status === 'active' && 
+          (!subscription.cancel_at_period_end || 
            (endDate && now < endDate) ||
            (nextBillingDate && now < nextBillingDate));
         
@@ -159,7 +160,7 @@ const Dashboard: React.FC = () => {
           setSubActive(false);
           secureStorage.setSubscriptionActive(false);
           secureLog('❌ Subscription exists but NOT active (canceled/expired), setting subActive = false');
-          secureLog('📊 Subscription status:', { status: subData.status, cancel_at_period_end: subData.cancel_at_period_end });
+          secureLog('📊 Subscription status:', { status: subscription.status, cancel_at_period_end: subscription.cancel_at_period_end });
         }
       } else {
         // No active subscription found
@@ -221,6 +222,14 @@ const Dashboard: React.FC = () => {
       // For new users, assume they're within 7 days if no created_at or if created_at is recent
       const userCreatedAt = user.created_at ? new Date(user.created_at) : new Date();
       const daysSinceCreation = Math.ceil((Date.now() - userCreatedAt.getTime()) / (1000 * 60 * 60 * 24));
+      
+      // Clear any leftover subscription data from previous sessions for new users
+      if (daysSinceCreation <= 7) {
+        localStorage.removeItem('subscription_active');
+        localStorage.removeItem('subscription_id');
+        localStorage.removeItem('flutterwave_subscription_id');
+        localStorage.removeItem('flutterwave_customer_code');
+      }
       
       // If user is new (no created_at) or within 7 days, give them trial
       if (!user.created_at || daysSinceCreation <= 7) {

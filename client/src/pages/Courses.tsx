@@ -122,8 +122,7 @@ const Courses: React.FC = () => {
     
     // CRITICAL: If user has an active subscription (any source), they should NOT have trial access
     const isSubscribed = databaseSubscriptionStatus || 
-                        secureStorage.isSubscriptionActive() || 
-                        localStorage.getItem('subscription_active') === 'true';
+                        secureStorage.isSubscriptionActive();
     
     if (isSubscribed) {
       // console.log('✅ User has active subscription (secureStorage, localStorage, or database), no trial access needed');
@@ -785,8 +784,7 @@ const Courses: React.FC = () => {
 
             {/* Active Subscription - Green */}
             {(databaseSubscriptionStatus || 
-              secureStorage.isSubscriptionActive() || 
-              localStorage.getItem('subscription_active') === 'true') && (
+              secureStorage.isSubscriptionActive()) && (
               <div className="bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl sm:rounded-2xl p-4 sm:p-6 text-white shadow-xl border border-green-400">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
                   <div className="flex items-center space-x-3 sm:space-x-4">

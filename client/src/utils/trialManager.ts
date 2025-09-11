@@ -50,13 +50,17 @@ export class TrialManager {
       }
 
       // Always save to localStorage as fallback
+      const now = new Date();
+      const timeDiff = endDate.getTime() - now.getTime();
+      const daysRemaining = Math.max(0, Math.floor(timeDiff / (1000 * 60 * 60 * 24)));
+      
       const trialStatus: TrialStatus = {
-        isActive: true,
+        isActive: daysRemaining > 0,
         startDate: startDate.toISOString(),
         endDate: endDate.toISOString(),
-        daysRemaining: this.TRIAL_DURATION_DAYS,
+        daysRemaining,
         totalDays: this.TRIAL_DURATION_DAYS,
-        isExpired: false
+        isExpired: daysRemaining <= 0
       };
 
       localStorage.setItem(this.TRIAL_STORAGE_KEY, JSON.stringify(trialStatus));
