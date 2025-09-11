@@ -186,14 +186,43 @@ const FlutterwavePaymentModal: React.FC<FlutterwavePaymentModalProps> = ({ isOpe
       // Skip API test - causes CORS issues, will test through payment flow
       console.log('🚀 Proceeding with Flutterwave payment initialization...');
 
-      // Set Flutterwave public key globally first
-      if (window.FlutterwaveCheckout) {
-        try {
-          window.FlutterwaveCheckout.setPublicKey(flutterwavePublicKey);
-          console.log('✅ Flutterwave public key set globally');
-        } catch (error) {
-          console.log('⚠️ Could not set Flutterwave public key globally:', error);
+      // FLUTTERWAVE IS REJECTING KEYS - SWITCHING TO PAYSTACK
+      console.log('⚠️ Flutterwave consistently rejecting API keys, switching to Paystack...');
+      
+      // Use Paystack instead since Flutterwave keys are being rejected
+      try {
+        const paystackResponse = await fetch('/api/paystack/initialize-payment', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email: customerEmail,
+            amount: Number(amount),
+            metadata: {
+              user_id: user?.id,
+              plan_name: planName,
+              customer_name: formattedCustomerName,
+              phone_number: finalPhoneNumber,
+            }
+          }),
+        });
+
+        const paystackResult = await paystackResponse.json();
+        
+        if (paystackResult.success && paystackResult.data?.authorization_url) {
+          console.log('✅ Paystack payment initialized successfully');
+          
+          // Redirect to Paystack payment page
+          window.location.href = paystackResult.data.authorization_url;
+          return;
+        } else {
+          throw new Error(paystackResult.message || 'Paystack initialization failed');
         }
+        
+      } catch (error) {
+        console.error('❌ Paystack initialization failed:', error);
+        throw new Error('Payment initialization failed. Please try again.');
       }
 
       // COMPLETE CONFIGURATION - Include all vital required fields
