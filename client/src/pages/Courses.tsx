@@ -114,12 +114,6 @@ const Courses: React.FC = () => {
   const checkTrialAccess = async () => {
     if (!user?.id) return;
     
-    // Wait for auth to be fully loaded
-    if (!supabase.auth.getUser()) {
-      console.log('Auth not ready, skipping trial check');
-      return;
-    }
-    
     // CRITICAL: If user has an active subscription (any source), they should NOT have trial access
     const isSubscribed = databaseSubscriptionStatus || 
                         secureStorage.isSubscriptionActive();
@@ -149,7 +143,7 @@ const Courses: React.FC = () => {
           
           const hasAccess = parsedTrial.isActive && daysRemaining > 0;
           setHasTrialAccess(hasAccess);
-          // console.log('Trial access check from localStorage:', hasAccess, 'days remaining:', daysRemaining);
+          console.log('🔍 Trial access check from localStorage:', { hasAccess, daysRemaining, parsedTrial });
           return;
         } catch (parseError) {
           // console.log('Failed to parse localStorage trial data');
@@ -184,7 +178,7 @@ const Courses: React.FC = () => {
         // Save to localStorage
         localStorage.setItem('user_trial_status', JSON.stringify(newTrialStatus));
         setHasTrialAccess(newTrialStatus.isActive && daysRemaining > 0);
-        // console.log('✅ Initialized trial for new user in Courses:', newTrialStatus);
+        console.log('✅ Initialized trial for new user in Courses:', { newTrialStatus, daysRemaining, hasAccess: newTrialStatus.isActive && daysRemaining > 0 });
       } else {
         // User is older than 7 days, no trial
         setHasTrialAccess(false);
@@ -803,9 +797,19 @@ const Courses: React.FC = () => {
             )}
 
             {/* Free Trial Active - Blue */}
-            {!(databaseSubscriptionStatus || 
-               secureStorage.isSubscriptionActive() || 
-               localStorage.getItem('subscription_active') === 'true') && hasTrialAccess && (
+            {(() => {
+              const showTrialBanner = !(databaseSubscriptionStatus || 
+                 secureStorage.isSubscriptionActive() || 
+                 localStorage.getItem('subscription_active') === 'true') && hasTrialAccess;
+              console.log('🔍 Trial banner condition check:', { 
+                databaseSubscriptionStatus, 
+                secureStorageActive: secureStorage.isSubscriptionActive(), 
+                localStorageActive: localStorage.getItem('subscription_active'), 
+                hasTrialAccess, 
+                showTrialBanner 
+              });
+              return showTrialBanner;
+            })() && (
               <div className="bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl sm:rounded-2xl p-4 sm:p-6 text-white shadow-xl border border-blue-400">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
                   <div className="flex items-center space-x-3 sm:space-x-4">
