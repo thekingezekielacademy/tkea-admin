@@ -186,6 +186,16 @@ const FlutterwavePaymentModal: React.FC<FlutterwavePaymentModalProps> = ({ isOpe
       // Skip API test - causes CORS issues, will test through payment flow
       console.log('🚀 Proceeding with Flutterwave payment initialization...');
 
+      // Set Flutterwave public key globally first
+      if (window.FlutterwaveCheckout) {
+        try {
+          window.FlutterwaveCheckout.setPublicKey(flutterwavePublicKey);
+          console.log('✅ Flutterwave public key set globally');
+        } catch (error) {
+          console.log('⚠️ Could not set Flutterwave public key globally:', error);
+        }
+      }
+
       // COMPLETE CONFIGURATION - Include all vital required fields
       const flutterwaveConfig = {
         public_key: flutterwavePublicKey,
@@ -200,10 +210,20 @@ const FlutterwavePaymentModal: React.FC<FlutterwavePaymentModalProps> = ({ isOpe
           name: formattedCustomerName,
           phone_number: finalPhoneNumber,
         },
+        subaccounts: [],
+        payment_plan: null,
+        integrity_hash: null,
         customizations: {
           title: 'King Ezekiel Academy',
           description: 'Monthly Membership Payment',
           logo: `${window.location.origin}/img/logo.png`,
+        },
+        meta: {
+          user_id: user?.id || 'anonymous',
+          plan_name: planName,
+          platform: 'web',
+          timestamp: new Date().toISOString(),
+          source: 'king_ezekiel_academy',
         },
         callback: function(response: any) {
           console.log('🔧 Flutterwave Response:', response);
