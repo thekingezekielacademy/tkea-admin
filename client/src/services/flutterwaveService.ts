@@ -6,6 +6,11 @@ import { logInfo, logError, logApiCall } from '../utils/performanceLogger';
 // API Configuration - Use secure server-side endpoints
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://app.thekingezekielacademy.com/api';
 const FLUTTERWAVE_PUBLIC_KEY = process.env.REACT_APP_FLUTTERWAVE_PUBLIC_KEY || 'FLWPUBK_TEST-d2eaf30b37947d8ee178a7f56417d6ef-X';
+const FLUTTERWAVE_MODE = process.env.REACT_APP_FLUTTERWAVE_MODE || 'test';
+
+// Log current mode
+console.log('🔧 Flutterwave Mode:', FLUTTERWAVE_MODE);
+console.log('🔧 Flutterwave Public Key:', FLUTTERWAVE_PUBLIC_KEY?.substring(0, 20) + '...');
 
 // Validate required environment variables
 if (!FLUTTERWAVE_PUBLIC_KEY) {
@@ -102,7 +107,7 @@ class FlutterwaveService {
       console.log('🚀 Creating Flutterwave subscription');
       
       // For development mode, simulate successful subscription creation
-      if (process.env.NODE_ENV === 'development' || window.location.hostname === 'localhost' || window.location.hostname.includes('vercel.app') || window.location.hostname === 'app.thekingezekielacademy.com') {
+      if (FLUTTERWAVE_MODE === 'test' || process.env.NODE_ENV === 'development' || window.location.hostname === 'localhost' || window.location.hostname.includes('vercel.app')) {
         console.log('🔧 Development mode: Simulating successful subscription creation');
         
         const user = (await supabase.auth.getUser()).data.user;
@@ -178,7 +183,7 @@ class FlutterwaveService {
       console.log('🔍 Verifying Flutterwave payment');
       
       // For development mode, simulate successful verification
-      if (process.env.NODE_ENV === 'development' || window.location.hostname === 'localhost' || window.location.hostname.includes('vercel.app') || window.location.hostname === 'app.thekingezekielacademy.com') {
+      if (FLUTTERWAVE_MODE === 'test' || process.env.NODE_ENV === 'development' || window.location.hostname === 'localhost' || window.location.hostname.includes('vercel.app')) {
         console.log('🔧 Development mode: Simulating successful payment verification');
         
         // Create a mock successful verification response

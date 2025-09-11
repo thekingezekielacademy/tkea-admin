@@ -63,8 +63,19 @@ const FlutterwavePaymentModal: React.FC<FlutterwavePaymentModalProps> = ({ isOpe
     setPaymentState({ status: 'processing' });
 
     try {
-      // Use hardcoded Flutterwave test key for reliability
-      const flutterwavePublicKey = 'FLWPUBK_TEST-d2eaf30b37947d8ee178a7f56417d6ef-X';
+      // Use environment variable for Flutterwave public key
+      const flutterwavePublicKey = process.env.REACT_APP_FLUTTERWAVE_PUBLIC_KEY || 'FLWPUBK_TEST-d2eaf30b37947d8ee178a7f56417d6ef-X';
+      
+      // Validate Flutterwave key format
+      if (!flutterwavePublicKey || !flutterwavePublicKey.startsWith('FLWPUBK_')) {
+        console.error('❌ Invalid Flutterwave public key format:', flutterwavePublicKey);
+        throw new Error('Invalid Flutterwave public key format');
+      }
+      
+      console.log('🔧 Flutterwave Payment Modal - Using key:', flutterwavePublicKey?.substring(0, 20) + '...');
+      console.log('🔧 Flutterwave Payment Modal - Full key length:', flutterwavePublicKey?.length);
+      console.log('🔧 Flutterwave Payment Modal - Key starts with:', flutterwavePublicKey?.substring(0, 10));
+      console.log('🔧 Flutterwave Payment Modal - Mode:', process.env.REACT_APP_FLUTTERWAVE_MODE || 'test');
 
       const tx_ref = `TKE_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
