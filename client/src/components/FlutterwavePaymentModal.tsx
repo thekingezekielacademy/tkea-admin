@@ -40,118 +40,13 @@ const FlutterwavePaymentModal: React.FC<FlutterwavePaymentModalProps> = ({ isOpe
     error?: string;
   }>({ status: 'idle' });
 
-  // Load Flutterwave script dynamically with proper API key initialization
+  // Simplified approach - no need to load Flutterwave script for hosted payments
   useEffect(() => {
     if (isOpen) {
-      if (window.FlutterwaveCheckout) {
-        console.log('✅ Flutterwave script already loaded');
-        setFlutterwaveLoaded(true);
-      } else {
-        console.log('⏳ Loading Flutterwave script with proper API key initialization...');
-        
-        // Set global Flutterwave configuration before loading script
-        const flutterwavePublicKey = process.env.REACT_APP_FLUTTERWAVE_PUBLIC_KEY;
-        if (flutterwavePublicKey) {
-          // Set global Flutterwave configuration
-          window.FlutterwaveConfig = {
-            publicKey: flutterwavePublicKey,
-            txRef: `TKE_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-            amount: 2500,
-            currency: 'NGN',
-            country: 'NG',
-            email: user?.email || 'customer@example.com',
-            phone_number: '08000000000',
-            name: user?.full_name || user?.name || 'Customer'
-          };
-          
-          // Disable fingerprinting globally before script loads
-          window.FlutterwaveConfig.disableFingerprinting = true;
-          window.FlutterwaveConfig.fingerprintingEnabled = false;
-          
-          console.log('🔧 Flutterwave global config set with fingerprinting disabled:', {
-            publicKey: flutterwavePublicKey.substring(0, 20) + '...',
-            mode: 'live',
-            fingerprintingDisabled: true
-          });
-        }
-        
-        // Load Flutterwave script dynamically with fingerprinting disabled
-        // Use a different approach to avoid fingerprinting issues
-        const script = document.createElement('script');
-        script.src = 'https://checkout.flutterwave.com/v3.js';
-        script.async = true;
-        script.crossOrigin = 'anonymous';
-        
-        // Add a global flag to disable fingerprinting before script loads
-        window.FlutterwaveDisableFingerprinting = true;
-        
-        // Add error handling for fingerprinting service
-        script.onerror = (error) => {
-          console.error('❌ Failed to load Flutterwave script:', error);
-          setPaymentState(prev => ({ 
-            ...prev, 
-            error: 'Payment system is temporarily unavailable. Please refresh the page and try again.' 
-          }));
-        };
-        
-        script.onload = () => {
-          console.log('✅ Flutterwave script loaded successfully');
-          
-          // Debug Flutterwave SDK
-          console.log('🔧 Flutterwave SDK loaded:', typeof window.FlutterwaveCheckout);
-          console.log('🔧 Flutterwave SDK methods:', Object.keys(window.FlutterwaveCheckout || {}));
-          console.log('🔧 Public key available:', !!flutterwavePublicKey);
-          
-          // Try to disable fingerprinting to prevent API key errors
-          if (window.FlutterwaveCheckout) {
-            try {
-              // Try different methods to disable fingerprinting
-              if (typeof window.FlutterwaveCheckout.disableFingerprinting === 'function') {
-                window.FlutterwaveCheckout.disableFingerprinting();
-                console.log('✅ Flutterwave fingerprinting disabled via disableFingerprinting');
-              } else if (typeof window.FlutterwaveCheckout.setFingerprintingEnabled === 'function') {
-                window.FlutterwaveCheckout.setFingerprintingEnabled(false);
-                console.log('✅ Flutterwave fingerprinting disabled via setFingerprintingEnabled');
-              } else if (window.FlutterwaveCheckout.fingerprintingEnabled !== undefined) {
-                window.FlutterwaveCheckout.fingerprintingEnabled = false;
-                console.log('✅ Flutterwave fingerprinting disabled via property');
-              } else {
-                console.log('⚠️ No method found to disable Flutterwave fingerprinting');
-              }
-              
-              // Set public key using the proper method
-              if (typeof window.FlutterwaveCheckout.setPublicKey === 'function') {
-                window.FlutterwaveCheckout.setPublicKey(flutterwavePublicKey);
-                console.log('✅ Flutterwave public key set globally via setPublicKey');
-              } else if (window.FlutterwaveCheckout.publicKey !== undefined) {
-                window.FlutterwaveCheckout.publicKey = flutterwavePublicKey;
-                console.log('✅ Flutterwave public key set globally via property');
-              } else {
-                console.log('⚠️ No method found to set Flutterwave public key globally');
-                console.log('🔧 Available methods:', Object.getOwnPropertyNames(window.FlutterwaveCheckout));
-              }
-            } catch (error) {
-              console.error('❌ Failed to configure Flutterwave:', error);
-            }
-          }
-          
-          setFlutterwaveLoaded(true);
-        };
-        document.head.appendChild(script);
-        
-        // Fallback timeout
-        setTimeout(() => {
-          if (!window.FlutterwaveCheckout) {
-            console.error('❌ Flutterwave script failed to load after 10 seconds');
-            setPaymentState(prev => ({ 
-              ...prev, 
-              error: 'Payment system is temporarily unavailable. Please refresh the page and try again.' 
-            }));
-          }
-        }, 10000);
-      }
+      console.log('✅ Using Flutterwave hosted payment solution - no script loading needed');
+      setFlutterwaveLoaded(true);
     }
-  }, [isOpen, user]);
+  }, [isOpen]);
 
   useEffect(() => {
     if (isOpen && user?.email) {
@@ -167,10 +62,7 @@ const FlutterwavePaymentModal: React.FC<FlutterwavePaymentModalProps> = ({ isOpe
       return;
     }
 
-    if (!flutterwaveLoaded) {
-      setPaymentState({ status: 'error', error: 'Payment system is loading, please wait...' });
-      return;
-    }
+    // No need to check flutterwaveLoaded since we're using hosted payments
 
     setLoading(true);
     setPaymentState({ status: 'processing' });
@@ -268,10 +160,10 @@ const FlutterwavePaymentModal: React.FC<FlutterwavePaymentModalProps> = ({ isOpe
       
       console.log('✅ ALL VALUES VALIDATED - No empty values detected');
 
-      // FLUTTERWAVE INTEGRATION - DIFFERENT APPROACH
-      console.log('🚀 Using Flutterwave with server-side initialization...');
+      // FLUTTERWAVE HOSTED PAYMENT SOLUTION - BYPASS FINGERPRINTING
+      console.log('🚀 Using Flutterwave hosted payment solution to bypass fingerprinting...');
       
-      // Try server-side initialization first
+      // Use server-side initialization to get hosted payment link
       try {
         const response = await fetch('/api/flutterwave/initialize-payment', {
           method: 'POST',
@@ -294,18 +186,46 @@ const FlutterwavePaymentModal: React.FC<FlutterwavePaymentModalProps> = ({ isOpe
         if (result.success && result.data) {
           console.log('✅ Server-side Flutterwave initialization successful:', result.data);
           
-          // Use the server-generated payment link directly
+          // Use the server-generated payment link directly (hosted payment)
           if (result.data.link) {
-            console.log('🚀 Redirecting to Flutterwave payment page:', result.data.link);
+            console.log('🚀 Redirecting to Flutterwave hosted payment page:', result.data.link);
             
-            // Redirect to Flutterwave payment page
-            window.location.href = result.data.link;
+            // Open in new tab to avoid fingerprinting issues
+            const paymentWindow = window.open(result.data.link, '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
+            
+            if (!paymentWindow) {
+              // Fallback to same window if popup blocked
+              window.location.href = result.data.link;
+            } else {
+              // Monitor the payment window
+              const checkClosed = setInterval(() => {
+                if (paymentWindow.closed) {
+                  clearInterval(checkClosed);
+                  // Payment window closed, redirect to verification
+                  window.location.href = '/payment-verification';
+                }
+              }, 1000);
+            }
             return;
           } else if (result.data.authorization_url) {
             console.log('🚀 Redirecting to Flutterwave authorization URL:', result.data.authorization_url);
             
-            // Redirect to Flutterwave authorization URL
-            window.location.href = result.data.authorization_url;
+            // Open in new tab to avoid fingerprinting issues
+            const paymentWindow = window.open(result.data.authorization_url, '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
+            
+            if (!paymentWindow) {
+              // Fallback to same window if popup blocked
+              window.location.href = result.data.authorization_url;
+            } else {
+              // Monitor the payment window
+              const checkClosed = setInterval(() => {
+                if (paymentWindow.closed) {
+                  clearInterval(checkClosed);
+                  // Payment window closed, redirect to verification
+                  window.location.href = '/payment-verification';
+                }
+              }, 1000);
+            }
             return;
           } else {
             throw new Error('No payment link received from server');
@@ -319,8 +239,6 @@ const FlutterwavePaymentModal: React.FC<FlutterwavePaymentModalProps> = ({ isOpe
         console.error('❌ Server-side Flutterwave initialization failed:', error);
         throw new Error('Payment initialization failed. Please try again.');
       }
-
-      // Server-side initialization completed above - no client-side code needed
 
     } catch (error) {
       console.error('Flutterwave payment error:', error);
@@ -393,14 +311,6 @@ const FlutterwavePaymentModal: React.FC<FlutterwavePaymentModalProps> = ({ isOpe
             </div>
           </div>
 
-          {!flutterwaveLoaded && (
-            <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
-              <div className="flex items-center">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-yellow-500 mr-2"></div>
-                <span className="text-sm text-yellow-700">Loading payment system...</span>
-              </div>
-            </div>
-          )}
 
           {paymentState.status === 'error' && (
             <div className="bg-red-50 border border-red-200 rounded-md p-3">
@@ -430,7 +340,7 @@ const FlutterwavePaymentModal: React.FC<FlutterwavePaymentModalProps> = ({ isOpe
             </button>
             <button
               onClick={handlePayment}
-              disabled={loading || !email.trim() || !phoneNumber.trim() || !flutterwaveLoaded}
+              disabled={loading || !email.trim() || !phoneNumber.trim()}
               className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
             >
               {loading ? (
