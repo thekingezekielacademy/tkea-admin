@@ -126,6 +126,7 @@ function App() {
               <Route path="/payment-verification" element={<ProtectedRoute><PaymentVerification /></ProtectedRoute>} />
               <Route path="/dashboard-with-sidebar" element={<ProtectedRoute><DashboardWithSidebar /></ProtectedRoute>} />
               <Route path="/course/:id" element={<ProtectedRoute><CourseOverview /></ProtectedRoute>} />
+              <Route path="/course/:id/overview" element={<ProtectedRoute><CourseOverview /></ProtectedRoute>} />
               <Route path="/course/:id/lesson/:lessonId" element={<ProtectedRoute><LessonPlayer /></ProtectedRoute>} />
               <Route path="/course/:id/complete" element={<ProtectedRoute><CourseComplete /></ProtectedRoute>} />
               <Route path="/diploma" element={<ProtectedRoute><Diploma /></ProtectedRoute>} />
