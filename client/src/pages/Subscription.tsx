@@ -183,40 +183,14 @@ const Subscription: React.FC = () => {
         return; // Exit early, don't check localStorage
       }
 
-      // If Supabase has no data or there's an error, clear any existing subscription
-      if (supabaseError) {
-        console.log('❌ No subscription found in database or access denied');
-        setSubscription(null);
-        // Clear any stale localStorage data
-        localStorage.removeItem('subscription');
-        return;
-      }
-
-      // Only check localStorage if Supabase has no data (not an error)
-      const localSubscription = localStorage.getItem('subscription');
-      if (localSubscription) {
-        try {
-          const parsed = JSON.parse(localSubscription);
-          // Only use localStorage if it's recent (within last 24 hours)
-          const subscriptionDate = new Date(parsed.created_at);
-          const now = new Date();
-          const hoursDiff = (now.getTime() - subscriptionDate.getTime()) / (1000 * 60 * 60);
-          
-          if (hoursDiff < 24) {
-            setSubscription(parsed);
-          } else {
-            // Clear stale data
-            localStorage.removeItem('subscription');
-            setSubscription(null);
-          }
-        } catch (e) {
-          console.error('Error parsing localStorage subscription:', e);
-          localStorage.removeItem('subscription');
-          setSubscription(null);
-        }
-      } else {
-        setSubscription(null);
-      }
+      // If Supabase has no data (empty array) or there's an error, clear any existing subscription
+      console.log('❌ No subscription found in database - clearing subscription state');
+      setSubscription(null);
+      // Clear any stale localStorage data
+      localStorage.removeItem('subscription');
+      localStorage.removeItem('flutterwave_subscription_id');
+      localStorage.removeItem('flutterwave_customer_code');
+      return;
     } catch (error) {
       console.error('Error fetching subscription:', error);
       setSubscription(null);
