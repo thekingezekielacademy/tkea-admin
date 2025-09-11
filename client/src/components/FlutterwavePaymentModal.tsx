@@ -48,6 +48,28 @@ const FlutterwavePaymentModal: React.FC<FlutterwavePaymentModalProps> = ({ isOpe
           console.log('🔧 Public key available:', !!process.env.REACT_APP_FLUTTERWAVE_PUBLIC_KEY);
           console.log('🔧 Public key value:', process.env.REACT_APP_FLUTTERWAVE_PUBLIC_KEY?.substring(0, 20) + '...');
           
+          // Try to set the public key globally for Flutterwave
+          if (window.FlutterwaveCheckout && process.env.REACT_APP_FLUTTERWAVE_PUBLIC_KEY) {
+            try {
+              // Try different methods to set the public key
+              if (typeof window.FlutterwaveCheckout.setPublicKey === 'function') {
+                window.FlutterwaveCheckout.setPublicKey(process.env.REACT_APP_FLUTTERWAVE_PUBLIC_KEY);
+                console.log('✅ Flutterwave public key set globally via setPublicKey');
+              } else if (typeof window.FlutterwaveCheckout.setPublicKey === 'function') {
+                window.FlutterwaveCheckout.setPublicKey(process.env.REACT_APP_FLUTTERWAVE_PUBLIC_KEY);
+                console.log('✅ Flutterwave public key set globally via setPublicKey');
+              } else if (window.FlutterwaveCheckout.publicKey !== undefined) {
+                window.FlutterwaveCheckout.publicKey = process.env.REACT_APP_FLUTTERWAVE_PUBLIC_KEY;
+                console.log('✅ Flutterwave public key set globally via property');
+              } else {
+                console.log('⚠️ No method found to set Flutterwave public key globally');
+                console.log('🔧 Available methods:', Object.getOwnPropertyNames(window.FlutterwaveCheckout));
+              }
+            } catch (error) {
+              console.error('❌ Failed to set Flutterwave public key globally:', error);
+            }
+          }
+          
           setFlutterwaveLoaded(true);
         };
         script.onerror = () => {
@@ -233,7 +255,36 @@ const FlutterwavePaymentModal: React.FC<FlutterwavePaymentModalProps> = ({ isOpe
           console.log('🔧 Flutterwave SDK type:', typeof window.FlutterwaveCheckout);
           console.log('🔧 Flutterwave SDK available:', !!window.FlutterwaveCheckout);
           
-          window.FlutterwaveCheckout(flutterwaveConfig);
+          // Try different initialization methods
+          try {
+            // Method 1: Standard initialization
+            window.FlutterwaveCheckout(flutterwaveConfig);
+          } catch (error) {
+            console.error('❌ Standard Flutterwave initialization failed:', error);
+            
+            // Method 2: Try with explicit public key setting
+            try {
+              const configWithExplicitKey = {
+                ...flutterwaveConfig,
+                public_key: flutterwavePublicKey
+              };
+              window.FlutterwaveCheckout(configWithExplicitKey);
+            } catch (error2) {
+              console.error('❌ Explicit key Flutterwave initialization failed:', error2);
+              
+              // Method 3: Try with different key format
+              try {
+                const configWithFormattedKey = {
+                  ...flutterwaveConfig,
+                  public_key: flutterwavePublicKey.trim()
+                };
+                window.FlutterwaveCheckout(configWithFormattedKey);
+              } catch (error3) {
+                console.error('❌ Formatted key Flutterwave initialization failed:', error3);
+                throw new Error('All Flutterwave initialization methods failed');
+              }
+            }
+          }
         } catch (error) {
           console.error('💥 Flutterwave initialization error:', error);
           setPaymentState({ 
