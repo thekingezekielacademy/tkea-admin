@@ -23,7 +23,10 @@ declare global {
       email: string;
       phone_number: string;
       name: string;
+      disableFingerprinting?: boolean;
+      fingerprintingEnabled?: boolean;
     };
+    FlutterwaveDisableFingerprinting?: boolean;
   }
 }
 
@@ -61,17 +64,36 @@ const FlutterwavePaymentModal: React.FC<FlutterwavePaymentModalProps> = ({ isOpe
             name: user?.full_name || user?.name || 'Customer'
           };
           
-          console.log('🔧 Flutterwave global config set:', {
+          // Disable fingerprinting globally before script loads
+          window.FlutterwaveConfig.disableFingerprinting = true;
+          window.FlutterwaveConfig.fingerprintingEnabled = false;
+          
+          console.log('🔧 Flutterwave global config set with fingerprinting disabled:', {
             publicKey: flutterwavePublicKey.substring(0, 20) + '...',
-            mode: 'live'
+            mode: 'live',
+            fingerprintingDisabled: true
           });
         }
         
-        // Load Flutterwave script dynamically
+        // Load Flutterwave script dynamically with fingerprinting disabled
+        // Use a different approach to avoid fingerprinting issues
         const script = document.createElement('script');
         script.src = 'https://checkout.flutterwave.com/v3.js';
         script.async = true;
         script.crossOrigin = 'anonymous';
+        
+        // Add a global flag to disable fingerprinting before script loads
+        window.FlutterwaveDisableFingerprinting = true;
+        
+        // Add error handling for fingerprinting service
+        script.onerror = (error) => {
+          console.error('❌ Failed to load Flutterwave script:', error);
+          setPaymentState(prev => ({ 
+            ...prev, 
+            error: 'Payment system is temporarily unavailable. Please refresh the page and try again.' 
+          }));
+        };
+        
         script.onload = () => {
           console.log('✅ Flutterwave script loaded successfully');
           
@@ -80,9 +102,23 @@ const FlutterwavePaymentModal: React.FC<FlutterwavePaymentModalProps> = ({ isOpe
           console.log('🔧 Flutterwave SDK methods:', Object.keys(window.FlutterwaveCheckout || {}));
           console.log('🔧 Public key available:', !!flutterwavePublicKey);
           
-          // Ensure public key is properly set
-          if (window.FlutterwaveCheckout && flutterwavePublicKey) {
+          // Try to disable fingerprinting to prevent API key errors
+          if (window.FlutterwaveCheckout) {
             try {
+              // Try different methods to disable fingerprinting
+              if (typeof window.FlutterwaveCheckout.disableFingerprinting === 'function') {
+                window.FlutterwaveCheckout.disableFingerprinting();
+                console.log('✅ Flutterwave fingerprinting disabled via disableFingerprinting');
+              } else if (typeof window.FlutterwaveCheckout.setFingerprintingEnabled === 'function') {
+                window.FlutterwaveCheckout.setFingerprintingEnabled(false);
+                console.log('✅ Flutterwave fingerprinting disabled via setFingerprintingEnabled');
+              } else if (window.FlutterwaveCheckout.fingerprintingEnabled !== undefined) {
+                window.FlutterwaveCheckout.fingerprintingEnabled = false;
+                console.log('✅ Flutterwave fingerprinting disabled via property');
+              } else {
+                console.log('⚠️ No method found to disable Flutterwave fingerprinting');
+              }
+              
               // Set public key using the proper method
               if (typeof window.FlutterwaveCheckout.setPublicKey === 'function') {
                 window.FlutterwaveCheckout.setPublicKey(flutterwavePublicKey);
@@ -95,18 +131,11 @@ const FlutterwavePaymentModal: React.FC<FlutterwavePaymentModalProps> = ({ isOpe
                 console.log('🔧 Available methods:', Object.getOwnPropertyNames(window.FlutterwaveCheckout));
               }
             } catch (error) {
-              console.error('❌ Failed to set Flutterwave public key globally:', error);
+              console.error('❌ Failed to configure Flutterwave:', error);
             }
           }
           
           setFlutterwaveLoaded(true);
-        };
-        script.onerror = () => {
-          console.error('❌ Failed to load Flutterwave script');
-          setPaymentState(prev => ({ 
-            ...prev, 
-            error: 'Payment system is temporarily unavailable. Please refresh the page and try again.' 
-          }));
         };
         document.head.appendChild(script);
         
