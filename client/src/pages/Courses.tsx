@@ -806,9 +806,17 @@ const Courses: React.FC = () => {
             )}
 
             {/* Free Trial Active - Blue */}
-            {!(databaseSubscriptionStatus || 
-               secureStorage.isSubscriptionActive() || 
-               localStorage.getItem('subscription_active') === 'true') && hasTrialAccess && (
+            {(() => {
+              const showTrialBanner = !(databaseSubscriptionStatus || 
+                 secureStorage.isSubscriptionActive() || 
+                 localStorage.getItem('subscription_active') === 'true') && hasTrialAccess;
+              
+              // TEMPORARY: Force show banner for debugging on mobile
+              const isMobile = window.innerWidth <= 768;
+              const forceShow = isMobile && user?.id; // Force show on mobile if user is logged in
+              
+              return showTrialBanner || forceShow;
+            })() && (
               <div className="bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl sm:rounded-2xl p-4 sm:p-6 text-white shadow-xl border border-blue-400">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
                   <div className="flex items-center space-x-3 sm:space-x-4">
