@@ -60,6 +60,15 @@ const FlutterwavePaymentModal: React.FC<FlutterwavePaymentModalProps> = ({ isOpe
       return;
     }
 
+    // Validate phone number is provided
+    if (!phoneNumber || phoneNumber.trim().length === 0) {
+      setPaymentState({ 
+        status: 'error', 
+        error: 'Phone number is required. Please enter your phone number to continue.' 
+      });
+      return;
+    }
+
     // No need to check flutterwaveLoaded since we're using hosted payments
 
     setLoading(true);
@@ -289,14 +298,30 @@ const FlutterwavePaymentModal: React.FC<FlutterwavePaymentModalProps> = ({ isOpe
             <input
               type="tel"
               value={phoneNumber}
-              onChange={(e) => setPhoneNumber(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              onChange={(e) => {
+                setPhoneNumber(e.target.value);
+                // Clear error state when user starts typing
+                if (paymentState.status === 'error' && paymentState.error?.includes('Phone number is required')) {
+                  setPaymentState({ status: 'idle' });
+                }
+              }}
+              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
+                paymentState.status === 'error' && paymentState.error?.includes('Phone number is required')
+                  ? 'border-red-500 focus:ring-red-500 bg-red-50'
+                  : 'border-gray-300 focus:ring-blue-500'
+              }`}
               placeholder="08012345678"
               required
             />
             <p className="text-xs text-gray-500 mt-1">
               Required for payment verification. Nigerian number format (08012345678)
             </p>
+            {paymentState.status === 'error' && paymentState.error?.includes('Phone number is required') && (
+              <p className="text-xs text-red-600 mt-1 flex items-center">
+                <FaExclamationTriangle className="w-3 h-3 mr-1" />
+                Please enter your phone number to continue
+              </p>
+            )}
           </div>
 
           <div className="bg-gray-50 p-4 rounded-md">
