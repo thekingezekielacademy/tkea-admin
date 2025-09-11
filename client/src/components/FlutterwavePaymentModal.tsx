@@ -41,6 +41,13 @@ const FlutterwavePaymentModal: React.FC<FlutterwavePaymentModalProps> = ({ isOpe
         script.async = true;
         script.onload = () => {
           console.log('✅ Flutterwave script loaded successfully');
+          
+          // Debug Flutterwave SDK
+          console.log('🔧 Flutterwave SDK loaded:', typeof window.FlutterwaveCheckout);
+          console.log('🔧 Flutterwave SDK methods:', Object.keys(window.FlutterwaveCheckout || {}));
+          console.log('🔧 Public key available:', !!process.env.REACT_APP_FLUTTERWAVE_PUBLIC_KEY);
+          console.log('🔧 Public key value:', process.env.REACT_APP_FLUTTERWAVE_PUBLIC_KEY?.substring(0, 20) + '...');
+          
           setFlutterwaveLoaded(true);
         };
         script.onerror = () => {
@@ -219,6 +226,11 @@ const FlutterwavePaymentModal: React.FC<FlutterwavePaymentModalProps> = ({ isOpe
             customer_email: customerEmail,
             customer_name: formattedCustomerName
           });
+          
+          // Debug the exact config being passed
+          console.log('🔧 Full Flutterwave config being passed:', JSON.stringify(flutterwaveConfig, null, 2));
+          console.log('🔧 Flutterwave SDK type:', typeof window.FlutterwaveCheckout);
+          console.log('🔧 Flutterwave SDK available:', !!window.FlutterwaveCheckout);
           
           window.FlutterwaveCheckout(flutterwaveConfig);
         } catch (error) {
