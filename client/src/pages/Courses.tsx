@@ -205,6 +205,7 @@ const Courses: React.FC = () => {
   // Check subscription status and trial access when user changes
   useEffect(() => {
     if (user) {
+      console.log('🔍 User changed, checking subscription and trial access:', { userId: user.id, email: user.email });
       // Check database subscription status first, then trial access
       const checkSubscriptionAndTrial = async () => {
         await checkDatabaseSubscription();
@@ -212,8 +213,16 @@ const Courses: React.FC = () => {
       };
       
       checkSubscriptionAndTrial();
+    } else {
+      console.log('🔍 No user, resetting trial access');
+      setHasTrialAccess(false);
     }
   }, [user]);
+
+  // Debug state changes
+  useEffect(() => {
+    console.log('🔍 Trial access state changed:', { hasTrialAccess, databaseSubscriptionStatus, user: user?.id });
+  }, [hasTrialAccess, databaseSubscriptionStatus, user]);
 
   // Fetch courses from database with pagination
   const fetchCourses = async (page = 0, append = false) => {
@@ -801,14 +810,23 @@ const Courses: React.FC = () => {
               const showTrialBanner = !(databaseSubscriptionStatus || 
                  secureStorage.isSubscriptionActive() || 
                  localStorage.getItem('subscription_active') === 'true') && hasTrialAccess;
+              
+              // TEMPORARY: Force show banner for debugging on mobile
+              const isMobile = window.innerWidth <= 768;
+              const forceShow = isMobile && user?.id; // Force show on mobile if user is logged in
+              
               console.log('🔍 Trial banner condition check:', { 
                 databaseSubscriptionStatus, 
                 secureStorageActive: secureStorage.isSubscriptionActive(), 
                 localStorageActive: localStorage.getItem('subscription_active'), 
                 hasTrialAccess, 
-                showTrialBanner 
+                showTrialBanner,
+                isMobile,
+                forceShow,
+                finalShow: showTrialBanner || forceShow
               });
-              return showTrialBanner;
+              
+              return showTrialBanner || forceShow;
             })() && (
               <div className="bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl sm:rounded-2xl p-4 sm:p-6 text-white shadow-xl border border-blue-400">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
@@ -819,7 +837,7 @@ const Courses: React.FC = () => {
                       </svg>
                     </div>
                     <div className="min-w-0 flex-1">
-                      <h3 className="text-base sm:text-lg md:text-2xl font-bold mb-1">⏰ Free Trial Active</h3>
+                      <h3 className="text-base sm:text-lg md:text-2xl font-bold mb-1">⏰ Free Trial Active {window.innerWidth <= 768 ? '(Mobile Debug)' : ''}</h3>
                       <p className="text-blue-100 text-xs sm:text-sm md:text-lg leading-relaxed">Enjoy full access for a limited time - upgrade to continue learning</p>
                     </div>
                   </div>
