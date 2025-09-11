@@ -104,8 +104,10 @@ const FlutterwavePaymentModal: React.FC<FlutterwavePaymentModalProps> = ({ isOpe
   }, [isOpen, user]);
 
   const handlePayment = async () => {
-    if (!email.trim()) {
-      setPaymentState({ status: 'error', error: 'Please enter your email address' });
+    // Enhanced validation - check both email state and user email
+    const validEmail = email.trim() || user?.email?.trim();
+    if (!validEmail) {
+      setPaymentState({ status: 'error', error: 'Please ensure you are logged in with a valid email address' });
       return;
     }
 
@@ -147,8 +149,8 @@ const FlutterwavePaymentModal: React.FC<FlutterwavePaymentModalProps> = ({ isOpe
       const tx_ref = `TKE_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
       // Validate required fields with better extraction
-      const customerName = user?.full_name || user?.name || user?.email?.split('@')[0] || 'Customer';
       const customerEmail = user?.email || email.trim();
+      const customerName = user?.full_name || user?.name || user?.email?.split('@')[0] || customerEmail?.split('@')[0] || 'Customer';
       
       // Ensure customer name is properly formatted and not empty
       const formattedCustomerName = customerName.trim().substring(0, 50) || 'Customer';
@@ -171,10 +173,10 @@ const FlutterwavePaymentModal: React.FC<FlutterwavePaymentModalProps> = ({ isOpe
         throw new Error('Customer name is required (minimum 2 characters)');
       }
 
-      // Validate phone number
-      const finalPhoneNumber = phoneNumber || user?.phone || '08000000000';
+      // Validate phone number with better fallback
+      const finalPhoneNumber = phoneNumber?.trim() || user?.phone?.trim() || '08000000000';
       if (!finalPhoneNumber || finalPhoneNumber.trim().length < 10) {
-        throw new Error('Valid phone number is required (minimum 10 digits)');
+        throw new Error('Valid phone number is required (minimum 10 digits). Please enter a Nigerian phone number like 08012345678.');
       }
 
       // Validate email format
@@ -298,10 +300,9 @@ const FlutterwavePaymentModal: React.FC<FlutterwavePaymentModalProps> = ({ isOpe
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-100"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Enter your email"
-              disabled={true}
-              readOnly
+              required
             />
           </div>
 
