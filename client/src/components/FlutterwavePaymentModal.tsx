@@ -212,48 +212,22 @@ const FlutterwavePaymentModal: React.FC<FlutterwavePaymentModalProps> = ({ isOpe
         if (result.success && result.data) {
           console.log('✅ Server-side Flutterwave initialization successful:', result.data);
           
-          // Now initialize client-side with server-validated data
-          const flutterwaveConfig = {
-            public_key: flutterwavePublicKey,
-            tx_ref: result.data.tx_ref || tx_ref,
-            amount: Number(amount),
-            currency: 'NGN',
-            customer: {
-              email: customerEmail,
-              name: formattedCustomerName,
-              phone_number: finalPhoneNumber,
-            },
-            customizations: {
-              title: 'King Ezekiel Academy',
-              description: 'Monthly Membership Payment',
-            },
-            callback: function(response: any) {
-              console.log('🔧 Flutterwave Response:', response);
-              
-              if (response.status === 'successful') {
-                console.log('✅ Flutterwave payment successful:', response);
-                setPaymentState({ status: 'success' });
-                
-                // Call onSuccess if provided
-                if (onSuccess) {
-                  onSuccess();
-                }
-                
-                // Close modal after success
-                setTimeout(() => {
-                  onClose();
-                }, 2000);
-              }
-            },
-            onclose: function() {
-              console.log('❌ Flutterwave payment cancelled by user');
-              setPaymentState({ status: 'idle' });
-              setLoading(false);
-            }
-          };
-
-          console.log('🔧 Initializing Flutterwave with server-validated config:', flutterwaveConfig);
-          window.FlutterwaveCheckout(flutterwaveConfig);
+          // Use the server-generated payment link directly
+          if (result.data.link) {
+            console.log('🚀 Redirecting to Flutterwave payment page:', result.data.link);
+            
+            // Redirect to Flutterwave payment page
+            window.location.href = result.data.link;
+            return;
+          } else if (result.data.authorization_url) {
+            console.log('🚀 Redirecting to Flutterwave authorization URL:', result.data.authorization_url);
+            
+            // Redirect to Flutterwave authorization URL
+            window.location.href = result.data.authorization_url;
+            return;
+          } else {
+            throw new Error('No payment link received from server');
+          }
           
         } else {
           throw new Error(result.message || 'Server-side Flutterwave initialization failed');
