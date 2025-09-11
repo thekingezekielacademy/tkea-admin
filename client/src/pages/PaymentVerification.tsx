@@ -50,38 +50,79 @@ const PaymentVerification: React.FC = () => {
 
         const transaction = verification.transaction;
 
-        setMessage('Creating your subscription...');
+        console.log('🔍 Transaction data for subscription creation:', {
+          transaction_id: transaction.id,
+          customer_email: transaction.customer.email,
+          customer_code: transaction.customer.customer_code,
+          customer_data: transaction.customer
+        });
 
-        // Step 2: Create recurring subscription
-        const subscription = await flutterwaveService.createSubscription(
-          transaction.customer.email,
-          transaction.customer.customer_code
-        );
+        setMessage('Saving payment to database...');
 
-        if (!subscription.success) {
-          throw new Error('Subscription creation failed');
-        }
-
-        setMessage('Saving subscription to database...');
-
-        // Step 3: Save subscription to database
-        await flutterwaveService.saveSubscriptionToDatabase(
-          user?.id || '',
-          subscription.subscription
-        );
-
-        // Step 4: Save payment to database
+        // Step 2: Save payment to database first
         await flutterwaveService.savePaymentToDatabase(
           user?.id || '',
           transaction
         );
 
+        setMessage('Creating your subscription...');
+
+        // Step 3: Try to create recurring subscription (optional for one-time payments)
+        let subscription = null;
+        try {
+          // Use customer_code if available, otherwise use email as fallback
+          const customerCode = transaction.customer.customer_code || transaction.customer.email;
+          subscription = await flutterwaveService.createSubscription(
+            transaction.customer.email,
+            customerCode
+          );
+          
+          if (subscription.success) {
+            setMessage('Saving subscription to database...');
+            // Step 4: Save subscription to database
+            await flutterwaveService.saveSubscriptionToDatabase(
+              user?.id || '',
+              subscription.subscription
+            );
+          }
+        } catch (subscriptionError) {
+          console.warn('⚠️ Subscription creation failed, but payment was successful:', subscriptionError);
+          // Create a local subscription entry even if Flutterwave subscription fails
+          try {
+            setMessage('Creating local subscription...');
+            const localSubscription = {
+              subscription_code: `LOCAL_${transaction.id}`,
+              customer_code: transaction.customer.customer_code || transaction.customer.email,
+              plan_name: 'Monthly Membership',
+              amount: transaction.amount,
+              currency: transaction.currency,
+              status: 'active',
+              created_at: new Date().toISOString(),
+              next_payment_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+            };
+            
+            await flutterwaveService.saveSubscriptionToDatabase(
+              user?.id || '',
+              localSubscription
+            );
+            console.log('✅ Local subscription created successfully');
+          } catch (localSubError) {
+            console.error('❌ Local subscription creation also failed:', localSubError);
+          }
+        }
+
         // Step 5: Update user's subscription status in secure storage
         if (user?.id) {
           localStorage.setItem('subscription_active', 'true');
-          localStorage.setItem('subscription_id', subscription.subscription.subscription_code || subscription.subscription.id);
-          localStorage.setItem('flutterwave_subscription_id', subscription.subscription.subscription_code || subscription.subscription.id);
-          localStorage.setItem('flutterwave_customer_code', transaction.customer.customer_code);
+          localStorage.setItem('payment_successful', 'true');
+          localStorage.setItem('transaction_id', transaction.id);
+          localStorage.setItem('transaction_ref', transaction.tx_ref);
+          
+          if (subscription && subscription.success) {
+            localStorage.setItem('subscription_id', subscription.subscription.subscription_code || subscription.subscription.id);
+            localStorage.setItem('flutterwave_subscription_id', subscription.subscription.subscription_code || subscription.subscription.id);
+            localStorage.setItem('flutterwave_customer_code', transaction.customer.customer_code || transaction.customer.email);
+          }
         }
 
         setStatus('success');
