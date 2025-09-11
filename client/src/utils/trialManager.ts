@@ -25,7 +25,7 @@ export class TrialManager {
       startDate.setHours(0, 0, 0, 0);
       
       // Set end date to end of the 7th day (23:59:59)
-      endDate.setDate(startDate.getDate() + this.TRIAL_DURATION_DAYS);
+      endDate.setDate(startDate.getDate() + this.TRIAL_DURATION_DAYS - 1); // 6 days from start = 7 days total
       endDate.setHours(23, 59, 59, 999);
 
       const trialData = {
@@ -195,6 +195,16 @@ export class TrialManager {
       
       // Round down to show exact days remaining (e.g., if 6.8 days left, show 6)
       daysRemaining = Math.max(0, Math.floor(remainingDays));
+      
+      // Debug logging
+      console.log('🔍 TrialManager calculation debug:', {
+        startDate,
+        endDate,
+        now: now.toISOString(),
+        timeDiffHours: timeDiff / (1000 * 60 * 60),
+        remainingDays,
+        daysRemaining
+      });
     }
     
     return {
@@ -328,7 +338,7 @@ export class TrialManager {
       startDate.setHours(0, 0, 0, 0);
       
       // Set end date to end of the 7th day (23:59:59)
-      endDate.setDate(startDate.getDate() + this.TRIAL_DURATION_DAYS);
+      endDate.setDate(startDate.getDate() + this.TRIAL_DURATION_DAYS - 1); // 6 days from start = 7 days total
       endDate.setHours(23, 59, 59, 999);
       
       const newTrialStatus: TrialStatus = {

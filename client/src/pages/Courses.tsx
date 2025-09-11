@@ -170,7 +170,7 @@ const Courses: React.FC = () => {
         const startDate = userCreatedAt;
         // Set end date to exactly 7 days from start (midnight to midnight)
         const endDate = new Date(startDate);
-        endDate.setDate(startDate.getDate() + 7);
+        endDate.setDate(startDate.getDate() + 6); // 6 days from start = 7 days total
         endDate.setHours(23, 59, 59, 999); // End of day
         
         // Calculate exact days remaining

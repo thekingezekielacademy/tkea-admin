@@ -235,15 +235,36 @@ const Dashboard: React.FC = () => {
       if (!user.created_at || daysSinceCreation <= 7) {
         // This is a new user within 7 days, initialize trial
         const startDate = userCreatedAt;
-        // Set end date to exactly 7 days from start (midnight to midnight)
+        // Set end date to exactly 7 days from start (7 days = 6 days + today)
         const endDate = new Date(startDate);
-        endDate.setDate(startDate.getDate() + 7);
+        endDate.setDate(startDate.getDate() + 6); // 6 days from start = 7 days total
         endDate.setHours(23, 59, 59, 999); // End of day
         
         // Calculate exact days remaining
         const now = new Date();
-        const timeDiff = endDate.getTime() - now.getTime();
+        
+        // Calculate days remaining more accurately
+        // Get the start of today and the start of the end date
+        const todayStart = new Date(now);
+        todayStart.setHours(0, 0, 0, 0);
+        
+        const endDateStart = new Date(endDate);
+        endDateStart.setHours(0, 0, 0, 0);
+        
+        // Calculate the difference in days
+        const timeDiff = endDateStart.getTime() - todayStart.getTime();
         const daysRemaining = Math.max(0, Math.floor(timeDiff / (1000 * 60 * 60 * 24)));
+        
+        // Debug logging
+        secureLog('🔍 Trial calculation debug:', {
+          userCreatedAt: userCreatedAt.toISOString(),
+          startDate: startDate.toISOString(),
+          endDate: endDate.toISOString(),
+          now: now.toISOString(),
+          timeDiffHours: timeDiff / (1000 * 60 * 60),
+          daysRemaining,
+          daysSinceCreation
+        });
         
         const newTrialStatus = {
           isActive: daysRemaining > 0, // Only active if days remaining > 0
