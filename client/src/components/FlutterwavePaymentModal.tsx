@@ -34,17 +34,15 @@ const FlutterwavePaymentModal: React.FC<FlutterwavePaymentModalProps> = ({ isOpe
   const [email, setEmail] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [loading, setLoading] = useState(false);
-  const [flutterwaveLoaded, setFlutterwaveLoaded] = useState(false);
   const [paymentState, setPaymentState] = useState<{
     status: 'idle' | 'processing' | 'success' | 'error';
     error?: string;
   }>({ status: 'idle' });
 
-  // Simplified approach - no need to load Flutterwave script for hosted payments
+  // Initialize payment modal
   useEffect(() => {
     if (isOpen) {
-      console.log('✅ Using Flutterwave hosted payment solution - no script loading needed');
-      setFlutterwaveLoaded(true);
+      console.log('✅ Flutterwave hosted payment modal initialized');
     }
   }, [isOpen]);
 
@@ -164,6 +162,7 @@ const FlutterwavePaymentModal: React.FC<FlutterwavePaymentModalProps> = ({ isOpe
       console.log('🚀 Using Flutterwave hosted payment solution to bypass fingerprinting...');
       
       // Use server-side initialization to get hosted payment link
+      console.log('🚀 Making request to Flutterwave API endpoint...');
       try {
         const response = await fetch('/api/flutterwave/initialize-payment', {
           method: 'POST',
@@ -246,6 +245,9 @@ const FlutterwavePaymentModal: React.FC<FlutterwavePaymentModalProps> = ({ isOpe
         status: 'error', 
         error: error.message || 'Payment failed. Please try again.' 
       });
+      setLoading(false);
+    } finally {
+      // Ensure loading is always reset
       setLoading(false);
     }
   };
