@@ -106,9 +106,16 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
       playerDiv.style.borderRadius = '0';
       playerDiv.style.overflow = 'hidden';
       
-      // Add player div to container
+      // Add player div to container (inside the wrapper div)
       if (containerRef.current) {
-        containerRef.current.appendChild(playerDiv);
+        // Find the wrapper div we just created
+        const wrapperDiv = containerRef.current.querySelector('.absolute.inset-0');
+        if (wrapperDiv) {
+          wrapperDiv.appendChild(playerDiv);
+        } else {
+          // Fallback to container if wrapper not found
+          containerRef.current.appendChild(playerDiv);
+        }
       }
       
       // Set loading state
@@ -123,7 +130,7 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
             height: '100%',
             playerVars: {
               autoplay: 0,
-              controls: 1,
+              controls: 0,
               modestbranding: 1,
               rel: 0,
               showinfo: 0,
@@ -479,7 +486,11 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
           position: 'relative',
           overflow: 'hidden',
           isolation: 'isolate', // Creates a new stacking context
-          contain: 'layout style paint' // CSS containment for better isolation
+          contain: 'layout style paint', // CSS containment for better isolation
+          width: '100%',
+          height: '100%',
+          maxWidth: '100%',
+          maxHeight: '100%'
         }}
         onMouseEnter={() => {
           if (hoverTimeoutRef.current) {
@@ -535,6 +546,10 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
         }}
       >
         <div className="relative w-full" style={{ paddingTop: '56.25%', position: 'relative', overflow: 'hidden' }}>
+          <div className="absolute inset-0 w-full h-full overflow-hidden" style={{ 
+            clipPath: 'inset(0)',
+            contain: 'layout style paint'
+          }}>
           <style>{`
             /* Fullscreen styles */
             .video-container:fullscreen {
@@ -602,18 +617,67 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
               }
             }
             
-            /* Complete YouTube branding removal */
+            /* Force YouTube iframe to fit container aspect ratio */
             iframe[src*="youtube.com"] {
-              /* Hide YouTube logo and branding */
-              position: relative;
+              position: absolute !important;
+              top: 0 !important;
+              left: 0 !important;
+              width: 100% !important;
+              height: 100% !important;
+              border: none !important;
+              outline: none !important;
+              overflow: hidden !important;
+              z-index: 1 !important;
+              object-fit: contain !important;
+              transform: scale(1) !important;
+              transform-origin: center center !important;
             }
             
             /* Hide YouTube watermark and branding elements */
             .video-container iframe {
-              /* Ensure iframe doesn't show YouTube branding */
               border: none !important;
               outline: none !important;
-              position: relative;
+              position: absolute !important;
+              top: 0 !important;
+              left: 0 !important;
+              width: 100% !important;
+              height: 100% !important;
+              overflow: hidden !important;
+              z-index: 1 !important;
+              object-fit: contain !important;
+            }
+            
+            /* Ensure video container properly contains iframe with aspect ratio */
+            .video-container {
+              position: relative !important;
+              overflow: hidden !important;
+              width: 100% !important;
+              height: 100% !important;
+              max-width: 100% !important;
+              max-height: 100% !important;
+            }
+            
+            /* Force aspect ratio constraint on the YouTube player div */
+            .video-container > div {
+              position: relative !important;
+              width: 100% !important;
+              height: 100% !important;
+              overflow: hidden !important;
+              max-width: 100% !important;
+              max-height: 100% !important;
+            }
+            
+            /* Additional containment for YouTube player elements */
+            .video-container * {
+              max-width: 100% !important;
+              max-height: 100% !important;
+              box-sizing: border-box !important;
+            }
+            
+            /* Force clip the iframe to container bounds */
+            .video-container iframe {
+              clip-path: inset(0) !important;
+              clip: rect(0, auto, auto, 0) !important;
             }
             
             /* Hide YouTube logo overlay */
@@ -993,6 +1057,7 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
                 </div>
               </div>
             </div>
+          </div>
           </div>
         </div>
       </div>

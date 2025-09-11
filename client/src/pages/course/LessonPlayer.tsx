@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import ProgressRing from '../../components/ProgressRing';
-import SimpleVideoPlayer from '../../components/SimpleVideoPlayer';
+import AdvancedVideoPlayer from '../../components/AdvancedVideoPlayer';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { TrialStatus } from '../../utils/trialManager';
@@ -804,7 +804,7 @@ const LessonPlayer: React.FC = () => {
             </div>
             <div className="w-full overflow-hidden" style={{ minHeight: '280px', height: '55vh', maxHeight: '580px', margin: 0, padding: 0, marginBottom: 0 }}>
               {isYouTubeVideo(currentVideo.link) ? (
-                <SimpleVideoPlayer
+                <AdvancedVideoPlayer
                   src={getYouTubeVideoId(currentVideo.link)}
                   type="youtube"
                   title={currentVideo.name}
