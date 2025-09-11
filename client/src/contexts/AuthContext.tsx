@@ -56,14 +56,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const isFetchingRef = useRef(false);
   const hasInitializedRef = useRef(false);
 
-  // Debug: Log AuthProvider initialization
-  useEffect(() => {
-    console.log('🔐 AuthProvider initializing...');
-    console.log('Environment check:', {
-      supabaseUrl: process.env.REACT_APP_SUPABASE_URL ? 'Set' : 'Missing',
-      supabaseKey: process.env.REACT_APP_SUPABASE_ANON_KEY ? 'Set' : 'Missing'
-    });
-  }, []);
 
   // Debounced fetchProfile to prevent multiple rapid calls
   const fetchProfile = useCallback(async (userId?: string) => {
