@@ -91,11 +91,10 @@ const Courses: React.FC = () => {
         .eq('user_id', user.id)
         .eq('status', 'active')
         .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
+        .limit(1);
       
-      if (!error && data) {
-        // console.log('✅ Found active subscription in database:', data);
+      if (!error && data && data.length > 0) {
+        // console.log('✅ Found active subscription in database:', data[0]);
         setDatabaseSubscriptionStatus(true);
         return true;
       } else {

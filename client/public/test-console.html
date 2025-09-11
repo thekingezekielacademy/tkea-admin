@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Console Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        #console-output { background: #f8f9fa; border: 1px solid #dee2e6; padding: 10px; margin: 10px 0; font-family: monospace; white-space: pre-wrap; max-height: 300px; overflow-y: auto; }
+    </style>
+</head>
+<body>
+    <h1>Console Error Test</h1>
+    
+    <div class="status info">
+        📊 Testing JavaScript loading and console errors...
+    </div>
+    
+    <div id="console-output"></div>
+    
+    <div id="status" class="status">
+        ⏳ Loading...
+    </div>
+
+    <script>
+        const output = document.getElementById('console-output');
+        const status = document.getElementById('status');
+        
+        // Capture console errors
+        const originalError = console.error;
+        const originalWarn = console.warn;
+        const originalLog = console.log;
+        
+        const errors = [];
+        const warnings = [];
+        const logs = [];
+        
+        function addToOutput(type, message) {
+            const timestamp = new Date().toLocaleTimeString();
+            output.textContent += `[${timestamp}] ${type.toUpperCase()}: ${message}\n`;
+        }
+        
+        console.error = function(...args) {
+            const message = args.join(' ');
+            errors.push(message);
+            addToOutput('ERROR', message);
+            originalError.apply(console, args);
+        };
+        
+        console.warn = function(...args) {
+            const message = args.join(' ');
+            warnings.push(message);
+            addToOutput('WARN', message);
+            originalWarn.apply(console, args);
+        };
+        
+        console.log = function(...args) {
+            const message = args.join(' ');
+            logs.push(message);
+            addToOutput('LOG', message);
+            originalLog.apply(console, args);
+        };
+        
+        // Test basic JavaScript
+        try {
+            status.innerHTML = '✅ JavaScript is working';
+            status.className = 'status success';
+        } catch (error) {
+            status.innerHTML = '❌ JavaScript error: ' + error.message;
+            status.className = 'status error';
+        }
+        
+        // Test React app loading
+        setTimeout(() => {
+            const reactApp = document.getElementById('root');
+            if (reactApp && reactApp.innerHTML.trim() !== '') {
+                addToOutput('SUCCESS', 'React app is rendering content');
+            } else {
+                addToOutput('ERROR', 'React app is not rendering content');
+            }
+            
+            // Show summary
+            const summary = document.createElement('div');
+            summary.className = 'status ' + (errors.length > 0 ? 'error' : 'success');
+            summary.innerHTML = `Found ${errors.length} errors, ${warnings.length} warnings, ${logs.length} logs`;
+            document.body.appendChild(summary);
+        }, 3000);
+    </script>
+    
+    <!-- Load the main React app -->
+    <script src="/static/js/main.49b0a5df.js"></script>
+</body>
+</html>

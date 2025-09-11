@@ -232,8 +232,12 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
         }
         // Store containerRef.current in a variable to avoid stale closure
         const container = containerRef.current;
-        if (container && playerDiv.parentNode) {
-          container.removeChild(playerDiv);
+        if (container && playerDiv && playerDiv.parentNode === container) {
+          try {
+            container.removeChild(playerDiv);
+          } catch (error) {
+            console.warn('Could not remove player div:', error);
+          }
         }
       };
     }

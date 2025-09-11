@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>React Mount Debug</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        #console-output { background: #f8f9fa; border: 1px solid #dee2e6; padding: 10px; margin: 10px 0; font-family: monospace; white-space: pre-wrap; max-height: 300px; overflow-y: auto; }
+    </style>
+</head>
+<body>
+    <h1>React Mount Debug Test</h1>
+    
+    <div class="status info">
+        ⏳ Testing React mounting process...
+    </div>
+    
+    <div id="root">
+        <p>Original content in root div - this should be replaced by React</p>
+    </div>
+
+    <div id="console-output"></div>
+
+    <script>
+        // Capture all console output
+        const originalError = console.error;
+        const originalLog = console.log;
+        const originalWarn = console.warn;
+        const output = document.getElementById('console-output');
+        
+        function addToOutput(message, type = 'log') {
+            const timestamp = new Date().toLocaleTimeString();
+            const color = type === 'error' ? 'red' : type === 'warn' ? 'orange' : 'black';
+            output.innerHTML += `<div style="color: ${color}">[${timestamp}] ${message}</div>`;
+        }
+        
+        console.error = function(...args) {
+            addToOutput('ERROR: ' + args.join(' '), 'error');
+            originalError.apply(console, args);
+        };
+        
+        console.log = function(...args) {
+            addToOutput('LOG: ' + args.join(' '), 'log');
+            originalLog.apply(console, args);
+        };
+        
+        console.warn = function(...args) {
+            addToOutput('WARN: ' + args.join(' '), 'warn');
+            originalWarn.apply(console, args);
+        };
+        
+        // Test basic JavaScript
+        addToOutput('✅ JavaScript is working');
+        
+        // Test if we can access the root element
+        const rootElement = document.getElementById('root');
+        if (rootElement) {
+            addToOutput('✅ Root element found: ' + rootElement.id);
+        } else {
+            addToOutput('❌ Root element not found', 'error');
+        }
+        
+        // Test if React is available globally
+        if (typeof React !== 'undefined') {
+            addToOutput('✅ React is available globally');
+        } else {
+            addToOutput('❌ React is not available globally', 'error');
+        }
+        
+        // Load the main JavaScript file
+        addToOutput('🔄 Loading main JavaScript file...');
+        
+        const script = document.createElement('script');
+        script.src = '/static/js/main.0ae451bb.js';
+        script.onload = function() {
+            addToOutput('✅ JavaScript file loaded successfully');
+            
+            // Wait a bit for React to mount
+            setTimeout(() => {
+                const root = document.getElementById('root');
+                const hasReactContent = root.innerHTML !== '<p>Original content in root div - this should be replaced by React</p>';
+                
+                if (hasReactContent) {
+                    addToOutput('✅ React app mounted successfully!');
+                    addToOutput('Root content: ' + root.innerHTML.substring(0, 200) + '...');
+                } else {
+                    addToOutput('❌ React app did not mount - root content unchanged');
+                    addToOutput('Current root content: ' + root.innerHTML);
+                }
+            }, 3000);
+        };
+        
+        script.onerror = function(e) {
+            addToOutput('❌ Failed to load JavaScript file: ' + e.message, 'error');
+        };
+        
+        document.head.appendChild(script);
+        
+        // Global error handler
+        window.addEventListener('error', function(e) {
+            addToOutput('Global error: ' + e.message + ' at ' + e.filename + ':' + e.lineno, 'error');
+        });
+        
+        // Unhandled promise rejection handler
+        window.addEventListener('unhandledrejection', function(e) {
+            addToOutput('Unhandled promise rejection: ' + e.reason, 'error');
+        });
+    </script>
+</body>
+</html>

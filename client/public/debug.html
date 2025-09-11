@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Page</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+    </style>
+</head>
+<body>
+    <h1>King Ezekiel Academy - Debug Page</h1>
+    
+    <div class="status success">
+        ✅ This page loads successfully
+    </div>
+    
+    <div class="status info">
+        📊 Testing JavaScript loading...
+    </div>
+    
+    <div id="js-status" class="status">
+        ⏳ Loading JavaScript...
+    </div>
+    
+    <div id="react-status" class="status">
+        ⏳ Testing React app...
+    </div>
+    
+    <div id="console-errors" class="status">
+        ⏳ Checking for console errors...
+    </div>
+
+    <script>
+        // Test basic JavaScript
+        document.getElementById('js-status').innerHTML = '✅ JavaScript is working';
+        document.getElementById('js-status').className = 'status success';
+        
+        // Test console errors
+        const originalError = console.error;
+        const errors = [];
+        console.error = function(...args) {
+            errors.push(args.join(' '));
+            originalError.apply(console, args);
+        };
+        
+        // Test React app loading
+        setTimeout(() => {
+            const reactApp = document.getElementById('root');
+            if (reactApp && reactApp.innerHTML.trim() !== '') {
+                document.getElementById('react-status').innerHTML = '✅ React app is rendering content';
+                document.getElementById('react-status').className = 'status success';
+            } else {
+                document.getElementById('react-status').innerHTML = '❌ React app is not rendering content';
+                document.getElementById('react-status').className = 'status error';
+            }
+            
+            // Show console errors
+            if (errors.length > 0) {
+                document.getElementById('console-errors').innerHTML = `❌ Found ${errors.length} console errors: ${errors.join(', ')}`;
+                document.getElementById('console-errors').className = 'status error';
+            } else {
+                document.getElementById('console-errors').innerHTML = '✅ No console errors detected';
+                document.getElementById('console-errors').className = 'status success';
+            }
+        }, 3000);
+    </script>
+    
+    <script src="/static/js/main.14f097a9.js"></script>
+</body>
+</html>

@@ -19,7 +19,13 @@ export const registerServiceWorker = async (): Promise<void> => {
         return;
       }
       
-      const registration = await navigator.serviceWorker.register('/sw.js');
+      // Clear all existing caches before registering new service worker
+      await clearAllCaches();
+      
+      const registration = await navigator.serviceWorker.register('/sw.js', {
+        // Force update by using a unique scope
+        scope: '/'
+      });
       
       console.log('Service Worker registered successfully:', registration);
       

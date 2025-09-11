@@ -86,7 +86,8 @@ function App() {
     // Temporarily disable service worker to test if it's causing the blank page
     // initializeServiceWorker();
     
-    // App component mounted successfully
+    // Debug: Log that App component is mounting
+    console.log('🚀 App component mounted successfully');
   }, []);
 
   // Handle PWA orientation changes
@@ -125,6 +126,20 @@ function App() {
 
   return (
     <SafeErrorBoundary>
+      {/* Debug indicator */}
+      <div style={{
+        position: 'fixed',
+        top: 0,
+        right: 0,
+        background: '#4CAF50',
+        color: 'white',
+        padding: '5px 10px',
+        fontSize: '12px',
+        zIndex: 9999,
+        borderRadius: '0 0 0 5px'
+      }}>
+        React App Loaded ✅
+      </div>
       <AuthProvider>
         <SidebarProvider>
           <Router>

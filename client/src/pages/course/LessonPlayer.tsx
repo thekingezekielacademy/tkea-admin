@@ -162,11 +162,10 @@ const LessonPlayer: React.FC = () => {
         .eq('user_id', user.id)
         .eq('status', 'active')
         .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
+        .limit(1);
       
-      if (!error && data) {
-        console.log('✅ Found active subscription in database:', data);
+      if (!error && data && data.length > 0) {
+        console.log('✅ Found active subscription in database:', data[0]);
         setDatabaseSubscriptionStatus(true);
         return true;
       } else {
@@ -191,11 +190,11 @@ const LessonPlayer: React.FC = () => {
         .from('profiles')
         .select('current_streak')
         .eq('id', user.id)
-        .single();
+        .limit(1);
       
-      if (!profileError && profileData) {
-        setUserStreak(profileData.current_streak || 0);
-        console.log('✅ User streak fetched:', profileData.current_streak);
+      if (!profileError && profileData && profileData.length > 0) {
+        setUserStreak(profileData[0].current_streak || 0);
+        console.log('✅ User streak fetched:', profileData[0].current_streak);
       } else {
         // Fallback: calculate streak from lesson completion data
         const { data: lessonData, error: lessonError } = await supabase
