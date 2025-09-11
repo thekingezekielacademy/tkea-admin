@@ -5,8 +5,8 @@ import { logInfo, logError, logApiCall } from '../utils/performanceLogger';
 
 // API Configuration - Use secure server-side endpoints
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://app.thekingezekielacademy.com/api';
-const FLUTTERWAVE_PUBLIC_KEY = process.env.REACT_APP_FLUTTERWAVE_PUBLIC_KEY;
-const FLUTTERWAVE_MODE = process.env.REACT_APP_FLUTTERWAVE_MODE || 'live';
+const FLUTTERWAVE_PUBLIC_KEY = process.env.REACT_APP_FLUTTERWAVE_PUBLIC_KEY || 'FLWPUBK_TEST-d2eaf30b37947d8ee178a7f56417d6ef-X';
+const FLUTTERWAVE_MODE = process.env.REACT_APP_FLUTTERWAVE_MODE || 'test';
 const FLUTTERWAVE_CLIENT_ID = process.env.REACT_APP_FLUTTERWAVE_CLIENT_ID;
 const FLUTTERWAVE_ENCRYPTION_KEY = process.env.REACT_APP_FLUTTERWAVE_ENCRYPTION_KEY;
 
