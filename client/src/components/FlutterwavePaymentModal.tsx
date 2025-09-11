@@ -26,19 +26,29 @@ const FlutterwavePaymentModal: React.FC<FlutterwavePaymentModalProps> = ({ isOpe
     error?: string;
   }>({ status: 'idle' });
 
-  // Load Flutterwave script
+  // Check if Flutterwave script is loaded
   useEffect(() => {
-    if (isOpen && !window.FlutterwaveCheckout) {
-      const script = document.createElement('script');
-      script.src = 'https://checkout.flutterwave.com/v3.js';
-      script.onload = () => setFlutterwaveLoaded(true);
-      script.onerror = () => {
-        console.error('Failed to load Flutterwave script');
-        setPaymentState(prev => ({ ...prev, error: 'Payment system unavailable' }));
-      };
-      document.head.appendChild(script);
-    } else if (window.FlutterwaveCheckout) {
-      setFlutterwaveLoaded(true);
+    if (isOpen) {
+      if (window.FlutterwaveCheckout) {
+        setFlutterwaveLoaded(true);
+      } else {
+        // Wait a bit for the script to load
+        const checkScript = setInterval(() => {
+          if (window.FlutterwaveCheckout) {
+            setFlutterwaveLoaded(true);
+            clearInterval(checkScript);
+          }
+        }, 100);
+        
+        // Clear interval after 5 seconds if script doesn't load
+        setTimeout(() => {
+          clearInterval(checkScript);
+          if (!window.FlutterwaveCheckout) {
+            console.error('Flutterwave script failed to load');
+            setPaymentState(prev => ({ ...prev, error: 'Payment system unavailable' }));
+          }
+        }, 5000);
+      }
     }
   }, [isOpen]);
 
@@ -67,7 +77,7 @@ const FlutterwavePaymentModal: React.FC<FlutterwavePaymentModalProps> = ({ isOpe
       const flutterwavePublicKey = process.env.REACT_APP_FLUTTERWAVE_PUBLIC_KEY || 'FLWPUBK_TEST-d2eaf30b37947d8ee178a7f56417d6ef-X';
       
       // Validate Flutterwave key format
-      if (!flutterwavePublicKey || !flutterwavePublicKey.startsWith('FLWPUBK_')) {
+      if (!flutterwavePublicKey || !flutterwavePublicKey.startsWith('FLWPUBK')) {
         console.error('❌ Invalid Flutterwave public key format:', flutterwavePublicKey);
         throw new Error('Invalid Flutterwave public key format');
       }
@@ -79,16 +89,48 @@ const FlutterwavePaymentModal: React.FC<FlutterwavePaymentModalProps> = ({ isOpe
 
       const tx_ref = `TKE_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-      window.FlutterwaveCheckout({
+      // Validate required fields with better extraction
+      const customerName = user?.full_name || user?.name || user?.email?.split('@')[0] || 'Customer';
+      const customerEmail = email.trim();
+      
+      // Ensure customer name is properly formatted and not empty
+      const formattedCustomerName = customerName.trim().substring(0, 50) || 'Customer';
+      
+      console.log('🔧 Flutterwave Payment Modal - Customer details:', {
+        name: formattedCustomerName,
+        email: customerEmail,
+        nameLength: formattedCustomerName.length,
+        emailLength: customerEmail.length,
+        originalName: customerName
+      });
+
+      // Enhanced validation with better error messages
+      if (!customerEmail || customerEmail.trim().length < 4) {
+        throw new Error('Valid email address is required (minimum 4 characters)');
+      }
+
+      if (!formattedCustomerName || formattedCustomerName.trim().length < 2) {
+        throw new Error('Customer name is required (minimum 2 characters)');
+      }
+
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(customerEmail)) {
+        throw new Error('Please enter a valid email address');
+      }
+
+      const flutterwaveConfig = {
         public_key: flutterwavePublicKey,
         tx_ref: tx_ref,
-        amount: amount,
+        amount: Number(amount),
         currency: 'NGN',
+        country: 'NG',
         payment_options: 'card,mobilemoney,ussd',
         redirect_url: `${window.location.origin}/payment-verification?tx_ref=${tx_ref}`,
         customer: {
-          email: email.trim(),
-          name: user?.full_name || user?.email || 'Customer',
+          email: customerEmail,
+          name: formattedCustomerName,
+          phone_number: user?.phone || '08000000000',
         },
         customizations: {
           title: 'King Ezekiel Academy',
@@ -101,26 +143,68 @@ const FlutterwavePaymentModal: React.FC<FlutterwavePaymentModalProps> = ({ isOpe
           platform: 'web',
           timestamp: new Date().toISOString(),
         },
+        subaccounts: [],
+        payment_plan: null,
+        integrity_hash: null,
         callback: function(response: any) {
-          console.log('✅ Flutterwave payment successful:', response);
-          setPaymentState({ status: 'success' });
+          console.log('🔧 Flutterwave Response:', response);
           
-          // Call onSuccess if provided
-          if (onSuccess) {
-            onSuccess();
+          if (response.status === 'successful') {
+            console.log('✅ Flutterwave payment successful:', response);
+            setPaymentState({ status: 'success' });
+            
+            // Call onSuccess if provided
+            if (onSuccess) {
+              onSuccess();
+            }
+            
+            // Close modal after success
+            setTimeout(() => {
+              onClose();
+            }, 2000);
+          } else {
+            console.error('❌ Flutterwave payment failed:', response);
+            setPaymentState({ 
+              status: 'error', 
+              error: response.message || 'Payment failed. Please try again.' 
+            });
+            setLoading(false);
           }
-          
-          // Close modal after success
-          setTimeout(() => {
-            onClose();
-          }, 2000);
         },
         onclose: function() {
           console.log('❌ Flutterwave payment cancelled by user');
           setPaymentState({ status: 'idle' });
           setLoading(false);
+        },
+      };
+
+      console.log('🔧 Flutterwave Payment Modal - Full config:', JSON.stringify(flutterwaveConfig, null, 2));
+
+      // Wait a bit for Flutterwave to be fully loaded
+      setTimeout(() => {
+        try {
+          if (!window.FlutterwaveCheckout) {
+            throw new Error('Flutterwave payment system is not loaded. Please refresh the page and try again.');
+          }
+          
+          console.log('🚀 Initializing Flutterwave payment with config:', {
+            public_key: flutterwavePublicKey?.substring(0, 20) + '...',
+            tx_ref: tx_ref,
+            amount: amount,
+            customer_email: customerEmail,
+            customer_name: formattedCustomerName
+          });
+          
+          window.FlutterwaveCheckout(flutterwaveConfig);
+        } catch (error) {
+          console.error('💥 Flutterwave initialization error:', error);
+          setPaymentState({ 
+            status: 'error', 
+            error: error.message || 'Failed to initialize payment. Please try again.' 
+          });
+          setLoading(false);
         }
-      });
+      }, 100);
 
     } catch (error) {
       console.error('Flutterwave payment error:', error);

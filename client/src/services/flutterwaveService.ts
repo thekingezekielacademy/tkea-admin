@@ -51,6 +51,21 @@ class FlutterwaveService {
     const startTime = performance.now();
     
     try {
+      // Enhanced validation
+      if (!email || email.trim().length < 4) {
+        throw new Error('Valid email address is required (minimum 4 characters)');
+      }
+      
+      if (!amount || amount <= 0) {
+        throw new Error('Valid amount is required');
+      }
+      
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email.trim())) {
+        throw new Error('Please enter a valid email address');
+      }
+      
       logInfo('Initializing Flutterwave payment via secure server endpoint', { email, amount }, 'FlutterwaveService', 'initializePayment');
       
       // Use secure API endpoint
@@ -60,7 +75,7 @@ class FlutterwaveService {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          email,
+          email: email.trim(),
           amount,
           metadata: {
             ...metadata,
