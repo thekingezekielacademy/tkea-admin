@@ -88,7 +88,7 @@ const FlutterwavePaymentModal: React.FC<FlutterwavePaymentModalProps> = ({ isOpe
 
     try {
       // Use environment variable for Flutterwave public key
-      const flutterwavePublicKey = process.env.REACT_APP_FLUTTERWAVE_PUBLIC_KEY || 'FLWPUBK_TEST-d2eaf30b37947d8ee178a7f56417d6ef-X';
+      const flutterwavePublicKey = process.env.REACT_APP_FLUTTERWAVE_PUBLIC_KEY;
       
       // Enhanced Flutterwave key validation
       if (!flutterwavePublicKey) {
