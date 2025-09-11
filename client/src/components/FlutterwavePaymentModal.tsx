@@ -200,7 +200,6 @@ const FlutterwavePaymentModal: React.FC<FlutterwavePaymentModalProps> = ({ isOpe
           timestamp: new Date().toISOString(),
         },
         subaccounts: [],
-        payment_plan: null,
         integrity_hash: null,
         callback: function(response: any) {
           console.log('🔧 Flutterwave Response:', response);
