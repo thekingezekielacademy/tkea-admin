@@ -313,6 +313,21 @@ const FlutterwavePaymentModal: React.FC<FlutterwavePaymentModalProps> = ({ isOpe
             </div>
           </div>
 
+          {/* Card Payment Warning */}
+          <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4">
+            <div className="flex items-start">
+              <FaExclamationTriangle className="w-5 h-5 text-yellow-600 mr-3 mt-0.5 flex-shrink-0" />
+              <div>
+                <h4 className="text-sm font-medium text-yellow-800 mb-1">
+                  Card Payment Issues
+                </h4>
+                <p className="text-sm text-yellow-700">
+                  We're experiencing technical issues with card payments. Please use <strong>Bank Transfer</strong> for a smooth payment experience.
+                </p>
+              </div>
+            </div>
+          </div>
+
 
           {paymentState.status === 'error' && (
             <div className="bg-red-50 border border-red-200 rounded-md p-3">
