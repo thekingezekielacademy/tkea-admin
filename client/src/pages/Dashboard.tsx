@@ -237,7 +237,7 @@ const Dashboard: React.FC = () => {
         const daysRemaining = Math.max(0, Math.floor(timeDiff / (1000 * 60 * 60 * 24)));
         
         const newTrialStatus = {
-          isActive: true,
+          isActive: daysRemaining > 0, // Only active if days remaining > 0
           startDate: startDate.toISOString(),
           endDate: endDate.toISOString(),
           daysRemaining,

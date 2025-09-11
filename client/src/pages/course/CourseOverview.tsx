@@ -159,6 +159,7 @@ const CourseOverview: React.FC = () => {
             const updatedTrialStatus = {
               ...parsedTrial,
               daysRemaining,
+              isActive: daysRemaining > 0, // Recalculate isActive based on remaining days
               isExpired: daysRemaining <= 0
             };
             

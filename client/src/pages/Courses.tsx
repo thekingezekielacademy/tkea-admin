@@ -180,7 +180,7 @@ const Courses: React.FC = () => {
         const daysRemaining = Math.max(0, Math.floor(timeDiff / (1000 * 60 * 60 * 24)));
         
         const newTrialStatus = {
-          isActive: true,
+          isActive: daysRemaining > 0, // Only active if days remaining > 0
           startDate: startDate.toISOString(),
           endDate: endDate.toISOString(),
           daysRemaining,
@@ -189,7 +189,7 @@ const Courses: React.FC = () => {
         
         // Save to localStorage
         localStorage.setItem('user_trial_status', JSON.stringify(newTrialStatus));
-        setHasTrialAccess(true);
+        setHasTrialAccess(newTrialStatus.isActive && daysRemaining > 0);
         // console.log('✅ Initialized trial for new user in Courses:', newTrialStatus);
       } else {
         // User is older than 7 days, no trial

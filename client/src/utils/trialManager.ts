@@ -189,8 +189,8 @@ export class TrialManager {
       const timeDiff = end.getTime() - now.getTime();
       const remainingDays = timeDiff / (1000 * 60 * 60 * 24);
       
-      // Round up to include partial days (e.g., if 6.8 days left, show 7)
-      daysRemaining = Math.max(0, Math.ceil(remainingDays));
+      // Round down to show exact days remaining (e.g., if 6.8 days left, show 6)
+      daysRemaining = Math.max(0, Math.floor(remainingDays));
     }
     
     return {
