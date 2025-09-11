@@ -14,6 +14,16 @@ interface FlutterwavePaymentModalProps {
 declare global {
   interface Window {
     FlutterwaveCheckout: any;
+    FlutterwaveConfig: {
+      publicKey: string;
+      txRef: string;
+      amount: number;
+      currency: string;
+      country: string;
+      email: string;
+      phone_number: string;
+      name: string;
+    };
   }
 }
 
@@ -27,16 +37,37 @@ const FlutterwavePaymentModal: React.FC<FlutterwavePaymentModalProps> = ({ isOpe
     error?: string;
   }>({ status: 'idle' });
 
-  // Load Flutterwave script dynamically
+  // Load Flutterwave script dynamically with proper API key initialization
   useEffect(() => {
     if (isOpen) {
       if (window.FlutterwaveCheckout) {
         console.log('✅ Flutterwave script already loaded');
         setFlutterwaveLoaded(true);
       } else {
-        console.log('⏳ Loading Flutterwave script...');
+        console.log('⏳ Loading Flutterwave script with proper API key initialization...');
         
-        // Load Flutterwave script dynamically with different version
+        // Set global Flutterwave configuration before loading script
+        const flutterwavePublicKey = process.env.REACT_APP_FLUTTERWAVE_PUBLIC_KEY;
+        if (flutterwavePublicKey) {
+          // Set global Flutterwave configuration
+          window.FlutterwaveConfig = {
+            publicKey: flutterwavePublicKey,
+            txRef: `TKE_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+            amount: 2500,
+            currency: 'NGN',
+            country: 'NG',
+            email: user?.email || 'customer@example.com',
+            phone_number: '08000000000',
+            name: user?.full_name || user?.name || 'Customer'
+          };
+          
+          console.log('🔧 Flutterwave global config set:', {
+            publicKey: flutterwavePublicKey.substring(0, 20) + '...',
+            mode: 'live'
+          });
+        }
+        
+        // Load Flutterwave script dynamically
         const script = document.createElement('script');
         script.src = 'https://checkout.flutterwave.com/v3.js';
         script.async = true;
@@ -47,21 +78,17 @@ const FlutterwavePaymentModal: React.FC<FlutterwavePaymentModalProps> = ({ isOpe
           // Debug Flutterwave SDK
           console.log('🔧 Flutterwave SDK loaded:', typeof window.FlutterwaveCheckout);
           console.log('🔧 Flutterwave SDK methods:', Object.keys(window.FlutterwaveCheckout || {}));
-          console.log('🔧 Public key available:', !!process.env.REACT_APP_FLUTTERWAVE_PUBLIC_KEY);
-          console.log('🔧 Public key value:', process.env.REACT_APP_FLUTTERWAVE_PUBLIC_KEY?.substring(0, 20) + '...');
+          console.log('🔧 Public key available:', !!flutterwavePublicKey);
           
-          // Try to set the public key globally for Flutterwave
-          if (window.FlutterwaveCheckout && process.env.REACT_APP_FLUTTERWAVE_PUBLIC_KEY) {
+          // Ensure public key is properly set
+          if (window.FlutterwaveCheckout && flutterwavePublicKey) {
             try {
-              // Try different methods to set the public key
+              // Set public key using the proper method
               if (typeof window.FlutterwaveCheckout.setPublicKey === 'function') {
-                window.FlutterwaveCheckout.setPublicKey(process.env.REACT_APP_FLUTTERWAVE_PUBLIC_KEY);
-                console.log('✅ Flutterwave public key set globally via setPublicKey');
-              } else if (typeof window.FlutterwaveCheckout.setPublicKey === 'function') {
-                window.FlutterwaveCheckout.setPublicKey(process.env.REACT_APP_FLUTTERWAVE_PUBLIC_KEY);
+                window.FlutterwaveCheckout.setPublicKey(flutterwavePublicKey);
                 console.log('✅ Flutterwave public key set globally via setPublicKey');
               } else if (window.FlutterwaveCheckout.publicKey !== undefined) {
-                window.FlutterwaveCheckout.publicKey = process.env.REACT_APP_FLUTTERWAVE_PUBLIC_KEY;
+                window.FlutterwaveCheckout.publicKey = flutterwavePublicKey;
                 console.log('✅ Flutterwave public key set globally via property');
               } else {
                 console.log('⚠️ No method found to set Flutterwave public key globally');
@@ -95,7 +122,7 @@ const FlutterwavePaymentModal: React.FC<FlutterwavePaymentModalProps> = ({ isOpe
         }, 10000);
       }
     }
-  }, [isOpen]);
+  }, [isOpen, user]);
 
   useEffect(() => {
     if (isOpen && user?.email) {
