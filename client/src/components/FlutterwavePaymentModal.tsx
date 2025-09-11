@@ -26,28 +26,42 @@ const FlutterwavePaymentModal: React.FC<FlutterwavePaymentModalProps> = ({ isOpe
     error?: string;
   }>({ status: 'idle' });
 
-  // Check if Flutterwave script is loaded
+  // Load Flutterwave script dynamically
   useEffect(() => {
     if (isOpen) {
       if (window.FlutterwaveCheckout) {
+        console.log('✅ Flutterwave script already loaded');
         setFlutterwaveLoaded(true);
       } else {
-        // Wait a bit for the script to load
-        const checkScript = setInterval(() => {
-          if (window.FlutterwaveCheckout) {
-            setFlutterwaveLoaded(true);
-            clearInterval(checkScript);
-          }
-        }, 100);
+        console.log('⏳ Loading Flutterwave script...');
         
-        // Clear interval after 5 seconds if script doesn't load
+        // Load Flutterwave script dynamically
+        const script = document.createElement('script');
+        script.src = 'https://checkout.flutterwave.com/v3.js';
+        script.async = true;
+        script.onload = () => {
+          console.log('✅ Flutterwave script loaded successfully');
+          setFlutterwaveLoaded(true);
+        };
+        script.onerror = () => {
+          console.error('❌ Failed to load Flutterwave script');
+          setPaymentState(prev => ({ 
+            ...prev, 
+            error: 'Payment system is temporarily unavailable. Please refresh the page and try again.' 
+          }));
+        };
+        document.head.appendChild(script);
+        
+        // Fallback timeout
         setTimeout(() => {
-          clearInterval(checkScript);
           if (!window.FlutterwaveCheckout) {
-            console.error('Flutterwave script failed to load');
-            setPaymentState(prev => ({ ...prev, error: 'Payment system unavailable' }));
+            console.error('❌ Flutterwave script failed to load after 10 seconds');
+            setPaymentState(prev => ({ 
+              ...prev, 
+              error: 'Payment system is temporarily unavailable. Please refresh the page and try again.' 
+            }));
           }
-        }, 5000);
+        }, 10000);
       }
     }
   }, [isOpen]);
@@ -74,12 +88,23 @@ const FlutterwavePaymentModal: React.FC<FlutterwavePaymentModalProps> = ({ isOpe
 
     try {
       // Use environment variable for Flutterwave public key
-      const flutterwavePublicKey = process.env.REACT_APP_FLUTTERWAVE_PUBLIC_KEY || 'FLWPUBK_TEST-d2eaf30b37947d8ee178a7f56417d6ef-X';
+      const flutterwavePublicKey = process.env.REACT_APP_FLUTTERWAVE_PUBLIC_KEY || 'FLWPUBK-fa262382709276e0900a8d2c6fcbe7ff-X';
       
-      // Validate Flutterwave key format
-      if (!flutterwavePublicKey || !flutterwavePublicKey.startsWith('FLWPUBK')) {
+      // Enhanced Flutterwave key validation
+      if (!flutterwavePublicKey) {
+        console.error('❌ Flutterwave public key is missing');
+        throw new Error('Flutterwave payment system is not configured. Please contact support.');
+      }
+      
+      if (!flutterwavePublicKey.startsWith('FLWPUBK')) {
         console.error('❌ Invalid Flutterwave public key format:', flutterwavePublicKey);
-        throw new Error('Invalid Flutterwave public key format');
+        throw new Error('Invalid Flutterwave public key format. Please contact support.');
+      }
+      
+      // Check if key is properly formatted (should be at least 40 characters)
+      if (flutterwavePublicKey.length < 40) {
+        console.error('❌ Flutterwave public key is too short:', flutterwavePublicKey);
+        throw new Error('Invalid Flutterwave public key. Please contact support.');
       }
       
       console.log('🔧 Flutterwave Payment Modal - Using key:', flutterwavePublicKey?.substring(0, 20) + '...');
