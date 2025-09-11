@@ -175,33 +175,41 @@ const FlutterwavePaymentModal: React.FC<FlutterwavePaymentModalProps> = ({ isOpe
         throw new Error('Please enter a valid email address');
       }
 
+      // TEST: Direct API key validation
+      console.log('🧪 TESTING: Attempting direct Flutterwave API validation...');
+      
+      try {
+        const testResponse = await fetch('https://api.flutterwave.com/v3/plans', {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${process.env.REACT_APP_FLUTTERWAVE_SECRET_KEY || 'FLWSECK-eb50a05e74e4a648510719bfa75dad5b-1993ab9913bvt-X'}`,
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        if (testResponse.ok) {
+          console.log('✅ Flutterwave API key is valid - server connection successful');
+        } else {
+          console.log('❌ Flutterwave API key validation failed:', testResponse.status, testResponse.statusText);
+        }
+      } catch (error) {
+        console.log('❌ Flutterwave API key test failed:', error);
+      }
+
+      // MINIMAL TEST CONFIGURATION - Remove complex options that might cause issues
       const flutterwaveConfig = {
         public_key: flutterwavePublicKey,
         tx_ref: tx_ref,
         amount: Number(amount),
         currency: 'NGN',
-        country: 'NG',
-        payment_options: 'card,mobilemoney,ussd',
-        redirect_url: `${window.location.origin}/payment-verification?tx_ref=${tx_ref}`,
         customer: {
           email: customerEmail,
           name: formattedCustomerName,
-          phone_number: user?.phone || '08000000000',
         },
         customizations: {
           title: 'King Ezekiel Academy',
-          description: `Subscription for ${planName}`,
-          logo: `${window.location.origin}/img/logo.png`,
+          description: 'Monthly Membership Payment',
         },
-        meta: {
-          user_id: user?.id || 'anonymous',
-          plan_name: planName,
-          platform: 'web',
-          timestamp: new Date().toISOString(),
-        },
-        subaccounts: [],
-        payment_plan: null,
-        integrity_hash: null,
         callback: function(response: any) {
           console.log('🔧 Flutterwave Response:', response);
           
