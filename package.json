@@ -26,8 +26,9 @@
   "author": "King Ezekiel Academy",
   "license": "MIT",
   "dependencies": {
-    "and": "^0.0.3",
     "@supabase/supabase-js": "^2.54.0",
+    "@vercel/node": "^5.3.22",
+    "and": "^0.0.3",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
