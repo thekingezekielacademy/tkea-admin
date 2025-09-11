@@ -5,7 +5,7 @@ import { useSidebar } from '../contexts/SidebarContext';
 import { supabase } from '../lib/supabase';
 import secureStorage from '../utils/secureStorage';
 import TrialBanner from '../components/TrialBanner';
-import { TrialStatus } from '../utils/trialManager';
+import { TrialStatus, TrialManager } from '../utils/trialManager';
 import DashboardSidebar from '../components/DashboardSidebar';
 import { 
   FaTrophy, 
@@ -198,11 +198,8 @@ const Dashboard: React.FC = () => {
       if (localTrial) {
         try {
           const parsedTrial = JSON.parse(localTrial);
-                  // Recalculate days remaining - use floor to get exact days, not rounded up
-        const now = new Date();
-        const endDate = new Date(parsedTrial.endDate);
-        const timeDiff = endDate.getTime() - now.getTime();
-        const daysRemaining = Math.max(0, Math.floor(timeDiff / (1000 * 60 * 60 * 24)));
+          // Use centralized calculation for consistency across devices
+          const daysRemaining = TrialManager.calculateDaysRemaining(parsedTrial.endDate);
           
           const updatedTrialStatus = {
             ...parsedTrial,

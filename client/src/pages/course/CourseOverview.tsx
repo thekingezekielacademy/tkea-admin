@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import ProgressRing from '../../components/ProgressRing';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
-import { TrialStatus } from '../../utils/trialManager';
+import { TrialStatus, TrialManager } from '../../utils/trialManager';
 import secureStorage from '../../utils/secureStorage';
 
 const CourseOverview: React.FC = () => {
@@ -151,10 +151,8 @@ const CourseOverview: React.FC = () => {
         if (localTrial) {
           try {
             const parsedTrial = JSON.parse(localTrial);
-            const now = new Date();
-            const endDate = new Date(parsedTrial.endDate);
-            const timeDiff = endDate.getTime() - now.getTime();
-            const daysRemaining = Math.max(0, Math.floor(timeDiff / (1000 * 60 * 60 * 24)));
+            // Use centralized calculation for consistency across devices
+            const daysRemaining = TrialManager.calculateDaysRemaining(parsedTrial.endDate);
             
             const updatedTrialStatus = {
               ...parsedTrial,

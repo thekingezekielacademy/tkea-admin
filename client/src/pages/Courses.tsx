@@ -144,11 +144,8 @@ const Courses: React.FC = () => {
       if (localTrial) {
         try {
           const parsedTrial = JSON.parse(localTrial);
-          // Recalculate days remaining - use floor to get exact days, not rounded up
-          const now = new Date();
-          const endDate = new Date(parsedTrial.endDate);
-          const timeDiff = endDate.getTime() - now.getTime();
-          const daysRemaining = Math.max(0, Math.floor(timeDiff / (1000 * 60 * 60 * 24)));
+          // Use centralized calculation for consistency across devices
+          const daysRemaining = TrialManager.calculateDaysRemaining(parsedTrial.endDate);
           
           const hasAccess = parsedTrial.isActive && daysRemaining > 0;
           setHasTrialAccess(hasAccess);
@@ -173,10 +170,8 @@ const Courses: React.FC = () => {
         endDate.setDate(startDate.getDate() + 6); // 6 days from start = 7 days total
         endDate.setHours(23, 59, 59, 999); // End of day
         
-        // Calculate exact days remaining
-        const now = new Date();
-        const timeDiff = endDate.getTime() - now.getTime();
-        const daysRemaining = Math.max(0, Math.floor(timeDiff / (1000 * 60 * 60 * 24)));
+        // Use centralized calculation for consistency across devices
+        const daysRemaining = TrialManager.calculateDaysRemaining(endDate.toISOString());
         
         const newTrialStatus = {
           isActive: daysRemaining > 0, // Only active if days remaining > 0

@@ -165,6 +165,37 @@ export class TrialManager {
   }
 
   /**
+   * Calculate days remaining consistently across all devices
+   */
+  static calculateDaysRemaining(endDate: string): number {
+    const now = new Date();
+    const end = new Date(endDate);
+    
+    // Use consistent calculation: compare start of today with start of end date
+    const todayStart = new Date(now);
+    todayStart.setHours(0, 0, 0, 0);
+    
+    const endDateStart = new Date(end);
+    endDateStart.setHours(0, 0, 0, 0);
+    
+    // Calculate the difference in days
+    const timeDiff = endDateStart.getTime() - todayStart.getTime();
+    const daysRemaining = Math.max(0, Math.floor(timeDiff / (1000 * 60 * 60 * 24)));
+    
+    // Debug logging
+    console.log('🔍 Consistent trial calculation:', {
+      endDate,
+      now: now.toISOString(),
+      todayStart: todayStart.toISOString(),
+      endDateStart: endDateStart.toISOString(),
+      timeDiffHours: timeDiff / (1000 * 60 * 60),
+      daysRemaining
+    });
+    
+    return daysRemaining;
+  }
+
+  /**
    * Calculate trial status based on dates
    */
   private static calculateTrialStatus(startDate: string, endDate: string): TrialStatus {
@@ -173,39 +204,7 @@ export class TrialManager {
     const end = new Date(endDate);
     
     const isExpired = now > end;
-    
-    // Calculate days remaining more intuitively
-    // If today is the start date, show full trial duration
-    // If we're in the middle, show remaining days
-    const today = new Date();
-    today.setHours(0, 0, 0, 0); // Start of today
-    
-    const startOfTrial = new Date(start);
-    startOfTrial.setHours(0, 0, 0, 0); // Start of trial day
-    
-    let daysRemaining: number;
-    
-    if (today.getTime() === startOfTrial.getTime()) {
-      // Today is the first day of trial, show full duration
-      daysRemaining = this.TRIAL_DURATION_DAYS;
-    } else {
-      // Calculate remaining days including partial days
-      const timeDiff = end.getTime() - now.getTime();
-      const remainingDays = timeDiff / (1000 * 60 * 60 * 24);
-      
-      // Round down to show exact days remaining (e.g., if 6.8 days left, show 6)
-      daysRemaining = Math.max(0, Math.floor(remainingDays));
-      
-      // Debug logging
-      console.log('🔍 TrialManager calculation debug:', {
-        startDate,
-        endDate,
-        now: now.toISOString(),
-        timeDiffHours: timeDiff / (1000 * 60 * 60),
-        remainingDays,
-        daysRemaining
-      });
-    }
+    const daysRemaining = this.calculateDaysRemaining(endDate);
     
     return {
       isActive: !isExpired,
