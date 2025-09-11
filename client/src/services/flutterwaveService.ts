@@ -8,8 +8,8 @@ const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://app.thekingezekie
 // Use live mode and live keys from environment variables
 const FLUTTERWAVE_PUBLIC_KEY = process.env.REACT_APP_FLUTTERWAVE_PUBLIC_KEY || 'FLWPUBK-fa262382709276e0900a8d2c6fcbe7ff-X';
 const FLUTTERWAVE_MODE = 'live';
-const FLUTTERWAVE_CLIENT_ID = process.env.REACT_APP_FLUTTERWAVE_CLIENT_ID;
-const FLUTTERWAVE_ENCRYPTION_KEY = process.env.REACT_APP_FLUTTERWAVE_ENCRYPTION_KEY;
+const FLUTTERWAVE_CLIENT_ID = process.env.REACT_APP_FLUTTERWAVE_CLIENT_ID || 'dc123fca-4b34-4241-8003-d41a15b96fa0';
+const FLUTTERWAVE_ENCRYPTION_KEY = process.env.REACT_APP_FLUTTERWAVE_ENCRYPTION_KEY || '1w+qjIHrl4UFCg9sdAqUxn0V4kHlNv7q0qiUgU6vxa0=';
 
 // Log current mode
 console.log('🔧 Flutterwave Mode:', FLUTTERWAVE_MODE);

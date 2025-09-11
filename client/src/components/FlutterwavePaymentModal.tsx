@@ -118,6 +118,8 @@ const FlutterwavePaymentModal: React.FC<FlutterwavePaymentModalProps> = ({ isOpe
     try {
       // Use live key from environment variables
       const flutterwavePublicKey = process.env.REACT_APP_FLUTTERWAVE_PUBLIC_KEY || 'FLWPUBK-fa262382709276e0900a8d2c6fcbe7ff-X';
+      const flutterwaveClientId = process.env.REACT_APP_FLUTTERWAVE_CLIENT_ID || 'dc123fca-4b34-4241-8003-d41a15b96fa0';
+      const flutterwaveEncryptionKey = process.env.REACT_APP_FLUTTERWAVE_ENCRYPTION_KEY || '1w+qjIHrl4UFCg9sdAqUxn0V4kHlNv7q0qiUgU6vxa0=';
       
       // Enhanced Flutterwave key validation
       if (!flutterwavePublicKey) {
@@ -176,6 +178,8 @@ const FlutterwavePaymentModal: React.FC<FlutterwavePaymentModalProps> = ({ isOpe
 
       const flutterwaveConfig = {
         public_key: flutterwavePublicKey,
+        client_id: flutterwaveClientId,
+        encryption_key: flutterwaveEncryptionKey,
         tx_ref: tx_ref,
         amount: Number(amount),
         currency: 'NGN',
