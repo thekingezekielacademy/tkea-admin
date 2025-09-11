@@ -186,6 +186,30 @@ const FlutterwavePaymentModal: React.FC<FlutterwavePaymentModalProps> = ({ isOpe
       // Skip API test - causes CORS issues, will test through payment flow
       console.log('🚀 Proceeding with Flutterwave payment initialization...');
 
+      // PRECISE DEBUGGING - Check for empty values before sending
+      console.log('🔍 DEBUGGING VALUES BEFORE SENDING TO SERVER:');
+      console.log('tx_ref:', tx_ref, 'Length:', tx_ref.length);
+      console.log('email:', customerEmail, 'Length:', customerEmail.length);
+      console.log('customer_name:', formattedCustomerName, 'Length:', formattedCustomerName.length);
+      console.log('phone_number:', finalPhoneNumber, 'Length:', finalPhoneNumber.length);
+      console.log('amount:', amount, 'Type:', typeof amount);
+      
+      // CRITICAL VALIDATION - Ensure no empty values
+      if (!tx_ref || tx_ref.length < 4) {
+        throw new Error(`Invalid tx_ref: "${tx_ref}" (length: ${tx_ref?.length || 0})`);
+      }
+      if (!customerEmail || customerEmail.length < 4) {
+        throw new Error(`Invalid email: "${customerEmail}" (length: ${customerEmail?.length || 0})`);
+      }
+      if (!formattedCustomerName || formattedCustomerName.length < 2) {
+        throw new Error(`Invalid customer_name: "${formattedCustomerName}" (length: ${formattedCustomerName?.length || 0})`);
+      }
+      if (!finalPhoneNumber || finalPhoneNumber.length < 10) {
+        throw new Error(`Invalid phone_number: "${finalPhoneNumber}" (length: ${finalPhoneNumber?.length || 0})`);
+      }
+      
+      console.log('✅ ALL VALUES VALIDATED - No empty values detected');
+
       // FLUTTERWAVE INTEGRATION - DIFFERENT APPROACH
       console.log('🚀 Using Flutterwave with server-side initialization...');
       
@@ -238,137 +262,7 @@ const FlutterwavePaymentModal: React.FC<FlutterwavePaymentModalProps> = ({ isOpe
         throw new Error('Payment initialization failed. Please try again.');
       }
 
-      // COMPLETE CONFIGURATION - Include all vital required fields
-      const flutterwaveConfig = {
-        public_key: flutterwavePublicKey,
-        tx_ref: tx_ref,
-        amount: Number(amount),
-        currency: 'NGN',
-        country: 'NG',
-        payment_options: 'card,mobilemoney,ussd',
-        redirect_url: `${window.location.origin}/payment-verification?tx_ref=${tx_ref}`,
-        customer: {
-          email: customerEmail,
-          name: formattedCustomerName,
-          phone_number: finalPhoneNumber,
-        },
-        subaccounts: [],
-        payment_plan: null,
-        integrity_hash: null,
-        customizations: {
-          title: 'King Ezekiel Academy',
-          description: 'Monthly Membership Payment',
-          logo: `${window.location.origin}/img/logo.png`,
-        },
-        meta: {
-          user_id: user?.id || 'anonymous',
-          plan_name: planName,
-          platform: 'web',
-          timestamp: new Date().toISOString(),
-          source: 'king_ezekiel_academy',
-        },
-        callback: function(response: any) {
-          console.log('🔧 Flutterwave Response:', response);
-          
-          if (response.status === 'successful') {
-            console.log('✅ Flutterwave payment successful:', response);
-            setPaymentState({ status: 'success' });
-            
-            // Call onSuccess if provided
-            if (onSuccess) {
-              onSuccess();
-            }
-            
-            // Close modal after success
-            setTimeout(() => {
-              onClose();
-            }, 2000);
-          } else {
-            console.error('❌ Flutterwave payment failed:', response);
-            setPaymentState({ 
-              status: 'error', 
-              error: response.message || 'Payment failed. Please try again.' 
-            });
-            setLoading(false);
-          }
-        },
-        onclose: function() {
-          console.log('❌ Flutterwave payment cancelled by user');
-          setPaymentState({ status: 'idle' });
-          setLoading(false);
-        },
-      };
-
-      console.log('🔧 Flutterwave Payment Modal - Full config:', JSON.stringify(flutterwaveConfig, null, 2));
-
-      // Wait a bit for Flutterwave to be fully loaded
-      setTimeout(() => {
-        try {
-          if (!window.FlutterwaveCheckout) {
-            throw new Error('Flutterwave payment system is not loaded. Please refresh the page and try again.');
-          }
-          
-          console.log('🚀 Initializing Flutterwave payment with config:', {
-            public_key: flutterwavePublicKey?.substring(0, 20) + '...',
-            tx_ref: tx_ref,
-            amount: amount,
-            customer_email: customerEmail,
-            customer_name: formattedCustomerName
-          });
-          
-          // Debug the exact config being passed
-          console.log('🔧 Full Flutterwave config being passed:', JSON.stringify(flutterwaveConfig, null, 2));
-          console.log('🔧 Flutterwave SDK type:', typeof window.FlutterwaveCheckout);
-          console.log('🔧 Flutterwave SDK available:', !!window.FlutterwaveCheckout);
-          
-          // Try different initialization methods
-          try {
-            // Method 1: Standard initialization
-            console.log('🔧 Attempting standard Flutterwave initialization...');
-            window.FlutterwaveCheckout(flutterwaveConfig);
-          } catch (error) {
-            console.error('❌ Standard Flutterwave initialization failed:', error);
-            
-            // Method 2: Try with different SDK method
-            try {
-              console.log('🔧 Attempting alternative Flutterwave initialization...');
-              if (window.FlutterwaveCheckout && typeof window.FlutterwaveCheckout === 'function') {
-                // Try calling it as a constructor
-                new window.FlutterwaveCheckout(flutterwaveConfig);
-              } else {
-                throw new Error('FlutterwaveCheckout is not a function');
-              }
-            } catch (error2) {
-              console.error('❌ Alternative Flutterwave initialization failed:', error2);
-              
-              // Method 3: Try with minimal config
-              try {
-                console.log('🔧 Attempting minimal Flutterwave initialization...');
-                const minimalConfig = {
-                  public_key: flutterwavePublicKey,
-                  tx_ref: flutterwaveConfig.tx_ref,
-                  amount: flutterwaveConfig.amount,
-                  currency: flutterwaveConfig.currency,
-                  customer: flutterwaveConfig.customer,
-                  callback: flutterwaveConfig.callback,
-                  onclose: flutterwaveConfig.onclose
-                };
-                window.FlutterwaveCheckout(minimalConfig);
-              } catch (error3) {
-                console.error('❌ Minimal Flutterwave initialization failed:', error3);
-                throw new Error('All Flutterwave initialization methods failed. Please contact Flutterwave support.');
-              }
-            }
-          }
-        } catch (error) {
-          console.error('💥 Flutterwave initialization error:', error);
-          setPaymentState({ 
-            status: 'error', 
-            error: error.message || 'Failed to initialize payment. Please try again.' 
-          });
-          setLoading(false);
-        }
-      }, 100);
+      // Server-side initialization completed above - no client-side code needed
 
     } catch (error) {
       console.error('Flutterwave payment error:', error);
