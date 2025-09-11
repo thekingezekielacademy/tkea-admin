@@ -186,12 +186,12 @@ const FlutterwavePaymentModal: React.FC<FlutterwavePaymentModalProps> = ({ isOpe
       // Skip API test - causes CORS issues, will test through payment flow
       console.log('🚀 Proceeding with Flutterwave payment initialization...');
 
-      // FLUTTERWAVE IS REJECTING KEYS - SWITCHING TO PAYSTACK
-      console.log('⚠️ Flutterwave consistently rejecting API keys, switching to Paystack...');
+      // FLUTTERWAVE INTEGRATION - DIFFERENT APPROACH
+      console.log('🚀 Using Flutterwave with server-side initialization...');
       
-      // Use Paystack instead since Flutterwave keys are being rejected
+      // Try server-side initialization first
       try {
-        const paystackResponse = await fetch('/api/paystack/initialize-payment', {
+        const response = await fetch('/api/flutterwave/initialize-payment', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -199,29 +199,68 @@ const FlutterwavePaymentModal: React.FC<FlutterwavePaymentModalProps> = ({ isOpe
           body: JSON.stringify({
             email: customerEmail,
             amount: Number(amount),
-            metadata: {
-              user_id: user?.id,
-              plan_name: planName,
-              customer_name: formattedCustomerName,
-              phone_number: finalPhoneNumber,
-            }
+            plan_name: planName,
+            user_id: user?.id,
+            tx_ref: tx_ref,
+            customer_name: formattedCustomerName,
+            phone_number: finalPhoneNumber,
           }),
         });
 
-        const paystackResult = await paystackResponse.json();
+        const result = await response.json();
         
-        if (paystackResult.success && paystackResult.data?.authorization_url) {
-          console.log('✅ Paystack payment initialized successfully');
+        if (result.success && result.data) {
+          console.log('✅ Server-side Flutterwave initialization successful:', result.data);
           
-          // Redirect to Paystack payment page
-          window.location.href = paystackResult.data.authorization_url;
-          return;
+          // Now initialize client-side with server-validated data
+          const flutterwaveConfig = {
+            public_key: flutterwavePublicKey,
+            tx_ref: result.data.tx_ref || tx_ref,
+            amount: Number(amount),
+            currency: 'NGN',
+            customer: {
+              email: customerEmail,
+              name: formattedCustomerName,
+              phone_number: finalPhoneNumber,
+            },
+            customizations: {
+              title: 'King Ezekiel Academy',
+              description: 'Monthly Membership Payment',
+            },
+            callback: function(response: any) {
+              console.log('🔧 Flutterwave Response:', response);
+              
+              if (response.status === 'successful') {
+                console.log('✅ Flutterwave payment successful:', response);
+                setPaymentState({ status: 'success' });
+                
+                // Call onSuccess if provided
+                if (onSuccess) {
+                  onSuccess();
+                }
+                
+                // Close modal after success
+                setTimeout(() => {
+                  onClose();
+                }, 2000);
+              }
+            },
+            onclose: function() {
+              console.log('❌ Flutterwave payment cancelled by user');
+              setPaymentState({ status: 'idle' });
+              setLoading(false);
+            }
+          };
+
+          console.log('🔧 Initializing Flutterwave with server-validated config:', flutterwaveConfig);
+          window.FlutterwaveCheckout(flutterwaveConfig);
+          
         } else {
-          throw new Error(paystackResult.message || 'Paystack initialization failed');
+          throw new Error(result.message || 'Server-side Flutterwave initialization failed');
         }
         
       } catch (error) {
-        console.error('❌ Paystack initialization failed:', error);
+        console.error('❌ Server-side Flutterwave initialization failed:', error);
         throw new Error('Payment initialization failed. Please try again.');
       }
 
