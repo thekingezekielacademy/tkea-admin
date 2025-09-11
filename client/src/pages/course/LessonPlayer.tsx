@@ -6,6 +6,7 @@ import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { TrialStatus } from '../../utils/trialManager';
 import secureStorage from '../../utils/secureStorage';
+import { notificationService } from '../../utils/notificationService';
 
 const LessonPlayer: React.FC = () => {
   const navigate = useNavigate();
@@ -28,6 +29,9 @@ const LessonPlayer: React.FC = () => {
   });
   const [subActive, setSubActive] = useState<boolean>(false);
   const [databaseSubscriptionStatus, setDatabaseSubscriptionStatus] = useState<boolean>(false);
+  const [userStreak, setUserStreak] = useState<number>(0);
+  const [relatedCourses, setRelatedCourses] = useState<any[]>([]);
+  const [loadingRelatedCourses, setLoadingRelatedCourses] = useState<boolean>(false);
 
   // Fetch course and lesson data function
   const fetchCourseAndLesson = async () => {
@@ -60,8 +64,9 @@ const LessonPlayer: React.FC = () => {
               user_id: user.id,
               course_id: id,
               progress: 0,
-              completed_lessons: 0,
-              last_accessed: new Date().toISOString()
+              completed_lessons: '[]',
+              last_accessed: new Date().toISOString(),
+              is_active: true
             }, {
               onConflict: 'user_id,course_id'
             });
@@ -124,6 +129,8 @@ const LessonPlayer: React.FC = () => {
           }
           
           if (foundVideo) {
+            console.log('🎥 Found video:', foundVideo);
+            console.log('🔗 Video link from database:', foundVideo.link);
             setCurrentVideo(foundVideo);
             setCurrentLessonIndex(sortedVideos.findIndex((v: any) => v.id === foundVideo.id));
           } else {
@@ -171,6 +178,140 @@ const LessonPlayer: React.FC = () => {
       console.log('⚠️ Database subscription check failed (table may not exist yet):', error);
       setDatabaseSubscriptionStatus(false);
       return false;
+    }
+  };
+
+  // Fetch user streak data
+  const fetchUserStreak = async () => {
+    if (!user?.id) return;
+    
+    try {
+      // Try to get streak from profiles table
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('current_streak')
+        .eq('id', user.id)
+        .single();
+      
+      if (!profileError && profileData) {
+        setUserStreak(profileData.current_streak || 0);
+        console.log('✅ User streak fetched:', profileData.current_streak);
+      } else {
+        // Fallback: calculate streak from lesson completion data
+        const { data: lessonData, error: lessonError } = await supabase
+          .from('user_lesson_progress')
+          .select('completed_at')
+          .eq('user_id', user.id)
+          .eq('is_completed', true)
+          .order('completed_at', { ascending: false });
+        
+        if (!lessonError && lessonData) {
+          // Calculate streak based on consecutive days with completed lessons
+          const today = new Date();
+          const yesterday = new Date(today);
+          yesterday.setDate(yesterday.getDate() - 1);
+          
+          let streak = 0;
+          let currentDate = new Date(today);
+          
+          for (let i = 0; i < 30; i++) { // Check last 30 days
+            const dateStr = currentDate.toISOString().split('T')[0];
+            const hasLessonOnDate = lessonData.some(lesson => 
+              lesson.completed_at?.startsWith(dateStr)
+            );
+            
+            if (hasLessonOnDate) {
+              streak++;
+              currentDate.setDate(currentDate.getDate() - 1);
+            } else {
+              break;
+            }
+          }
+          
+          setUserStreak(streak);
+          console.log('✅ Calculated streak from lesson data:', streak);
+        } else {
+          setUserStreak(0);
+          console.log('❌ Could not fetch streak data');
+        }
+      }
+    } catch (error) {
+      console.log('⚠️ Error fetching user streak:', error);
+      setUserStreak(0);
+    }
+  };
+
+  // Fetch related courses
+  const fetchRelatedCourses = async () => {
+    if (!course) {
+      console.log('❌ No course data available for related courses');
+      return;
+    }
+    
+    setLoadingRelatedCourses(true);
+    console.log('🔍 Fetching related courses for course:', course.id);
+    console.log('📋 Full course object:', course);
+    console.log('🏷️ Course category:', course.category);
+    
+    try {
+      // First, let's check what courses exist in the database
+      const { data: allCourses, error: allCoursesError } = await supabase
+        .from('courses')
+        .select('id, title, category')
+        .limit(10);
+      
+      console.log('📊 All courses in database:', allCourses);
+      console.log('📊 All courses error:', allCoursesError);
+      
+      // First try to get courses from the same category
+      let relatedData = null;
+      let relatedError = null;
+      
+      if (course.category) {
+        console.log('🔍 Searching for courses with category:', course.category);
+        const { data, error } = await supabase
+          .from('courses')
+          .select('id, title, cover_photo_url, category, level, description')
+          .eq('category', course.category)
+          .neq('id', course.id)
+          .limit(3);
+        
+        relatedData = data;
+        relatedError = error;
+        console.log('📊 Category-based query result:', { data: data?.length, error, results: data });
+      } else {
+        console.log('⚠️ Course has no category field');
+      }
+      
+      if (!relatedError && relatedData && relatedData.length > 0) {
+        setRelatedCourses(relatedData);
+        console.log('✅ Related courses fetched by category:', relatedData.length);
+        setLoadingRelatedCourses(false);
+        return;
+      }
+      
+      // Fallback: get random courses
+      console.log('🔄 Trying fallback: random courses');
+      const { data: randomData, error: randomError } = await supabase
+        .from('courses')
+        .select('id, title, cover_photo_url, category, level, description')
+        .neq('id', course.id)
+        .limit(3);
+      
+      console.log('📊 Random courses query result:', { data: randomData?.length, error: randomError, results: randomData });
+      
+      if (!randomError && randomData) {
+        setRelatedCourses(randomData);
+        console.log('✅ Random courses fetched as fallback:', randomData.length);
+      } else {
+        console.log('❌ Could not fetch any courses:', randomError);
+        setRelatedCourses([]);
+      }
+    } catch (error) {
+      console.log('⚠️ Error fetching related courses:', error);
+      setRelatedCourses([]);
+    } finally {
+      setLoadingRelatedCourses(false);
     }
   };
 
@@ -251,6 +392,20 @@ const LessonPlayer: React.FC = () => {
     fetchCourseAndLesson();
   }, [id, lessonId, user?.id]);
 
+  // Fetch user streak when user changes
+  useEffect(() => {
+    if (user?.id) {
+      fetchUserStreak();
+    }
+  }, [user?.id]);
+
+  // Fetch related courses when course changes
+  useEffect(() => {
+    if (course) {
+      fetchRelatedCourses();
+    }
+  }, [course]);
+
   // Handle video player events
   const handleVideoPlay = () => {
     console.log(`Lesson ${lessonId} video started playing`);
@@ -272,6 +427,12 @@ const LessonPlayer: React.FC = () => {
       if (user?.id) {
         try {
           // Mark lesson as completed in user_lesson_progress
+          console.log('📊 Tracking lesson completion:', {
+            user_id: user.id,
+            course_id: id,
+            lesson_id: lessonId
+          });
+
           const { error: progressError } = await supabase
             .from('user_lesson_progress')
             .upsert({
@@ -281,13 +442,79 @@ const LessonPlayer: React.FC = () => {
               is_completed: true,
               completed_at: new Date().toISOString()
             }, {
-              onConflict: 'user_id,course_id,lesson_id'
+              onConflict: 'user_id,lesson_id'
             });
 
           if (!progressError) {
             console.log('✅ Lesson completion tracked in database');
+            
+            // Update user_courses table with new completed lessons count
+            console.log('🔄 SYNC: Starting user_courses update for course:', id);
+            try {
+              // Get current completed lessons count for this course
+              const { data: currentProgress, error: progressQueryError } = await supabase
+                .from('user_lesson_progress')
+                .select('lesson_id')
+                .eq('user_id', user.id)
+                .eq('course_id', id)
+                .eq('is_completed', true);
+
+              console.log('🔄 SYNC: Query result:', { currentProgress, progressQueryError });
+
+              if (!progressQueryError && currentProgress) {
+                const completedCount = currentProgress.length;
+                console.log('🔄 SYNC: Found completed lessons:', completedCount);
+                
+                // Update user_courses table
+                const { error: userCoursesError } = await supabase
+                  .from('user_courses')
+                  .update({
+                    completed_lessons: completedCount,
+                    progress: completedCount > 0 ? Math.round((completedCount / (course?.videos?.length || 1)) * 100) : 0,
+                    last_accessed: new Date().toISOString()
+                  })
+                  .eq('user_id', user.id)
+                  .eq('course_id', id);
+
+                console.log('🔄 SYNC: Update result:', { userCoursesError });
+
+                if (!userCoursesError) {
+                  console.log('✅ User courses table updated with progress:', {
+                    courseId: id,
+                    completedCount,
+                    totalVideos: course?.videos?.length || 0,
+                    progressPercentage: Math.round((completedCount / (course?.videos?.length || 1)) * 100)
+                  });
+                } else {
+                  console.log('❌ Failed to update user_courses:', userCoursesError);
+                }
+              } else {
+                console.log('❌ SYNC: Failed to query user_lesson_progress:', progressQueryError);
+              }
+            } catch (updateError) {
+              console.log('❌ Error updating user_courses:', updateError);
+            }
+            
+            // Send notification for lesson completion
+            if (notificationService.isNotificationEnabled()) {
+              try {
+                await notificationService.sendNotification({
+                  title: '🎉 Lesson Completed!',
+                  body: `Great job! You've completed "${currentVideo.name}". Keep up the momentum!`,
+                  tag: 'lesson-completed',
+                  requireInteraction: false,
+                  actions: [
+                    { action: 'continue', title: 'Next Lesson' },
+                    { action: 'view', title: 'View Progress' }
+                  ]
+                });
+              } catch (notificationError) {
+                console.log('Notification send failed:', notificationError);
+              }
+            }
           } else {
-            console.log('Database tracking failed, using localStorage fallback');
+            console.log('❌ Database tracking failed:', progressError);
+            console.log('Using localStorage fallback');
           }
 
           // Try to update XP and streak
@@ -375,6 +602,15 @@ const LessonPlayer: React.FC = () => {
           console.log('✅ Awarded 200 XP bonus for completing course');
         } else {
           console.log('Could not award course completion XP:', xpError);
+        }
+        
+        // Send course completion notification
+        if (notificationService.isNotificationEnabled()) {
+          try {
+            await notificationService.sendCourseCompletionNotification(course?.title || 'Course');
+          } catch (notificationError) {
+            console.log('Course completion notification failed:', notificationError);
+          }
         }
       } catch (xpError) {
         console.log('XP system not available yet');
@@ -675,11 +911,47 @@ const LessonPlayer: React.FC = () => {
           </div>
           <div className="bg-white border rounded-xl p-4">
             <div className="font-semibold mb-1">Daily Streak</div>
-            <div className="text-sm text-gray-600">You’ve learned 3 days in a row</div>
+            <div className="text-sm text-gray-600">
+              {userStreak > 0 
+                ? `You've learned ${userStreak} day${userStreak === 1 ? '' : 's'} in a row` 
+                : 'Start your learning streak today!'
+              }
+            </div>
           </div>
           <div className="bg-white border rounded-xl p-4">
             <div className="font-semibold mb-1">Related Courses</div>
-            <div className="text-sm text-gray-600">Suggestions curated for you</div>
+            <div className="space-y-2">
+              {loadingRelatedCourses ? (
+                <div className="text-sm text-gray-600 flex items-center gap-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-400"></div>
+                  Loading suggestions...
+                </div>
+              ) : relatedCourses.length > 0 ? (
+                relatedCourses.map((course) => (
+                  <div 
+                    key={course.id}
+                    className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded"
+                    onClick={() => navigate(`/course/${course.id}`)}
+                  >
+                    <img 
+                      src={course.cover_photo_url || '/default-course-image.jpg'} 
+                      alt={course.title}
+                      className="w-8 h-8 rounded object-cover"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium text-gray-900 truncate">
+                        {course.title}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {course.level} • {course.category}
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-sm text-gray-600">No related courses found</div>
+              )}
+            </div>
           </div>
         </aside>
       </div>
