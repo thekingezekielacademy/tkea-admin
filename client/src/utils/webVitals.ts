@@ -50,8 +50,8 @@ class WebVitalsMonitor {
 
 // Create instance with safe defaults
 export const webVitals = new WebVitalsMonitor({
-  enabled: process.env.NODE_ENV === 'production',
-  endpoint: process.env.REACT_APP_ANALYTICS_ENDPOINT,
+  enabled: process.env.NODE_ENV === 'production' && !!process.env.REACT_APP_ANALYTICS_ENDPOINT && process.env.REACT_APP_ANALYTICS_ENDPOINT !== 'your-analytics-endpoint.com/api/vitals',
+  endpoint: process.env.REACT_APP_ANALYTICS_ENDPOINT && process.env.REACT_APP_ANALYTICS_ENDPOINT !== 'your-analytics-endpoint.com/api/vitals' ? process.env.REACT_APP_ANALYTICS_ENDPOINT : undefined,
 });
 
 export default webVitals;
