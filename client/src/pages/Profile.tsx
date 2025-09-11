@@ -2,13 +2,12 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useSidebar } from '../contexts/SidebarContext';
 import { supabase } from '../lib/supabase';
-import secureStorage from '../utils/secureStorage';
 import DashboardSidebar from '../components/DashboardSidebar';
-import { FaEdit, FaEnvelope, FaImage, FaKey, FaSave, FaTimes, FaCreditCard, FaHistory } from 'react-icons/fa';
+import { FaEdit, FaEnvelope, FaImage, FaKey, FaSave, FaTimes, FaTrash, FaExclamationTriangle, FaCheckCircle, FaTimesCircle } from 'react-icons/fa';
 
 
 const Profile: React.FC = () => {
-  const { user, updateProfile, fetchProfile } = useAuth();
+  const { user, fetchProfile, signOut } = useAuth();
   const { isExpanded, isMobile } = useSidebar();
 
   // Calculate dynamic margin based on sidebar state
@@ -20,10 +19,13 @@ const Profile: React.FC = () => {
   const [showEditName, setShowEditName] = useState(false);
   const [showEditBio, setShowEditBio] = useState(false);
   const [showChangePassword, setShowChangePassword] = useState(false);
-  // Billing history only
-  const [billingHistory, setBillingHistory] = useState<any[]>([]);
-  const [billingLoading, setBillingLoading] = useState(true);
-  // Removed unused state variables
+  const [showDeleteAccount, setShowDeleteAccount] = useState(false);
+  const [deleteStep, setDeleteStep] = useState(1);
+  const [deleteAnswers, setDeleteAnswers] = useState({
+    reason: '',
+    feedback: '',
+    confirm: false
+  });
 
   const [nameInput, setNameInput] = useState(user?.name || '');
   const [bioInput, setBioInput] = useState(user?.bio || '');
@@ -36,41 +38,92 @@ const Profile: React.FC = () => {
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-  
-  // Fetch billing history only
-  const fetchBillingHistory = useCallback(async () => {
-    if (!user?.id) return;
-    
-    try {
-      setBillingLoading(true);
-      
-      // Fetch billing history
-        const { data: billingData, error: billingError } = await supabase
-          .from('subscription_payments')
-          .select('*')
-          .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(10);
-        
-      if (billingError) {
-        console.error('Error fetching billing history:', billingError);
-        } else {
-        setBillingHistory(billingData || []);
-        console.log('✅ Billing history fetched:', billingData?.length || 0, 'records');
-      }
-    } catch (error) {
-      console.error('Error in billing history fetch:', error);
-    } finally {
-      setBillingLoading(false);
-    }
-  }, [user?.id]);
 
-  // Fetch billing history when component mounts
-  useEffect(() => {
-    if (user?.id) {
-      fetchBillingHistory();
+  // Coming soon features that users would miss
+  const comingSoonFeatures = [
+    {
+      title: "AI-Powered Learning Assistant",
+      description: "Get personalized study recommendations and instant help with course content",
+      icon: "🤖"
+    },
+    {
+      title: "Advanced Progress Analytics",
+      description: "Detailed insights into your learning patterns and performance metrics",
+      icon: "📊"
+    },
+    {
+      title: "Live Study Groups",
+      description: "Connect with other students for collaborative learning sessions",
+      icon: "👥"
+    },
+    {
+      title: "Mobile App Access",
+      description: "Learn on-the-go with our upcoming mobile application",
+      icon: "📱"
+    },
+    {
+      title: "Certification Program",
+      description: "Earn industry-recognized certificates upon course completion",
+      icon: "🏆"
+    },
+    {
+      title: "Priority Support",
+      description: "24/7 dedicated support for all your learning needs",
+      icon: "🎧"
     }
-  }, [user?.id, fetchBillingHistory]);
+  ];
+  
+  const handleDeleteAccount = async () => {
+    if (!deleteAnswers.confirm) {
+      setError('Please confirm that you want to delete your account');
+      return;
+    }
+
+    setSaving(true);
+    setError(null);
+
+    try {
+      // Delete user data from all tables
+      const tables = ['profiles', 'user_subscriptions', 'subscription_payments', 'user_trials', 'user_achievements', 'user_courses'];
+      
+      for (const table of tables) {
+        const { error } = await supabase
+          .from(table)
+          .delete()
+          .eq('user_id', user?.id);
+        
+        if (error) {
+          console.warn(`Error deleting from ${table}:`, error);
+        }
+      }
+
+      // Delete the user account
+      const { error: deleteError } = await supabase.auth.admin.deleteUser(user?.id || '');
+      
+      if (deleteError) {
+        throw deleteError;
+      }
+
+      // Sign out and redirect
+      await signOut();
+      window.location.href = '/';
+    } catch (error) {
+      console.error('Error deleting account:', error);
+      setError('Failed to delete account. Please contact support.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const resetDeleteFlow = () => {
+    setShowDeleteAccount(false);
+    setDeleteStep(1);
+    setDeleteAnswers({
+      reason: '',
+      feedback: '',
+      confirm: false
+    });
+  };
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -214,20 +267,6 @@ const Profile: React.FC = () => {
     }
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-  };
-
-  const formatCurrency = (amount: number, currency: string) => {
-    return new Intl.NumberFormat('en-NG', {
-      style: 'currency',
-      currency: currency
-    }).format(amount);
-  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -443,53 +482,224 @@ const Profile: React.FC = () => {
               </div>
             </div>
 
-            {/* Subscription Management - Moved to /subscription page */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-6">Subscription</h2>
-              <div className="text-center py-8">
-                <FaCreditCard className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Manage Your Subscription</h3>
-                <p className="text-gray-600 mb-6">Go to the subscription page to manage your plan</p>
-                <a
-                  href="/subscription"
-                  className="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                >
-                  Go to Subscription Page
-                </a>
-          </div>
+            {/* Account Deletion - Red Zone */}
+            <div className="bg-red-50 border-2 border-red-200 rounded-lg p-6 mb-6">
+              <div className="flex items-center space-x-3 mb-4">
+                <FaExclamationTriangle className="w-6 h-6 text-red-600" />
+                <h2 className="text-xl font-semibold text-red-900">Danger Zone</h2>
               </div>
-
-            {/* Billing History */}
-            {billingHistory.length > 0 && (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <h2 className="text-xl font-semibold text-gray-900 mb-6">Billing History</h2>
-                <div className="space-y-4">
-                  {billingHistory.map((payment, index) => (
-                    <div key={index} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                      <div className="flex items-center space-x-3">
-                        <FaHistory className="w-5 h-5 text-gray-400" />
-                        <div>
-                          <p className="font-medium text-gray-900">
-                            {formatCurrency(payment.amount, payment.currency)}
-                          </p>
-                          <p className="text-sm text-gray-600">
-                            {formatDate(payment.paid_at)}
-                          </p>
-                  </div>
-                </div>
-                      <div className="text-right">
-                        <p className="text-sm font-medium text-green-600 capitalize">
-                          {payment.status}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          {payment.payment_method}
-                        </p>
-                  </div>
-                </div>
-                  ))}
+              
+              <p className="text-red-700 mb-4">
+                Permanently delete your account and all associated data. This action cannot be undone.
+              </p>
+              
+              <button
+                onClick={() => setShowDeleteAccount(true)}
+                className="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-200 flex items-center space-x-2"
+              >
+                <FaTrash className="w-4 h-4" />
+                <span>Delete Account</span>
+              </button>
             </div>
-          </div>
-        )}
+
+            {/* Delete Account Modal */}
+            {showDeleteAccount && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+                  <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-2xl font-bold text-red-900">Delete Account</h3>
+                    <button
+                      onClick={resetDeleteFlow}
+                      className="text-gray-400 hover:text-gray-600"
+                    >
+                      <FaTimes className="w-6 h-6" />
+                    </button>
+                  </div>
+
+                  {deleteStep === 1 && (
+                    <div className="space-y-6">
+                      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <FaExclamationTriangle className="w-5 h-5 text-red-600" />
+                          <h4 className="font-semibold text-red-900">What you'll lose</h4>
+                        </div>
+                        <ul className="text-sm text-red-700 space-y-1">
+                          <li>• All your course progress and achievements</li>
+                          <li>• Personal profile and settings</li>
+                          <li>• Subscription history and billing information</li>
+                          <li>• Any saved content or bookmarks</li>
+                          <li>• Access to all premium features</li>
+                        </ul>
+                      </div>
+
+                      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <FaExclamationTriangle className="w-5 h-5 text-yellow-600" />
+                          <h4 className="font-semibold text-yellow-900">Coming Soon Features</h4>
+                        </div>
+                        <p className="text-sm text-yellow-700 mb-3">
+                          You'll miss out on these exciting features we're working on:
+                        </p>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          {comingSoonFeatures.map((feature, index) => (
+                            <div key={index} className="flex items-start space-x-2">
+                              <span className="text-lg">{feature.icon}</span>
+                              <div>
+                                <p className="text-sm font-medium text-yellow-900">{feature.title}</p>
+                                <p className="text-xs text-yellow-700">{feature.description}</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="flex justify-end space-x-3">
+                        <button
+                          onClick={resetDeleteFlow}
+                          className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={() => setDeleteStep(2)}
+                          className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                        >
+                          Continue
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {deleteStep === 2 && (
+                    <div className="space-y-6">
+                      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                        <h4 className="font-semibold text-red-900 mb-3">Help us improve</h4>
+                        <p className="text-sm text-red-700 mb-4">
+                          We'd love to know why you're leaving so we can improve our service.
+                        </p>
+                        
+                        <div className="space-y-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              What's the main reason for leaving?
+                            </label>
+                            <select
+                              value={deleteAnswers.reason}
+                              onChange={(e) => setDeleteAnswers(prev => ({ ...prev, reason: e.target.value }))}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                            >
+                              <option value="">Select a reason</option>
+                              <option value="too-expensive">Too expensive</option>
+                              <option value="not-useful">Content not useful</option>
+                              <option value="technical-issues">Technical issues</option>
+                              <option value="found-alternative">Found better alternative</option>
+                              <option value="no-time">No time to use</option>
+                              <option value="other">Other</option>
+                            </select>
+                          </div>
+                          
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Any additional feedback? (Optional)
+                            </label>
+                            <textarea
+                              value={deleteAnswers.feedback}
+                              onChange={(e) => setDeleteAnswers(prev => ({ ...prev, feedback: e.target.value }))}
+                              rows={3}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                              placeholder="Tell us how we can improve..."
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex justify-end space-x-3">
+                        <button
+                          onClick={() => setDeleteStep(1)}
+                          className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400"
+                        >
+                          Back
+                        </button>
+                        <button
+                          onClick={() => setDeleteStep(3)}
+                          className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                        >
+                          Continue
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {deleteStep === 3 && (
+                    <div className="space-y-6">
+                      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                        <div className="flex items-center space-x-2 mb-3">
+                          <FaExclamationTriangle className="w-5 h-5 text-red-600" />
+                          <h4 className="font-semibold text-red-900">Final Confirmation</h4>
+                        </div>
+                        <p className="text-sm text-red-700 mb-4">
+                          This is your last chance to change your mind. Once you confirm, your account and all data will be permanently deleted.
+                        </p>
+                        
+                        <div className="space-y-3">
+                          <div className="flex items-center space-x-2">
+                            <input
+                              type="checkbox"
+                              id="confirm-delete"
+                              checked={deleteAnswers.confirm}
+                              onChange={(e) => setDeleteAnswers(prev => ({ ...prev, confirm: e.target.checked }))}
+                              className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
+                            />
+                            <label htmlFor="confirm-delete" className="text-sm text-red-700">
+                              I understand that this action cannot be undone and I will lose all my data
+                            </label>
+                          </div>
+                          
+                          <div className="flex items-center space-x-2">
+                            <input
+                              type="checkbox"
+                              id="confirm-data"
+                              checked={deleteAnswers.confirm}
+                              onChange={(e) => setDeleteAnswers(prev => ({ ...prev, confirm: e.target.checked }))}
+                              className="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500"
+                            />
+                            <label htmlFor="confirm-data" className="text-sm text-red-700">
+                              I confirm that I want to permanently delete my account
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex justify-end space-x-3">
+                        <button
+                          onClick={() => setDeleteStep(2)}
+                          className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400"
+                        >
+                          Back
+                        </button>
+                        <button
+                          onClick={handleDeleteAccount}
+                          disabled={!deleteAnswers.confirm || saving}
+                          className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                        >
+                          {saving ? (
+                            <>
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                              <span>Deleting...</span>
+                            </>
+                          ) : (
+                            <>
+                              <FaTrash className="w-4 h-4" />
+                              <span>Delete Account Forever</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
 
           </div>
         </div>
