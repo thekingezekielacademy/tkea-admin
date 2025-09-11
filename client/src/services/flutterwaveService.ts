@@ -5,9 +5,9 @@ import { logInfo, logError, logApiCall } from '../utils/performanceLogger';
 
 // API Configuration - Use secure server-side endpoints
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://app.thekingezekielacademy.com/api';
-// Force test mode and test keys to resolve API key rejection issue
-const FLUTTERWAVE_PUBLIC_KEY = 'FLWPUBK_TEST-d2eaf30b37947d8ee178a7f56417d6ef-X';
-const FLUTTERWAVE_MODE = 'test';
+// Use live mode and live keys from environment variables
+const FLUTTERWAVE_PUBLIC_KEY = process.env.REACT_APP_FLUTTERWAVE_PUBLIC_KEY || 'FLWPUBK-fa262382709276e0900a8d2c6fcbe7ff-X';
+const FLUTTERWAVE_MODE = 'live';
 const FLUTTERWAVE_CLIENT_ID = process.env.REACT_APP_FLUTTERWAVE_CLIENT_ID;
 const FLUTTERWAVE_ENCRYPTION_KEY = process.env.REACT_APP_FLUTTERWAVE_ENCRYPTION_KEY;
 
@@ -125,7 +125,7 @@ class FlutterwaveService {
       console.log('🚀 Creating Flutterwave subscription');
       
       // For development mode, simulate successful subscription creation
-      if (FLUTTERWAVE_MODE === 'test' || process.env.NODE_ENV === 'development' || window.location.hostname === 'localhost' || window.location.hostname.includes('vercel.app')) {
+      if (process.env.NODE_ENV === 'development' || window.location.hostname === 'localhost' || window.location.hostname.includes('vercel.app')) {
         console.log('🔧 Development mode: Simulating successful subscription creation');
         
         const user = (await supabase.auth.getUser()).data.user;
@@ -201,7 +201,7 @@ class FlutterwaveService {
       console.log('🔍 Verifying Flutterwave payment');
       
       // For development mode, simulate successful verification
-      if (FLUTTERWAVE_MODE === 'test' || process.env.NODE_ENV === 'development' || window.location.hostname === 'localhost' || window.location.hostname.includes('vercel.app')) {
+      if (process.env.NODE_ENV === 'development' || window.location.hostname === 'localhost' || window.location.hostname.includes('vercel.app')) {
         console.log('🔧 Development mode: Simulating successful payment verification');
         
         // Create a mock successful verification response
