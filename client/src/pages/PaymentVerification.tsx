@@ -24,15 +24,18 @@ const PaymentVerification: React.FC = () => {
           status,
           transaction_id,
           user: user?.id,
-          url: window.location.href
+          url: window.location.href,
+          allParams: Object.fromEntries(searchParams.entries())
         });
 
         if (!tx_ref) {
           throw new Error('Payment reference not found');
         }
 
-        if (status !== 'successful') {
-          throw new Error('Payment was not successful');
+        // Don't fail immediately if status is not 'successful' - let Flutterwave API verify
+        // The status parameter might not always be present in the redirect URL
+        if (status && status !== 'successful') {
+          console.log('⚠️ Status parameter indicates failure, but will verify with Flutterwave API');
         }
 
         setMessage('Verifying payment with Flutterwave...');
