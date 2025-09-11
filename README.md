@@ -146,15 +146,25 @@ For support and questions, please contact the development team or create an issu
 ## 🚀 Deployment Status
 
 - ✅ **Local Development**: Running on localhost:3000 & localhost:5000
-- ✅ **GitHub Pages**: Deployed at https://thekingezekielacademy.github.io/-king-ezekiel-academy
-- 🔄 **Vercel**: Build configuration fixed, awaiting new deployment
-- 📋 **Namecheap**: Deployment guide prepared
+- ✅ **Firebase Hosting**: Live at <https://thekingezekielacademy-ac3cb.web.app>
+- ✅ **Custom Domain**: <https://app.thekingezekielacademy.com> (SSL pending)
+- 🔄 **Vercel**: Available at <https://king-ezekiel-academy.vercel.app>
+- 📋 **GitHub Pages**: Workflow disabled (migrated to Firebase)
 
-## 🔧 **Latest Vercel Fix Applied**
+## 🔧 **Latest Fixes Applied**
 
-- **Build Command**: `cp -r client/public client/src && cd client && npm run build`
-- **Issue Resolved**: Public folder copying before build
-- **Status**: Ready for successful deployment
+- ✅ **Blank Page Issue**: Fixed react-router-dom dependency placement
+- ✅ **Sentry DSN**: Conditional initialization to prevent errors
+- ✅ **Analytics**: Fixed endpoint validation
+- ✅ **Service Worker**: Safe registration handling
+- ✅ **Environment Variables**: All required variables configured
+- ✅ **Build Process**: Optimized and error-free
+
+## 🌐 **Live Deployment**
+
+**Primary URL**: [https://thekingezekielacademy-ac3cb.web.app](https://thekingezekielacademy-ac3cb.web.app)
+
+**Custom Domain**: [https://app.thekingezekielacademy.com](https://app.thekingezekielacademy.com) (SSL certificate pending)
 
 ## About
 
