@@ -42,7 +42,7 @@ const FlutterwavePaymentModal: React.FC<FlutterwavePaymentModalProps> = ({ isOpe
   // Initialize payment modal
   useEffect(() => {
     if (isOpen) {
-      console.log('✅ Flutterwave hosted payment modal initialized');
+      console.log('✅ Flutterwave inline checkout modal initialized');
     }
   }, [isOpen]);
 
