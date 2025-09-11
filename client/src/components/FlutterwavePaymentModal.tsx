@@ -176,40 +176,27 @@ const FlutterwavePaymentModal: React.FC<FlutterwavePaymentModalProps> = ({ isOpe
         throw new Error('Please enter a valid email address');
       }
 
-      // TEST: Direct API key validation
-      console.log('🧪 TESTING: Attempting direct Flutterwave API validation...');
-      
-      try {
-        const testResponse = await fetch('https://api.flutterwave.com/v3/plans', {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${process.env.REACT_APP_FLUTTERWAVE_SECRET_KEY || 'FLWSECK-eb50a05e74e4a648510719bfa75dad5b-1993ab9913bvt-X'}`,
-            'Content-Type': 'application/json',
-          },
-        });
-        
-        if (testResponse.ok) {
-          console.log('✅ Flutterwave API key is valid - server connection successful');
-        } else {
-          console.log('❌ Flutterwave API key validation failed:', testResponse.status, testResponse.statusText);
-        }
-      } catch (error) {
-        console.log('❌ Flutterwave API key test failed:', error);
-      }
+      // Skip API test - causes CORS issues, will test through payment flow
+      console.log('🚀 Proceeding with Flutterwave payment initialization...');
 
-      // MINIMAL TEST CONFIGURATION - Remove complex options that might cause issues
+      // COMPLETE CONFIGURATION - Include all vital required fields
       const flutterwaveConfig = {
         public_key: flutterwavePublicKey,
         tx_ref: tx_ref,
         amount: Number(amount),
         currency: 'NGN',
+        country: 'NG',
+        payment_options: 'card,mobilemoney,ussd',
+        redirect_url: `${window.location.origin}/payment-verification?tx_ref=${tx_ref}`,
         customer: {
           email: customerEmail,
           name: formattedCustomerName,
+          phone_number: user?.phone || '08000000000',
         },
         customizations: {
           title: 'King Ezekiel Academy',
           description: 'Monthly Membership Payment',
+          logo: `${window.location.origin}/img/logo.png`,
         },
         callback: function(response: any) {
           console.log('🔧 Flutterwave Response:', response);
