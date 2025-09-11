@@ -54,6 +54,9 @@ import './styles/orientation.css'; // Import orientation CSS
 
 function App() {
   useEffect(() => {
+    // Debug: Log that App component is mounting
+    console.log('🚀 App component mounting...');
+    
     // Initialize monitoring first
     webVitals.startMonitoring();
     analytics.initialize();
