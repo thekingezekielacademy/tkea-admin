@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clear Local Storage - King Ezekiel Academy</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        button {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #c82333;
+        }
+        .success {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .info {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧹 Clear Subscription Data</h1>
+        <p>This will clear all subscription data from local storage for testing the Flutterwave integration.</p>
+        
+        <div class="info">
+            <strong>What will be cleared:</strong>
+            <ul>
+                <li>subscription_active</li>
+                <li>subscription_id</li>
+                <li>subscription_ref</li>
+                <li>subscription_amount</li>
+                <li>subscription_currency</li>
+                <li>subscription_next_renewal</li>
+            </ul>
+        </div>
+        
+        <button onclick="clearSubscriptionData()">Clear All Subscription Data</button>
+        <button onclick="checkCurrentData()">Check Current Data</button>
+        
+        <div id="result"></div>
+    </div>
+
+    <script>
+        function clearSubscriptionData() {
+            try {
+                // Clear all subscription-related local storage
+                localStorage.removeItem('subscription_active');
+                localStorage.removeItem('subscription_id');
+                localStorage.removeItem('subscription_ref');
+                localStorage.removeItem('subscription_amount');
+                localStorage.removeItem('subscription_currency');
+                localStorage.removeItem('subscription_next_renewal');
+                
+                // Also clear session storage
+                sessionStorage.removeItem('subscription_active');
+                sessionStorage.removeItem('subscription_id');
+                sessionStorage.removeItem('subscription_ref');
+                sessionStorage.removeItem('subscription_amount');
+                sessionStorage.removeItem('subscription_currency');
+                sessionStorage.removeItem('subscription_next_renewal');
+                
+                document.getElementById('result').innerHTML = 
+                    '<div class="success">✅ All subscription data cleared successfully!<br>You can now test the Flutterwave integration.</div>';
+            } catch (error) {
+                document.getElementById('result').innerHTML = 
+                    '<div style="color: red;">❌ Error clearing data: ' + error.message + '</div>';
+            }
+        }
+        
+        function checkCurrentData() {
+            const data = {
+                'subscription_active': localStorage.getItem('subscription_active'),
+                'subscription_id': localStorage.getItem('subscription_id'),
+                'subscription_ref': localStorage.getItem('subscription_ref'),
+                'subscription_amount': localStorage.getItem('subscription_amount'),
+                'subscription_currency': localStorage.getItem('subscription_currency'),
+                'subscription_next_renewal': localStorage.getItem('subscription_next_renewal')
+            };
+            
+            let result = '<h3>Current Local Storage Data:</h3><ul>';
+            for (const [key, value] of Object.entries(data)) {
+                result += `<li><strong>${key}:</strong> ${value || 'null'}</li>`;
+            }
+            result += '</ul>';
+            
+            document.getElementById('result').innerHTML = result;
+        }
+        
+        // Check data on page load
+        window.onload = function() {
+            checkCurrentData();
+        };
+    </script>
+</body>
+</html>

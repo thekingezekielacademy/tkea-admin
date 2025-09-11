@@ -1,35 +1,44 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { paystackService } from '../services/paystackService';
+import { flutterwaveService } from '../services/flutterwaveService';
 import { supabase } from '../lib/supabase';
 
 const PaymentVerification: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
-  const [status, setStatus] = useState<'verifying' | 'success' | 'error'>('verifying');
-  const [message, setMessage] = useState('Verifying your payment...');
+  const [status, setStatus] = useState<'loading' | 'verifying' | 'success' | 'error'>('loading');
+  const [message, setMessage] = useState('Loading...');
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const verifyPayment = async () => {
       try {
-        const reference = searchParams.get('reference');
-        const trxref = searchParams.get('trxref');
+        const tx_ref = searchParams.get('tx_ref');
+        const status = searchParams.get('status');
+        const transaction_id = searchParams.get('transaction_id');
 
-        if (!reference || !trxref) {
+        console.log('🔍 Payment Verification Debug:', {
+          tx_ref,
+          status,
+          transaction_id,
+          user: user?.id,
+          url: window.location.href
+        });
+
+        if (!tx_ref) {
           throw new Error('Payment reference not found');
         }
 
-        if (reference !== trxref) {
-          throw new Error('Invalid payment reference');
+        if (status !== 'successful') {
+          throw new Error('Payment was not successful');
         }
 
-        setMessage('Verifying payment with Paystack...');
+        setMessage('Verifying payment with Flutterwave...');
 
-        // Step 1: Verify payment with Paystack
-        const verification = await paystackService.verifyPayment(reference);
+        // Step 1: Verify payment with Flutterwave
+        const verification = await flutterwaveService.verifyPayment(tx_ref);
         
         if (!verification.success) {
           throw new Error('Payment verification failed');
@@ -40,7 +49,7 @@ const PaymentVerification: React.FC = () => {
         setMessage('Creating your subscription...');
 
         // Step 2: Create recurring subscription
-        const subscription = await paystackService.createSubscription(
+        const subscription = await flutterwaveService.createSubscription(
           transaction.customer.email,
           transaction.customer.customer_code
         );
@@ -52,13 +61,13 @@ const PaymentVerification: React.FC = () => {
         setMessage('Saving subscription to database...');
 
         // Step 3: Save subscription to database
-        await paystackService.saveSubscriptionToDatabase(
+        await flutterwaveService.saveSubscriptionToDatabase(
           user?.id || '',
           subscription.subscription
         );
 
         // Step 4: Save payment to database
-        await paystackService.savePaymentToDatabase(
+        await flutterwaveService.savePaymentToDatabase(
           user?.id || '',
           transaction
         );
@@ -66,15 +75,17 @@ const PaymentVerification: React.FC = () => {
         // Step 5: Update user's subscription status in secure storage
         if (user?.id) {
           localStorage.setItem('subscription_active', 'true');
-          localStorage.setItem('subscription_id', subscription.subscription.subscription_code);
+          localStorage.setItem('subscription_id', subscription.subscription.subscription_code || subscription.subscription.id);
+          localStorage.setItem('flutterwave_subscription_id', subscription.subscription.subscription_code || subscription.subscription.id);
+          localStorage.setItem('flutterwave_customer_code', transaction.customer.customer_code);
         }
 
         setStatus('success');
         setMessage('Payment successful! Your subscription is now active.');
 
-        // Redirect to dashboard after 3 seconds
+        // Redirect to subscription page after 3 seconds to show updated status
         setTimeout(() => {
-          navigate('/dashboard');
+          navigate('/subscription');
         }, 3000);
 
       } catch (err) {
@@ -86,15 +97,27 @@ const PaymentVerification: React.FC = () => {
     };
 
     if (user) {
+      setStatus('verifying');
+      setMessage('Verifying your payment...');
       verifyPayment();
     } else {
-      // If no user, redirect to signin
-      navigate('/signin');
+      // If no user, show loading and wait a bit for auth to load
+      setTimeout(() => {
+        if (!user) {
+          setStatus('error');
+          setError('Please sign in to verify your payment');
+          setMessage('Authentication required');
+        }
+      }, 2000);
     }
   }, [searchParams, user, navigate]);
 
   const getStatusIcon = () => {
     switch (status) {
+      case 'loading':
+        return (
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-400"></div>
+        );
       case 'verifying':
         return (
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
@@ -120,6 +143,8 @@ const PaymentVerification: React.FC = () => {
 
   const getStatusColor = () => {
     switch (status) {
+      case 'loading':
+        return 'text-gray-600';
       case 'verifying':
         return 'text-blue-600';
       case 'success':
@@ -137,6 +162,7 @@ const PaymentVerification: React.FC = () => {
         </div>
 
         <h1 className={`text-2xl font-bold mb-4 ${getStatusColor()}`}>
+          {status === 'loading' && 'Loading...'}
           {status === 'verifying' && 'Verifying Payment'}
           {status === 'success' && 'Payment Successful!'}
           {status === 'error' && 'Payment Failed'}

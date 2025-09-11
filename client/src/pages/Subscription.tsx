@@ -3,9 +3,9 @@ import { useAuth } from '../contexts/AuthContext';
 import { useSidebar } from '../contexts/SidebarContext';
 import { supabase } from '../lib/supabase';
 import DashboardSidebar from '../components/DashboardSidebar';
-import PaymentModal from '../components/PaymentModal';
+import FlutterwavePaymentModal from '../components/FlutterwavePaymentModal';
 import secureStorage from '../utils/secureStorage';
-import { subscriptionService } from '../services/subscriptionService';
+import flutterwaveService from '../services/flutterwaveService';
 import DOMPurify from 'dompurify';
 import { 
   FaCreditCard, 
@@ -30,9 +30,9 @@ interface SubscriptionData {
   cancel_at_period_end: boolean;
   created_at: string;
   updated_at: string;
-  // Paystack integration fields
-  paystack_subscription_id?: string;
-  paystack_customer_code?: string;
+  // Flutterwave integration fields
+  flutterwave_subscription_id?: string;
+  flutterwave_customer_code?: string;
 }
 
 interface BillingHistory {
@@ -45,8 +45,8 @@ interface BillingHistory {
   date: string;
   invoice_url?: string;
   subscription_id?: string;
-  paystack_subscription_id?: string;
-  paystack_reference?: string;
+  flutterwave_subscription_id?: string;
+  flutterwave_reference?: string;
   billing_cycle?: string;
   start_date?: string;
   end_date?: string;
@@ -114,16 +114,16 @@ const Subscription: React.FC = () => {
         .eq('user_id', user.id)
         .eq('status', 'active')  // Add status filter like Profile.tsx
         .order('created_at', { ascending: false })  // Add ordering like Profile.tsx
-        .limit(1)  // Add limit like Profile.tsx
-        .single();
+        .limit(1);  // Remove .single() to handle empty results
 
       console.log('🔍 Debug: Supabase response:', { data: supabaseData, error: supabaseError });
 
-      if (supabaseData && !supabaseError) {
+      if (supabaseData && supabaseData.length > 0 && !supabaseError) {
         // Use real Supabase data - this is the source of truth
+        const subscriptionData = supabaseData[0];
         // Calculate proper dates for monthly subscription
         const now = new Date();
-        let startDate = new Date(supabaseData.created_at);
+        let startDate = new Date(subscriptionData.created_at);
         
         // If the created_at date is in the future, use current date as start
         if (startDate > now) {
@@ -140,36 +140,36 @@ const Subscription: React.FC = () => {
         nextBillingDate = new Date(endDate.getTime());
         
         // If we have a next_payment_date from database, use that instead
-        if (supabaseData.next_payment_date) {
-          nextBillingDate = new Date(supabaseData.next_payment_date);
+        if (subscriptionData.next_payment_date) {
+          nextBillingDate = new Date(subscriptionData.next_payment_date);
         }
         
         // Debug: Log the date calculations
         console.log('🔍 Date Debug:', {
-          created_at: supabaseData.created_at,
+          created_at: subscriptionData.created_at,
           startDate: startDate.toISOString(),
           endDate: endDate.toISOString(),
           nextBillingDate: nextBillingDate.toISOString(),
           currentDate: now.toISOString(),
-          next_payment_date: supabaseData.next_payment_date,
+          next_payment_date: subscriptionData.next_payment_date,
           calculated_next_billing: nextBillingDate.toISOString()
         });
         
         const subscription = {
-          id: supabaseData.id,
-          status: supabaseData.status,
-          plan_name: supabaseData.plan_name,
-          amount: supabaseData.amount === 250000 ? 2500 : supabaseData.amount, // Fix amount display
-          currency: supabaseData.currency || 'NGN',
+          id: subscriptionData.id,
+          status: subscriptionData.status,
+          plan_name: subscriptionData.plan_name,
+          amount: subscriptionData.amount === 250000 ? 2500 : subscriptionData.amount, // Fix amount display
+          currency: subscriptionData.currency || 'NGN',
           billing_cycle: 'monthly' as const,
-          start_date: supabaseData.created_at,
+          start_date: subscriptionData.created_at,
           end_date: endDate.toISOString(),
           next_billing_date: nextBillingDate.toISOString(),
-          paystack_subscription_id: supabaseData.paystack_subscription_id,
-          paystack_customer_code: supabaseData.paystack_customer_code,
-          created_at: supabaseData.created_at,
-          updated_at: supabaseData.updated_at,
-          cancel_at_period_end: supabaseData.cancel_at_period_end || false
+          flutterwave_subscription_id: subscriptionData.paystack_subscription_id, // Use existing column
+          flutterwave_customer_code: subscriptionData.paystack_customer_code, // Use existing column
+          created_at: subscriptionData.created_at,
+          updated_at: subscriptionData.updated_at,
+          cancel_at_period_end: subscriptionData.cancel_at_period_end || false
         };
 
         setSubscription(subscription);
@@ -228,8 +228,38 @@ const Subscription: React.FC = () => {
 
   useEffect(() => {
     if (user) {
-      fetchSubscriptionStatus();
+      // Add a small delay to ensure database operations have completed
+      const timer = setTimeout(() => {
+        fetchSubscriptionStatus();
+      }, 1000);
+      
+      return () => clearTimeout(timer);
     }
+  }, [user, fetchSubscriptionStatus]);
+
+  // Add a refresh on page load to catch any new subscriptions
+  useEffect(() => {
+    const handlePageLoad = () => {
+      if (user) {
+        fetchSubscriptionStatus();
+      }
+    };
+
+    // Refresh immediately when component mounts
+    handlePageLoad();
+
+    // Also refresh when the page becomes visible (user comes back from payment)
+    const handleVisibilityChange = () => {
+      if (!document.hidden && user) {
+        fetchSubscriptionStatus();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, [user, fetchSubscriptionStatus]);
 
   useEffect(() => {
@@ -253,11 +283,11 @@ const Subscription: React.FC = () => {
             date: subscription.start_date,
             invoice_url: `#subscription-${subscription.id}`,
             subscription_id: subscription.id,
-            paystack_subscription_id: subscription.paystack_subscription_id,
+            flutterwave_subscription_id: subscription.flutterwave_subscription_id,
             billing_cycle: 'monthly',
             start_date: subscription.start_date,
             end_date: subscription.next_billing_date || subscription.end_date,
-            paystack_reference: subscription.paystack_subscription_id
+            flutterwave_reference: subscription.flutterwave_subscription_id
           };
           setBillingHistory([subscriptionBilling]);
         } else {
@@ -480,53 +510,53 @@ const Subscription: React.FC = () => {
       updated_at: new Date().toISOString()
     };
     
-    // REAL PAYSTACK INTEGRATION: Create new subscription via API
-    if (subscription?.paystack_customer_code) {
+    // REAL FLUTTERWAVE INTEGRATION: Create new subscription via API
+    if (subscription?.flutterwave_customer_code) {
       try {
-        console.log('🔄 Creating new Paystack subscription for customer:', subscription.paystack_customer_code);
+        console.log('🔄 Creating new Flutterwave subscription for customer:', subscription.flutterwave_customer_code);
         
-        const response = await fetch('/api/paystack/create-subscription', {
+        const response = await fetch('/api/flutterwave/create-subscription', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            customerCode: subscription.paystack_customer_code,
-            amount: 2500,
+            customerCode: subscription.flutterwave_customer_code,
+            email: user?.email,
             userId: user?.id // Pass user ID for database integration
           })
         });
 
         if (!response.ok) {
-          throw new Error('Failed to create subscription via Paystack');
+          throw new Error('Failed to create subscription via Flutterwave');
         }
 
         const result = await response.json();
-        console.log('✅ Paystack subscription created successfully:', result);
+        console.log('✅ Flutterwave subscription created successfully:', result);
         
-        // Update the restored subscription with Paystack data
-        const paystackSubscription = {
+        // Update the restored subscription with Flutterwave data
+        const flutterwaveSubscription = {
           ...restoredSubscription,
-          paystack_subscription_id: result.data.subscription_code,
-          paystack_customer_code: subscription.paystack_customer_code
+          flutterwave_subscription_id: result.data.subscription_id,
+          flutterwave_customer_code: subscription.flutterwave_customer_code
         };
         
-        setSubscription(paystackSubscription);
+        setSubscription(flutterwaveSubscription);
         
         // Store the restored subscription in localStorage to persist after refresh
         localStorage.setItem('subscription_restored', 'true');
-        localStorage.setItem('subscription_restored_data', JSON.stringify(paystackSubscription));
+        localStorage.setItem('subscription_restored_data', JSON.stringify(flutterwaveSubscription));
         
         // Show success message with billing cycle info
         const daysLeft = Math.ceil((endDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
-        alert(`Subscription restored successfully via Paystack! You now have active access until ${endDate.toLocaleDateString()} (${daysLeft} days left). Your next billing will be on ${nextBillingDate.toLocaleDateString()}.`);
+        alert(`Subscription restored successfully via Flutterwave! You now have active access until ${endDate.toLocaleDateString()} (${daysLeft} days left). Your next billing will be on ${nextBillingDate.toLocaleDateString()}.`);
         
       } catch (error) {
-        console.error('❌ Error creating Paystack subscription:', error);
-        alert('Failed to create subscription via Paystack. Please try again.');
+        console.error('❌ Error creating Flutterwave subscription:', error);
+        alert('Failed to create subscription via Flutterwave. Please try again.');
         return;
       }
     } else {
-      // Fallback to local simulation if no Paystack customer code
-      console.log('⚠️ No Paystack customer code found, using local simulation');
+      // Fallback to local simulation if no Flutterwave customer code
+      console.log('⚠️ No Flutterwave customer code found, using local simulation');
       setSubscription(restoredSubscription);
       
       // Store the restored subscription in localStorage to persist after refresh
@@ -719,7 +749,7 @@ const Subscription: React.FC = () => {
       console.log('📊 Exporting billing history...');
       
       // Use real API to export billing history
-      const response = await fetch(`/api/paystack/billing-history/${user.id}?format=csv`);
+      const response = await fetch(`/api/flutterwave/billing-history/${user.id}?format=csv`);
       
       if (response.ok) {
         const csvContent = await response.text();
@@ -758,7 +788,7 @@ const Subscription: React.FC = () => {
            formatCurrency(item.amount, item.currency),
            item.status,
            item.type || 'subscription',
-           item.paystack_reference || 'N/A'
+           item.flutterwave_reference || 'N/A'
          ])
       ].map(row => row.join(',')).join('\n');
 
@@ -780,7 +810,7 @@ const Subscription: React.FC = () => {
   };
 
   const confirmCancelSubscription = async () => {
-    if (!subscription?.paystack_subscription_id) {
+    if (!subscription?.flutterwave_subscription_id) {
       setError('No subscription ID found');
       return;
     }
@@ -790,12 +820,11 @@ const Subscription: React.FC = () => {
       setError(null);
       setSuccess(null); // Clear previous success messages
 
-      console.log('🔒 Canceling Paystack subscription:', subscription.paystack_subscription_id);
+      console.log('🔒 Canceling Flutterwave subscription:', subscription.flutterwave_subscription_id);
 
-      // Use the subscription service for secure cancellation
-      const result = await subscriptionService.cancelSubscription(
-        subscription.id,
-        subscription.paystack_subscription_id
+      // Use the Flutterwave service for secure cancellation
+      const result = await flutterwaveService.cancelSubscription(
+        subscription.flutterwave_subscription_id
       );
 
       if (result.success) {
@@ -804,12 +833,16 @@ const Subscription: React.FC = () => {
         setSuccess(result.message);
         
         // Update database status
-        const dbUpdateSuccess = await subscriptionService.updateSubscriptionStatus(
-          subscription.id,
-          'canceled'
-        );
+        const { error: dbError } = await supabase
+          .from('user_subscriptions')
+          .update({ status: 'canceled' })
+          .eq('id', subscription.id);
         
-        if (dbUpdateSuccess) {
+        if (dbError) {
+          console.error('Database update error:', dbError);
+        }
+        
+        if (!dbError) {
           console.log('✅ Subscription cancelled successfully and database updated');
         } else {
           console.warn('⚠️ Subscription cancelled but database update failed');
@@ -1210,7 +1243,7 @@ const Subscription: React.FC = () => {
       )}
 
       {/* Payment Modal */}
-      <PaymentModal
+      <FlutterwavePaymentModal
         isOpen={showPaymentModal}
         onClose={() => setShowPaymentModal(false)}
         onSuccess={() => {
