@@ -35,10 +35,11 @@ const FlutterwavePaymentModal: React.FC<FlutterwavePaymentModalProps> = ({ isOpe
       } else {
         console.log('⏳ Loading Flutterwave script...');
         
-        // Load Flutterwave script dynamically
+        // Load Flutterwave script dynamically with different version
         const script = document.createElement('script');
         script.src = 'https://checkout.flutterwave.com/v3.js';
         script.async = true;
+        script.crossOrigin = 'anonymous';
         script.onload = () => {
           console.log('✅ Flutterwave script loaded successfully');
           
@@ -262,30 +263,39 @@ const FlutterwavePaymentModal: React.FC<FlutterwavePaymentModalProps> = ({ isOpe
           // Try different initialization methods
           try {
             // Method 1: Standard initialization
+            console.log('🔧 Attempting standard Flutterwave initialization...');
             window.FlutterwaveCheckout(flutterwaveConfig);
           } catch (error) {
             console.error('❌ Standard Flutterwave initialization failed:', error);
             
-            // Method 2: Try with explicit public key setting
+            // Method 2: Try with different SDK method
             try {
-              const configWithExplicitKey = {
-                ...flutterwaveConfig,
-                public_key: flutterwavePublicKey
-              };
-              window.FlutterwaveCheckout(configWithExplicitKey);
+              console.log('🔧 Attempting alternative Flutterwave initialization...');
+              if (window.FlutterwaveCheckout && typeof window.FlutterwaveCheckout === 'function') {
+                // Try calling it as a constructor
+                new window.FlutterwaveCheckout(flutterwaveConfig);
+              } else {
+                throw new Error('FlutterwaveCheckout is not a function');
+              }
             } catch (error2) {
-              console.error('❌ Explicit key Flutterwave initialization failed:', error2);
+              console.error('❌ Alternative Flutterwave initialization failed:', error2);
               
-              // Method 3: Try with different key format
+              // Method 3: Try with minimal config
               try {
-                const configWithFormattedKey = {
-                  ...flutterwaveConfig,
-                  public_key: flutterwavePublicKey.trim()
+                console.log('🔧 Attempting minimal Flutterwave initialization...');
+                const minimalConfig = {
+                  public_key: flutterwavePublicKey,
+                  tx_ref: flutterwaveConfig.tx_ref,
+                  amount: flutterwaveConfig.amount,
+                  currency: flutterwaveConfig.currency,
+                  customer: flutterwaveConfig.customer,
+                  callback: flutterwaveConfig.callback,
+                  onclose: flutterwaveConfig.onclose
                 };
-                window.FlutterwaveCheckout(configWithFormattedKey);
+                window.FlutterwaveCheckout(minimalConfig);
               } catch (error3) {
-                console.error('❌ Formatted key Flutterwave initialization failed:', error3);
-                throw new Error('All Flutterwave initialization methods failed');
+                console.error('❌ Minimal Flutterwave initialization failed:', error3);
+                throw new Error('All Flutterwave initialization methods failed. Please contact Flutterwave support.');
               }
             }
           }
