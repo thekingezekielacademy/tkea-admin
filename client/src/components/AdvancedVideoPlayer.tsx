@@ -44,23 +44,24 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
   const [playbackRate, setPlaybackRate] = useState(1);
   const [showSpeedMenu, setShowSpeedMenu] = useState(false);
   const [availableSpeeds, setAvailableSpeeds] = useState<number[]>([0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2]);
-  const [isPlayerReady, setIsPlayerReady] = useState(false);
 
   // Load YouTube Player API
   useEffect(() => {
     const loadYouTubeAPI = () => {
       if (window.YT && window.YT.Player) {
-        return;
+        return Promise.resolve();
       }
       
-      const script = document.createElement('script');
-      script.src = 'https://www.youtube.com/iframe_api';
-      script.onload = () => {
-        window.onYouTubeIframeAPIReady = () => {
-          console.log('YouTube API loaded');
+      return new Promise<void>((resolve) => {
+        const script = document.createElement('script');
+        script.src = 'https://www.youtube.com/iframe_api';
+        script.onload = () => {
+          window.onYouTubeIframeAPIReady = () => {
+            resolve();
+          };
         };
-      };
-      document.head.appendChild(script);
+        document.head.appendChild(script);
+      });
     };
 
     if (type === 'youtube') {
@@ -88,9 +89,6 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
       const videoId = src.includes('youtube.com') || src.includes('youtu.be') 
         ? src.match(/(?:youtube\.com\/(?:[^/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?/\s]{11})/)?.[1] || src
         : src;
-      
-      console.log('🎬 AdvancedVideoPlayer - Source URL:', src);
-      console.log('🎬 AdvancedVideoPlayer - Extracted Video ID:', videoId);
       
 
       
@@ -123,27 +121,32 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
             height: '100%',
             playerVars: {
               autoplay: 0,
-              controls: 1,
+              controls: 0,
               modestbranding: 1,
               rel: 0,
               showinfo: 0,
               iv_load_policy: 3,
               cc_load_policy: 0,
-              fs: 1,
-              disablekb: 0,
+              fs: 0,
+              disablekb: 1,
               playsinline: 1,
+              origin: 'https://www.youtube.com',
               enablejsapi: 1,
-              origin: window.location.origin
+              // Additional parameters for complete discretion
+              start: 0,
+              end: 0,
+              loop: 0,
+              playlist: '',
+              // Hide YouTube branding completely
+              widget_referrer: window.location.origin,
+              // Prevent YouTube suggestions and branding
+              hl: 'en',
+              cc_lang_pref: 'en'
             },
             events: {
               onReady: (event: any) => {
+                setIsLoading(false);
                 console.log('YouTube player ready');
-                // Add a small delay to ensure player is fully ready
-                setTimeout(() => {
-                  setIsLoading(false);
-                  setIsPlayerReady(true);
-                  console.log('YouTube player fully ready');
-                }, 500);
                 
                 // Check available playback rates for this video
                 if (playerRef.current && playerRef.current.getAvailablePlaybackRates) {
@@ -173,24 +176,6 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
                   if (event.data === 0) {
                     onEnded?.();
                   }
-                }
-              },
-              onError: (event: any) => {
-                console.error('YouTube player error:', event.data);
-                setIsLoading(false);
-                // Common error codes: 2 (invalid video), 5 (HTML5 player error), 100 (video not found), 150 (video restricted)
-                if (event.data === 2) {
-                  console.error('❌ Invalid video ID or video not available');
-                } else if (event.data === 5) {
-                  console.error('❌ HTML5 player error');
-                } else if (event.data === 100) {
-                  console.error('❌ Video not found or private');
-                } else if (event.data === 150) {
-                  console.error('❌ Video is restricted or unavailable. Check if the video is public and not region-locked.');
-                  console.error('❌ Video ID causing error:', videoId);
-                  console.error('❌ Source URL:', src);
-                } else {
-                  console.error('❌ Unknown YouTube error:', event.data);
                 }
               }
             }
@@ -248,20 +233,7 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
   }, []);
   
   const togglePlay = () => {
-    // Check if player is ready
-    if (!isPlayerReady || !playerRef.current) {
-      console.warn('YouTube player not ready yet. Please wait for the player to load.');
-      return;
-    }
-
-    // Double-check that the required methods exist
-    if (typeof playerRef.current.playVideo !== 'function' || typeof playerRef.current.pauseVideo !== 'function') {
-      console.warn('YouTube player methods not available. Player may still be initializing.');
-      return;
-    }
-
-    // Execute play/pause with error handling
-    try {
+    if (playerRef.current && typeof playerRef.current.playVideo === 'function') {
       if (isPlaying) {
         playerRef.current.pauseVideo();
         setIsPlaying(false);
@@ -271,10 +243,8 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
         setIsPlaying(true);
         onPlay?.();
       }
-    } catch (error) {
-      console.error('Error controlling YouTube player:', error);
-      // Reset playing state on error
-      setIsPlaying(false);
+    } else {
+      console.warn('YouTube player not ready or playVideo method not available');
     }
   };
 
@@ -805,22 +775,22 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
           
           {/* Clickable overlay for play/pause */}
           <div 
-            className={`absolute inset-0 z-15 ${isPlayerReady ? 'cursor-pointer' : 'cursor-not-allowed'}`}
-            onClick={isPlayerReady ? togglePlay : undefined}
-            style={{ pointerEvents: isPlayerReady ? 'auto' : 'none' }}
+            className="absolute inset-0 z-15 cursor-pointer"
+            onClick={togglePlay}
+            style={{ pointerEvents: isPlaying ? 'auto' : 'auto' }}
           />
           
           {/* Custom video placeholder */}
           <div 
-            className={`absolute inset-0 w-full h-full bg-black flex items-center justify-center transition-all duration-75 z-20 ${
-              isLoading || !isPlayerReady ? 'opacity-100' : (isPlaying ? 'opacity-0 pointer-events-none' : 'opacity-100')
-            } ${isPlayerReady ? 'cursor-pointer' : 'cursor-not-allowed'}`}
-            onClick={isPlayerReady ? togglePlay : undefined}
+            className={`absolute inset-0 w-full h-full bg-black flex items-center justify-center transition-all duration-75 cursor-pointer z-20 ${
+              isLoading ? 'opacity-100' : (isPlaying ? 'opacity-0 pointer-events-none' : 'opacity-100')
+            }`}
+            onClick={togglePlay}
           >
             <div className="text-center text-white">
               <p className="text-xl md:text-2xl font-medium mb-2">{title || 'Video Player'}</p>
               <p className="text-sm text-gray-400 opacity-75">
-                {isLoading ? 'Loading video...' : !isPlayerReady ? 'Initializing player...' : 'Tap anywhere to play'}
+                {isLoading ? 'Loading video...' : 'Tap anywhere to play'}
               </p>
             </div>
           </div>
@@ -861,17 +831,11 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
 
                 <button 
                   onClick={togglePlay} 
-                  disabled={!isPlayerReady || isLoading}
                   className={`hover:text-blue-400 transition-colors transition-opacity p-1 md:p-0 ${
-                    isLoading || !isPlayerReady ? 'opacity-100' : (isPlaying ? (isHovered ? 'opacity-100' : 'opacity-0') : 'opacity-100')
-                  } ${!isPlayerReady ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+                    isLoading ? 'opacity-100' : (isPlaying ? (isHovered ? 'opacity-100' : 'opacity-0') : 'opacity-100')
+                  }`}
                 >
-                  {!isPlayerReady ? (
-                    <svg className="w-5 h-5 md:w-6 md:h-6 animate-spin" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                  ) : isPlaying ? (
+                  {isPlaying ? (
                     <svg className="w-5 h-5 md:w-6 md:h-6" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 00-1 1v2a1 1 0 001 1h6a1 1 0 001-1V9a1 1 0 00-1-1H7z" clipRule="evenodd" />
                     </svg>
