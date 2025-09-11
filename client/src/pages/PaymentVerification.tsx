@@ -41,7 +41,8 @@ const PaymentVerification: React.FC = () => {
         setMessage('Verifying payment with Flutterwave...');
 
         // Step 1: Verify payment with Flutterwave
-        const verification = await flutterwaveService.verifyPayment(tx_ref);
+        // Pass both tx_ref and transaction_id for better verification
+        const verification = await flutterwaveService.verifyPayment(tx_ref, transaction_id || undefined);
         
         if (!verification.success) {
           throw new Error('Payment verification failed');

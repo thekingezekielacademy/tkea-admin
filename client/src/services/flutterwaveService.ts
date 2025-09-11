@@ -194,9 +194,9 @@ class FlutterwaveService {
   }
 
   // Verify payment via server endpoint
-  async verifyPayment(reference: string) {
+  async verifyPayment(reference: string, transactionId?: string) {
     try {
-      console.log('🔍 Verifying Flutterwave payment');
+      console.log('🔍 Verifying Flutterwave payment', { reference, transactionId });
       
       // For development mode, simulate successful verification
       if (process.env.NODE_ENV === 'development' || window.location.hostname === 'localhost') {
@@ -233,7 +233,8 @@ class FlutterwaveService {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          reference
+          reference,
+          transaction_id: transactionId
         })
       });
 
