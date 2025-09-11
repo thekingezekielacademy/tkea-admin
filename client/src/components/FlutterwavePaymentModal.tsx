@@ -149,8 +149,8 @@ const FlutterwavePaymentModal: React.FC<FlutterwavePaymentModalProps> = ({ isOpe
       if (!customerEmail || customerEmail.length < 4) {
         throw new Error(`Invalid email: "${customerEmail}" (length: ${customerEmail?.length || 0})`);
       }
-      if (!formattedCustomerName || formattedCustomerName.length < 2) {
-        throw new Error(`Invalid customer_name: "${formattedCustomerName}" (length: ${formattedCustomerName?.length || 0})`);
+      if (!formattedCustomerName || formattedCustomerName.length < 4) {
+        throw new Error(`Invalid customer_name: "${formattedCustomerName}" (length: ${formattedCustomerName?.length || 0}). Customer name must be at least 4 characters long.`);
       }
       if (!finalPhoneNumber || finalPhoneNumber.length < 10) {
         throw new Error(`Invalid phone_number: "${finalPhoneNumber}" (length: ${finalPhoneNumber?.length || 0})`);
