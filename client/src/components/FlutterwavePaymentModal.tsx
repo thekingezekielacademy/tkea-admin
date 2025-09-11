@@ -19,6 +19,7 @@ declare global {
 
 const FlutterwavePaymentModal: React.FC<FlutterwavePaymentModalProps> = ({ isOpen, onClose, onSuccess, user, planName, amount }) => {
   const [email, setEmail] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [loading, setLoading] = useState(false);
   const [flutterwaveLoaded, setFlutterwaveLoaded] = useState(false);
   const [paymentState, setPaymentState] = useState<{
@@ -170,6 +171,12 @@ const FlutterwavePaymentModal: React.FC<FlutterwavePaymentModalProps> = ({ isOpe
         throw new Error('Customer name is required (minimum 2 characters)');
       }
 
+      // Validate phone number
+      const finalPhoneNumber = phoneNumber || user?.phone || '08000000000';
+      if (!finalPhoneNumber || finalPhoneNumber.trim().length < 10) {
+        throw new Error('Valid phone number is required (minimum 10 digits)');
+      }
+
       // Validate email format
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(customerEmail)) {
@@ -191,7 +198,7 @@ const FlutterwavePaymentModal: React.FC<FlutterwavePaymentModalProps> = ({ isOpe
         customer: {
           email: customerEmail,
           name: formattedCustomerName,
-          phone_number: user?.phone || '08000000000',
+          phone_number: finalPhoneNumber,
         },
         customizations: {
           title: 'King Ezekiel Academy',
@@ -340,6 +347,23 @@ const FlutterwavePaymentModal: React.FC<FlutterwavePaymentModalProps> = ({ isOpe
               disabled={true}
               readOnly
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Phone Number <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="tel"
+              value={phoneNumber}
+              onChange={(e) => setPhoneNumber(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="08012345678"
+              required
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Required for payment verification. Nigerian number format (08012345678)
+            </p>
           </div>
 
           <div className="bg-gray-50 p-4 rounded-md">
