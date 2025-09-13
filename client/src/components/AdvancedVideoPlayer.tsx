@@ -877,6 +877,11 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
               .speed-menu {
                 min-width: 160px !important;
                 padding: 12px !important;
+                bottom: 24px !important;
+                left: 0 !important;
+                right: auto !important;
+                max-height: 200px !important;
+                overflow-y: auto !important;
               }
               
               .speed-menu button {
@@ -884,6 +889,13 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
                 padding: 12px 16px !important;
                 font-size: 14px !important;
               }
+            }
+            
+            /* Ensure speed menu is always visible */
+            .speed-menu {
+              position: absolute !important;
+              z-index: 9999 !important;
+              transform: translateY(0) !important;
             }
             `}
           </style>
@@ -1004,7 +1016,7 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
                   
                   {/* Speed Menu */}
                   {showSpeedMenu && (
-                    <div className="speed-menu absolute bottom-12 left-0 bg-black bg-opacity-95 rounded-lg p-3 space-y-1 min-w-[140px] sm:min-w-[100px] z-50 shadow-xl border border-gray-500 max-w-[200px] sm:max-w-none">
+                    <div className="speed-menu absolute top-0 left-0 transform -translate-y-full bg-black bg-opacity-95 rounded-lg p-3 space-y-1 min-w-[140px] sm:min-w-[100px] z-50 shadow-xl border border-gray-500 max-w-[200px] sm:max-w-none">
                       {availableSpeeds.map((speed) => (
                         <button
                           key={speed}
