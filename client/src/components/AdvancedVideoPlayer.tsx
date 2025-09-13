@@ -855,6 +855,36 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
                 transition: all 0.2s ease;
               }
             }
+            
+            /* Speed menu specific styles */
+            .speed-menu {
+              backdrop-filter: blur(10px);
+              -webkit-backdrop-filter: blur(10px);
+              border: 1px solid rgba(255, 255, 255, 0.1);
+              box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            }
+            
+            .speed-menu button {
+              white-space: nowrap;
+              min-height: 36px;
+              display: flex;
+              align-items: center;
+              justify-content: flex-start;
+            }
+            
+            /* Mobile speed menu improvements */
+            @media (max-width: 768px) {
+              .speed-menu {
+                min-width: 160px !important;
+                padding: 12px !important;
+              }
+              
+              .speed-menu button {
+                min-height: 44px !important;
+                padding: 12px 16px !important;
+                font-size: 14px !important;
+              }
+            }
             `}
           </style>
           {/* Custom title overlay */}
@@ -974,7 +1004,7 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
                   
                   {/* Speed Menu */}
                   {showSpeedMenu && (
-                    <div className="speed-menu absolute bottom-8 left-0 bg-black bg-opacity-90 rounded-lg p-2 space-y-1 min-w-[120px] sm:min-w-[80px] z-50 shadow-lg border border-gray-600 max-w-[200px] sm:max-w-none">
+                    <div className="speed-menu absolute bottom-12 left-0 bg-black bg-opacity-95 rounded-lg p-3 space-y-1 min-w-[140px] sm:min-w-[100px] z-50 shadow-xl border border-gray-500 max-w-[200px] sm:max-w-none">
                       {availableSpeeds.map((speed) => (
                         <button
                           key={speed}
@@ -983,10 +1013,10 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
                             e.stopPropagation();
                             handleSpeedChange(speed);
                           }}
-                          className={`w-full text-left px-3 py-2 rounded text-sm sm:text-xs transition-colors cursor-pointer ${
+                          className={`w-full text-left px-4 py-3 rounded-md text-sm sm:text-xs font-medium transition-all duration-200 cursor-pointer ${
                             playbackRate === speed 
-                              ? 'bg-blue-600 text-white hover:bg-blue-700' 
-                              : 'text-gray-300 hover:bg-blue-600 hover:text-white'
+                              ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-md' 
+                              : 'text-gray-200 hover:bg-blue-600 hover:text-white hover:shadow-md'
                           }`}
                           style={{ pointerEvents: 'auto' }}
                           data-speed-control
