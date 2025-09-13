@@ -109,8 +109,8 @@ function App() {
     // Force cache clear before initializing service worker
     forceCacheClear();
     
-    // Temporarily disable service worker to test if it's causing the blank page
-    // initializeServiceWorker();
+    // Initialize service worker for PWA functionality
+    initializeServiceWorker();
     
     // Set loading to false after initialization
     const timer = setTimeout(() => {
