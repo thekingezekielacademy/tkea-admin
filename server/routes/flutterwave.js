@@ -6,6 +6,7 @@ const crypto = require('crypto');
 const FLUTTERWAVE_SECRET_KEY = process.env.FLUTTERWAVE_SECRET_KEY;
 const FLUTTERWAVE_PUBLIC_KEY = process.env.FLUTTERWAVE_PUBLIC_KEY;
 const FLUTTERWAVE_ENCRYPTION_KEY = process.env.FLUTTERWAVE_ENCRYPTION_KEY;
+const FLUTTERWAVE_PLAN_ID = process.env.FLUTTERWAVE_PLAN_ID;
 
 // Initialize Flutterwave payment
 router.post('/initialize-payment', async (req, res) => {

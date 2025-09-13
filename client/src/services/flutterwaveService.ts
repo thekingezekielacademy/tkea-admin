@@ -138,7 +138,7 @@ class FlutterwaveService {
             id: 'sub_' + Date.now(),
             subscription_code: 'SUB_' + Date.now(),
             customer_code: customerCode,
-            plan_id: '146829',
+            plan_id: process.env.REACT_APP_FLUTTERWAVE_PLAN_ID || '146851',
             amount: 2500,
             currency: 'NGN',
             status: 'active',
