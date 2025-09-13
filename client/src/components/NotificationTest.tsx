@@ -22,30 +22,78 @@ const NotificationTest: React.FC = () => {
   };
 
   const testNotification = async () => {
+    console.log('🧪 Testing basic notification...');
+    console.log('🔍 Permission status:', permissionStatus);
+    console.log('🔍 Notification supported:', 'Notification' in window);
+    console.log('🔍 Current permission:', Notification.permission);
+    
     if (permissionStatus === 'granted') {
-      await notificationService.sendNotification({
-        title: '🔔 Test Notification',
-        body: 'This is a test notification from King Ezekiel Academy!',
-        icon: '/favicon.svg',
-        tag: 'test-notification'
-      });
+      try {
+        console.log('🚀 Attempting to send notification...');
+        await notificationService.sendNotification({
+          title: '🔔 Test Notification',
+          body: 'This is a test notification from King Ezekiel Academy!',
+          icon: '/favicon.svg',
+          tag: 'test-notification'
+        });
+        console.log('✅ Notification sent successfully!');
+      } catch (error) {
+        console.error('❌ Error sending notification:', error);
+      }
+    } else {
+      console.log('❌ Permission not granted');
     }
   };
 
   const testDailyReminder = async () => {
+    console.log('🧪 Testing daily reminder...');
     if (permissionStatus === 'granted') {
-      await notificationService.sendDailyLearningReminder();
+      try {
+        await notificationService.sendDailyLearningReminder();
+        console.log('✅ Daily reminder sent!');
+      } catch (error) {
+        console.error('❌ Error sending daily reminder:', error);
+      }
     }
   };
 
   const testStreakReminder = async () => {
+    console.log('🧪 Testing streak reminder...');
     if (permissionStatus === 'granted') {
-      await notificationService.sendStreakReminder(5);
+      try {
+        await notificationService.sendStreakReminder(5);
+        console.log('✅ Streak reminder sent!');
+      } catch (error) {
+        console.error('❌ Error sending streak reminder:', error);
+      }
     }
   };
 
   const reinitializeNotifications = () => {
     notificationService.forceReinitialize();
+  };
+
+  const testDirectNotification = () => {
+    console.log('🧪 Testing direct notification (bypassing service worker)...');
+    if (permissionStatus === 'granted') {
+      try {
+        const notification = new Notification('🔔 Direct Test', {
+          body: 'This is a direct notification test!',
+          icon: '/favicon.svg',
+          tag: 'direct-test'
+        });
+        console.log('✅ Direct notification created!');
+        
+        notification.onclick = () => {
+          console.log('📱 Notification clicked!');
+          notification.close();
+        };
+      } catch (error) {
+        console.error('❌ Error creating direct notification:', error);
+      }
+    } else {
+      console.log('❌ Permission not granted for direct notification');
+    }
   };
 
   return (
@@ -104,6 +152,13 @@ const NotificationTest: React.FC = () => {
                 className="w-full bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors"
               >
                 Test Streak Reminder
+              </button>
+
+              <button
+                onClick={testDirectNotification}
+                className="w-full bg-pink-500 text-white px-4 py-2 rounded hover:bg-pink-600 transition-colors"
+              >
+                Test Direct Notification
               </button>
             </>
           )}
