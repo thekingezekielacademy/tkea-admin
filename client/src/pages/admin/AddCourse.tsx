@@ -28,11 +28,43 @@ const AddCourse: React.FC = () => {
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [category, setCategory] = useState('business-entrepreneurship');
+  const [level, setLevel] = useState('beginner');
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  
+  // Schedule popup states
+  const [showSchedulePopup, setShowSchedulePopup] = useState(false);
+  const [scheduledDate, setScheduledDate] = useState('');
+  const [scheduledTime, setScheduledTime] = useState('');
 
   const isAdmin = user?.role === 'admin';
   const sensors = useSensors(useSensor(PointerSensor));
+
+  // Category options
+  const categories = [
+    { value: 'business-entrepreneurship', label: 'Business & Entrepreneurship' },
+    { value: 'branding-public-relations', label: 'Branding & Public Relations' },
+    { value: 'content-communication', label: 'Content & Communication' },
+    { value: 'digital-advertising', label: 'Digital Advertising' },
+    { value: 'email-seo-strategies', label: 'Email & SEO Strategies' },
+    { value: 'ui-ux-design', label: 'UI/UX Design' },
+    { value: 'visual-communication', label: 'Visual Communication' },
+    { value: 'video-editing-creation', label: 'Video Editing & Creation' },
+    { value: 'data-science-analytics', label: 'Data Science & Analytics' },
+    { value: 'artificial-intelligence-cloud', label: 'AI & Cloud Computing' },
+    { value: 'project-workflow-management', label: 'Project & Workflow Management' },
+    { value: 'information-security', label: 'Information Security' }
+  ];
+
+  // Level options
+  const levels = [
+    { value: 'beginner', label: 'Beginner' },
+    { value: 'intermediate', label: 'Intermediate' },
+    { value: 'advanced', label: 'Advanced' },
+    { value: 'expert', label: 'Expert' },
+    { value: 'mastery', label: 'Mastery' }
+  ];
 
   // Local arrayMove to avoid extra dependency
   function arrayMove<T>(array: T[], from: number, to: number): T[] {
@@ -132,9 +164,11 @@ const AddCourse: React.FC = () => {
         .insert({
           title: title || 'Untitled Course',
           description: description || null,
-          cover_url: coverUrl,
-          playlist_url: playlistUrl,
-          lessons_count: videos.length,
+          category: category,
+          level: level,
+          cover_photo_url: coverUrl,
+          status: 'published',
+          created_by: user?.id,
         })
         .select('id')
         .single();
@@ -143,16 +177,79 @@ const AddCourse: React.FC = () => {
       const payload = videos.map(v => ({
         course_id: courseIns.id,
         order_index: v.position,
-        title: v.title,
-        video_id: v.id,
-        video_url: `https://www.youtube.com/watch?v=${v.id}`,
-        thumbnail_url: v.thumbnail ?? null,
+        name: v.title,
+        duration: '0:00', // Default duration, could be enhanced later
+        link: `https://www.youtube.com/watch?v=${v.id}`,
       }));
-      const { error: lErr } = await supabase.from('lessons').insert(payload);
+      const { error: lErr } = await supabase.from('course_videos').insert(payload);
       if (lErr) throw lErr;
       navigate('/admin/courses');
     } catch (e: any) {
       setSaveError(e?.message || 'Failed to save course');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const onScheduleCourse = async () => {
+    if (!isAdmin) return;
+    setSaving(true);
+    setSaveError(null);
+    try {
+      let coverUrl: string | null = null;
+      if (coverFile) {
+        const ext = coverFile.name.split('.').pop() || 'jpg';
+        const key = `covers/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+        const { error: upErr } = await supabase.storage.from('course-covers').upload(key, coverFile, { upsert: false });
+        if (upErr) throw upErr;
+        const { data: pub } = supabase.storage.from('course-covers').getPublicUrl(key);
+        coverUrl = pub.publicUrl;
+      }
+
+      // Calculate scheduled datetime
+      const scheduledDateTime = new Date(`${scheduledDate}T${scheduledTime}`);
+      const scheduledFor = scheduledDateTime.toISOString();
+
+      const { data: courseIns, error: cErr } = await supabase
+        .from('courses')
+        .insert({
+          title: title || 'Untitled Course',
+          description: description || null,
+          category: category,
+          level: level,
+          cover_photo_url: coverUrl,
+          scheduled_for: scheduledFor,
+          is_scheduled: true,
+          status: 'scheduled',
+          created_by: user?.id,
+        })
+        .select('id')
+        .single();
+      if (cErr) throw cErr;
+
+      const payload = videos.map(v => ({
+        course_id: courseIns.id,
+        order_index: v.position,
+        name: v.title,
+        duration: '0:00', // Default duration, could be enhanced later
+        link: `https://www.youtube.com/watch?v=${v.id}`,
+      }));
+      const { error: lErr } = await supabase.from('course_videos').insert(payload);
+      if (lErr) throw lErr;
+
+      // Send notification for scheduled course
+      try {
+        const { CourseScheduler } = await import('../../utils/courseScheduler');
+        const scheduler = CourseScheduler.getInstance();
+        await scheduler.notifyCourseScheduled(title, scheduledFor, courseIns.id);
+      } catch (error) {
+        console.error('Error sending course scheduled notification:', error);
+      }
+
+      setShowSchedulePopup(false);
+      navigate('/admin/courses');
+    } catch (e: any) {
+      setSaveError(e?.message || 'Failed to schedule course');
     } finally {
       setSaving(false);
     }
@@ -270,12 +367,83 @@ const AddCourse: React.FC = () => {
               {saveError && <div className="text-sm text-red-600">{saveError}</div>}
               <div className="flex justify-between">
                 <button onClick={() => setStep(2)} className="px-4 py-2 border rounded hover:bg-gray-50">BACK</button>
-                <button onClick={onSaveCourse} disabled={saving || !title || videos.length === 0} className={`px-4 py-2 rounded text-white ${(!saving && title && videos.length) ? 'bg-primary-600 hover:bg-primary-700' : 'bg-gray-400 cursor-not-allowed'}`}>{saving ? 'Saving…' : 'SAVE COURSE'}</button>
+                <div className="flex space-x-3">
+                  <button 
+                    onClick={() => setShowSchedulePopup(true)} 
+                    disabled={saving || !title || videos.length === 0} 
+                    className={`px-4 py-2 rounded text-white ${(!saving && title && videos.length) ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-400 cursor-not-allowed'}`}
+                  >
+                    Schedule
+                  </button>
+                  <button 
+                    onClick={onSaveCourse} 
+                    disabled={saving || !title || videos.length === 0} 
+                    className={`px-4 py-2 rounded text-white ${(!saving && title && videos.length) ? 'bg-primary-600 hover:bg-primary-700' : 'bg-gray-400 cursor-not-allowed'}`}
+                  >
+                    {saving ? 'Saving…' : 'Create Course'}
+                  </button>
+                </div>
               </div>
             </div>
           )}
         </div>
       </div>
+
+      {/* Schedule Popup Modal */}
+      {showSchedulePopup && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            <h3 className="text-lg font-semibold mb-4">Schedule Course</h3>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm text-gray-700 mb-1">Schedule Date</label>
+                <input 
+                  type="date" 
+                  value={scheduledDate} 
+                  onChange={(e) => setScheduledDate(e.target.value)} 
+                  min={new Date().toISOString().split('T')[0]}
+                  className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm text-gray-700 mb-1">Schedule Time</label>
+                <input 
+                  type="time" 
+                  value={scheduledTime} 
+                  onChange={(e) => setScheduledTime(e.target.value)} 
+                  className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              {scheduledDate && scheduledTime && (
+                <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                  <p className="text-blue-700 text-sm">
+                    📅 Course will be published on {new Date(`${scheduledDate}T${scheduledTime}`).toLocaleString()}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end space-x-3 mt-6">
+              <button 
+                onClick={() => setShowSchedulePopup(false)} 
+                className="px-4 py-2 border rounded hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={onScheduleCourse} 
+                disabled={!scheduledDate || !scheduledTime || saving}
+                className={`px-4 py-2 rounded text-white ${(scheduledDate && scheduledTime && !saving) ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-400 cursor-not-allowed'}`}
+              >
+                {saving ? 'Scheduling…' : 'Schedule Course'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

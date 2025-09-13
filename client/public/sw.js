@@ -126,6 +126,8 @@ self.addEventListener('notificationclick', (event) => {
       url = `/course/${courseId}/overview`;
     } else if (notificationType === 'level-up') {
       url = '/profile'; // For level-up notifications, show progress on profile
+    } else if (notificationType === 'course-scheduled' || notificationType === 'course-available' || notificationType === 'course-reminder') {
+      url = '/courses'; // For course scheduling notifications, go to courses page
     }
     
     event.waitUntil(

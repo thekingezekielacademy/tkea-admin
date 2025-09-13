@@ -112,6 +112,18 @@ function App() {
     // Initialize service worker for PWA functionality
     initializeServiceWorker();
     
+    // Initialize course scheduler
+    const initializeCourseScheduler = async () => {
+      try {
+        const { CourseScheduler } = await import('./utils/courseScheduler');
+        const scheduler = CourseScheduler.getInstance();
+        scheduler.startScheduler();
+      } catch (error) {
+        console.error('Error initializing course scheduler:', error);
+      }
+    };
+    initializeCourseScheduler();
+    
     // Set loading to false after initialization
     const timer = setTimeout(() => {
       setIsLoading(false);

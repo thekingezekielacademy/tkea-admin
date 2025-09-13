@@ -254,6 +254,54 @@ export class NotificationService {
     });
   }
 
+  // COURSE SCHEDULING NOTIFICATIONS
+
+  // Course scheduled notification
+  async sendCourseScheduledNotification(courseTitle: string, scheduledDate: string, courseId?: string): Promise<void> {
+    await this.sendNotification({
+      title: '📅 New Course Scheduled!',
+      body: `"${courseTitle}" is scheduled to be published on ${new Date(scheduledDate).toLocaleDateString()}. Get ready to learn!`,
+      tag: 'course-scheduled',
+      requireInteraction: true,
+      actions: [
+        { action: 'view', title: 'View Course' },
+        { action: 'dismiss', title: 'Later' }
+      ],
+      data: { courseId, courseTitle, scheduledDate, type: 'course-scheduled' }
+    });
+  }
+
+  // Course available notification
+  async sendCourseAvailableNotification(courseTitle: string, courseId?: string): Promise<void> {
+    await this.sendNotification({
+      title: '🎉 Course Now Available!',
+      body: `"${courseTitle}" is now live and ready for you to start learning!`,
+      tag: 'course-available',
+      requireInteraction: true,
+      actions: [
+        { action: 'continue', title: 'Start Learning' },
+        { action: 'view', title: 'View Course' }
+      ],
+      data: { courseId, courseTitle, type: 'course-available' }
+    });
+  }
+
+  // Course reminder notification
+  async sendCourseReminderNotification(courseTitle: string, hoursUntil: number, courseId?: string): Promise<void> {
+    const timeText = hoursUntil < 24 ? `${hoursUntil} hours` : `${Math.floor(hoursUntil / 24)} days`;
+    await this.sendNotification({
+      title: '⏰ Course Starting Soon!',
+      body: `"${courseTitle}" will be available in ${timeText}. Don't miss out!`,
+      tag: 'course-reminder',
+      requireInteraction: true,
+      actions: [
+        { action: 'view', title: 'View Course' },
+        { action: 'dismiss', title: 'Later' }
+      ],
+      data: { courseId, courseTitle, hoursUntil, type: 'course-reminder' }
+    });
+  }
+
   // COURSE RECOMMENDATION NOTIFICATIONS
 
   // Popular course recommendation

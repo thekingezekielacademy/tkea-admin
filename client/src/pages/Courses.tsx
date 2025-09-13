@@ -20,6 +20,10 @@ interface Course {
   created_by?: string;
   created_at: string;
   updated_at: string;
+  // Scheduling fields
+  scheduled_for?: string;
+  is_scheduled?: boolean;
+  status?: string;
   // Transformed fields for display
   category: string;
   duration: string;
@@ -732,6 +736,37 @@ const Courses: React.FC = () => {
     }
   };
 
+  const handleNotifyMe = async (courseId: string) => {
+    if (!user) {
+      // User is not signed in - go to signup page
+      navigate('/signup');
+      return;
+    }
+
+    try {
+      // Request notification permission
+      const notificationService = (await import('../utils/notificationService')).NotificationService.getInstance();
+      const hasPermission = await notificationService.requestPermission();
+      
+      if (hasPermission) {
+        // Store course notification preference
+        const courseNotifications = JSON.parse(localStorage.getItem('course_notifications') || '[]');
+        if (!courseNotifications.includes(courseId)) {
+          courseNotifications.push(courseId);
+          localStorage.setItem('course_notifications', JSON.stringify(courseNotifications));
+        }
+        
+        // Show success message
+        alert('You will be notified when this course becomes available!');
+      } else {
+        alert('Please enable notifications to get updates about this course.');
+      }
+    } catch (error) {
+      console.error('Error setting up notifications:', error);
+      alert('There was an error setting up notifications. Please try again.');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <SEOHead
@@ -1063,8 +1098,12 @@ const Courses: React.FC = () => {
                 </div>
                 <div className="absolute top-2 sm:top-4 left-2 sm:left-4 bg-primary-600 text-white px-2 sm:px-3 py-1 rounded text-xs sm:text-sm font-medium flex items-center space-x-1">
                   <FaGraduationCap className="h-3 w-3" />
-                  <span className="hidden sm:inline">{user && (databaseSubscriptionStatus || secureStorage.isSubscriptionActive()) ? 'Full Access' : 'Membership'}</span>
-                  <span className="sm:hidden">{user && (databaseSubscriptionStatus || secureStorage.isSubscriptionActive()) ? 'Access' : 'Member'}</span>
+                  <span className="hidden sm:inline">
+                    {course.is_scheduled ? 'Coming Soon' : (user && (databaseSubscriptionStatus || secureStorage.isSubscriptionActive()) ? 'Full Access' : 'Membership')}
+                  </span>
+                  <span className="sm:hidden">
+                    {course.is_scheduled ? 'Soon' : (user && (databaseSubscriptionStatus || secureStorage.isSubscriptionActive()) ? 'Access' : 'Member')}
+                  </span>
                 </div>
               </div>
               
@@ -1075,7 +1114,23 @@ const Courses: React.FC = () => {
                 </div>
                 
                 <h3 className="text-base sm:text-xl font-semibold text-gray-900 mb-2 leading-tight">{course.title}</h3>
-                <p className="text-gray-600 mb-3 sm:mb-4 line-clamp-2 text-sm sm:text-base">{course.description || 'No description available'}</p>
+                {course.is_scheduled && course.scheduled_for ? (
+                  <div className="mb-3 sm:mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                    <p className="text-blue-700 text-sm sm:text-base font-medium flex items-center space-x-2">
+                      <span>📅</span>
+                      <span>Coming Soon: {new Date(course.scheduled_for).toLocaleDateString('en-US', { 
+                        weekday: 'long', 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}</span>
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-gray-600 mb-3 sm:mb-4 line-clamp-2 text-sm sm:text-base">{course.description || 'No description available'}</p>
+                )}
                 
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4 mb-3 sm:mb-4 text-xs sm:text-sm text-gray-500">
                   <div className="flex items-center space-x-1">
@@ -1099,10 +1154,22 @@ const Courses: React.FC = () => {
                       {user && (databaseSubscriptionStatus || secureStorage.isSubscriptionActive() || hasTrialAccess) ? 'Full Access' : 'Membership Access'}
                     </span>
                   </div>
-                  <button onClick={() => handleEnroll(course.id)} className="w-full sm:w-auto bg-primary-600 text-white px-4 sm:px-6 py-2.5 sm:py-2 rounded-lg hover:bg-primary-700 transition-colors duration-200 flex items-center justify-center space-x-2 text-sm sm:text-base">
-                    {user && (databaseSubscriptionStatus || secureStorage.isSubscriptionActive() || hasTrialAccess) ? (
+                  <button 
+                    onClick={() => course.is_scheduled ? handleNotifyMe(course.id) : handleEnroll(course.id)} 
+                    className={`w-full sm:w-auto px-4 sm:px-6 py-2.5 sm:py-2 rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2 text-sm sm:text-base ${
+                      course.is_scheduled 
+                        ? 'bg-blue-600 text-white hover:bg-blue-700' 
+                        : 'bg-primary-600 text-white hover:bg-primary-700'
+                    }`}
+                  >
+                    {course.is_scheduled ? (
                       <>
-                      <FaUnlock className="h-3 w-3 sm:h-4 sm:w-4" />
+                        <span>🔔</span>
+                        <span>Notify Me</span>
+                      </>
+                    ) : user && (databaseSubscriptionStatus || secureStorage.isSubscriptionActive() || hasTrialAccess) ? (
+                      <>
+                        <FaUnlock className="h-3 w-3 sm:h-4 sm:w-4" />
                         <span>Start Learning</span>
                       </>
                     ) : user ? (
@@ -1112,7 +1179,7 @@ const Courses: React.FC = () => {
                       </>
                     ) : (
                       <>
-                      <FaLock className="h-3 w-3 sm:h-4 sm:w-4" />
+                        <FaLock className="h-3 w-3 sm:h-4 sm:w-4" />
                         <span>Start Free!</span>
                       </>
                     )}
