@@ -103,17 +103,51 @@ self.addEventListener('push', (event) => {
 
 // Notification click event
 self.addEventListener('notificationclick', (event) => {
-  console.log('Service Worker: Notification clicked');
+  console.log('Service Worker: Notification clicked', event.action);
   
   event.notification.close();
 
-  if (event.action === 'learn') {
-    // Open the app and navigate to learning
+  // Handle different notification actions
+  const action = event.action;
+  const notificationData = event.notification.data || {};
+  
+  if (action === 'learn' || action === 'continue' || action === 'start') {
+    // Learning actions - go to dashboard
     event.waitUntil(
       clients.openWindow('/dashboard')
     );
-  } else if (event.action === 'dismiss') {
-    // Just close the notification
+  } else if (action === 'view' || action === 'view-course' || action === 'view-progress') {
+    // View actions - go to courses, specific course, or profile for progress
+    const courseId = notificationData.courseId;
+    const notificationType = notificationData.type;
+    
+    let url = '/courses';
+    if (courseId) {
+      url = `/course/${courseId}/overview`;
+    } else if (notificationType === 'level-up') {
+      url = '/profile'; // For level-up notifications, show progress on profile
+    }
+    
+    event.waitUntil(
+      clients.openWindow(url)
+    );
+  } else if (action === 'keep' || action === 'keep-learning') {
+    // Keep learning actions - go to dashboard
+    event.waitUntil(
+      clients.openWindow('/dashboard')
+    );
+  } else if (action === 'explore' || action === 'explore-feature') {
+    // Explore actions - go to dashboard
+    event.waitUntil(
+      clients.openWindow('/dashboard')
+    );
+  } else if (action === 'share' || action === 'share-achievement') {
+    // Share actions - go to profile or dashboard
+    event.waitUntil(
+      clients.openWindow('/profile')
+    );
+  } else if (action === 'dismiss' || action === 'later' || action === 'not-now' || action === 'not-today' || action === 'not-interested' || action === 'not-ready') {
+    // Dismiss actions - just close the notification
     console.log('Service Worker: Notification dismissed');
   } else {
     // Default action - open the app

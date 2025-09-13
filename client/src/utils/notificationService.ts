@@ -188,12 +188,13 @@ export class NotificationService {
       actions: [
         { action: 'view', title: 'View Progress' },
         { action: 'continue', title: 'Keep Learning' }
-      ]
+      ],
+      data: { newLevel, xpGained, type: 'level-up' }
     });
   }
 
   // Course continuation reminder
-  async sendCourseContinuationReminder(courseTitle: string, progress: number): Promise<void> {
+  async sendCourseContinuationReminder(courseTitle: string, progress: number, courseId?: string): Promise<void> {
     await this.sendNotification({
       title: '📖 Continue Learning',
       body: `You're ${progress}% through "${courseTitle}" - pick up where you left off!`,
@@ -202,14 +203,15 @@ export class NotificationService {
       actions: [
         { action: 'continue', title: 'Continue Course' },
         { action: 'dismiss', title: 'Later' }
-      ]
+      ],
+      data: { courseId, courseTitle, progress }
     });
   }
 
   // CONTENT DISCOVERY NOTIFICATIONS
 
   // New course announcement
-  async sendNewCourseNotification(courseTitle: string, category: string): Promise<void> {
+  async sendNewCourseNotification(courseTitle: string, category: string, courseId?: string): Promise<void> {
     await this.sendNotification({
       title: '🆕 New Course Available!',
       body: `"${courseTitle}" in ${category} is now available. Start learning today!`,
@@ -218,7 +220,8 @@ export class NotificationService {
       actions: [
         { action: 'view', title: 'View Course' },
         { action: 'dismiss', title: 'Not Interested' }
-      ]
+      ],
+      data: { courseId, courseTitle, category }
     });
   }
 
@@ -237,7 +240,7 @@ export class NotificationService {
   }
 
   // Course suggestions
-  async sendCourseSuggestion(courseTitle: string, reason: string): Promise<void> {
+  async sendCourseSuggestion(courseTitle: string, reason: string, courseId?: string): Promise<void> {
     await this.sendNotification({
       title: '💡 Course Suggestion',
       body: `Based on your interests: "${courseTitle}" - ${reason}`,
@@ -246,7 +249,8 @@ export class NotificationService {
       actions: [
         { action: 'view', title: 'View Course' },
         { action: 'dismiss', title: 'Not Interested' }
-      ]
+      ],
+      data: { courseId, courseTitle, reason }
     });
   }
 
