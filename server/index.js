@@ -75,6 +75,12 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// Serve service worker with correct MIME type
+app.get('/sw.js', (req, res) => {
+  res.setHeader('Content-Type', 'application/javascript');
+  res.sendFile(path.join(__dirname, '../public/sw.js'));
+});
+
 // Serve static files from React build
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, '../client/build')));
