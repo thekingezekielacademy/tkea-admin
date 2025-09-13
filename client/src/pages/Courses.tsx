@@ -738,7 +738,8 @@ const Courses: React.FC = () => {
         title="Digital Marketing Courses - King Ezekiel Academy"
         description="Master digital marketing with our comprehensive courses designed for beginners and professionals. Learn SEO, social media, e-commerce, and more from industry experts."
       />
-      <DashboardSidebar />
+      {/* Only show sidebar for authenticated users */}
+      {user && <DashboardSidebar />}
       
       {/* Main Content */}
       <div className={getMainContentClasses()} style={{ minHeight: '100vh' }}>
