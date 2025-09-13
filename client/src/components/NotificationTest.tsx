@@ -13,7 +13,8 @@ const NotificationTest: React.FC = () => {
       const permission = await Notification.requestPermission();
       setPermissionStatus(permission);
       if (permission === 'granted') {
-        notificationService.initializeNotifications();
+        console.log('✅ Permission granted, initializing notifications...');
+        notificationService.forceReinitialize();
       }
     } catch (error) {
       console.error('Error requesting notification permission:', error);
@@ -43,6 +44,10 @@ const NotificationTest: React.FC = () => {
     }
   };
 
+  const reinitializeNotifications = () => {
+    notificationService.forceReinitialize();
+  };
+
   return (
     <div className="bg-white p-6 rounded-lg shadow-lg max-w-md mx-auto">
       <h2 className="text-2xl font-bold mb-4 text-gray-800">Notification Test</h2>
@@ -70,6 +75,13 @@ const NotificationTest: React.FC = () => {
               Request Permission
             </button>
           )}
+
+          <button
+            onClick={reinitializeNotifications}
+            className="w-full bg-indigo-500 text-white px-4 py-2 rounded hover:bg-indigo-600 transition-colors"
+          >
+            Re-initialize Notifications
+          </button>
 
           {permissionStatus === 'granted' && (
             <>

@@ -66,7 +66,9 @@ export class NotificationService {
 
   // Check if notifications are supported and permitted
   isNotificationEnabled(): boolean {
-    return this.isSupported && this.permission === 'granted';
+    // Always check the current permission status from the browser
+    const currentPermission = 'Notification' in window ? Notification.permission : 'denied';
+    return this.isSupported && currentPermission === 'granted';
   }
 
   // Send a notification
@@ -521,12 +523,18 @@ export class NotificationService {
 
   // Initialize all notification schedules
   initializeNotifications(): void {
-    if (!this.isNotificationEnabled()) {
+    // Always check current permission status
+    const currentPermission = 'Notification' in window ? Notification.permission : 'denied';
+    
+    if (!this.isSupported || currentPermission !== 'granted') {
       console.log('🔕 Notifications not enabled, skipping initialization');
+      console.log('🔍 Permission status:', currentPermission);
+      console.log('🔍 Supported:', this.isSupported);
       return;
     }
 
     console.log('🔔 Initializing notification schedules...');
+    console.log('🔍 Permission confirmed:', currentPermission);
     
     // Schedule all notification types
     this.scheduleDailyReminder();
@@ -570,6 +578,12 @@ export class NotificationService {
     } catch (error) {
       console.error('Error checking immediate triggers:', error);
     }
+  }
+
+  // Force re-initialization after permission is granted
+  forceReinitialize(): void {
+    console.log('🔄 Force re-initializing notifications...');
+    this.initializeNotifications();
   }
 }
 
