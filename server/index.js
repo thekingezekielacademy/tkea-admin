@@ -17,21 +17,7 @@ const flutterwaveRoutes = require('./routes/flutterwave');
 // const paystackRoutes = require('./routes/paystack'); // Disabled - using Flutterwave instead
 
 // Load environment variables from parent directory
-const envPath = path.join(__dirname, '../.env');
-console.log('🔧 Loading .env from:', envPath);
-const result = dotenv.config({ path: envPath });
-if (result.error) {
-  console.error('❌ Error loading .env file:', result.error);
-} else {
-  console.log('✅ .env file loaded successfully');
-}
-
-// Debug environment variables
-console.log('🔧 Server Environment Variables:');
-console.log('FLUTTERWAVE_SECRET_KEY:', process.env.FLUTTERWAVE_SECRET_KEY ? 'SET' : 'NOT SET');
-console.log('FLUTTERWAVE_PUBLIC_KEY:', process.env.FLUTTERWAVE_PUBLIC_KEY ? 'SET' : 'NOT SET');
-console.log('FLUTTERWAVE_ENCRYPTION_KEY:', process.env.FLUTTERWAVE_ENCRYPTION_KEY ? 'SET' : 'NOT SET');
-console.log('FLUTTERWAVE_PLAN_ID:', process.env.FLUTTERWAVE_PLAN_ID ? 'SET' : 'NOT SET');
+dotenv.config({ path: path.join(__dirname, '../.env') });
 
 const app = express();
 
