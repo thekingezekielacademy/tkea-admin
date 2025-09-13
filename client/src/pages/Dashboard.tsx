@@ -96,10 +96,8 @@ const Dashboard: React.FC = () => {
   });
   const [isLoading, setIsLoading] = useState(true);
   
-  // Check subscription status
-  const [subActive, setSubActive] = useState<boolean>(() => {
-    try { return secureStorage.isSubscriptionActive(); } catch { return false; }
-  });
+  // Check subscription status - prioritize database over local storage
+  const [subActive, setSubActive] = useState<boolean>(false);
   
     // Add refresh trigger for course data
   const [refreshTrigger, setRefreshTrigger] = useState(0);
