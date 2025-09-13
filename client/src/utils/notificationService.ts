@@ -250,6 +250,106 @@ export class NotificationService {
     });
   }
 
+  // COURSE RECOMMENDATION NOTIFICATIONS
+
+  // Popular course recommendation
+  async sendPopularCourseRecommendation(courseTitle: string, category: string, studentCount: number): Promise<void> {
+    await this.sendNotification({
+      title: '🔥 Popular Course Alert!',
+      body: `"${courseTitle}" in ${category} has ${studentCount}+ students. Don't miss out!`,
+      tag: 'popular-course',
+      requireInteraction: true,
+      actions: [
+        { action: 'view', title: 'View Course' },
+        { action: 'dismiss', title: 'Not Now' }
+      ]
+    });
+  }
+
+  // Category-based course recommendation
+  async sendCategoryCourseRecommendation(courseTitle: string, category: string): Promise<void> {
+    await this.sendNotification({
+      title: '📚 Recommended for You',
+      body: `Since you're interested in ${category}, check out "${courseTitle}"!`,
+      tag: 'category-recommendation',
+      requireInteraction: true,
+      actions: [
+        { action: 'view', title: 'View Course' },
+        { action: 'dismiss', title: 'Not Interested' }
+      ]
+    });
+  }
+
+  // Skill progression recommendation
+  async sendSkillProgressionRecommendation(courseTitle: string, currentLevel: string, nextLevel: string): Promise<void> {
+    await this.sendNotification({
+      title: '🚀 Ready to Level Up?',
+      body: `You've mastered ${currentLevel}! Try "${courseTitle}" - ${nextLevel} level course`,
+      tag: 'skill-progression',
+      requireInteraction: true,
+      actions: [
+        { action: 'view', title: 'View Course' },
+        { action: 'dismiss', title: 'Not Ready' }
+      ]
+    });
+  }
+
+  // Trending course recommendation
+  async sendTrendingCourseRecommendation(courseTitle: string, category: string): Promise<void> {
+    await this.sendNotification({
+      title: '📈 Trending Now',
+      body: `"${courseTitle}" in ${category} is trending this week. Join the learning wave!`,
+      tag: 'trending-recommendation',
+      requireInteraction: true,
+      actions: [
+        { action: 'view', title: 'View Course' },
+        { action: 'dismiss', title: 'Not Now' }
+      ]
+    });
+  }
+
+  // Completion-based recommendation
+  async sendCompletionBasedRecommendation(courseTitle: string, completedCourse: string): Promise<void> {
+    await this.sendNotification({
+      title: '🎯 Perfect Next Step!',
+      body: `Since you completed "${completedCourse}", you'll love "${courseTitle}"!`,
+      tag: 'completion-recommendation',
+      requireInteraction: true,
+      actions: [
+        { action: 'view', title: 'View Course' },
+        { action: 'dismiss', title: 'Not Interested' }
+      ]
+    });
+  }
+
+  // Beginner-friendly course recommendation
+  async sendBeginnerCourseRecommendation(courseTitle: string, category: string): Promise<void> {
+    await this.sendNotification({
+      title: '🌱 Perfect for Beginners',
+      body: `"${courseTitle}" in ${category} is great for starting your learning journey!`,
+      tag: 'beginner-recommendation',
+      requireInteraction: true,
+      actions: [
+        { action: 'view', title: 'View Course' },
+        { action: 'dismiss', title: 'Not Now' }
+      ]
+    });
+  }
+
+  // Advanced course recommendation
+  async sendAdvancedCourseRecommendation(courseTitle: string, category: string): Promise<void> {
+    await this.sendNotification({
+      title: '⚡ Advanced Challenge',
+      body: `Ready for a challenge? Try "${courseTitle}" in ${category} - Advanced level!`,
+      tag: 'advanced-recommendation',
+      requireInteraction: true,
+      actions: [
+        { action: 'view', title: 'View Course' },
+        { action: 'dismiss', title: 'Not Ready' }
+      ]
+    });
+  }
+
   // New features
   async sendNewFeatureNotification(featureName: string, description: string): Promise<void> {
     await this.sendNotification({
@@ -503,6 +603,32 @@ export class NotificationService {
     }, delay);
   }
 
+  // Schedule course recommendation notifications
+  scheduleCourseRecommendations(): void {
+    const now = new Date();
+    const isWeekend = now.getDay() === 0 || now.getDay() === 6;
+    
+    // Different times for course recommendations
+    const hour = isWeekend ? 17 : 20; // 5 PM weekends, 8 PM weekdays
+    
+    const scheduledTime = new Date();
+    scheduledTime.setHours(hour, 0, 0, 0);
+    
+    if (scheduledTime <= now) {
+      scheduledTime.setDate(scheduledTime.getDate() + 1);
+    }
+    
+    const delay = scheduledTime.getTime() - now.getTime();
+    
+    console.log(`💡 Scheduled course recommendations for ${isWeekend ? 'weekend' : 'weekday'} at ${hour}:00`);
+    
+    setTimeout(() => {
+      this.checkAndSendCourseRecommendations();
+      // Reschedule for next day
+      this.scheduleCourseRecommendations();
+    }, delay);
+  }
+
   // Check and send course continuation reminders
   private async checkAndSendCourseReminders(): Promise<void> {
     try {
@@ -518,6 +644,96 @@ export class NotificationService {
       }
     } catch (error) {
       console.error('Error checking course reminders:', error);
+    }
+  }
+
+  // Check and send course recommendation notifications
+  private async checkAndSendCourseRecommendations(): Promise<void> {
+    try {
+      // Get user's learning history and preferences
+      const userStats = JSON.parse(localStorage.getItem('user_stats') || '{"level": 1, "completedCourses": []}');
+      const currentCourse = JSON.parse(localStorage.getItem('current_course') || '{}');
+      const enrolledCourses = JSON.parse(localStorage.getItem('enrolled_courses') || '[]');
+      
+      // Randomly select a recommendation type
+      const recommendationTypes = [
+        'popular',
+        'category',
+        'trending',
+        'beginner',
+        'advanced',
+        'completion'
+      ];
+      
+      const randomType = recommendationTypes[Math.floor(Math.random() * recommendationTypes.length)];
+      
+      // Sample course data for recommendations
+      const sampleCourses = [
+        { title: 'AI TOOLS EXPLAINED - FOR BEGINNERS', category: 'AI & Technology', level: 'Beginner' },
+        { title: 'DIGITAL MARKETING MASTERY', category: 'Marketing', level: 'Intermediate' },
+        { title: 'WEB DEVELOPMENT FUNDAMENTALS', category: 'Programming', level: 'Beginner' },
+        { title: 'DATA SCIENCE ESSENTIALS', category: 'Data Science', level: 'Advanced' },
+        { title: 'BUSINESS STRATEGY & PLANNING', category: 'Business', level: 'Intermediate' },
+        { title: 'CYBERSECURITY BASICS', category: 'Security', level: 'Beginner' }
+      ];
+      
+      const randomCourse = sampleCourses[Math.floor(Math.random() * sampleCourses.length)];
+      
+      // Send recommendation based on type
+      switch (randomType) {
+        case 'popular':
+          await this.sendPopularCourseRecommendation(
+            randomCourse.title, 
+            randomCourse.category, 
+            Math.floor(Math.random() * 5000) + 1000
+          );
+          break;
+          
+        case 'category':
+          await this.sendCategoryCourseRecommendation(
+            randomCourse.title, 
+            randomCourse.category
+          );
+          break;
+          
+        case 'trending':
+          await this.sendTrendingCourseRecommendation(
+            randomCourse.title, 
+            randomCourse.category
+          );
+          break;
+          
+        case 'beginner':
+          if (randomCourse.level === 'Beginner') {
+            await this.sendBeginnerCourseRecommendation(
+              randomCourse.title, 
+              randomCourse.category
+            );
+          }
+          break;
+          
+        case 'advanced':
+          if (randomCourse.level === 'Advanced') {
+            await this.sendAdvancedCourseRecommendation(
+              randomCourse.title, 
+              randomCourse.category
+            );
+          }
+          break;
+          
+        case 'completion':
+          if (userStats.completedCourses && userStats.completedCourses.length > 0) {
+            const completedCourse = userStats.completedCourses[0];
+            await this.sendCompletionBasedRecommendation(
+              randomCourse.title, 
+              completedCourse
+            );
+          }
+          break;
+      }
+      
+    } catch (error) {
+      console.error('Error checking course recommendations:', error);
     }
   }
 
@@ -540,6 +756,7 @@ export class NotificationService {
     this.scheduleDailyReminder();
     this.scheduleStreakReminder();
     this.scheduleCourseReminders();
+    this.scheduleCourseRecommendations();
     
     // Schedule immediate check for existing triggers
     setTimeout(() => {

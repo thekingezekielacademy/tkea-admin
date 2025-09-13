@@ -112,6 +112,93 @@ const NotificationTest: React.FC = () => {
     }
   };
 
+  // Course recommendation test functions
+  const testPopularCourseRecommendation = async () => {
+    console.log('🧪 Testing popular course recommendation...');
+    if (permissionStatus === 'granted') {
+      try {
+        await notificationService.sendPopularCourseRecommendation(
+          'AI TOOLS EXPLAINED - FOR BEGINNERS',
+          'AI & Technology',
+          2500
+        );
+        console.log('✅ Popular course recommendation sent!');
+      } catch (error) {
+        console.error('❌ Error sending popular course recommendation:', error);
+      }
+    } else {
+      console.log('❌ Permission not granted');
+    }
+  };
+
+  const testCategoryCourseRecommendation = async () => {
+    console.log('🧪 Testing category course recommendation...');
+    if (permissionStatus === 'granted') {
+      try {
+        await notificationService.sendCategoryCourseRecommendation(
+          'DIGITAL MARKETING MASTERY',
+          'Marketing'
+        );
+        console.log('✅ Category course recommendation sent!');
+      } catch (error) {
+        console.error('❌ Error sending category course recommendation:', error);
+      }
+    } else {
+      console.log('❌ Permission not granted');
+    }
+  };
+
+  const testTrendingCourseRecommendation = async () => {
+    console.log('🧪 Testing trending course recommendation...');
+    if (permissionStatus === 'granted') {
+      try {
+        await notificationService.sendTrendingCourseRecommendation(
+          'WEB DEVELOPMENT FUNDAMENTALS',
+          'Programming'
+        );
+        console.log('✅ Trending course recommendation sent!');
+      } catch (error) {
+        console.error('❌ Error sending trending course recommendation:', error);
+      }
+    } else {
+      console.log('❌ Permission not granted');
+    }
+  };
+
+  const testBeginnerCourseRecommendation = async () => {
+    console.log('🧪 Testing beginner course recommendation...');
+    if (permissionStatus === 'granted') {
+      try {
+        await notificationService.sendBeginnerCourseRecommendation(
+          'CYBERSECURITY BASICS',
+          'Security'
+        );
+        console.log('✅ Beginner course recommendation sent!');
+      } catch (error) {
+        console.error('❌ Error sending beginner course recommendation:', error);
+      }
+    } else {
+      console.log('❌ Permission not granted');
+    }
+  };
+
+  const testAdvancedCourseRecommendation = async () => {
+    console.log('🧪 Testing advanced course recommendation...');
+    if (permissionStatus === 'granted') {
+      try {
+        await notificationService.sendAdvancedCourseRecommendation(
+          'DATA SCIENCE ESSENTIALS',
+          'Data Science'
+        );
+        console.log('✅ Advanced course recommendation sent!');
+      } catch (error) {
+        console.error('❌ Error sending advanced course recommendation:', error);
+      }
+    } else {
+      console.log('❌ Permission not granted');
+    }
+  };
+
   return (
     <div className="bg-white p-6 rounded-lg shadow-lg max-w-md mx-auto">
       <h2 className="text-2xl font-bold mb-4 text-gray-800">Notification Test</h2>
@@ -180,10 +267,49 @@ const NotificationTest: React.FC = () => {
           )}
         </div>
 
+        {/* Course Recommendation Tests */}
+        {permissionStatus === 'granted' && (
+          <div className="mt-6">
+            <h3 className="text-lg font-semibold mb-3 text-gray-700">Course Recommendation Tests</h3>
+            <div className="space-y-2">
+              <button
+                onClick={testPopularCourseRecommendation}
+                className="w-full bg-orange-500 text-white py-2 px-4 rounded hover:bg-orange-600 transition-colors"
+              >
+                Test Popular Course Recommendation
+              </button>
+              <button
+                onClick={testCategoryCourseRecommendation}
+                className="w-full bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 transition-colors"
+              >
+                Test Category Course Recommendation
+              </button>
+              <button
+                onClick={testTrendingCourseRecommendation}
+                className="w-full bg-green-500 text-white py-2 px-4 rounded hover:bg-green-600 transition-colors"
+              >
+                Test Trending Course Recommendation
+              </button>
+              <button
+                onClick={testBeginnerCourseRecommendation}
+                className="w-full bg-teal-500 text-white py-2 px-4 rounded hover:bg-teal-600 transition-colors"
+              >
+                Test Beginner Course Recommendation
+              </button>
+              <button
+                onClick={testAdvancedCourseRecommendation}
+                className="w-full bg-red-500 text-white py-2 px-4 rounded hover:bg-red-600 transition-colors"
+              >
+                Test Advanced Course Recommendation
+              </button>
+            </div>
+          </div>
+        )}
+
         <div className="text-xs text-gray-500 mt-4">
           <p><strong>Notification Schedule:</strong></p>
-          <p>• Weekdays: 6 PM (Daily), 8 PM (Streak), 7 PM (Course)</p>
-          <p>• Weekends: 2 PM (Daily), 3 PM (Streak), 4 PM (Course)</p>
+          <p>• Weekdays: 6 PM (Daily), 8 PM (Streak), 7 PM (Course), 8 PM (Recommendations)</p>
+          <p>• Weekends: 2 PM (Daily), 3 PM (Streak), 4 PM (Course), 5 PM (Recommendations)</p>
         </div>
       </div>
     </div>
