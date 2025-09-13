@@ -39,10 +39,44 @@ const FlutterwavePaymentModal: React.FC<FlutterwavePaymentModalProps> = ({ isOpe
     error?: string;
   }>({ status: 'idle' });
 
-  // Initialize payment modal
+  // Disable Flutterwave fingerprinting globally to avoid 400 errors
   useEffect(() => {
+    window.FlutterwaveDisableFingerprinting = true;
+  }, []);
+
+  // Load Flutterwave script
+  useEffect(() => {
+    const loadFlutterwaveScript = () => {
+      return new Promise((resolve, reject) => {
+        // Check if script already loaded
+        if (window.FlutterwaveCheckout) {
+          resolve(true);
+          return;
+        }
+
+        const script = document.createElement('script');
+        script.src = 'https://checkout.flutterwave.com/v3.js';
+        script.async = true;
+        script.onload = () => {
+          console.log('✅ Flutterwave script loaded successfully');
+          resolve(true);
+        };
+        script.onerror = () => {
+          console.error('❌ Failed to load Flutterwave script');
+          reject(new Error('Failed to load Flutterwave script'));
+        };
+        document.head.appendChild(script);
+      });
+    };
+
     if (isOpen) {
-      console.log('✅ Flutterwave inline checkout modal initialized');
+      loadFlutterwaveScript()
+        .then(() => {
+          console.log('✅ Flutterwave inline checkout modal initialized');
+        })
+        .catch((error) => {
+          console.error('❌ Flutterwave initialization error:', error);
+        });
     }
   }, [isOpen]);
 
@@ -166,6 +200,9 @@ const FlutterwavePaymentModal: React.FC<FlutterwavePaymentModalProps> = ({ isOpe
       }
       
       console.log('✅ ALL VALUES VALIDATED - No empty values detected');
+
+      // Disable fingerprinting globally to avoid 400 errors
+      window.FlutterwaveDisableFingerprinting = true;
 
       // FLUTTERWAVE HOSTED PAYMENT SOLUTION - BYPASS FINGERPRINTING
       console.log('🚀 Using Flutterwave hosted payment solution to bypass fingerprinting...');
