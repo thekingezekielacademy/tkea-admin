@@ -211,6 +211,8 @@ const FlutterwavePaymentModal: React.FC<FlutterwavePaymentModalProps> = ({ isOpe
       console.log('🚀 Making request to Flutterwave API endpoint...');
       try {
         const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+        console.log('🔗 API URL:', API_BASE_URL);
+        
         const response = await fetch(`${API_BASE_URL}/flutterwave/initialize-payment`, {
           method: 'POST',
           headers: {
@@ -227,7 +229,17 @@ const FlutterwavePaymentModal: React.FC<FlutterwavePaymentModalProps> = ({ isOpe
           }),
         });
 
+        console.log('📡 Response status:', response.status);
+        console.log('📡 Response headers:', Object.fromEntries(response.headers.entries()));
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('❌ Server error response:', errorText);
+          throw new Error(`Server error: ${response.status} - ${errorText}`);
+        }
+
         const result = await response.json();
+        console.log('📡 Server response:', result);
         
         if (result.success && result.data) {
           console.log('✅ Server-side Flutterwave initialization successful:', result.data);

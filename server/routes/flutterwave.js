@@ -16,9 +16,18 @@ if (!FLUTTERWAVE_SECRET_KEY || !FLUTTERWAVE_PUBLIC_KEY || !FLUTTERWAVE_ENCRYPTIO
 // Initialize Flutterwave payment
 router.post('/initialize-payment', async (req, res) => {
   try {
+    console.log('🔧 Flutterwave Environment Variables:');
+    console.log('FLUTTERWAVE_SECRET_KEY:', FLUTTERWAVE_SECRET_KEY ? 'SET' : 'NOT SET');
+    console.log('FLUTTERWAVE_PUBLIC_KEY:', FLUTTERWAVE_PUBLIC_KEY ? 'SET' : 'NOT SET');
+    console.log('FLUTTERWAVE_ENCRYPTION_KEY:', FLUTTERWAVE_ENCRYPTION_KEY ? 'SET' : 'NOT SET');
+    console.log('FLUTTERWAVE_PLAN_ID:', FLUTTERWAVE_PLAN_ID ? 'SET' : 'NOT SET');
+    
     const { email, amount, plan_name, user_id, tx_ref, customer_name, phone_number } = req.body;
     
+    console.log('📝 Payment request received:', { email, amount, plan_name, user_id });
+    
     if (!email || !amount || !plan_name) {
+      console.log('❌ Missing required fields:', { email: !!email, amount: !!amount, plan_name: !!plan_name });
       return res.status(400).json({ 
         success: false, 
         message: 'Email, amount, and plan name are required' 
@@ -26,6 +35,7 @@ router.post('/initialize-payment', async (req, res) => {
     }
 
     if (!FLUTTERWAVE_SECRET_KEY) {
+      console.log('❌ Flutterwave not configured on server');
       return res.status(500).json({ 
         success: false, 
         message: 'Flutterwave not configured on server' 
@@ -61,6 +71,7 @@ router.post('/initialize-payment', async (req, res) => {
     };
 
     // Call Flutterwave API to initialize payment
+    console.log('🚀 Calling Flutterwave API...');
     const response = await fetch('https://api.flutterwave.com/v3/payments', {
       method: 'POST',
       headers: {
@@ -70,7 +81,9 @@ router.post('/initialize-payment', async (req, res) => {
       body: JSON.stringify(paymentData)
     });
 
+    console.log('📡 Flutterwave API response status:', response.status);
     const result = await response.json();
+    console.log('📡 Flutterwave API response:', JSON.stringify(result, null, 2));
 
     if (result.status === 'success') {
       console.log('✅ Flutterwave payment initialized successfully:', result.data.tx_ref);
@@ -95,10 +108,16 @@ router.post('/initialize-payment', async (req, res) => {
     }
 
   } catch (error) {
-    console.error('Flutterwave payment initialization error:', error);
+    console.error('❌ Flutterwave payment initialization error:', error);
+    console.error('❌ Error details:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    });
+    
     res.status(500).json({
       success: false,
-      message: 'Payment initialization failed. Please try again.'
+      message: `Payment initialization failed: ${error.message}. Please try again.`
     });
   }
 });
