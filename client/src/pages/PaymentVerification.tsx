@@ -11,10 +11,37 @@ const PaymentVerification: React.FC = () => {
   const [status, setStatus] = useState<'loading' | 'verifying' | 'success' | 'error'>('loading');
   const [message, setMessage] = useState('Loading...');
   const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
     const verifyPayment = async () => {
       try {
+        // First, check if user already has an active subscription
+        if (user?.id) {
+          const { data: existingSubscription } = await supabase
+            .from('user_subscriptions')
+            .select('*')
+            .eq('user_id', user.id)
+            .eq('status', 'active')
+            .order('created_at', { ascending: false })
+            .limit(1);
+          
+          if (existingSubscription && existingSubscription.length > 0) {
+            console.log('✅ User already has active subscription:', existingSubscription[0]);
+            setStatus('success');
+            setMessage('Payment successful! Your subscription is already active.');
+            
+            // Update local storage
+            localStorage.setItem('subscription_active', 'true');
+            localStorage.setItem('payment_successful', 'true');
+            
+            setTimeout(() => {
+              navigate('/subscription');
+            }, 2000);
+            return;
+          }
+        }
+        
         const tx_ref = searchParams.get('tx_ref');
         const status = searchParams.get('status');
         const transaction_id = searchParams.get('transaction_id');
@@ -151,9 +178,38 @@ const PaymentVerification: React.FC = () => {
 
       } catch (err) {
         console.error('Payment verification error:', err);
+        
+        // Check if subscription might have been created despite the error
+        try {
+          const { data: existingSubscription } = await supabase
+            .from('user_subscriptions')
+            .select('*')
+            .eq('user_id', user?.id)
+            .eq('status', 'active')
+            .order('created_at', { ascending: false })
+            .limit(1);
+          
+          if (existingSubscription && existingSubscription.length > 0) {
+            console.log('✅ Found existing active subscription despite error:', existingSubscription[0]);
+            setStatus('success');
+            setMessage('Payment successful! Your subscription is now active.');
+            
+            // Update local storage
+            localStorage.setItem('subscription_active', 'true');
+            localStorage.setItem('payment_successful', 'true');
+            
+            setTimeout(() => {
+              navigate('/subscription');
+            }, 3000);
+            return;
+          }
+        } catch (checkError) {
+          console.error('Error checking for existing subscription:', checkError);
+        }
+        
         setStatus('error');
         setError(err instanceof Error ? err.message : 'Payment verification failed');
-        setMessage('There was an issue with your payment. Please contact support.');
+        setMessage('There was an issue with your payment. Please try again or contact support.');
       }
     };
 
@@ -248,10 +304,28 @@ const PaymentVerification: React.FC = () => {
         {status === 'error' && (
           <div className="space-y-3">
             <button
-              onClick={() => navigate('/subscription')}
+              onClick={() => {
+                setRetryCount(prev => prev + 1);
+                setStatus('verifying');
+                setMessage('Re-verifying your payment...');
+                setError(null);
+                // Re-run verification
+                setTimeout(() => {
+                  const tx_ref = searchParams.get('tx_ref');
+                  if (tx_ref) {
+                    window.location.href = `/payment-verification?tx_ref=${tx_ref}&retry=${retryCount + 1}`;
+                  }
+                }, 1000);
+              }}
               className="w-full px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
             >
-              Try Again
+              Check Again
+            </button>
+            <button
+              onClick={() => navigate('/subscription')}
+              className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              Go to Subscription
             </button>
             <button
               onClick={() => navigate('/dashboard')}
