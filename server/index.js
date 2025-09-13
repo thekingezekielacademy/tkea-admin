@@ -13,7 +13,7 @@ const newsletterRoutes = require('./routes/newsletter');
 const courseRoutes = require('./routes/courses');
 const lessonRoutes = require('./routes/lessons');
 const paymentRoutes = require('./routes/payments');
-const paystackRoutes = require('./routes/paystack');
+// const paystackRoutes = require('./routes/paystack'); // Disabled - using Flutterwave instead
 
 // Load environment variables from parent directory
 dotenv.config({ path: path.join(__dirname, '../.env') });
@@ -61,7 +61,10 @@ app.use('/api/newsletter', newsletterRoutes);
 app.use('/api/courses', courseRoutes);
 app.use('/api/lessons', lessonRoutes);
 app.use('/api/payments', paymentRoutes);
-app.use('/api/paystack', paystackRoutes);
+// app.use('/api/paystack', paystackRoutes); // Disabled - using Flutterwave instead
+
+// Serve Flutterwave API routes from the api directory
+app.use('/api/flutterwave', express.static(path.join(__dirname, '../api/flutterwave')));
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

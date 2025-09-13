@@ -53,6 +53,9 @@ import './App.css';
 import './styles/orientation.css'; // Import orientation CSS
 
 function App() {
+  const [appError, setAppError] = React.useState<string | null>(null);
+  const [isLoading, setIsLoading] = React.useState(true);
+
   useEffect(() => {
     // Force cache clearing for all users on app load
     const forceCacheClear = async () => {
@@ -77,8 +80,12 @@ function App() {
     };
     
     // Initialize monitoring first
-    webVitals.startMonitoring();
-    analytics.initialize();
+    try {
+      webVitals.startMonitoring();
+      analytics.initialize();
+    } catch (error) {
+      console.warn('Analytics initialization failed:', error);
+    }
     
     // Force cache clear before initializing service worker
     forceCacheClear();
@@ -86,7 +93,33 @@ function App() {
     // Temporarily disable service worker to test if it's causing the blank page
     // initializeServiceWorker();
     
-    // App component mounted successfully
+    // Set loading to false after initialization
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 2000);
+    
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Global error handler
+  useEffect(() => {
+    const handleError = (event: ErrorEvent) => {
+      console.error('Global error caught:', event.error);
+      setAppError('An error occurred while loading the application. Please try refreshing the page.');
+    };
+
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      console.error('Unhandled promise rejection:', event.reason);
+      setAppError('An error occurred while loading the application. Please try refreshing the page.');
+    };
+
+    window.addEventListener('error', handleError);
+    window.addEventListener('unhandledrejection', handleUnhandledRejection);
+
+    return () => {
+      window.removeEventListener('error', handleError);
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+    };
   }, []);
 
   // Handle PWA orientation changes
@@ -122,6 +155,59 @@ function App() {
       window.removeEventListener('resize', handleOrientationChange);
     };
   }, []);
+
+  // Show loading screen
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">King Ezekiel Academy</h1>
+          <p className="text-gray-600">Loading your learning experience...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error screen if there's an app error
+  if (appError) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-red-50 to-pink-100 flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white rounded-xl shadow-lg p-8 text-center">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
+          </div>
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">King Ezekiel Academy</h1>
+          <p className="text-gray-600 mb-6">{appError}</p>
+          <div className="space-y-3">
+            <button 
+              onClick={() => window.location.reload()} 
+              className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Refresh Page
+            </button>
+            <button 
+              onClick={() => setAppError(null)} 
+              className="w-full bg-gray-200 text-gray-800 px-6 py-3 rounded-lg hover:bg-gray-300 transition-colors"
+            >
+              Try Again
+            </button>
+          </div>
+          <div className="mt-6 text-sm text-gray-500">
+            <p>If the problem persists, please try:</p>
+            <ul className="mt-2 space-y-1">
+              <li>• Disabling browser extensions</li>
+              <li>• Using incognito/private mode</li>
+              <li>• Trying a different browser</li>
+              <li>• Checking your internet connection</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <SafeErrorBoundary>
