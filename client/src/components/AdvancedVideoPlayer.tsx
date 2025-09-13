@@ -892,12 +892,17 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
                 right: auto !important;
                 max-height: none !important;
                 overflow-y: visible !important;
+                touch-action: manipulation !important;
               }
               
               .speed-menu button {
-                min-height: 32px !important;
-                padding: 6px 10px !important;
-                font-size: 12px !important;
+                min-height: 44px !important;
+                padding: 12px 16px !important;
+                font-size: 14px !important;
+                touch-action: manipulation !important;
+                -webkit-tap-highlight-color: rgba(59, 130, 246, 0.3) !important;
+                cursor: pointer !important;
+                pointer-events: auto !important;
               }
             }
             
@@ -1043,11 +1048,21 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
                   
                   {/* Speed Menu */}
                   {showSpeedMenu && (
-                    <div className="speed-menu absolute bottom-24 left-0 bg-black bg-opacity-95 rounded-lg p-2 space-y-1 min-w-[100px] z-50 shadow-xl border border-gray-500 max-h-[200px] overflow-y-auto">
+                    <div 
+                      className="speed-menu absolute bottom-24 left-0 bg-black bg-opacity-95 rounded-lg p-2 space-y-1 min-w-[100px] z-50 shadow-xl border border-gray-500 max-h-[200px] overflow-y-auto"
+                      onTouchStart={(e) => e.stopPropagation()}
+                      onTouchEnd={(e) => e.stopPropagation()}
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       {availableSpeeds.map((speed) => (
                         <button
                           key={speed}
                           onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleSpeedChange(speed);
+                          }}
+                          onTouchEnd={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
                             handleSpeedChange(speed);
@@ -1057,7 +1072,13 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
                               ? 'bg-blue-600 text-white hover:bg-blue-700' 
                               : 'text-gray-200 hover:bg-blue-600 hover:text-white'
                           }`}
-                          style={{ pointerEvents: 'auto' }}
+                          style={{ 
+                            pointerEvents: 'auto',
+                            touchAction: 'manipulation',
+                            WebkitTouchCallout: 'none',
+                            WebkitUserSelect: 'none',
+                            userSelect: 'none'
+                          }}
                           data-speed-control
                         >
                           {speed}x
