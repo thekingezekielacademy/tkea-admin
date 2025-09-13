@@ -4,7 +4,7 @@ import ProgressRing from '../../components/ProgressRing';
 import AdvancedVideoPlayer from '../../components/AdvancedVideoPlayer';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
-import { TrialStatus } from '../../utils/trialManager';
+import { TrialStatus, TrialManager } from '../../utils/trialManager';
 import secureStorage from '../../utils/secureStorage';
 import { notificationService } from '../../utils/notificationService';
 
@@ -331,41 +331,25 @@ const LessonPlayer: React.FC = () => {
         console.log('📊 Subscription status:', isSubActive);
         console.log('📊 Database subscription status:', hasDatabaseSubscription);
         
-        // Check trial status from localStorage
-        const localTrial = localStorage.getItem('user_trial_status');
-        console.log('📅 Local trial data:', localTrial);
+        // Check trial status using the centralized helper
+        const updatedTrialStatus = TrialManager.ensureTrialStatusIsCurrent();
+        console.log('📅 Trial status check result:', updatedTrialStatus);
         
-        if (localTrial) {
-          try {
-            const parsedTrial = JSON.parse(localTrial);
-            const now = new Date();
-            const endDate = new Date(parsedTrial.endDate);
-            const timeDiff = endDate.getTime() - now.getTime();
-            const daysRemaining = Math.max(0, Math.floor(timeDiff / (1000 * 60 * 60 * 24)));
-            
-            const updatedTrialStatus = {
-              ...parsedTrial,
-              daysRemaining,
-              isExpired: daysRemaining <= 0
-            };
-            
-            setTrialStatus(updatedTrialStatus);
-            console.log('📊 Trial status:', updatedTrialStatus);
-            
-            // Check if access should be granted (prioritize database subscription)
-            const hasAccess = updatedTrialStatus.isActive || hasDatabaseSubscription || isSubActive;
-            console.log('🔐 Has access:', hasAccess, '(Trial active:', updatedTrialStatus.isActive, '| DB Sub:', hasDatabaseSubscription, '| Secure Sub:', isSubActive, ')');
-            
-            // Redirect if NO access (trial expired AND no subscription)
-            if (!hasAccess) {
-              console.log('🚫 ACCESS DENIED - Trial expired and no subscription - redirecting to profile');
-              navigate('/profile', { replace: true });
-              return;
-            } else {
-              console.log('✅ ACCESS GRANTED - Trial active or subscription active');
-            }
-          } catch (parseError) {
-            console.error('❌ Failed to parse localStorage trial data:', parseError);
+        if (updatedTrialStatus) {
+          setTrialStatus(updatedTrialStatus);
+          console.log('📊 Trial status updated:', updatedTrialStatus);
+          
+          // Check if access should be granted (prioritize database subscription)
+          const hasAccess = updatedTrialStatus.isActive || hasDatabaseSubscription || isSubActive;
+          console.log('🔐 Has access:', hasAccess, '(Trial active:', updatedTrialStatus.isActive, '| DB Sub:', hasDatabaseSubscription, '| Secure Sub:', isSubActive, ')');
+          
+          // Redirect if NO access (trial expired AND no subscription)
+          if (!hasAccess) {
+            console.log('🚫 ACCESS DENIED - Trial expired and no subscription - redirecting to profile');
+            navigate('/profile', { replace: true });
+            return;
+          } else {
+            console.log('✅ ACCESS GRANTED - Trial active or subscription active');
           }
         } else {
           console.log('⚠️ No trial data found in localStorage');

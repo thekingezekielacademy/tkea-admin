@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trial Status Debug</title>
+</head>
+<body>
+    <h1>Trial Status Debug</h1>
+    <div id="debug-info"></div>
+    
+    <script>
+        // Debug trial status
+        function debugTrialStatus() {
+            const debugDiv = document.getElementById('debug-info');
+            
+            // Get trial data from localStorage
+            const localTrial = localStorage.getItem('user_trial_status');
+            
+            let debugInfo = '<h2>Local Storage Trial Data:</h2>';
+            if (localTrial) {
+                try {
+                    const trialData = JSON.parse(localTrial);
+                    debugInfo += '<pre>' + JSON.stringify(trialData, null, 2) + '</pre>';
+                    
+                    // Calculate current status
+                    const now = new Date();
+                    const endDate = new Date(trialData.endDate);
+                    const isExpired = now > endDate;
+                    
+                    // Calculate days remaining using the same logic as the app
+                    const todayStart = new Date(now);
+                    todayStart.setHours(0, 0, 0, 0);
+                    
+                    const endDateStart = new Date(endDate);
+                    endDateStart.setHours(0, 0, 0, 0);
+                    
+                    const timeDiff = endDateStart.getTime() - todayStart.getTime();
+                    const daysRemaining = Math.max(0, Math.floor(timeDiff / (1000 * 60 * 60 * 24)));
+                    
+                    debugInfo += '<h2>Current Calculation:</h2>';
+                    debugInfo += '<p><strong>Current Time:</strong> ' + now.toISOString() + '</p>';
+                    debugInfo += '<p><strong>End Date:</strong> ' + endDate.toISOString() + '</p>';
+                    debugInfo += '<p><strong>Is Expired (time comparison):</strong> ' + isExpired + '</p>';
+                    debugInfo += '<p><strong>Days Remaining (day comparison):</strong> ' + daysRemaining + '</p>';
+                    debugInfo += '<p><strong>Should be Active:</strong> ' + (daysRemaining > 0) + '</p>';
+                    debugInfo += '<p><strong>Stored isActive:</strong> ' + trialData.isActive + '</p>';
+                    
+                } catch (error) {
+                    debugInfo += '<p style="color: red;">Error parsing trial data: ' + error.message + '</p>';
+                }
+            } else {
+                debugInfo += '<p style="color: red;">No trial data found in localStorage</p>';
+            }
+            
+            // Check subscription status
+            const subscriptionActive = localStorage.getItem('subscription_active') === 'true';
+            debugInfo += '<h2>Subscription Status:</h2>';
+            debugInfo += '<p><strong>Subscription Active:</strong> ' + subscriptionActive + '</p>';
+            
+            debugDiv.innerHTML = debugInfo;
+        }
+        
+        // Run debug on page load
+        window.onload = debugTrialStatus;
+    </script>
+</body>
+</html>

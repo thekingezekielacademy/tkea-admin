@@ -322,6 +322,34 @@ export class TrialManager {
   }
 
   /**
+   * Ensure trial status is properly calculated and updated
+   */
+  static ensureTrialStatusIsCurrent(): TrialStatus | null {
+    try {
+      const localTrial = localStorage.getItem(this.TRIAL_STORAGE_KEY);
+      if (!localTrial) return null;
+      
+      const parsedTrial = JSON.parse(localTrial);
+      const daysRemaining = this.calculateDaysRemaining(parsedTrial.endDate);
+      
+      const updatedStatus: TrialStatus = {
+        ...parsedTrial,
+        daysRemaining,
+        isActive: daysRemaining > 0,
+        isExpired: daysRemaining <= 0
+      };
+      
+      // Update localStorage with current status
+      localStorage.setItem(this.TRIAL_STORAGE_KEY, JSON.stringify(updatedStatus));
+      
+      return updatedStatus;
+    } catch (error) {
+      console.error('Failed to ensure trial status is current:', error);
+      return null;
+    }
+  }
+
+  /**
    * Reset trial for testing purposes (for admin use)
    */
   static resetTrialForTesting(userId: string): void {
