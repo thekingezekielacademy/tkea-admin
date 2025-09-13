@@ -2,11 +2,18 @@ const express = require('express');
 const router = express.Router();
 const crypto = require('crypto');
 
-// Flutterwave configuration
-const FLUTTERWAVE_SECRET_KEY = process.env.FLUTTERWAVE_SECRET_KEY;
-const FLUTTERWAVE_PUBLIC_KEY = process.env.FLUTTERWAVE_PUBLIC_KEY;
-const FLUTTERWAVE_ENCRYPTION_KEY = process.env.FLUTTERWAVE_ENCRYPTION_KEY;
-const FLUTTERWAVE_PLAN_ID = process.env.FLUTTERWAVE_PLAN_ID;
+// Flutterwave configuration - temporarily hardcoded for testing
+const FLUTTERWAVE_SECRET_KEY = process.env.FLUTTERWAVE_SECRET_KEY || 'FLWSECK-eb50a05e74e4a648510719bfa75dad5b-1993ab9913bvt-X';
+const FLUTTERWAVE_PUBLIC_KEY = process.env.FLUTTERWAVE_PUBLIC_KEY || 'FLWPUBK-454fa0a1faa931dcccf6672ed71645cd-X';
+const FLUTTERWAVE_ENCRYPTION_KEY = process.env.FLUTTERWAVE_ENCRYPTION_KEY || 'eb50a05e74e459b334aad266';
+const FLUTTERWAVE_PLAN_ID = process.env.FLUTTERWAVE_PLAN_ID || '146851';
+
+// Debug environment variables
+console.log('🔧 Flutterwave Environment Variables:');
+console.log('FLUTTERWAVE_SECRET_KEY:', FLUTTERWAVE_SECRET_KEY ? 'SET' : 'NOT SET');
+console.log('FLUTTERWAVE_PUBLIC_KEY:', FLUTTERWAVE_PUBLIC_KEY ? 'SET' : 'NOT SET');
+console.log('FLUTTERWAVE_ENCRYPTION_KEY:', FLUTTERWAVE_ENCRYPTION_KEY ? 'SET' : 'NOT SET');
+console.log('FLUTTERWAVE_PLAN_ID:', FLUTTERWAVE_PLAN_ID ? 'SET' : 'NOT SET');
 
 // Initialize Flutterwave payment
 router.post('/initialize-payment', async (req, res) => {
