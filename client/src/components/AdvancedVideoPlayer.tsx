@@ -875,19 +875,19 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
             /* Mobile speed menu improvements */
             @media (max-width: 768px) {
               .speed-menu {
-                min-width: 140px !important;
-                padding: 8px !important;
-                bottom: 24px !important;
+                min-width: 120px !important;
+                padding: 6px !important;
+                bottom: 28px !important;
                 left: 0 !important;
                 right: auto !important;
-                max-height: 300px !important;
+                max-height: none !important;
                 overflow-y: visible !important;
               }
               
               .speed-menu button {
-                min-height: 36px !important;
-                padding: 8px 12px !important;
-                font-size: 13px !important;
+                min-height: 32px !important;
+                padding: 6px 10px !important;
+                font-size: 12px !important;
               }
             }
             
@@ -1016,7 +1016,7 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
                   
                   {/* Speed Menu */}
                   {showSpeedMenu && (
-                    <div className="speed-menu absolute bottom-20 left-0 bg-black bg-opacity-95 rounded-lg p-2 space-y-1 min-w-[120px] sm:min-w-[100px] z-50 shadow-xl border border-gray-500">
+                    <div className="speed-menu absolute bottom-24 left-0 bg-black bg-opacity-95 rounded-lg p-2 space-y-1 min-w-[100px] z-50 shadow-xl border border-gray-500">
                       {availableSpeeds.map((speed) => (
                         <button
                           key={speed}
@@ -1025,7 +1025,7 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
                             e.stopPropagation();
                             handleSpeedChange(speed);
                           }}
-                          className={`w-full text-left px-3 py-2 rounded text-sm sm:text-xs font-medium transition-all duration-200 cursor-pointer ${
+                          className={`w-full text-left px-2 py-1 rounded text-xs font-medium transition-all duration-200 cursor-pointer ${
                             playbackRate === speed 
                               ? 'bg-blue-600 text-white hover:bg-blue-700' 
                               : 'text-gray-200 hover:bg-blue-600 hover:text-white'
