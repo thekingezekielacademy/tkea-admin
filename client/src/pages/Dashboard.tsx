@@ -22,7 +22,6 @@ import {
 import { secureLog, secureError } from '../utils/secureLogger';
 import { notificationService } from '../utils/notificationService';
 import NotificationPermission from '../components/NotificationPermission';
-import NotificationTest from '../components/NotificationTest';
 
 interface Course {
   id: string;
@@ -1090,10 +1089,6 @@ const Dashboard: React.FC = () => {
         }}
       />
 
-      {/* Notification Test Component - Remove in production */}
-      <div className="p-4">
-        <NotificationTest />
-      </div>
       
       {/* Header */}
         <div className="bg-white shadow-sm border-b pt-16">
