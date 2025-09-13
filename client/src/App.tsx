@@ -195,6 +195,7 @@ function App() {
           <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">King Ezekiel Academy</h1>
           <p className="text-gray-600">Loading your learning experience...</p>
+          <p className="text-sm text-gray-500 mt-2">If this takes too long, please refresh the page</p>
         </div>
       </div>
     );
