@@ -173,7 +173,8 @@ const FlutterwavePaymentModal: React.FC<FlutterwavePaymentModalProps> = ({ isOpe
       // Use server-side initialization to get hosted payment link
       console.log('🚀 Making request to Flutterwave API endpoint...');
       try {
-        const response = await fetch('/api/flutterwave/initialize-payment', {
+        const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+        const response = await fetch(`${API_BASE_URL}/flutterwave/initialize-payment`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
