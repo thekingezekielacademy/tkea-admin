@@ -83,11 +83,27 @@ const NotificationTest: React.FC = () => {
           tag: 'direct-test'
         });
         console.log('✅ Direct notification created!');
+        console.log('🔍 Notification object:', notification);
         
         notification.onclick = () => {
           console.log('📱 Notification clicked!');
           notification.close();
         };
+        
+        notification.onshow = () => {
+          console.log('👁️ Notification is now visible!');
+        };
+        
+        notification.onerror = (error) => {
+          console.error('❌ Notification error:', error);
+        };
+        
+        // Auto-close after 5 seconds for testing
+        setTimeout(() => {
+          console.log('⏰ Auto-closing notification after 5 seconds');
+          notification.close();
+        }, 5000);
+        
       } catch (error) {
         console.error('❌ Error creating direct notification:', error);
       }
