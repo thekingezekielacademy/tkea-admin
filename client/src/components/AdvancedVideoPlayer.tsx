@@ -974,7 +974,7 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
                   
                   {/* Speed Menu */}
                   {showSpeedMenu && (
-                    <div className="speed-menu absolute bottom-8 left-0 bg-black bg-opacity-90 rounded-lg p-2 space-y-1 min-w-[80px] z-50">
+                    <div className="speed-menu absolute bottom-8 left-0 bg-black bg-opacity-90 rounded-lg p-2 space-y-1 min-w-[120px] sm:min-w-[80px] z-50 shadow-lg border border-gray-600 max-w-[200px] sm:max-w-none">
                       {availableSpeeds.map((speed) => (
                         <button
                           key={speed}
@@ -983,7 +983,7 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
                             e.stopPropagation();
                             handleSpeedChange(speed);
                           }}
-                          className={`w-full text-left px-2 py-1 rounded text-xs transition-colors cursor-pointer ${
+                          className={`w-full text-left px-3 py-2 rounded text-sm sm:text-xs transition-colors cursor-pointer ${
                             playbackRate === speed 
                               ? 'bg-blue-600 text-white hover:bg-blue-700' 
                               : 'text-gray-300 hover:bg-blue-600 hover:text-white'
@@ -995,7 +995,7 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
                         </button>
                       ))}
                       {availableSpeeds.length <= 8 && (
-                        <div className="text-xs text-gray-400 px-2 py-1 border-t border-gray-600 mt-1">
+                        <div className="text-xs text-gray-400 px-3 py-2 border-t border-gray-600 mt-1">
                           Max: {Math.max(...availableSpeeds)}x
                         </div>
                       )}
