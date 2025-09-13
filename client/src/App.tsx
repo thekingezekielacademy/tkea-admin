@@ -13,6 +13,7 @@ import ScrollToTop from './components/ScrollToTop';
 import SafeErrorBoundary from './components/SafeErrorBoundary';
 import webVitals from './utils/webVitals';
 import analytics from './utils/analytics';
+import { notificationService } from './utils/notificationService';
 import './utils/sentry'; // Initialize Sentry first
 import Home from './pages/Home';
 import Courses from './pages/Courses';
@@ -85,6 +86,24 @@ function App() {
       analytics.initialize();
     } catch (error) {
       console.warn('Analytics initialization failed:', error);
+    }
+
+    // Initialize notifications
+    try {
+      // Request notification permission and initialize schedules
+      if ('Notification' in window && Notification.permission === 'granted') {
+        notificationService.initializeNotifications();
+      } else if ('Notification' in window && Notification.permission === 'default') {
+        // Request permission after a delay to not be too pushy
+        setTimeout(async () => {
+          const permission = await Notification.requestPermission();
+          if (permission === 'granted') {
+            notificationService.initializeNotifications();
+          }
+        }, 3000);
+      }
+    } catch (error) {
+      console.warn('Notification initialization failed:', error);
     }
     
     // Force cache clear before initializing service worker

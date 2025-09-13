@@ -100,17 +100,32 @@ export class NotificationService {
 
   // Streak reminders
   async sendStreakReminder(streakDays: number): Promise<void> {
-    const messages = [
-      `🔥 You're on a ${streakDays}-day learning streak! Keep it going!`,
+    const now = new Date();
+    const isWeekend = now.getDay() === 0 || now.getDay() === 6;
+    
+    const weekdayMessages = [
+      `🔥 You're on a ${streakDays}-day learning streak! Keep it going this evening!`,
       `📚 Day ${streakDays} of your learning streak - don't break it now!`,
-      `🎯 ${streakDays} days strong! Continue your learning journey today.`,
-      `💪 Your ${streakDays}-day streak is impressive! Learn something new today.`
+      `🎯 ${streakDays} days strong! Continue your learning journey this evening.`,
+      `💪 Your ${streakDays}-day streak is impressive! Learn something new tonight.`,
+      `🌟 ${streakDays} days of dedication! Evening learning time!`,
+      `⚡ ${streakDays} days strong! Power up your evening with learning!`
     ];
 
+    const weekendMessages = [
+      `🔥 You're on a ${streakDays}-day learning streak! Perfect weekend to keep it going!`,
+      `📚 Day ${streakDays} of your learning streak - weekend learning time!`,
+      `🎯 ${streakDays} days strong! Continue your learning journey this afternoon.`,
+      `💪 Your ${streakDays}-day streak is impressive! Weekend learning session!`,
+      `🌟 ${streakDays} days of dedication! Afternoon learning time!`,
+      `⚡ ${streakDays} days strong! Weekend learning power!`
+    ];
+
+    const messages = isWeekend ? weekendMessages : weekdayMessages;
     const randomMessage = messages[Math.floor(Math.random() * messages.length)];
 
     await this.sendNotification({
-      title: '🔥 Learning Streak',
+      title: isWeekend ? '🔥 Weekend Streak Time!' : '🔥 Evening Streak Reminder',
       body: randomMessage,
       tag: 'streak-reminder',
       requireInteraction: true,
@@ -123,18 +138,34 @@ export class NotificationService {
 
   // Daily learning reminder
   async sendDailyLearningReminder(): Promise<void> {
-    const messages = [
-      '📖 Have you learned something new today?',
-      '🎓 Your daily learning session is waiting!',
-      '💡 Time to level up your skills!',
-      '🚀 Ready for your next lesson?',
-      '📚 Knowledge is power - learn something new today!'
+    const now = new Date();
+    const isWeekend = now.getDay() === 0 || now.getDay() === 6;
+    
+    const weekdayMessages = [
+      '📚 Ready to continue your learning journey this evening?',
+      '🎯 Time for your daily dose of knowledge!',
+      '💡 Let\'s learn something new today!',
+      '🚀 Your next lesson is waiting for you!',
+      '📖 Keep building your skills with King Ezekiel Academy!',
+      '🌟 Evening learning session - let\'s make it count!',
+      '⚡ Power up your evening with some learning!'
     ];
 
+    const weekendMessages = [
+      '📚 Perfect afternoon for some learning!',
+      '🎯 Weekend learning time - let\'s do this!',
+      '💡 Relax and learn something new this afternoon!',
+      '🚀 Your weekend learning adventure awaits!',
+      '📖 Make the most of your weekend with King Ezekiel Academy!',
+      '🌟 Afternoon learning session - perfect timing!',
+      '⚡ Weekend learning power - let\'s go!'
+    ];
+
+    const messages = isWeekend ? weekendMessages : weekdayMessages;
     const randomMessage = messages[Math.floor(Math.random() * messages.length)];
 
     await this.sendNotification({
-      title: '📚 Daily Learning',
+      title: isWeekend ? 'Weekend Learning Time!' : 'Evening Learning Reminder',
       body: randomMessage,
       tag: 'daily-reminder',
       requireInteraction: true,
@@ -388,9 +419,14 @@ export class NotificationService {
     }, delay);
   }
 
-  // Schedule daily learning reminder
-  scheduleDailyReminder(hour: number = 9): void {
+  // Schedule daily learning reminder with weekend/weekday differentiation
+  scheduleDailyReminder(): void {
     const now = new Date();
+    const isWeekend = now.getDay() === 0 || now.getDay() === 6; // Sunday or Saturday
+    
+    // Evening times on weekdays (6 PM), afternoon on weekends (2 PM)
+    const hour = isWeekend ? 14 : 18; // 2 PM weekends, 6 PM weekdays
+    
     const scheduledTime = new Date();
     scheduledTime.setHours(hour, 0, 0, 0);
     
@@ -399,17 +435,24 @@ export class NotificationService {
     }
     
     const delay = scheduledTime.getTime() - now.getTime();
+    
+    console.log(`📅 Scheduled daily reminder for ${isWeekend ? 'weekend' : 'weekday'} at ${hour}:00`);
     
     setTimeout(() => {
       this.sendDailyLearningReminder();
       // Reschedule for next day
-      this.scheduleDailyReminder(hour);
+      this.scheduleDailyReminder();
     }, delay);
   }
 
-  // Schedule streak reminder
-  scheduleStreakReminder(hour: number = 20): void {
+  // Schedule streak reminder with weekend/weekday differentiation
+  scheduleStreakReminder(): void {
     const now = new Date();
+    const isWeekend = now.getDay() === 0 || now.getDay() === 6; // Sunday or Saturday
+    
+    // Evening times on weekdays (8 PM), afternoon on weekends (3 PM)
+    const hour = isWeekend ? 15 : 20; // 3 PM weekends, 8 PM weekdays
+    
     const scheduledTime = new Date();
     scheduledTime.setHours(hour, 0, 0, 0);
     
@@ -418,6 +461,8 @@ export class NotificationService {
     }
     
     const delay = scheduledTime.getTime() - now.getTime();
+    
+    console.log(`🔥 Scheduled streak reminder for ${isWeekend ? 'weekend' : 'weekday'} at ${hour}:00`);
     
     setTimeout(() => {
       // Get current streak from localStorage or API
@@ -426,8 +471,105 @@ export class NotificationService {
         this.sendStreakReminder(streak);
       }
       // Reschedule for next day
-      this.scheduleStreakReminder(hour);
+      this.scheduleStreakReminder();
     }, delay);
+  }
+
+  // Schedule course continuation reminders
+  scheduleCourseReminders(): void {
+    const now = new Date();
+    const isWeekend = now.getDay() === 0 || now.getDay() === 6;
+    
+    // Different times for course reminders
+    const hour = isWeekend ? 16 : 19; // 4 PM weekends, 7 PM weekdays
+    
+    const scheduledTime = new Date();
+    scheduledTime.setHours(hour, 0, 0, 0);
+    
+    if (scheduledTime <= now) {
+      scheduledTime.setDate(scheduledTime.getDate() + 1);
+    }
+    
+    const delay = scheduledTime.getTime() - now.getTime();
+    
+    console.log(`📚 Scheduled course reminders for ${isWeekend ? 'weekend' : 'weekday'} at ${hour}:00`);
+    
+    setTimeout(() => {
+      this.checkAndSendCourseReminders();
+      // Reschedule for next day
+      this.scheduleCourseReminders();
+    }, delay);
+  }
+
+  // Check and send course continuation reminders
+  private async checkAndSendCourseReminders(): Promise<void> {
+    try {
+      const currentCourse = JSON.parse(localStorage.getItem('current_course') || '{}');
+      if (currentCourse && currentCourse.progress > 0 && currentCourse.progress < 100) {
+        const lastAccessed = localStorage.getItem(`last_accessed_${currentCourse.id}`);
+        if (lastAccessed) {
+          const hoursSinceLastAccess = (Date.now() - parseInt(lastAccessed)) / (1000 * 60 * 60);
+          if (hoursSinceLastAccess > 24) {
+            await this.sendCourseContinuationReminder(currentCourse.title, currentCourse.progress);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error checking course reminders:', error);
+    }
+  }
+
+  // Initialize all notification schedules
+  initializeNotifications(): void {
+    if (!this.isNotificationEnabled()) {
+      console.log('🔕 Notifications not enabled, skipping initialization');
+      return;
+    }
+
+    console.log('🔔 Initializing notification schedules...');
+    
+    // Schedule all notification types
+    this.scheduleDailyReminder();
+    this.scheduleStreakReminder();
+    this.scheduleCourseReminders();
+    
+    // Schedule immediate check for existing triggers
+    setTimeout(() => {
+      this.checkImmediateTriggers();
+    }, 5000); // Check after 5 seconds
+  }
+
+  // Check for immediate notification triggers
+  private async checkImmediateTriggers(): Promise<void> {
+    try {
+      // Check for XP level up
+      const previousLevel = parseInt(localStorage.getItem('previous_level') || '1');
+      const userStats = JSON.parse(localStorage.getItem('user_stats') || '{"level": 1}');
+      const currentLevel = userStats.level || 1;
+      
+      if (currentLevel > previousLevel) {
+        await this.sendXPLevelUpNotification(currentLevel, userStats.xp || 0);
+        localStorage.setItem('previous_level', currentLevel.toString());
+      }
+
+      // Check for trial expiration
+      const trialData = localStorage.getItem('user_trial_status');
+      if (trialData) {
+        const trial = JSON.parse(trialData);
+        if (trial.isActive && trial.daysRemaining <= 3 && trial.daysRemaining > 0) {
+          await this.sendTrialExpirationWarning(trial.daysRemaining);
+        }
+      }
+
+      // Check for premium upgrade opportunity
+      const userEngagement = parseInt(localStorage.getItem('user_engagement_score') || '0');
+      if (userEngagement > 10) {
+        await this.sendPremiumUpgradePrompt('unlimited courses and advanced features');
+      }
+
+    } catch (error) {
+      console.error('Error checking immediate triggers:', error);
+    }
   }
 }
 
