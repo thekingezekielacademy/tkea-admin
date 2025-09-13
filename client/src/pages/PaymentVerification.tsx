@@ -32,6 +32,15 @@ const PaymentVerification: React.FC = () => {
           throw new Error('Payment reference not found');
         }
 
+        // Check if status indicates cancellation or failure
+        if (status && (status === 'cancelled' || status === 'failed')) {
+          console.log('❌ Status parameter indicates payment was cancelled or failed');
+          setStatus('error');
+          setError('Payment was cancelled or failed');
+          setMessage('Your payment was not completed. Please try again.');
+          return;
+        }
+        
         // Don't fail immediately if status is not 'successful' - let Flutterwave API verify
         // The status parameter might not always be present in the redirect URL
         if (status && status !== 'successful') {
@@ -45,7 +54,14 @@ const PaymentVerification: React.FC = () => {
         const verification = await flutterwaveService.verifyPayment(tx_ref, transaction_id || undefined);
         
         if (!verification.success) {
-          throw new Error('Payment verification failed');
+          console.log('❌ Flutterwave verification failed:', verification);
+          throw new Error('Payment verification failed. The payment may have been cancelled or failed.');
+        }
+        
+        // Check if the transaction was actually successful
+        if (verification.transaction && verification.transaction.status !== 'successful') {
+          console.log('❌ Transaction status is not successful:', verification.transaction.status);
+          throw new Error(`Payment was not successful. Status: ${verification.transaction.status}`);
         }
 
         const transaction = verification.transaction;

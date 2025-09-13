@@ -248,6 +248,12 @@ const FlutterwavePaymentModal: React.FC<FlutterwavePaymentModalProps> = ({ isOpe
           if (result.data.link) {
             console.log('🚀 Redirecting to Flutterwave hosted payment page:', result.data.link);
             
+            // Store the transaction reference for verification
+            const txRef = result.data.tx_ref || result.data.reference;
+            if (txRef) {
+              localStorage.setItem('pending_payment_tx_ref', txRef);
+            }
+            
             // Open in new tab to avoid fingerprinting issues
             const paymentWindow = window.open(result.data.link, '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
             
@@ -259,14 +265,28 @@ const FlutterwavePaymentModal: React.FC<FlutterwavePaymentModalProps> = ({ isOpe
               const checkClosed = setInterval(() => {
                 if (paymentWindow.closed) {
                   clearInterval(checkClosed);
-                  // Payment window closed, redirect to verification
-                  window.location.href = '/payment-verification';
+                  
+                  // When window closes, show a message asking user to confirm payment status
+                  setPaymentState({ 
+                    status: 'processing', 
+                    error: 'Please check your email for payment confirmation or try again if payment failed.' 
+                  });
+                  setLoading(false);
+                  
+                  // Clear the pending payment reference
+                  localStorage.removeItem('pending_payment_tx_ref');
                 }
               }, 1000);
             }
             return;
           } else if (result.data.authorization_url) {
             console.log('🚀 Redirecting to Flutterwave authorization URL:', result.data.authorization_url);
+            
+            // Store the transaction reference for verification
+            const txRef = result.data.tx_ref || result.data.reference;
+            if (txRef) {
+              localStorage.setItem('pending_payment_tx_ref', txRef);
+            }
             
             // Open in new tab to avoid fingerprinting issues
             const paymentWindow = window.open(result.data.authorization_url, '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
@@ -279,8 +299,16 @@ const FlutterwavePaymentModal: React.FC<FlutterwavePaymentModalProps> = ({ isOpe
               const checkClosed = setInterval(() => {
                 if (paymentWindow.closed) {
                   clearInterval(checkClosed);
-                  // Payment window closed, redirect to verification
-                  window.location.href = '/payment-verification';
+                  
+                  // When window closes, show a message asking user to confirm payment status
+                  setPaymentState({ 
+                    status: 'processing', 
+                    error: 'Please check your email for payment confirmation or try again if payment failed.' 
+                  });
+                  setLoading(false);
+                  
+                  // Clear the pending payment reference
+                  localStorage.removeItem('pending_payment_tx_ref');
                 }
               }, 1000);
             }
@@ -418,6 +446,33 @@ const FlutterwavePaymentModal: React.FC<FlutterwavePaymentModalProps> = ({ isOpe
               <div className="flex items-center">
                 <FaCheckCircle className="w-4 h-4 text-green-500 mr-2" />
                 <span className="text-sm text-green-700">Payment successful!</span>
+              </div>
+            </div>
+          )}
+
+          {paymentState.status === 'processing' && (
+            <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500 mr-2"></div>
+                  <span className="text-sm text-blue-700">Payment window closed. Please verify your payment status.</span>
+                </div>
+                <button
+                  onClick={() => {
+                    const txRef = localStorage.getItem('pending_payment_tx_ref');
+                    if (txRef) {
+                      window.location.href = `/payment-verification?tx_ref=${txRef}`;
+                    } else {
+                      setPaymentState({ 
+                        status: 'error', 
+                        error: 'No payment reference found. Please try again.' 
+                      });
+                    }
+                  }}
+                  className="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
+                >
+                  Verify Payment
+                </button>
               </div>
             </div>
           )}
