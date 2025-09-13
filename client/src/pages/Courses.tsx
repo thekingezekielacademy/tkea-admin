@@ -109,15 +109,14 @@ const Courses: React.FC = () => {
     }
   };
 
-  // Check if user has trial access
-  const checkTrialAccess = async () => {
+  // Check if user has trial access with explicit subscription status
+  const checkTrialAccessWithStatus = async (isSubscribed: boolean) => {
     if (!user?.id) return;
     
     // CRITICAL: If user has an active subscription (any source), they should NOT have trial access
-    const isSubscribed = databaseSubscriptionStatus || 
-                        secureStorage.isSubscriptionActive();
+    const hasActiveSubscription = isSubscribed || secureStorage.isSubscriptionActive();
     
-    if (isSubscribed) {
+    if (hasActiveSubscription) {
       // console.log('✅ User has active subscription (secureStorage, localStorage, or database), no trial access needed');
       setHasTrialAccess(false);
       
@@ -188,7 +187,7 @@ const Courses: React.FC = () => {
       try {
         const trialAccess = await TrialManager.hasTrialAccess(user.id);
         // Only set trial access if user is NOT subscribed
-        if (!isSubscribed) {
+        if (!hasActiveSubscription) {
           setHasTrialAccess(trialAccess);
           // console.log('Trial access check from database:', trialAccess);
         }
@@ -207,8 +206,9 @@ const Courses: React.FC = () => {
       // console.log('🔍 User changed, checking subscription and trial access:', { userId: user.id, email: user.email });
       // Check database subscription status first, then trial access
       const checkSubscriptionAndTrial = async () => {
-        await checkDatabaseSubscription();
-        await checkTrialAccess();
+        const isSubscribed = await checkDatabaseSubscription();
+        // Pass the subscription status directly to avoid race conditions
+        await checkTrialAccessWithStatus(isSubscribed);
       };
       
       checkSubscriptionAndTrial();
@@ -602,7 +602,7 @@ const Courses: React.FC = () => {
   useEffect(() => {
     fetchCourses(0, false);
     if (user?.id) {
-      checkTrialAccess();
+      checkTrialAccessWithStatus(databaseSubscriptionStatus);
     }
   }, [user?.id]); // Run when user changes
 
@@ -811,11 +811,7 @@ const Courses: React.FC = () => {
                  secureStorage.isSubscriptionActive() || 
                  localStorage.getItem('subscription_active') === 'true') && hasTrialAccess;
               
-              // TEMPORARY: Force show banner for debugging on mobile
-              const isMobile = window.innerWidth <= 768;
-              const forceShow = isMobile && user?.id; // Force show on mobile if user is logged in
-              
-              return showTrialBanner || forceShow;
+              return showTrialBanner;
             })() && (
               <div className="bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl sm:rounded-2xl p-4 sm:p-6 text-white shadow-xl border border-blue-400">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
