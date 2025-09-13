@@ -455,7 +455,10 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
         const target = event.target as Element;
         // Don't close if clicking on the speed menu or speed button
         if (!target.closest('.speed-menu') && !target.closest('[data-speed-control]')) {
-          setShowSpeedMenu(false);
+          // Add a small delay for mobile to prevent accidental closing
+          setTimeout(() => {
+            setShowSpeedMenu(false);
+          }, 100);
         }
       }
     };
@@ -513,7 +516,14 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
           }
           setIsHovered(true);
         }}
-        onTouchEnd={() => {
+        onTouchEnd={(e) => {
+          // Prevent closing speed menu on mobile touch
+          if (showSpeedMenu) {
+            e.preventDefault();
+            e.stopPropagation();
+            return;
+          }
+          
           // For mobile, keep controls visible longer and add tap-to-toggle
           if (window.innerWidth <= 768) {
             // On mobile, controls stay visible for 5 seconds
@@ -896,6 +906,23 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
               position: absolute !important;
               z-index: 9999 !important;
               transform: translateY(0) !important;
+              min-height: auto !important;
+              max-height: 200px !important;
+              overflow-y: auto !important;
+            }
+            
+            /* Desktop speed menu improvements */
+            @media (min-width: 769px) {
+              .speed-menu {
+                min-width: 120px !important;
+                max-height: 180px !important;
+              }
+              
+              .speed-menu button {
+                min-height: 28px !important;
+                padding: 4px 8px !important;
+                font-size: 11px !important;
+              }
             }
             `}
           </style>
@@ -1016,7 +1043,7 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
                   
                   {/* Speed Menu */}
                   {showSpeedMenu && (
-                    <div className="speed-menu absolute bottom-24 left-0 bg-black bg-opacity-95 rounded-lg p-2 space-y-1 min-w-[100px] z-50 shadow-xl border border-gray-500">
+                    <div className="speed-menu absolute bottom-24 left-0 bg-black bg-opacity-95 rounded-lg p-2 space-y-1 min-w-[100px] z-50 shadow-xl border border-gray-500 max-h-[200px] overflow-y-auto">
                       {availableSpeeds.map((speed) => (
                         <button
                           key={speed}
