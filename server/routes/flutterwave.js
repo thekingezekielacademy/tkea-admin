@@ -56,7 +56,8 @@ router.post('/initialize-payment', async (req, res) => {
       tx_ref: transactionRef,
       amount: Number(amount),
       currency: 'NGN',
-      redirect_url: `${process.env.CLIENT_URL || 'http://localhost:3000'}/payment-verification`,
+      redirect_url: `${process.env.CLIENT_URL || 'https://app.thekingezekielacademy.com'}/payment-verification`,
+      webhook_url: `${process.env.CLIENT_URL || 'https://app.thekingezekielacademy.com'}/api/flutterwave/webhook`,
       payment_options: isMobile ? 'card,mobilemoney,ussd,banktransfer' : 'card,mobilemoney,ussd',
       customer: {
         email: email,
@@ -66,7 +67,7 @@ router.post('/initialize-payment', async (req, res) => {
       customizations: {
         title: 'King Ezekiel Academy',
         description: `Subscription: ${plan_name}`,
-        logo: `${process.env.CLIENT_URL || 'http://localhost:3000'}/favicon.svg`
+        logo: `${process.env.CLIENT_URL || 'https://app.thekingezekielacademy.com'}/favicon.svg`
       },
       meta: {
         user_id: user_id || 'anonymous',
