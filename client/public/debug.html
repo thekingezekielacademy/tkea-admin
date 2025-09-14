@@ -70,27 +70,27 @@
             <h3>🔧 Browser Compatibility</h3>
             <button onclick="testBrowserCompatibility()">Test Browser Features</button>
             <div id="browser-output" class="output"></div>
-        </div>
-
+    </div>
+    
         <div class="test-section">
             <h3>💾 Storage & Cache</h3>
             <button onclick="testStorage()">Test Storage</button>
             <button onclick="clearAllStorage()">Clear All Storage</button>
             <div id="storage-output" class="output"></div>
-        </div>
-
+    </div>
+    
         <div class="test-section">
             <h3>🚀 Application Status</h3>
             <button onclick="testAppStatus()">Check App Status</button>
             <div id="app-output" class="output"></div>
-        </div>
-
+    </div>
+    
         <div class="test-section">
             <h3>🔍 Environment Variables</h3>
             <button onclick="checkEnvironment()">Check Environment</button>
             <div id="env-output" class="output"></div>
-        </div>
-
+    </div>
+    
         <div class="test-section">
             <h3>📊 Quick Actions</h3>
             <button onclick="goToMainApp()">Go to Main App</button>
@@ -268,20 +268,20 @@
                 // Check for JavaScript errors
                 let jsErrors = [];
                 const originalConsoleError = console.error;
-                console.error = function(...args) {
+        console.error = function(...args) {
                     jsErrors.push(args.join(' '));
                     originalConsoleError.apply(console, args);
-                };
-
+        };
+        
                 // Restore console.error after a short delay
-                setTimeout(() => {
+        setTimeout(() => {
                     console.error = originalConsoleError;
                     if (jsErrors.length > 0) {
                         addOutput('app-output', `Found ${jsErrors.length} JavaScript errors:`, 'warning');
                         jsErrors.forEach(error => {
                             addOutput('app-output', `  - ${error}`, 'error');
                         });
-                    } else {
+            } else {
                         addOutput('app-output', '✅ No JavaScript errors detected', 'success');
                     }
                 }, 2000);

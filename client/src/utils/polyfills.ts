@@ -106,12 +106,62 @@ const browserInfo = {
   isSafari: /Safari/.test(navigator.userAgent) && /Apple Computer/.test(navigator.vendor),
   isEdge: /Edg/.test(navigator.userAgent),
   isIE: /MSIE|Trident/.test(navigator.userAgent),
+  isInstagram: /Instagram/.test(navigator.userAgent),
+  isFacebook: /FBAN|FBAV/.test(navigator.userAgent),
+  isInAppBrowser: /Instagram|FBAN|FBAV|Line|WhatsApp|Twitter/.test(navigator.userAgent),
   supportsServiceWorker: 'serviceWorker' in navigator,
   supportsWebP: document.createElement('canvas').toDataURL('image/webp').indexOf('data:image/webp') === 0
 };
 
 // Log browser compatibility info
 console.log('Browser compatibility info:', browserInfo);
+
+// Handle Instagram in-app browser
+if (browserInfo.isInstagram || browserInfo.isInAppBrowser) {
+  console.log('Instagram/In-app browser detected - applying compatibility fixes');
+  
+  // Disable service worker for in-app browsers
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations().then(registrations => {
+      registrations.forEach(registration => {
+        registration.unregister();
+      });
+    });
+  }
+  
+  // Add Instagram-specific meta tags
+  const meta = document.createElement('meta');
+  meta.name = 'viewport';
+  meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover';
+  document.head.appendChild(meta);
+  
+  // Show Instagram-specific notice
+  const notice = document.createElement('div');
+  notice.id = 'instagram-notice';
+  notice.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    color: white;
+    padding: 12px;
+    text-align: center;
+    font-size: 14px;
+    z-index: 10000;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  `;
+  notice.innerHTML = `
+    <div style="display: flex; align-items: center; justify-content: center; gap: 10px;">
+      <span>📱 For the best experience, open in Chrome or Safari</span>
+      <button onclick="this.parentElement.parentElement.style.display='none'" style="background: none; border: none; color: white; font-size: 16px; cursor: pointer;">✕</button>
+    </div>
+  `;
+  document.body.appendChild(notice);
+  
+  // Adjust body padding to account for notice
+  document.body.style.paddingTop = '50px';
+}
 
 // Warn about unsupported browsers
 if (browserInfo.isIE) {

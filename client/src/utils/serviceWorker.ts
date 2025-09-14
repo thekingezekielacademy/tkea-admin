@@ -15,6 +15,13 @@ export const registerServiceWorker = async (): Promise<void> => {
     return;
   }
 
+  // Don't register service worker in Instagram/Facebook in-app browsers
+  const userAgent = navigator.userAgent;
+  if (/Instagram|FBAN|FBAV/.test(userAgent)) {
+    console.log('Instagram/Facebook in-app browser detected - skipping service worker registration');
+    return;
+  }
+
   try {
     // Only register if sw.js exists
     const swExists = await fetch('/sw.js', { method: 'HEAD' }).then(r => r.ok).catch(() => false);
