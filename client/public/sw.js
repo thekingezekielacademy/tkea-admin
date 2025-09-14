@@ -56,7 +56,11 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     caches.match(event.request)
       .then((response) => {
-        // Return cached version or fetch from network
+        // Always fetch from network for API calls to ensure fresh data
+        if (event.request.url.includes('/api/')) {
+          return fetch(event.request);
+        }
+        // Return cached version or fetch from network for other resources
         return response || fetch(event.request);
       })
   );

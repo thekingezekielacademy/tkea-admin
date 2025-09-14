@@ -1,4 +1,5 @@
 const express = require('express');
+const axios = require('axios');
 const router = express.Router();
 const crypto = require('crypto');
 
@@ -80,21 +81,19 @@ router.post('/initialize-payment', async (req, res) => {
       }
     };
 
-    // Simple Flutterwave API call
+    // Simple Flutterwave API call using axios
     console.log('🚀 Calling Flutterwave API...');
     console.log('📡 Payment Data:', JSON.stringify(paymentData, null, 2));
     
-    const response = await fetch('https://api.flutterwave.com/v3/payments', {
-      method: 'POST',
+    const response = await axios.post('https://api.flutterwave.com/v3/payments', paymentData, {
       headers: {
         'Authorization': `Bearer ${FLUTTERWAVE_SECRET_KEY}`,
         'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(paymentData)
+      }
     });
 
     console.log('📡 Flutterwave API response status:', response.status);
-    const result = await response.json();
+    const result = response.data;
     console.log('📡 Flutterwave API response:', JSON.stringify(result, null, 2));
 
     if (result.status === 'success') {
@@ -121,9 +120,19 @@ router.post('/initialize-payment', async (req, res) => {
 
   } catch (error) {
     console.error('❌ Flutterwave payment initialization error:', error);
+    
+    let errorMessage = 'Payment initialization failed. Please try again.';
+    if (error.response) {
+      // Server responded with error status
+      errorMessage = `Payment initialization failed: ${error.response.data?.message || error.message}`;
+    } else if (error.request) {
+      // Request was made but no response received
+      errorMessage = 'Payment initialization failed: Network error. Please check your connection.';
+    }
+    
     res.status(500).json({
       success: false,
-      message: `Payment initialization failed: ${error.message}. Please try again.`
+      message: errorMessage
     });
   }
 });

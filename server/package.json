@@ -18,11 +18,12 @@
   "author": "King Ezekiel Academy",
   "license": "MIT",
   "dependencies": {
-    "express": "^4.18.2",
+    "@supabase/supabase-js": "^2.38.4",
+    "axios": "^1.12.1",
     "cors": "^2.8.5",
     "crypto": "^1.0.1",
     "dotenv": "^16.3.1",
-    "@supabase/supabase-js": "^2.38.4"
+    "express": "^4.18.2"
   },
   "devDependencies": {
     "nodemon": "^3.0.2"
