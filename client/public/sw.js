@@ -8,7 +8,7 @@
  * - Offline functionality
  */
 
-const CACHE_NAME = 'king-ezekiel-academy-v1';
+const CACHE_NAME = 'king-ezekiel-academy-v2';
 const urlsToCache = [
   '/',
   '/static/js/bundle.js',
@@ -58,6 +58,10 @@ self.addEventListener('fetch', (event) => {
       .then((response) => {
         // Always fetch from network for API calls to ensure fresh data
         if (event.request.url.includes('/api/')) {
+          return fetch(event.request);
+        }
+        // For JavaScript files, always fetch from network to ensure fresh code
+        if (event.request.url.includes('.js') || event.request.url.includes('bundle')) {
           return fetch(event.request);
         }
         // Return cached version or fetch from network for other resources
