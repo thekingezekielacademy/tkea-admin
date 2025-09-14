@@ -6,6 +6,7 @@ require('dotenv').config();
 // Import routes
 const contactRoutes = require('./routes/contact');
 const paystackRoutes = require('./routes/paystack');
+const flutterwaveRoutes = require('./routes/flutterwave');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -103,6 +104,7 @@ app.post('/api/payments/verify', async (req, res) => {
 // Contact routes
 app.use('/api/contact', contactRoutes);
 app.use('/api/paystack', paystackRoutes);
+app.use('/api/flutterwave', flutterwaveRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
