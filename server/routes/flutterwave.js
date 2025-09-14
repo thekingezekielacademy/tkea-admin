@@ -45,13 +45,19 @@ router.post('/initialize-payment', async (req, res) => {
     // Generate transaction reference if not provided
     const transactionRef = tx_ref || `KEA_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     
-    // Prepare payment data
+    // Detect if request is from mobile
+    const userAgent = req.headers['user-agent'] || '';
+    const isMobile = /Mobile|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
+    
+    console.log('📱 Device detection:', { userAgent, isMobile });
+    
+    // Prepare payment data with mobile-optimized settings
     const paymentData = {
       tx_ref: transactionRef,
       amount: Number(amount),
       currency: 'NGN',
       redirect_url: `${process.env.CLIENT_URL || 'http://localhost:3000'}/payment-verification`,
-      payment_options: 'card,mobilemoney,ussd',
+      payment_options: isMobile ? 'card,mobilemoney,ussd,banktransfer' : 'card,mobilemoney,ussd',
       customer: {
         email: email,
         phone_number: phone_number || '',
@@ -66,24 +72,58 @@ router.post('/initialize-payment', async (req, res) => {
         user_id: user_id || 'anonymous',
         plan_name: plan_name,
         source: 'king-ezekiel-academy',
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        device_type: isMobile ? 'mobile' : 'desktop'
       }
     };
 
-    // Call Flutterwave API to initialize payment
+    // Call Flutterwave API to initialize payment with retry logic for mobile
     console.log('🚀 Calling Flutterwave API...');
-    const response = await fetch('https://api.flutterwave.com/v3/payments', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${FLUTTERWAVE_SECRET_KEY}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(paymentData)
-    });
+    let response;
+    let result;
+    let retryCount = 0;
+    const maxRetries = isMobile ? 3 : 1; // More retries for mobile
+    
+    while (retryCount <= maxRetries) {
+      try {
+        response = await fetch('https://api.flutterwave.com/v3/payments', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${FLUTTERWAVE_SECRET_KEY}`,
+            'Content-Type': 'application/json',
+            'User-Agent': 'King-Ezekiel-Academy/1.0'
+          },
+          body: JSON.stringify(paymentData)
+        });
 
-    console.log('📡 Flutterwave API response status:', response.status);
-    const result = await response.json();
-    console.log('📡 Flutterwave API response:', JSON.stringify(result, null, 2));
+        console.log(`📡 Flutterwave API response status (attempt ${retryCount + 1}):`, response.status);
+        result = await response.json();
+        console.log(`📡 Flutterwave API response (attempt ${retryCount + 1}):`, JSON.stringify(result, null, 2));
+        
+        // If successful, break out of retry loop
+        if (result.status === 'success') {
+          break;
+        }
+        
+        // If not successful and we have retries left, wait and retry
+        if (retryCount < maxRetries) {
+          console.log(`⚠️ Flutterwave API failed, retrying in 2 seconds... (${retryCount + 1}/${maxRetries})`);
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          retryCount++;
+        } else {
+          break;
+        }
+      } catch (fetchError) {
+        console.error(`❌ Flutterwave API fetch error (attempt ${retryCount + 1}):`, fetchError);
+        if (retryCount < maxRetries) {
+          console.log(`⚠️ Fetch error, retrying in 2 seconds... (${retryCount + 1}/${maxRetries})`);
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          retryCount++;
+        } else {
+          throw fetchError;
+        }
+      }
+    }
 
     if (result.status === 'success') {
       console.log('✅ Flutterwave payment initialized successfully:', result.data.tx_ref);
@@ -101,9 +141,15 @@ router.post('/initialize-payment', async (req, res) => {
       });
     } else {
       console.error('❌ Flutterwave payment initialization failed:', result.message);
+      const errorMessage = isMobile 
+        ? `Mobile payment initialization failed: ${result.message || 'Please try again or use a different payment method'}`
+        : `Payment initialization failed: ${result.message || 'Please try again'}`;
+      
       res.status(400).json({
         success: false,
-        message: result.message || 'Payment initialization failed'
+        message: errorMessage,
+        device_type: isMobile ? 'mobile' : 'desktop',
+        retry_count: retryCount
       });
     }
 
@@ -115,9 +161,18 @@ router.post('/initialize-payment', async (req, res) => {
       name: error.name
     });
     
+    const userAgent = req.headers['user-agent'] || '';
+    const isMobile = /Mobile|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
+    
+    const errorMessage = isMobile 
+      ? `Mobile payment initialization failed: ${error.message}. Please try again or contact support.`
+      : `Payment initialization failed: ${error.message}. Please try again.`;
+    
     res.status(500).json({
       success: false,
-      message: `Payment initialization failed: ${error.message}. Please try again.`
+      message: errorMessage,
+      device_type: isMobile ? 'mobile' : 'desktop',
+      error_code: error.code || 'UNKNOWN_ERROR'
     });
   }
 });

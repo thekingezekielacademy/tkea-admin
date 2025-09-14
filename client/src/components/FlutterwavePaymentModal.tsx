@@ -103,6 +103,10 @@ const FlutterwavePaymentModal: React.FC<FlutterwavePaymentModalProps> = ({ isOpe
       return;
     }
 
+    // Detect if user is on mobile
+    const isMobile = /Mobile|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    console.log('📱 Client-side mobile detection:', { userAgent: navigator.userAgent, isMobile });
+
     // No need to check flutterwaveLoaded since we're using hosted payments
 
     setLoading(true);
@@ -328,9 +332,23 @@ const FlutterwavePaymentModal: React.FC<FlutterwavePaymentModalProps> = ({ isOpe
 
     } catch (error) {
       console.error('Flutterwave payment error:', error);
+      
+      // Enhanced error handling for mobile users
+      let errorMessage = error.message || 'Payment failed. Please try again.';
+      
+      if (isMobile) {
+        if (error.message?.includes('Mobile payment initialization failed')) {
+          errorMessage = 'Mobile payment failed. Please try again or use a different payment method.';
+        } else if (error.message?.includes('network') || error.message?.includes('timeout')) {
+          errorMessage = 'Network error on mobile. Please check your connection and try again.';
+        } else {
+          errorMessage = 'Mobile payment failed. Please try again or contact support.';
+        }
+      }
+      
       setPaymentState({ 
         status: 'error', 
-        error: error.message || 'Payment failed. Please try again.' 
+        error: errorMessage 
       });
       setLoading(false);
     } finally {
