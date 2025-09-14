@@ -35,7 +35,7 @@ class SubscriptionService {
 
   constructor() {
     // Use environment variable or fallback to a secure endpoint
-    this.baseUrl = process.env.REACT_APP_API_URL || 'https://app.thekingezekielacademy.com/api';
+    this.baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000';
   }
 
   /**
