@@ -86,7 +86,7 @@ const Terms: React.FC = () => {
                 </li>
                 <li className="flex items-start">
                   <FaCreditCard className="h-5 w-5 text-primary-500 mr-3 mt-1 flex-shrink-0" />
-                  <span>Payments are processed via trusted third-party providers (Paystack)</span>
+                  <span>Payments are processed via trusted third-party providers (Flutterwave)</span>
                 </li>
                 <li className="flex items-start">
                   <FaCreditCard className="h-5 w-5 text-primary-500 mr-3 mt-1 flex-shrink-0" />

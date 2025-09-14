@@ -4,7 +4,7 @@ import { ErrorHandler } from '../utils/errorHandler';
 import { logInfo, logError, logApiCall } from '../utils/performanceLogger';
 
 // API Configuration - Use secure server-side endpoints
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 // Professional Flutterwave Configuration - Live Mode
 const FLUTTERWAVE_PUBLIC_KEY = process.env.REACT_APP_FLUTTERWAVE_PUBLIC_KEY || 'FLWPUBK-454fa0a1faa931dcccf6672ed71645cd-X';
 const FLUTTERWAVE_MODE = 'live';
@@ -70,7 +70,7 @@ class FlutterwaveService {
       logInfo('Initializing Flutterwave payment via secure server endpoint', { email, amount }, 'FlutterwaveService', 'initializePayment');
       
       // Use secure API endpoint
-      const response = await fetch(`${API_BASE_URL}/api/flutterwave/initialize-payment`, {
+      const response = await fetch(`${API_BASE_URL}/flutterwave/initialize-payment`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -307,8 +307,8 @@ class FlutterwaveService {
     try {
       console.log('🚫 Cancelling Flutterwave subscription via secure server endpoint');
       
-      // Use the Vercel API endpoint
-      const apiEndpoint = '/api/flutterwave/cancel-subscription';
+      // Use the secure API endpoint
+      const apiEndpoint = '/flutterwave/cancel-subscription';
       
       const response = await fetch(apiEndpoint, {
         method: 'POST',
@@ -362,8 +362,8 @@ class FlutterwaveService {
         const { data: updateData, error: updateError } = await supabase
           .from('user_subscriptions')
           .update({
-            paystack_subscription_id: flutterwaveData.subscription_code || flutterwaveData.id,
-            paystack_customer_code: flutterwaveData.customer_code || userId,
+            flutterwave_subscription_id: flutterwaveData.subscription_code || flutterwaveData.id,
+            flutterwave_customer_code: flutterwaveData.customer_code || userId,
             plan_name: flutterwaveData.plan_name || 'Monthly Membership',
             status: flutterwaveData.status || 'active',
             amount: flutterwaveData.amount || 2500,
@@ -380,8 +380,8 @@ class FlutterwaveService {
           .from('user_subscriptions')
           .insert({
             user_id: userId,
-            paystack_subscription_id: flutterwaveData.subscription_code || flutterwaveData.id,
-            paystack_customer_code: flutterwaveData.customer_code || userId,
+            flutterwave_subscription_id: flutterwaveData.subscription_code || flutterwaveData.id,
+            flutterwave_customer_code: flutterwaveData.customer_code || userId,
             plan_name: flutterwaveData.plan_name || 'Monthly Membership',
             status: flutterwaveData.status || 'active',
             amount: flutterwaveData.amount || 2500,
@@ -416,8 +416,8 @@ class FlutterwaveService {
         .from('subscription_payments')
         .insert({
           user_id: userId,
-          paystack_transaction_id: transactionData.id, // Use existing column
-          paystack_reference: transactionData.tx_ref, // Use existing column
+          flutterwave_transaction_id: transactionData.id, // Use existing column
+          flutterwave_reference: transactionData.tx_ref, // Use existing column
           amount: transactionData.amount,
           currency: transactionData.currency,
           status: transactionData.status === 'successful' ? 'success' : transactionData.status,

@@ -10,58 +10,52 @@
 
 // Service worker registration
 export const registerServiceWorker = async (): Promise<void> => {
-  if ('serviceWorker' in navigator) {
-    try {
-      // Only register if sw.js exists
-      const swExists = await fetch('/sw.js', { method: 'HEAD' }).then(r => r.ok).catch(() => false);
-      if (!swExists) {
-        console.log('Service Worker file not found, skipping registration');
-        return;
-      }
-      
-      // Clear all existing caches before registering new service worker
-      await clearAllCaches();
-      
-      const registration = await navigator.serviceWorker.register('/sw.js', {
-        // Force update by using a unique scope
-        scope: '/'
-      });
-      
-      console.log('Service Worker registered successfully:', registration);
-      
-      // Handle service worker updates
-      registration.addEventListener('updatefound', () => {
-        const newWorker = registration.installing;
-        
-        if (newWorker) {
-          newWorker.addEventListener('statechange', () => {
-            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-              // New service worker is available
-              showUpdateNotification();
-            }
-          });
-        }
-      });
-      
-      // Handle service worker activation
-      navigator.serviceWorker.addEventListener('controllerchange', () => {
-        console.log('Service Worker activated');
-        // Only reload if not in the middle of authentication
-        const isAuthPage = window.location.pathname.includes('/signin') || 
-                          window.location.pathname.includes('/signup') ||
-                          window.location.pathname.includes('/forgot-password');
-        
-        if (!isAuthPage) {
-          // Small delay to allow auth state to stabilize
-          setTimeout(() => {
-            window.location.reload();
-          }, 1000);
-        }
-      });
-      
-    } catch (error) {
-      console.error('Service Worker registration failed:', error);
+  if (!('serviceWorker' in navigator)) {
+    console.log('Service Worker not supported in this browser');
+    return;
+  }
+
+  try {
+    // Only register if sw.js exists
+    const swExists = await fetch('/sw.js', { method: 'HEAD' }).then(r => r.ok).catch(() => false);
+    if (!swExists) {
+      console.log('Service Worker file not found, skipping registration');
+      return;
     }
+    
+    // Don't clear caches aggressively - this can cause issues
+    // Only clear if there's a version mismatch
+    
+    const registration = await navigator.serviceWorker.register('/sw.js', {
+      scope: '/',
+      updateViaCache: 'none' // Always check for updates
+    });
+    
+    console.log('Service Worker registered successfully:', registration);
+    
+    // Handle service worker updates
+    registration.addEventListener('updatefound', () => {
+      const newWorker = registration.installing;
+      
+      if (newWorker) {
+        newWorker.addEventListener('statechange', () => {
+          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+            // New service worker is available - show notification but don't auto-reload
+            showUpdateNotification();
+          }
+        });
+      }
+    });
+    
+    // Handle service worker activation - be less aggressive
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      console.log('Service Worker activated');
+      // Don't auto-reload - let user decide
+    });
+    
+  } catch (error) {
+    console.error('Service Worker registration failed:', error);
+    // Don't throw - let app continue without service worker
   }
 };
 

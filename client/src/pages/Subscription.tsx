@@ -165,8 +165,8 @@ const Subscription: React.FC = () => {
           start_date: subscriptionData.created_at,
           end_date: endDate.toISOString(),
           next_billing_date: nextBillingDate.toISOString(),
-          flutterwave_subscription_id: subscriptionData.paystack_subscription_id, // Use existing column
-          flutterwave_customer_code: subscriptionData.paystack_customer_code, // Use existing column
+          flutterwave_subscription_id: subscriptionData.flutterwave_subscription_id, // Use existing column
+          flutterwave_customer_code: subscriptionData.flutterwave_customer_code, // Use existing column
           created_at: subscriptionData.created_at,
           updated_at: subscriptionData.updated_at,
           cancel_at_period_end: subscriptionData.cancel_at_period_end || false

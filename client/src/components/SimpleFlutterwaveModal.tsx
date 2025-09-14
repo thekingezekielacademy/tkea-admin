@@ -41,10 +41,10 @@ const SimpleFlutterwaveModal: React.FC<SimpleFlutterwaveModalProps> = ({
       return;
     }
 
-    if (!phoneNumber || phoneNumber.trim().length === 0) {
+    if (!phoneNumber || phoneNumber.trim().length < 10) {
       setPaymentState({ 
         status: 'error', 
-        error: 'Please enter your phone number' 
+        error: 'Please enter a valid phone number (at least 10 digits)' 
       });
       return;
     }
@@ -53,10 +53,18 @@ const SimpleFlutterwaveModal: React.FC<SimpleFlutterwaveModalProps> = ({
     setPaymentState({ status: 'processing' });
 
     try {
+      // Disable Flutterwave fingerprinting globally to prevent errors
+      if (typeof window !== 'undefined') {
+        (window as any).FlutterwaveDisableFingerprinting = true;
+        // Also disable other fingerprinting services
+        (window as any).FlutterwaveDisableTracking = true;
+        (window as any).FlutterwaveDisableAnalytics = true;
+      }
+
       // Simple server call
-      const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+      const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
       
-      const response = await fetch(`${API_BASE_URL}/api/flutterwave/initialize-payment`, {
+      const response = await fetch(`${API_BASE_URL}/flutterwave/initialize-payment`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -79,8 +87,10 @@ const SimpleFlutterwaveModal: React.FC<SimpleFlutterwaveModalProps> = ({
           localStorage.setItem('pending_payment_tx_ref', result.data.tx_ref);
         }
         
-        // Simple redirect - no popup windows, no monitoring
+        // Redirect to Flutterwave payment page
+        // Flutterwave hosted links should be accessed via GET, not POST
         window.location.href = result.data.link;
+        
         return;
       } else {
         throw new Error(result.message || 'Payment initialization failed');

@@ -15,7 +15,6 @@ export class EnvironmentValidator {
   private static readonly REQUIRED_VARS = [
     'REACT_APP_SUPABASE_URL',
     'REACT_APP_SUPABASE_ANON_KEY',
-    'REACT_APP_PAYSTACK_PUBLIC_KEY',
     'REACT_APP_API_URL'
   ];
 
@@ -27,7 +26,6 @@ export class EnvironmentValidator {
 
   // Variables that should NOT be in client-side code
   private static readonly FORBIDDEN_VARS = [
-    'PAYSTACK_SECRET_KEY',
     'SUPABASE_SERVICE_ROLE_KEY',
     'DATABASE_URL',
     'JWT_SECRET'
@@ -63,7 +61,6 @@ export class EnvironmentValidator {
 
     // Validate specific values
     this.validateSupabaseConfig(warnings);
-    this.validatePaystackConfig(warnings);
     this.validateApiConfig(warnings);
 
     const isValid = missing.length === 0;
@@ -97,20 +94,6 @@ export class EnvironmentValidator {
     }
   }
 
-  /**
-   * Validate Paystack configuration
-   */
-  private static validatePaystackConfig(warnings: string[]): void {
-    const publicKey = process.env.REACT_APP_PAYSTACK_PUBLIC_KEY;
-
-    if (publicKey && !publicKey.startsWith('pk_')) {
-      warnings.push('REACT_APP_PAYSTACK_PUBLIC_KEY should start with "pk_"');
-    }
-
-    if (publicKey && publicKey.includes('sk_')) {
-      warnings.push('SECURITY WARNING: REACT_APP_PAYSTACK_PUBLIC_KEY contains secret key pattern');
-    }
-  }
 
   /**
    * Validate API configuration

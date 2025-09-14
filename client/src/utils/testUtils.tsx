@@ -34,7 +34,6 @@ export const mockSupabase = {
 export const mockEnv = {
   REACT_APP_SUPABASE_URL: 'https://test.supabase.co',
   REACT_APP_SUPABASE_ANON_KEY: 'test-anon-key',
-  REACT_APP_PAYSTACK_PUBLIC_KEY: 'pk_test_123',
   REACT_APP_API_URL: 'https://test-api.com',
   NODE_ENV: 'test',
 };

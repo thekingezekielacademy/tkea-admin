@@ -3,73 +3,351 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Debug Page</title>
+    <title>King Ezekiel Academy - Debug Page</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        .status { padding: 10px; margin: 10px 0; border-radius: 5px; }
-        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
-        .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
-        .info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            border-left: 4px solid;
+        }
+        .success { background: #d4edda; border-color: #28a745; color: #155724; }
+        .error { background: #f8d7da; border-color: #dc3545; color: #721c24; }
+        .warning { background: #fff3cd; border-color: #ffc107; color: #856404; }
+        .info { background: #d1ecf1; border-color: #17a2b8; color: #0c5460; }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        .output {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
     </style>
 </head>
 <body>
-    <h1>King Ezekiel Academy - Debug Page</h1>
-    
-    <div class="status success">
-        ✅ This page loads successfully
-    </div>
-    
-    <div class="status info">
-        📊 Testing JavaScript loading...
-    </div>
-    
-    <div id="js-status" class="status">
-        ⏳ Loading JavaScript...
-    </div>
-    
-    <div id="react-status" class="status">
-        ⏳ Testing React app...
-    </div>
-    
-    <div id="console-errors" class="status">
-        ⏳ Checking for console errors...
+    <div class="container">
+        <h1>🔧 King Ezekiel Academy - Debug Page</h1>
+        <p>This page helps diagnose issues with the main application.</p>
+
+        <div class="test-section">
+            <h3>🌐 Network & Connectivity</h3>
+            <button onclick="testConnectivity()">Test Connectivity</button>
+            <div id="connectivity-output" class="output"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>🔧 Browser Compatibility</h3>
+            <button onclick="testBrowserCompatibility()">Test Browser Features</button>
+            <div id="browser-output" class="output"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>💾 Storage & Cache</h3>
+            <button onclick="testStorage()">Test Storage</button>
+            <button onclick="clearAllStorage()">Clear All Storage</button>
+            <div id="storage-output" class="output"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>🚀 Application Status</h3>
+            <button onclick="testAppStatus()">Check App Status</button>
+            <div id="app-output" class="output"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>🔍 Environment Variables</h3>
+            <button onclick="checkEnvironment()">Check Environment</button>
+            <div id="env-output" class="output"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>📊 Quick Actions</h3>
+            <button onclick="goToMainApp()">Go to Main App</button>
+            <button onclick="hardRefresh()">Hard Refresh</button>
+            <button onclick="downloadDebugInfo()">Download Debug Info</button>
+        </div>
     </div>
 
     <script>
-        // Test basic JavaScript
-        document.getElementById('js-status').innerHTML = '✅ JavaScript is working';
-        document.getElementById('js-status').className = 'status success';
-        
-        // Test console errors
-        const originalError = console.error;
-        const errors = [];
-        console.error = function(...args) {
-            errors.push(args.join(' '));
-            originalError.apply(console, args);
-        };
-        
-        // Test React app loading
-        setTimeout(() => {
-            const reactApp = document.getElementById('root');
-            if (reactApp && reactApp.innerHTML.trim() !== '') {
-                document.getElementById('react-status').innerHTML = '✅ React app is rendering content';
-                document.getElementById('react-status').className = 'status success';
-            } else {
-                document.getElementById('react-status').innerHTML = '❌ React app is not rendering content';
-                document.getElementById('react-status').className = 'status error';
+        function addOutput(elementId, message, type = 'info') {
+            const output = document.getElementById(elementId);
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type === 'error' ? 'error' : type === 'success' ? 'success' : 'info';
+            output.innerHTML += `<div class="${className}">[${timestamp}] ${message}</div>`;
+            output.scrollTop = output.scrollHeight;
+        }
+
+        function clearOutput(elementId) {
+            document.getElementById(elementId).innerHTML = '';
+        }
+
+        async function testConnectivity() {
+            clearOutput('connectivity-output');
+            addOutput('connectivity-output', 'Testing network connectivity...', 'info');
+
+            try {
+                // Test basic connectivity
+                const response = await fetch('/', { method: 'HEAD' });
+                addOutput('connectivity-output', `✅ Basic connectivity: ${response.status}`, 'success');
+
+                // Test API endpoint
+                const apiResponse = await fetch('/api/health', { method: 'GET' }).catch(() => null);
+                if (apiResponse && apiResponse.ok) {
+                    addOutput('connectivity-output', '✅ API endpoint reachable', 'success');
+                } else {
+                    addOutput('connectivity-output', '⚠️ API endpoint not reachable', 'warning');
+                }
+
+                // Test external resources
+                const externalTest = await fetch('https://www.google.com', { method: 'HEAD', mode: 'no-cors' });
+                addOutput('connectivity-output', '✅ External connectivity working', 'success');
+
+            } catch (error) {
+                addOutput('connectivity-output', `❌ Connectivity test failed: ${error.message}`, 'error');
             }
+        }
+
+        function testBrowserCompatibility() {
+            clearOutput('browser-output');
+            addOutput('browser-output', 'Testing browser compatibility...', 'info');
+
+            const features = {
+                'Service Worker': 'serviceWorker' in navigator,
+                'Local Storage': typeof Storage !== 'undefined',
+                'Session Storage': typeof sessionStorage !== 'undefined',
+                'Fetch API': 'fetch' in window,
+                'Promise': 'Promise' in window,
+                'ES6 Classes': (function() { try { eval('class Test{}'); return true; } catch(e) { return false; } })(),
+                'Arrow Functions': (function() { try { eval('() => {}'); return true; } catch(e) { return false; } })(),
+                'Template Literals': (function() { try { eval('`test`'); return true; } catch(e) { return false; } })(),
+                'IntersectionObserver': 'IntersectionObserver' in window,
+                'ResizeObserver': 'ResizeObserver' in window
+            };
+
+            Object.entries(features).forEach(([feature, supported]) => {
+                const status = supported ? '✅' : '❌';
+                const type = supported ? 'success' : 'error';
+                addOutput('browser-output', `${status} ${feature}`, type);
+            });
+
+            // Browser info
+            addOutput('browser-output', `\nUser Agent: ${navigator.userAgent}`, 'info');
+            addOutput('browser-output', `Language: ${navigator.language}`, 'info');
+            addOutput('browser-output', `Platform: ${navigator.platform}`, 'info');
+        }
+
+        function testStorage() {
+            clearOutput('storage-output');
+            addOutput('storage-output', 'Testing storage capabilities...', 'info');
+
+            try {
+                // Test localStorage
+                localStorage.setItem('debug-test', 'test-value');
+                const localValue = localStorage.getItem('debug-test');
+                localStorage.removeItem('debug-test');
+                
+                if (localValue === 'test-value') {
+                    addOutput('storage-output', '✅ localStorage working', 'success');
+                    addOutput('storage-output', `localStorage usage: ${JSON.stringify(localStorage).length} characters`, 'info');
+                } else {
+                    addOutput('storage-output', '❌ localStorage not working', 'error');
+                }
+
+                // Test sessionStorage
+                sessionStorage.setItem('debug-test', 'test-value');
+                const sessionValue = sessionStorage.getItem('debug-test');
+                sessionStorage.removeItem('debug-test');
+                
+                if (sessionValue === 'test-value') {
+                    addOutput('storage-output', '✅ sessionStorage working', 'success');
+                } else {
+                    addOutput('storage-output', '❌ sessionStorage not working', 'error');
+                }
+
+                // Check for existing app data
+                const appKeys = Object.keys(localStorage).filter(key => 
+                    key.includes('supabase') || key.includes('king-ezekiel') || key.includes('auth')
+                );
+                
+                if (appKeys.length > 0) {
+                    addOutput('storage-output', `Found ${appKeys.length} app-related storage keys`, 'info');
+                    appKeys.forEach(key => {
+                        addOutput('storage-output', `  - ${key}`, 'info');
+                    });
+                } else {
+                    addOutput('storage-output', 'No app-related storage keys found', 'warning');
+                }
+
+            } catch (error) {
+                addOutput('storage-output', `❌ Storage test failed: ${error.message}`, 'error');
+            }
+        }
+
+        function clearAllStorage() {
+            if (confirm('Are you sure you want to clear all storage? This will log you out and clear all cached data.')) {
+                try {
+                    localStorage.clear();
+                    sessionStorage.clear();
+                    
+                    // Clear service worker caches
+                    if ('caches' in window) {
+                        caches.keys().then(cacheNames => {
+                            cacheNames.forEach(cacheName => {
+                                caches.delete(cacheName);
+                            });
+                        });
+                    }
+                    
+                    addOutput('storage-output', '✅ All storage cleared successfully', 'success');
+                } catch (error) {
+                    addOutput('storage-output', `❌ Failed to clear storage: ${error.message}`, 'error');
+                }
+            }
+        }
+
+        async function testAppStatus() {
+            clearOutput('app-output');
+            addOutput('app-output', 'Testing application status...', 'info');
+
+            try {
+                // Check if main app files are accessible
+                const mainJsResponse = await fetch('/static/js/main.589c00fb.js', { method: 'HEAD' });
+                if (mainJsResponse.ok) {
+                    addOutput('app-output', '✅ Main JavaScript file accessible', 'success');
+                } else {
+                    addOutput('app-output', `⚠️ Main JavaScript file status: ${mainJsResponse.status}`, 'warning');
+                }
+
+                // Check if CSS is accessible
+                const cssResponse = await fetch('/static/css/main.5c5721b4.css', { method: 'HEAD' });
+                if (cssResponse.ok) {
+                    addOutput('app-output', '✅ Main CSS file accessible', 'success');
+                } else {
+                    addOutput('app-output', `⚠️ Main CSS file status: ${cssResponse.status}`, 'warning');
+                }
+
+                // Test React mounting
+                const rootElement = document.getElementById('root');
+                if (rootElement) {
+                    addOutput('app-output', '✅ Root element found in DOM', 'success');
+                } else {
+                    addOutput('app-output', '❌ Root element not found in DOM', 'error');
+                }
+
+                // Check for JavaScript errors
+                let jsErrors = [];
+                const originalConsoleError = console.error;
+                console.error = function(...args) {
+                    jsErrors.push(args.join(' '));
+                    originalConsoleError.apply(console, args);
+                };
+
+                // Restore console.error after a short delay
+                setTimeout(() => {
+                    console.error = originalConsoleError;
+                    if (jsErrors.length > 0) {
+                        addOutput('app-output', `Found ${jsErrors.length} JavaScript errors:`, 'warning');
+                        jsErrors.forEach(error => {
+                            addOutput('app-output', `  - ${error}`, 'error');
+                        });
+                    } else {
+                        addOutput('app-output', '✅ No JavaScript errors detected', 'success');
+                    }
+                }, 2000);
+
+            } catch (error) {
+                addOutput('app-output', `❌ App status test failed: ${error.message}`, 'error');
+            }
+        }
+
+        function checkEnvironment() {
+            clearOutput('env-output');
+            addOutput('env-output', 'Checking environment variables...', 'info');
+
+            // Note: Environment variables are not accessible in client-side code
+            // This is a placeholder for server-side environment checks
+            addOutput('env-output', '⚠️ Environment variables are server-side only', 'warning');
+            addOutput('env-output', 'Check Vercel dashboard for environment variable configuration', 'info');
             
-            // Show console errors
-            if (errors.length > 0) {
-                document.getElementById('console-errors').innerHTML = `❌ Found ${errors.length} console errors: ${errors.join(', ')}`;
-                document.getElementById('console-errors').className = 'status error';
-            } else {
-                document.getElementById('console-errors').innerHTML = '✅ No console errors detected';
-                document.getElementById('console-errors').className = 'status success';
+            // Check for common issues
+            const currentUrl = window.location.href;
+            addOutput('env-output', `Current URL: ${currentUrl}`, 'info');
+            
+            if (currentUrl.includes('localhost')) {
+                addOutput('env-output', '⚠️ Running on localhost - environment variables may not be set', 'warning');
             }
-        }, 3000);
+        }
+
+        function goToMainApp() {
+            window.location.href = '/';
+        }
+
+        function hardRefresh() {
+            if (confirm('This will perform a hard refresh, clearing cache. Continue?')) {
+                window.location.reload(true);
+            }
+        }
+
+        function downloadDebugInfo() {
+            const debugInfo = {
+                timestamp: new Date().toISOString(),
+                userAgent: navigator.userAgent,
+                url: window.location.href,
+                localStorage: Object.keys(localStorage).length,
+                sessionStorage: Object.keys(sessionStorage).length,
+                features: {
+                    serviceWorker: 'serviceWorker' in navigator,
+                    localStorage: typeof Storage !== 'undefined',
+                    fetch: 'fetch' in window,
+                    promise: 'Promise' in window
+                }
+            };
+
+            const blob = new Blob([JSON.stringify(debugInfo, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'debug-info.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // Auto-run basic tests on page load
+        window.addEventListener('load', () => {
+            testBrowserCompatibility();
+            testStorage();
+        });
     </script>
-    
-    <script src="/static/js/main.14f097a9.js"></script>
 </body>
 </html>

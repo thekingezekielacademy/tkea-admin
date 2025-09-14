@@ -17,8 +17,8 @@ export interface SubscriptionData {
   start_date: string;
   end_date: string;
   next_billing_date: string;
-  paystack_subscription_id: string;
-  paystack_customer_code: string;
+  flutterwave_subscription_id: string;
+  flutterwave_customer_code: string;
   created_at: string;
   updated_at: string;
   cancel_at_period_end: boolean;
@@ -35,28 +35,28 @@ class SubscriptionService {
 
   constructor() {
     // Use environment variable or fallback to a secure endpoint
-    this.baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+    this.baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
   }
 
   /**
    * Cancel a subscription
    * @param subscriptionId - The subscription ID to cancel
-   * @param paystackSubscriptionId - The Paystack subscription code
+   * @param flutterwaveSubscriptionId - The Flutterwave subscription code
    * @returns Promise<CancelSubscriptionResponse>
    */
-  async cancelSubscription(subscriptionId: string, paystackSubscriptionId: string): Promise<CancelSubscriptionResponse> {
+  async cancelSubscription(subscriptionId: string, flutterwaveSubscriptionId: string): Promise<CancelSubscriptionResponse> {
     try {
       console.log('🚫 Cancelling subscription via secure backend API');
       
       // Use secure backend API for subscription cancellation
-      const response = await fetch(`${this.baseUrl}/paystack/cancel-subscription`, {
+      const response = await fetch(`${this.baseUrl}/flutterwave/cancel-subscription`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${await this.getAuthToken()}`,
         },
         body: JSON.stringify({
-          subscriptionId: paystackSubscriptionId,
+          subscriptionId: flutterwaveSubscriptionId,
           reason: 'User requested cancellation',
         }),
       });
@@ -88,8 +88,8 @@ class SubscriptionService {
     }
   }
 
-  // Note: Direct Paystack API calls removed for security
-  // All Paystack operations now go through secure backend API
+  // Note: Direct Flutterwave API calls removed for security
+  // All Flutterwave operations now go through secure backend API
 
   /**
    * Get authentication token for API calls

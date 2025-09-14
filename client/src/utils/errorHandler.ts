@@ -141,8 +141,8 @@ export class ErrorHandler {
       return 'AUTH_ERROR';
     }
 
-    // Paystack errors
-    if (error.message?.includes('Paystack') || error.message?.includes('payment')) {
+    // Payment errors
+    if (error.message?.includes('payment')) {
       return 'PAYMENT_ERROR';
     }
 
@@ -176,8 +176,8 @@ export class ErrorHandler {
       return 'Your session has expired. Please sign in again.';
     }
 
-    // Paystack errors
-    if (error.message?.includes('Paystack')) {
+    // Payment errors
+    if (error.message?.includes('payment')) {
       return 'Payment processing failed. Please try again.';
     }
 

@@ -14,6 +14,7 @@ import SafeErrorBoundary from './components/SafeErrorBoundary';
 import webVitals from './utils/webVitals';
 import analytics from './utils/analytics';
 import { notificationService } from './utils/notificationService';
+import './utils/polyfills'; // Load polyfills first
 import './utils/sentry'; // Initialize Sentry first
 import Home from './pages/Home';
 import Courses from './pages/Courses';
@@ -28,7 +29,6 @@ import AdminAddCourseWizard from './pages/admin/AdminAddCourseWizard';
 import AdminCourses from './pages/admin/AdminCourses';
 import EditCourse from './pages/admin/EditCourse';
 import CourseView from './pages/admin/CourseView';
-import AddCourse from './pages/admin/AddCourse';
 import AdminBlog from './pages/admin/AdminBlog';
 import AddBlogPost from './pages/admin/AddBlogPost';
 import ViewBlogPost from './pages/admin/ViewBlogPost';
@@ -58,76 +58,69 @@ function App() {
   const [isLoading, setIsLoading] = React.useState(true);
 
   useEffect(() => {
-    // Force cache clearing for all users on app load
-    const forceCacheClear = async () => {
-      try {
-        // Clear all browser caches
-        await clearAllCaches();
-        
-        // Clear localStorage of old cached data
-        const keysToRemove = [];
-        for (let i = 0; i < localStorage.length; i++) {
-          const key = localStorage.key(i);
-          if (key && (key.includes('cache') || key.includes('old') || key.includes('temp'))) {
-            keysToRemove.push(key);
-          }
-        }
-        keysToRemove.forEach(key => localStorage.removeItem(key));
-        
-        console.log('Cache cleared for fresh content');
-      } catch (error) {
-        console.log('Cache clearing failed:', error);
-      }
-    };
-    
-    // Initialize monitoring first
-    try {
-      webVitals.startMonitoring();
-      analytics.initialize();
-    } catch (error) {
-      console.warn('Analytics initialization failed:', error);
+    // Disable Flutterwave fingerprinting globally to prevent errors
+    if (typeof window !== 'undefined') {
+      (window as any).FlutterwaveDisableFingerprinting = true;
+      (window as any).FlutterwaveDisableTracking = true;
+      (window as any).FlutterwaveDisableAnalytics = true;
     }
 
-    // Initialize notifications
-    try {
-      // Request notification permission and initialize schedules
-      if ('Notification' in window && Notification.permission === 'granted') {
-        notificationService.initializeNotifications();
-      } else if ('Notification' in window && Notification.permission === 'default') {
-        // Request permission after a delay to not be too pushy
-        setTimeout(async () => {
-          const permission = await Notification.requestPermission();
-          if (permission === 'granted') {
-            notificationService.initializeNotifications();
-          }
-        }, 3000);
-      }
-    } catch (error) {
-      console.warn('Notification initialization failed:', error);
-    }
-    
-    // Force cache clear before initializing service worker
-    forceCacheClear();
-    
-    // Initialize service worker for PWA functionality
-    initializeServiceWorker();
-    
-    // Initialize course scheduler
-    const initializeCourseScheduler = async () => {
+    // Initialize app with error handling
+    const initializeApp = async () => {
       try {
-        const { CourseScheduler } = await import('./utils/courseScheduler');
-        const scheduler = CourseScheduler.getInstance();
-        scheduler.startScheduler();
+        // Initialize monitoring first (non-blocking)
+        try {
+          webVitals.startMonitoring();
+          analytics.initialize();
+        } catch (error) {
+          console.warn('Analytics initialization failed:', error);
+        }
+
+        // Initialize notifications (non-blocking)
+        try {
+          if ('Notification' in window && Notification.permission === 'granted') {
+            notificationService.initializeNotifications();
+          } else if ('Notification' in window && Notification.permission === 'default') {
+            setTimeout(async () => {
+              const permission = await Notification.requestPermission();
+              if (permission === 'granted') {
+                notificationService.initializeNotifications();
+              }
+            }, 3000);
+          }
+        } catch (error) {
+          console.warn('Notification initialization failed:', error);
+        }
+        
+        // Initialize service worker with better error handling
+        try {
+          await initializeServiceWorker();
+        } catch (error) {
+          console.warn('Service worker initialization failed:', error);
+        }
+        
+        // Initialize course scheduler (non-blocking)
+        try {
+          const { CourseScheduler } = await import('./utils/courseScheduler');
+          const scheduler = CourseScheduler.getInstance();
+          scheduler.startScheduler();
+        } catch (error) {
+          console.warn('Course scheduler initialization failed:', error);
+        }
+        
       } catch (error) {
-        console.error('Error initializing course scheduler:', error);
+        console.error('App initialization error:', error);
+        // Don't let initialization errors break the app
       }
     };
-    initializeCourseScheduler();
     
-    // Set loading to false after initialization
+    // Run initialization
+    initializeApp();
+    
+    // Set loading to false with shorter timeout
     const timer = setTimeout(() => {
       setIsLoading(false);
-    }, 2000);
+    }, 1000);
     
     return () => clearTimeout(timer);
   }, []);

@@ -9,9 +9,30 @@
     <meta name="theme-color" content="#1e3a8a" />
     <meta name="flutterwave-disable-fingerprinting" content="true" />
     
-    <!-- Disable Flutterwave Fingerprinting -->
+    <!-- Disable Flutterwave Fingerprinting and Prevent Cancel Popup -->
     <script>
       window.FlutterwaveDisableFingerprinting = true;
+      window.FlutterwaveDisableTracking = true;
+      window.FlutterwaveDisableAnalytics = true;
+      
+      // Prevent unexpected cancel popups
+      window.addEventListener('beforeunload', function(e) {
+        // Only show confirmation if user is actually trying to leave
+        if (e.target.activeElement && e.target.activeElement.tagName === 'A') {
+          return;
+        }
+        // Don't show confirmation for programmatic navigation
+        e.preventDefault();
+        e.returnValue = '';
+      });
+      
+      // Override any Flutterwave cancel confirmations
+      window.addEventListener('message', function(event) {
+        if (event.data && event.data.type === 'flutterwave-cancel') {
+          event.preventDefault();
+          return false;
+        }
+      });
     </script>
     
     <!-- Mobile Browser Compatibility -->
