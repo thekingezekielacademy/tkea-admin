@@ -5,8 +5,7 @@
   "installCommand": "npm install && cd client && npm install",
   "security": {
     "ddosProtection": {
-      "enabled": true,
-      "level": "standard"
+      "enabled": false
     }
   },
   "rewrites": [
