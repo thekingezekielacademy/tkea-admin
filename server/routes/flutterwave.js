@@ -1,6 +1,13 @@
 const express = require('express');
 const router = express.Router();
 const crypto = require('crypto');
+const { createClient } = require('@supabase/supabase-js');
+
+// Initialize Supabase client
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
 
 // Flutterwave configuration
 const FLUTTERWAVE_SECRET_KEY = process.env.FLUTTERWAVE_SECRET_KEY;
@@ -78,9 +85,9 @@ router.post('/initialize-payment', async (req, res) => {
       }
     };
 
-    // Simple Flutterwave API call
-    console.log('🚀 Calling Flutterwave API...');
-    const response = await fetch('https://api.flutterwave.com/v3/payments', {
+    // Flutterwave V4 API call
+    console.log('🚀 Calling Flutterwave V4 API...');
+    const response = await fetch('https://api.flutterwave.com/v4/payments', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${FLUTTERWAVE_SECRET_KEY}`,
@@ -136,8 +143,8 @@ router.post('/verify-payment', async (req, res) => {
       });
     }
 
-    // Call Flutterwave API to verify payment
-    const response = await fetch(`https://api.flutterwave.com/v3/transactions/${tx_ref}/verify`, {
+    // Call Flutterwave V4 API to verify payment
+    const response = await fetch(`https://api.flutterwave.com/v4/transactions/${tx_ref}/verify`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${FLUTTERWAVE_SECRET_KEY}`,
@@ -183,12 +190,13 @@ router.post('/verify-payment', async (req, res) => {
   }
 });
 
-// Flutterwave webhook endpoint
+// Flutterwave V4 webhook endpoint
 router.post('/webhook', async (req, res) => {
   try {
     const event = req.body;
+    console.log('📨 Flutterwave V4 webhook received:', event);
     
-    // Verify webhook signature (optional but recommended)
+    // Verify webhook signature for V4 (recommended)
     const secretHash = process.env.FLUTTERWAVE_WEBHOOK_SECRET;
     if (secretHash) {
       const hash = crypto
@@ -197,29 +205,52 @@ router.post('/webhook', async (req, res) => {
         .digest('hex');
       
       if (hash !== req.headers['verif-hash']) {
+        console.log('❌ Invalid webhook signature');
         return res.status(401).json({ error: 'Invalid webhook signature' });
       }
     }
     
-    // Handle different webhook events
+    // Handle V4 webhook events
     switch (event.event) {
       case 'charge.completed':
         // Payment was successful
         const payment = event.data;
         console.log('✅ Payment completed:', payment.tx_ref);
+        console.log('💰 Payment details:', {
+          amount: payment.amount,
+          currency: payment.currency,
+          customer: payment.customer,
+          status: payment.status
+        });
         
-        // TODO: Update user subscription in database
-        // await processSuccessfulPayment(payment);
+        // Process successful payment
+        await processSuccessfulPayment(payment);
         break;
         
       case 'charge.failed':
         // Payment failed
         const failedPayment = event.data;
         console.log('❌ Payment failed:', failedPayment.tx_ref);
+        console.log('💸 Failure details:', {
+          reason: failedPayment.processor_response,
+          status: failedPayment.status
+        });
+        break;
+        
+      case 'subscription.created':
+        // Subscription created
+        const subscription = event.data;
+        console.log('📋 Subscription created:', subscription.subscription_id);
+        break;
+        
+      case 'subscription.cancelled':
+        // Subscription cancelled
+        const cancelledSub = event.data;
+        console.log('🚫 Subscription cancelled:', cancelledSub.subscription_id);
         break;
         
       default:
-        console.log('Unhandled webhook event:', event.event);
+        console.log('📝 Unhandled V4 webhook event:', event.event);
     }
     
     res.json({ received: true });
@@ -229,5 +260,72 @@ router.post('/webhook', async (req, res) => {
     res.status(500).json({ error: 'Webhook processing failed' });
   }
 });
+
+// Process successful payment and create subscription
+async function processSuccessfulPayment(payment) {
+  try {
+    console.log('🔄 Processing successful payment:', payment.tx_ref);
+    
+    // Find user by email
+    const { data: userData, error: userError } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('email', payment.customer.email)
+      .single();
+
+    if (userError || !userData) {
+      console.error('❌ User not found for payment:', payment.customer.email);
+      return;
+    }
+
+    // Create subscription
+    const { data: subscription, error: subError } = await supabase
+      .from('user_subscriptions')
+      .insert({
+        user_id: userData.id,
+        flutterwave_subscription_id: payment.tx_ref,
+        flutterwave_customer_code: payment.customer.customer_code || payment.customer.email,
+        plan_name: 'Monthly Membership',
+        status: 'active',
+        amount: payment.amount,
+        currency: payment.currency,
+        start_date: new Date().toISOString(),
+        next_payment_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .select()
+      .single();
+
+    if (subError) {
+      console.error('❌ Error creating subscription:', subError);
+    } else {
+      console.log('✅ Subscription created successfully:', subscription.id);
+    }
+
+    // Create payment record
+    const { error: paymentError } = await supabase
+      .from('subscription_payments')
+      .insert({
+        user_id: userData.id,
+        flutterwave_transaction_id: payment.id.toString(),
+        flutterwave_reference: payment.tx_ref,
+        amount: payment.amount,
+        currency: payment.currency,
+        status: 'success',
+        payment_method: payment.payment_type,
+        paid_at: payment.created_at,
+      });
+
+    if (paymentError) {
+      console.error('❌ Error saving payment:', paymentError);
+    } else {
+      console.log('✅ Payment record saved successfully');
+    }
+
+  } catch (error) {
+    console.error('❌ Error processing successful payment:', error);
+  }
+}
 
 module.exports = router;
