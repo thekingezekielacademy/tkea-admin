@@ -70,7 +70,7 @@ class FlutterwaveService {
       logInfo('Initializing Flutterwave payment via secure server endpoint', { email, amount }, 'FlutterwaveService', 'initializePayment');
       
       // Use secure API endpoint
-      const response = await fetch(`${API_BASE_URL}/flutterwave/initialize-payment`, {
+      const response = await fetch(`${API_BASE_URL}/api/flutterwave/initialize-payment`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
