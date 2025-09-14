@@ -5,7 +5,7 @@
   "installCommand": "npm install && cd client && npm install",
   "rewrites": [
     {
-      "source": "/((?!static/|favicon|manifest|img/).*)",
+      "source": "/((?!static/|favicon|manifest|img/|api/).*)",
       "destination": "/index.html"
     }
   ],
