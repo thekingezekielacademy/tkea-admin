@@ -56,7 +56,7 @@ const SimpleFlutterwaveModal: React.FC<SimpleFlutterwaveModalProps> = ({
       // Simple server call
       const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
       
-      const response = await fetch(`${API_BASE_URL}/api/flutterwave/initialize-payment`, {
+      const response = await fetch(`${API_BASE_URL}/flutterwave/initialize-payment`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
