@@ -19,16 +19,17 @@ const urlsToCache = [
 
 // Install event - cache resources
 self.addEventListener('install', (event) => {
-  console.log('Service Worker: Install event');
+  console.log('Service Worker: Install event - DISABLING CACHE');
+  // Completely disable caching to force fresh loads
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then((cache) => {
-        console.log('Service Worker: Caching files');
-        return cache.addAll(urlsToCache);
-      })
-      .catch((error) => {
-        console.error('Service Worker: Cache failed', error);
-      })
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((cacheName) => {
+          console.log('Service Worker: Deleting ALL caches:', cacheName);
+          return caches.delete(cacheName);
+        })
+      );
+    })
   );
   self.skipWaiting();
 });
@@ -51,23 +52,11 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// Fetch event - serve from cache when offline
+// Fetch event - ALWAYS fetch from network (no caching)
 self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    caches.match(event.request)
-      .then((response) => {
-        // Always fetch from network for API calls to ensure fresh data
-        if (event.request.url.includes('/api/')) {
-          return fetch(event.request);
-        }
-        // For JavaScript files, always fetch from network to ensure fresh code
-        if (event.request.url.includes('.js') || event.request.url.includes('bundle')) {
-          return fetch(event.request);
-        }
-        // Return cached version or fetch from network for other resources
-        return response || fetch(event.request);
-      })
-  );
+  console.log('Service Worker: Fetch event - BYPASSING CACHE for:', event.request.url);
+  // Always fetch from network - no caching at all
+  event.respondWith(fetch(event.request));
 });
 
 // Push event - handle push notifications
