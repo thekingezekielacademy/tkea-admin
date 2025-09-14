@@ -3,15 +3,17 @@ const router = express.Router();
 const crypto = require('crypto');
 
 // Flutterwave configuration
-const FLUTTERWAVE_SECRET_KEY = process.env.FLUTTERWAVE_SECRET_KEY;
-const FLUTTERWAVE_PUBLIC_KEY = process.env.FLUTTERWAVE_PUBLIC_KEY;
-const FLUTTERWAVE_ENCRYPTION_KEY = process.env.FLUTTERWAVE_ENCRYPTION_KEY;
-const FLUTTERWAVE_PLAN_ID = process.env.FLUTTERWAVE_PLAN_ID;
+const FLUTTERWAVE_SECRET_KEY = process.env.FLUTTERWAVE_SECRET_KEY || 'FLWSECK-eb50a05e74e4a648510719bfa75dad5b-1993ab9913bvt-X';
+const FLUTTERWAVE_PUBLIC_KEY = process.env.FLUTTERWAVE_PUBLIC_KEY || 'FLWPUBK-454fa0a1faa931dcccf6672ed71645cd-X';
+const FLUTTERWAVE_ENCRYPTION_KEY = process.env.FLUTTERWAVE_ENCRYPTION_KEY || 'eb50a05e74e459b334aad266';
+const FLUTTERWAVE_PLAN_ID = process.env.FLUTTERWAVE_PLAN_ID || '146851';
 
 // Check if Flutterwave is configured
-if (!FLUTTERWAVE_SECRET_KEY || !FLUTTERWAVE_PUBLIC_KEY || !FLUTTERWAVE_ENCRYPTION_KEY) {
-  console.log('⚠️ Flutterwave not configured - using environment variables');
-}
+console.log('✅ Flutterwave configured with credentials');
+console.log('🔑 Secret Key:', FLUTTERWAVE_SECRET_KEY ? 'SET' : 'NOT SET');
+console.log('🔑 Public Key:', FLUTTERWAVE_PUBLIC_KEY ? 'SET' : 'NOT SET');
+console.log('🔑 Encryption Key:', FLUTTERWAVE_ENCRYPTION_KEY ? 'SET' : 'NOT SET');
+console.log('🔑 Plan ID:', FLUTTERWAVE_PLAN_ID);
 
 // Initialize Flutterwave payment
 router.post('/initialize-payment', async (req, res) => {
@@ -80,7 +82,9 @@ router.post('/initialize-payment', async (req, res) => {
 
     // Simple Flutterwave API call
     console.log('🚀 Calling Flutterwave API...');
-    const response = await fetch('https://api.flutterwave.com/v4/payments', {
+    console.log('📡 Payment Data:', JSON.stringify(paymentData, null, 2));
+    
+    const response = await fetch('https://api.flutterwave.com/v3/payments', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${FLUTTERWAVE_SECRET_KEY}`,
@@ -137,7 +141,7 @@ router.post('/verify-payment', async (req, res) => {
     }
 
     // Call Flutterwave API to verify payment
-    const response = await fetch(`https://api.flutterwave.com/v4/transactions/${tx_ref}/verify`, {
+    const response = await fetch(`https://api.flutterwave.com/v3/transactions/${tx_ref}/verify`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${FLUTTERWAVE_SECRET_KEY}`,

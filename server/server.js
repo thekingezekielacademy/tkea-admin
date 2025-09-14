@@ -5,7 +5,6 @@ require('dotenv').config();
 
 // Import routes
 const contactRoutes = require('./routes/contact');
-const paystackRoutes = require('./routes/paystack');
 const flutterwaveRoutes = require('./routes/flutterwave');
 
 const app = express();
@@ -15,95 +14,21 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
-// Paystack webhook secret (get this from your Paystack dashboard)
-const PAYSTACK_SECRET = process.env.PAYSTACK_SECRET_KEY;
+// Flutterwave configuration
+const FLUTTERWAVE_SECRET_KEY = process.env.FLUTTERWAVE_SECRET_KEY;
+const FLUTTERWAVE_PUBLIC_KEY = process.env.FLUTTERWAVE_PUBLIC_KEY;
+const FLUTTERWAVE_ENCRYPTION_KEY = process.env.FLUTTERWAVE_ENCRYPTION_KEY;
+const FLUTTERWAVE_PLAN_ID = process.env.FLUTTERWAVE_PLAN_ID;
 
-// Verify webhook signature
-const verifyWebhookSignature = (req, res, next) => {
-  const signature = req.headers['x-paystack-signature'];
-  
-  if (!signature) {
-    return res.status(401).json({ error: 'No signature provided' });
-  }
-
-  const hash = crypto
-    .createHmac('sha512', PAYSTACK_SECRET)
-    .update(JSON.stringify(req.body))
-    .digest('hex');
-
-  if (hash !== signature) {
-    return res.status(401).json({ error: 'Invalid signature' });
-  }
-
-  next();
-};
-
-// Paystack webhook endpoint
-app.post('/api/webhooks/paystack', verifyWebhookSignature, async (req, res) => {
-  try {
-    const { event, data } = req.body;
-    console.log('📨 Paystack webhook received:', event);
-
-    // Import the webhook handler
-    const { PaystackWebhookHandler } = require('./webhookHandler');
-    
-    // Process the webhook
-    await PaystackWebhookHandler.handleWebhook({ event, data });
-    
-    res.json({ success: true, message: 'Webhook processed successfully' });
-  } catch (error) {
-    console.error('❌ Webhook processing error:', error);
-    res.status(500).json({ error: 'Webhook processing failed' });
-  }
-});
-
-// Payment verification endpoint
-app.post('/api/payments/verify', async (req, res) => {
-  try {
-    const { reference, userId } = req.body;
-    
-    if (!reference || !userId) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Reference and userId are required' 
-      });
-    }
-
-    // Verify payment with Paystack
-    const response = await fetch(`https://api.paystack.co/transaction/verify/${reference}`, {
-      headers: {
-        'Authorization': `Bearer ${PAYSTACK_SECRET}`,
-      },
-    });
-
-    const result = await response.json();
-    
-    if (result.status && result.data.status === 'success') {
-      console.log('✅ Payment verified successfully:', result.data);
-      res.json({ 
-        success: true, 
-        message: 'Payment verified successfully',
-        data: result.data 
-      });
-    } else {
-      console.log('❌ Payment verification failed:', result.message);
-      res.json({ 
-        success: false, 
-        message: result.message || 'Payment verification failed' 
-      });
-    }
-  } catch (error) {
-    console.error('❌ Payment verification error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Payment verification failed' 
-    });
-  }
-});
+// Check Flutterwave configuration
+if (!FLUTTERWAVE_SECRET_KEY || !FLUTTERWAVE_PUBLIC_KEY || !FLUTTERWAVE_ENCRYPTION_KEY) {
+  console.log('⚠️ Flutterwave not configured - check environment variables');
+} else {
+  console.log('✅ Flutterwave configured successfully');
+}
 
 // Contact routes
 app.use('/api/contact', contactRoutes);
-app.use('/api/paystack', paystackRoutes);
 app.use('/api/flutterwave', flutterwaveRoutes);
 
 // Health check endpoint
@@ -111,14 +36,16 @@ app.get('/api/health', (req, res) => {
   res.json({ 
     status: 'OK', 
     timestamp: new Date().toISOString(),
-    message: 'Paystack webhook server is running'
+    message: 'King Ezekiel Academy API is running',
+    paymentProvider: 'Flutterwave'
   });
 });
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`🚀 Paystack webhook server running on port ${PORT}`);
-  console.log(`📡 Webhook endpoint: http://localhost:${PORT}/api/webhooks/paystack`);
+  console.log(`🚀 King Ezekiel Academy API server running on port ${PORT}`);
+  console.log(`💳 Flutterwave payment endpoint: http://localhost:${PORT}/api/flutterwave/initialize-payment`);
+  console.log(`📡 Flutterwave webhook endpoint: http://localhost:${PORT}/api/flutterwave/webhook`);
   console.log(`🔍 Health check: http://localhost:${PORT}/api/health`);
 });
 
