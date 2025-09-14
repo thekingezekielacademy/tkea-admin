@@ -277,7 +277,8 @@ const Courses: React.FC = () => {
             duration,
             order_index
           )
-        `);
+        `)
+        .in('status', ['published', 'scheduled']);
 
       // Apply category filtering
       if (selectedCategory !== 'all') {

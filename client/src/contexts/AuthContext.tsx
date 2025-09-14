@@ -55,6 +55,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const fetchProfileTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isFetchingRef = useRef(false);
   const hasInitializedRef = useRef(false);
+  const networkRetryCountRef = useRef(0);
+  const maxNetworkRetries = 3;
 
 
   // Debounced fetchProfile to prevent multiple rapid calls
@@ -157,14 +159,35 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         
         // Handle network connectivity issues
         if (error.message?.includes('Failed to fetch') || error.message?.includes('ERR_NAME_NOT_RESOLVED')) {
-          // console.log('Network connectivity issue detected, will retry in 5 seconds...');
-          setTimeout(() => {
-            if (isFetchingRef.current) {
-              isFetchingRef.current = false;
+          networkRetryCountRef.current += 1;
+          console.log(`Network connectivity issue detected (attempt ${networkRetryCountRef.current}/${maxNetworkRetries}), will retry in 5 seconds...`);
+          
+          if (networkRetryCountRef.current < maxNetworkRetries) {
+            setTimeout(() => {
+              if (isFetchingRef.current) {
+                isFetchingRef.current = false;
+              }
+              debouncedFetchProfile(userId);
+            }, 5000);
+            return;
+          } else {
+            console.log('Max network retries reached, attempting fallback for admin users...');
+            // Try to get user info from localStorage as fallback
+            try {
+              const fallbackUser = JSON.parse(localStorage.getItem('user_profile') || 'null');
+              if (fallbackUser && fallbackUser.role === 'admin') {
+                console.log('Using fallback admin user from localStorage');
+                setUser(fallbackUser);
+                setIsAdmin(true);
+                setLoading(false);
+                setAuthLoading(false);
+                isFetchingRef.current = false;
+                return;
+              }
+            } catch (fallbackError) {
+              console.error('Fallback user retrieval failed:', fallbackError);
             }
-            debouncedFetchProfile(userId);
-          }, 5000);
-          return;
+          }
         }
         
         // Don't clear the user state on database errors
@@ -181,6 +204,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // console.log('Profile data fetched:', data);
       setUser(data);
       
+      // Store user profile in localStorage as fallback
+      try {
+        localStorage.setItem('user_profile', JSON.stringify(data));
+      } catch (storageError) {
+        console.warn('Failed to store user profile in localStorage:', storageError);
+      }
+      
       // Check if user is admin
       const userIsAdmin = data.role === 'admin';
       setIsAdmin(userIsAdmin);
@@ -190,6 +220,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       } else {
         // console.log('User role:', data.role);
       }
+      
+      // Reset network retry count on successful fetch
+      networkRetryCountRef.current = 0;
       
       setLoading(false);
       setAuthLoading(false);

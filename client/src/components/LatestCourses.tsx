@@ -13,6 +13,10 @@ interface Course {
   category: string;
   duration: string;
   lessons: number;
+  // Scheduling fields
+  status?: string;
+  is_scheduled?: boolean;
+  scheduled_for?: string;
 }
 
 const LatestCourses: React.FC = () => {
@@ -48,6 +52,7 @@ const LatestCourses: React.FC = () => {
               order_index
             )
           `)
+          .in('status', ['published', 'scheduled'])
           .order('created_at', { ascending: false })
           .limit(10);
 
@@ -259,46 +264,71 @@ const LatestCourses: React.FC = () => {
                 transform: `translateX(-${currentIndex * (100 / getSlidesPerView())}%)` 
               }}
             >
-              {courses.map((course) => (
-                <div key={course.id} className="w-full sm:w-1/2 lg:w-1/3 flex-shrink-0 px-2 sm:px-3">
-                  <div className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 h-full">
-                    <div className="relative">
-                      <img 
-                        src={course.cover_photo_url || 'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=400&h=250&fit=crop'} 
-                        alt={course.title}
-                        className="w-full h-40 sm:h-36 lg:h-40 object-cover"
-                      />
-                      <div className="absolute top-2 right-2">
-                        {getLevelBadge(course.level)}
-                      </div>
-                      <div className="absolute top-2 left-2 bg-primary-600 text-white px-2 py-1 rounded text-xs font-medium flex items-center space-x-1">
-                        <FaGraduationCap className="h-3 w-3" />
-                        <span>New</span>
-                      </div>
-                    </div>
-                    
-                    <div className="p-4 sm:p-4">
-                      <h3 className="text-base sm:text-sm lg:text-base font-semibold text-gray-900 mb-2 line-clamp-2 leading-tight">
-                        {course.title}
-                      </h3>
-                      <p className="text-sm sm:text-xs lg:text-sm text-gray-600 mb-3 line-clamp-2">
-                        {course.description || 'No description available'}
-                      </p>
-                      
-                      <div className="flex items-center justify-between text-sm sm:text-xs lg:text-sm text-gray-500">
-                        <div className="flex items-center space-x-1">
-                          <FaClock className="h-3 w-3 sm:h-3 sm:w-3" />
-                          <span>{course.duration}</span>
+              {courses.map((course) => {
+                const isScheduled = course.status === 'scheduled';
+                const scheduledDate = course.scheduled_for ? new Date(course.scheduled_for).toLocaleDateString() : '';
+                
+                return (
+                  <div key={course.id} className="w-full sm:w-1/2 lg:w-1/3 flex-shrink-0 px-2 sm:px-3">
+                    <div 
+                      className={`bg-white rounded-xl shadow-lg overflow-hidden transition-all duration-300 h-full ${
+                        isScheduled ? 'cursor-default opacity-75' : 'hover:shadow-xl cursor-pointer'
+                      }`}
+                      onClick={() => {
+                        if (isScheduled) {
+                          // Show "Coming Soon" message for scheduled courses
+                          alert(`This course is coming soon! Scheduled for ${scheduledDate}`);
+                        } else {
+                          // Navigate to course for published courses
+                          window.location.href = `/courses/${course.id}`;
+                        }
+                      }}
+                    >
+                      <div className="relative">
+                        <img 
+                          src={course.cover_photo_url || 'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=400&h=250&fit=crop'} 
+                          alt={course.title}
+                          className="w-full h-40 sm:h-36 lg:h-40 object-cover"
+                        />
+                        <div className="absolute top-2 right-2">
+                          {getLevelBadge(course.level)}
                         </div>
-                        <div className="flex items-center space-x-1">
-                          <FaBook className="h-3 w-3 sm:h-3 sm:w-3" />
-                          <span>{course.lessons} lessons</span>
+                        <div className="absolute top-2 left-2 bg-primary-600 text-white px-2 py-1 rounded text-xs font-medium flex items-center space-x-1">
+                          <FaGraduationCap className="h-3 w-3" />
+                          <span>{isScheduled ? 'Coming Soon' : 'New'}</span>
+                        </div>
+                        {isScheduled && (
+                          <div className="absolute inset-0 bg-black bg-opacity-20 flex items-center justify-center">
+                            <div className="bg-white bg-opacity-90 px-3 py-1 rounded-full text-sm font-medium text-gray-800">
+                              Coming Soon
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div className="p-4 sm:p-4">
+                        <h3 className="text-base sm:text-sm lg:text-base font-semibold text-gray-900 mb-2 line-clamp-2 leading-tight">
+                          {course.title}
+                        </h3>
+                        <p className="text-sm sm:text-xs lg:text-sm text-gray-600 mb-3 line-clamp-2">
+                          {isScheduled ? `Available on ${scheduledDate}` : (course.description || 'No description available')}
+                        </p>
+                        
+                        <div className="flex items-center justify-between text-sm sm:text-xs lg:text-sm text-gray-500">
+                          <div className="flex items-center space-x-1">
+                            <FaClock className="h-3 w-3 sm:h-3 sm:w-3" />
+                            <span>{course.duration}</span>
+                          </div>
+                          <div className="flex items-center space-x-1">
+                            <FaBook className="h-3 w-3 sm:h-3 sm:w-3" />
+                            <span>{course.lessons} lessons</span>
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 

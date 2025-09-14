@@ -53,11 +53,40 @@ self.addEventListener('activate', (event) => {
 
 // Fetch event - serve from cache when offline
 self.addEventListener('fetch', (event) => {
+  // Skip caching for API requests to prevent interference
+  if (event.request.url.includes('supabase.co') || 
+      event.request.url.includes('/api/') ||
+      event.request.url.includes('auth/v1/') ||
+      event.request.url.includes('rest/v1/')) {
+    // For API requests, just fetch from network without caching
+    event.respondWith(
+      fetch(event.request).catch(error => {
+        console.error('Network fetch failed for API request:', error);
+        // Return a proper error response instead of letting it fail silently
+        return new Response(JSON.stringify({ error: 'Network error' }), {
+          status: 503,
+          statusText: 'Service Unavailable',
+          headers: { 'Content-Type': 'application/json' }
+        });
+      })
+    );
+    return;
+  }
+
+  // For non-API requests, use the original caching strategy
   event.respondWith(
     caches.match(event.request)
       .then((response) => {
         // Return cached version or fetch from network
         return response || fetch(event.request);
+      })
+      .catch(error => {
+        console.error('Fetch event error:', error);
+        // Return a proper error response
+        return new Response('Network error', {
+          status: 503,
+          statusText: 'Service Unavailable'
+        });
       })
   );
 });

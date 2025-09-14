@@ -41,6 +41,11 @@ const AdminAddCourseWizard: React.FC = () => {
   const [newVideo, setNewVideo] = useState({ name: '', duration: '', link: '' });
   const [draggedVideoIndex, setDraggedVideoIndex] = useState<number | null>(null);
 
+  // Schedule popup states
+  const [showSchedulePopup, setShowSchedulePopup] = useState(false);
+  const [scheduledDate, setScheduledDate] = useState('');
+  const [scheduledTime, setScheduledTime] = useState('');
+
   // Drag and drop functionality
   const handleDragStart = (e: React.DragEvent, index: number) => {
     setDraggedVideoIndex(index);
@@ -222,6 +227,114 @@ const AdminAddCourseWizard: React.FC = () => {
       console.log('✅ New course notifications sent successfully');
     } catch (error) {
       console.error('Error in notifyUsersAboutNewCourse:', error);
+    }
+  };
+
+  const handleScheduleCourse = async () => {
+    if (!courseData.title.trim()) {
+      setError('Please enter a course title');
+      return;
+    }
+
+    if (courseData.videos.length === 0) {
+      setError('Please add at least one video to the course');
+      return;
+    }
+
+    if (!scheduledDate || !scheduledTime) {
+      setError('Please select both date and time for scheduling');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError('');
+
+      // Combine date and time
+      const scheduledFor = new Date(`${scheduledDate}T${scheduledTime}`).toISOString();
+      
+      let coverPhotoUrl = null;
+
+      // Upload cover photo if provided
+      if (courseData.coverPhoto) {
+        try {
+          const fileExt = courseData.coverPhoto.name.split('.').pop();
+          const fileName = `${Date.now()}.${fileExt}`;
+          const filePath = `course-covers/${fileName}`;
+
+          const arrayBuffer = await courseData.coverPhoto.arrayBuffer();
+          
+          const { error: uploadError } = await supabase.storage
+            .from('course-covers')
+            .upload(filePath, arrayBuffer);
+
+          if (!uploadError) {
+            const { data: { publicUrl } } = supabase.storage
+              .from('course-covers')
+              .getPublicUrl(filePath);
+            coverPhotoUrl = publicUrl;
+          }
+        } catch (uploadErr) {
+          console.warn('Cover photo upload failed:', uploadErr);
+        }
+      }
+
+      // Create the course with scheduled status
+      const { data: courseIns, error: courseError } = await supabase
+        .from('courses')
+        .insert({
+          title: courseData.title,
+          description: courseData.description,
+          level: courseData.level,
+          category: courseData.category,
+          cover_photo_url: coverPhotoUrl,
+          is_scheduled: true,
+          status: 'scheduled',
+          scheduled_for: scheduledFor,
+          created_by: user?.id
+        })
+        .select()
+        .single();
+
+      if (courseError) {
+        throw new Error(courseError.message);
+      }
+
+      // Create lessons for each video
+      const lessonInserts = courseData.videos.map((video, index) => ({
+        course_id: courseIns.id,
+        title: video.name,
+        video_url: video.link,
+        duration: video.duration,
+        order_index: index + 1,
+        is_scheduled: true,
+        status: 'scheduled',
+        scheduled_for: scheduledFor
+      }));
+
+      const { error: lessonsError } = await supabase
+        .from('lessons')
+        .insert(lessonInserts);
+
+      if (lessonsError) {
+        throw new Error(lessonsError.message);
+      }
+
+      // Send notification about scheduled course
+      try {
+        const { CourseScheduler } = await import('../../utils/courseScheduler');
+        const scheduler = CourseScheduler.getInstance();
+        await scheduler.notifyCourseScheduled(courseData.title, scheduledFor, courseIns.id);
+      } catch (error) {
+        console.error('Error sending course scheduled notification:', error);
+      }
+
+      setShowSchedulePopup(false);
+      navigate('/admin/courses');
+    } catch (e: any) {
+      setError(e?.message || 'Failed to schedule course');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -650,6 +763,14 @@ const AdminAddCourseWizard: React.FC = () => {
               >
                 {loading ? 'Creating Course...' : 'Create Course'}
               </button>
+
+              <button
+                onClick={() => setShowSchedulePopup(true)}
+                disabled={loading}
+                className="px-6 py-3 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 transition-colors duration-200"
+              >
+                Schedule
+              </button>
           
           <button
             onClick={handleCreateCourse}
@@ -710,6 +831,76 @@ const AdminAddCourseWizard: React.FC = () => {
           {step === 2 && renderStep2()}
           {step === 3 && renderStep3()}
         </div>
+
+        {/* Schedule Popup Modal */}
+        {showSchedulePopup && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-xl shadow-2xl p-8 max-w-md w-full mx-4">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-2xl font-bold text-gray-900">Schedule Course</h3>
+                <button
+                  onClick={() => setShowSchedulePopup(false)}
+                  className="text-gray-400 hover:text-gray-600 transition-colors duration-200"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              <div className="space-y-6">
+                <div>
+                  <label htmlFor="schedule-date" className="block text-sm font-medium text-gray-700 mb-2">
+                    Select Date
+                  </label>
+                  <input
+                    id="schedule-date"
+                    type="date"
+                    value={scheduledDate}
+                    onChange={(e) => setScheduledDate(e.target.value)}
+                    min={new Date().toISOString().split('T')[0]}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="schedule-time" className="block text-sm font-medium text-gray-700 mb-2">
+                    Select Time
+                  </label>
+                  <input
+                    id="schedule-time"
+                    type="time"
+                    value={scheduledTime}
+                    onChange={(e) => setScheduledTime(e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
+                  />
+                </div>
+
+                {error && (
+                  <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg">
+                    {error}
+                  </div>
+                )}
+
+                <div className="flex space-x-4 pt-4">
+                  <button
+                    onClick={() => setShowSchedulePopup(false)}
+                    className="flex-1 px-6 py-3 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition-colors duration-200"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleScheduleCourse}
+                    disabled={loading || !scheduledDate || !scheduledTime}
+                    className="flex-1 px-6 py-3 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+                  >
+                    {loading ? 'Scheduling...' : 'Schedule Course'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

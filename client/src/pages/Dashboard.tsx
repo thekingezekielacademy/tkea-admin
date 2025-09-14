@@ -772,8 +772,12 @@ const Dashboard: React.FC = () => {
           description,
           level,
           cover_photo_url,
-          created_by
+          created_by,
+          status,
+          is_scheduled,
+          scheduled_for
         `)
+        .in('status', ['published', 'scheduled'])
         .order('created_at', { ascending: false })
         .limit(6);
 
