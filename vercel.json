@@ -3,14 +3,9 @@
   "buildCommand": "cd client && npm run build",
   "outputDirectory": "client/build",
   "installCommand": "npm install && cd client && npm install",
-  "functions": {
-    "client/api/**/*.js": {
-      "runtime": "nodejs18.x"
-    }
-  },
   "rewrites": [
     {
-      "source": "/((?!static/|favicon|manifest|img/|api/).*)",
+      "source": "/((?!static/|favicon|manifest|img/).*)",
       "destination": "/index.html"
     }
   ],
