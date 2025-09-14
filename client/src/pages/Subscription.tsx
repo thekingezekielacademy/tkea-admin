@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useSidebar } from '../contexts/SidebarContext';
 import { supabase } from '../lib/supabase';
 import DashboardSidebar from '../components/DashboardSidebar';
-import FlutterwavePaymentModal from '../components/FlutterwavePaymentModal';
+import SimpleFlutterwaveModal from '../components/SimpleFlutterwaveModal';
 import secureStorage from '../utils/secureStorage';
 import flutterwaveService from '../services/flutterwaveService';
 import DOMPurify from 'dompurify';
@@ -1217,7 +1217,7 @@ const Subscription: React.FC = () => {
       )}
 
       {/* Payment Modal */}
-      <FlutterwavePaymentModal
+      <SimpleFlutterwaveModal
         isOpen={showPaymentModal}
         onClose={() => setShowPaymentModal(false)}
         onSuccess={() => {
