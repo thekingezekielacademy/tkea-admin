@@ -4,7 +4,7 @@ import { ErrorHandler } from '../utils/errorHandler';
 import { logInfo, logError, logApiCall } from '../utils/performanceLogger';
 
 // API Configuration - Use secure server-side endpoints
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+const API_BASE_URL = process.env.REACT_APP_API_URL || (process.env.NODE_ENV === 'production' ? 'https://api.thekingezekielacademy.com/api' : 'http://localhost:5000/api');
 // Professional Flutterwave Configuration - Live Mode
 const FLUTTERWAVE_PUBLIC_KEY = process.env.REACT_APP_FLUTTERWAVE_PUBLIC_KEY || 'FLWPUBK-454fa0a1faa931dcccf6672ed71645cd-X';
 const FLUTTERWAVE_MODE = 'live';

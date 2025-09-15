@@ -11,7 +11,7 @@ interface ContactResponse {
   errors?: any[];
 }
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+const API_BASE_URL = process.env.REACT_APP_API_URL || (process.env.NODE_ENV === 'production' ? 'https://api.thekingezekielacademy.com/api' : 'http://localhost:5000/api');
 
 export const contactService = {
   async submitContactForm(formData: ContactFormData): Promise<ContactResponse> {
