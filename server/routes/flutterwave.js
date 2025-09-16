@@ -108,11 +108,6 @@ const FLUTTERWAVE_PUBLIC_KEY = process.env.FLUTTERWAVE_PUBLIC_KEY || 'FLWPUBK-45
 const FLUTTERWAVE_ENCRYPTION_KEY = process.env.FLUTTERWAVE_ENCRYPTION_KEY || 'eb50a05e74e459b334aad266';
 const FLUTTERWAVE_PLAN_ID = process.env.FLUTTERWAVE_PLAN_ID || '146851';
 
-// Validate Flutterwave keys
-if (!FLUTTERWAVE_SECRET_KEY || !FLUTTERWAVE_PUBLIC_KEY) {
-  console.error('❌ Flutterwave keys are missing. Please set FLUTTERWAVE_SECRET_KEY and FLUTTERWAVE_PUBLIC_KEY environment variables.');
-}
-
 // Check if Flutterwave is configured
 console.log('✅ Flutterwave configured with credentials');
 console.log('🔑 Secret Key:', FLUTTERWAVE_SECRET_KEY ? 'SET' : 'NOT SET');
@@ -161,7 +156,7 @@ router.post('/initialize-payment', paymentLimiter, validatePaymentInput, async (
     // Ensure production URLs are always used in production
     const baseUrl = process.env.NODE_ENV === 'production' 
       ? 'https://app.thekingezekielacademy.com'
-      : (process.env.CLIENT_URL || 'https://app.thekingezekielacademy.com');
+      : (process.env.CLIENT_URL || 'http://localhost:3000');
 
     // Prepare payment data with mobile-optimized settings
     const paymentData = {
@@ -193,16 +188,9 @@ router.post('/initialize-payment', paymentLimiter, validatePaymentInput, async (
       disable_fingerprint: true,
       disable_tracking: true,
       disable_analytics: true,
-      // Additional parameters to prevent fingerprinting errors
-      fingerprinting: false,
-      tracking: false,
       // Additional parameters to ensure proper configuration
       init_url: `${baseUrl}/payment-verification`,
-      callback_url: `${baseUrl}/payment-verification`,
-      // Ensure proper redirect handling
-      redirect_url: `${baseUrl}/payment-verification`,
-      // Remove any parameters that might trigger premature cancel
-      cancel_url: `${baseUrl}/subscription`
+      callback_url: `${baseUrl}/payment-verification`
     };
 
     // Simple Flutterwave API call using axios

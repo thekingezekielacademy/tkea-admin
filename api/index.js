@@ -14,7 +14,9 @@ app.set('trust proxy', 1);
 app.use(cors({
   origin: [
     'https://app.thekingezekielacademy.com',
-    'https://thekingezekielacademy.com'
+    'https://thekingezekielacademy.com',
+    'http://localhost:3000', // For development
+    'http://localhost:3001'  // For development
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
@@ -113,7 +115,7 @@ app.post('/api/flutterwave/initialize-payment', validatePaymentInput, async (req
     // Ensure production URLs are always used in production
     const baseUrl = process.env.NODE_ENV === 'production' 
       ? 'https://app.thekingezekielacademy.com'
-      : (process.env.CLIENT_URL || 'https://app.thekingezekielacademy.com');
+      : (process.env.CLIENT_URL || 'http://localhost:3000');
     
     console.log('🔧 Payment URL Configuration:', {
       NODE_ENV: process.env.NODE_ENV,
@@ -152,16 +154,9 @@ app.post('/api/flutterwave/initialize-payment', validatePaymentInput, async (req
       disable_fingerprint: true,
       disable_tracking: true,
       disable_analytics: true,
-      // Additional parameters to prevent fingerprinting errors
-      fingerprinting: false,
-      tracking: false,
       // Additional parameters to ensure proper configuration
       init_url: `${baseUrl}/payment-verification`,
-      callback_url: `${baseUrl}/payment-verification`,
-      // Ensure proper redirect handling
-      redirect_url: `${baseUrl}/payment-verification`,
-      // Remove any parameters that might trigger premature cancel
-      cancel_url: `${baseUrl}/subscription`
+      callback_url: `${baseUrl}/payment-verification`
     };
 
     const response = await axios.post('https://api.flutterwave.com/v3/payments', paymentData, {

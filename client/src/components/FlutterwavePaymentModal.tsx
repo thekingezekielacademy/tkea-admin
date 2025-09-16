@@ -114,10 +114,31 @@ const FlutterwavePaymentModal: React.FC<FlutterwavePaymentModalProps> = ({ isOpe
     setPaymentState({ status: 'processing' });
 
     try {
-      // Professional Flutterwave Configuration - Using server-side initialization
-      // We don't need the public key on the client side since we're using server-side initialization
-      console.log('🔧 Flutterwave Payment Modal - Using server-side initialization (no client-side key needed)');
-      console.log('🔧 Flutterwave Payment Modal - Mode: server-side hosted payment');
+      // Professional Flutterwave Configuration - Using new fresh keys
+      const flutterwavePublicKey = process.env.REACT_APP_FLUTTERWAVE_PUBLIC_KEY;
+      
+      // Enhanced Flutterwave key validation
+      if (!flutterwavePublicKey) {
+        console.error('❌ Flutterwave public key is missing');
+        throw new Error('Flutterwave payment system is not configured. Please contact support.');
+      }
+      
+      if (!flutterwavePublicKey.startsWith('FLWPUBK')) {
+        console.error('❌ Invalid Flutterwave public key format:', flutterwavePublicKey);
+        throw new Error('Invalid Flutterwave public key format. Please contact support.');
+      }
+      
+      // Check if key is properly formatted (should be at least 40 characters)
+      if (flutterwavePublicKey.length < 40) {
+        console.error('❌ Flutterwave public key is too short:', flutterwavePublicKey);
+        throw new Error('Invalid Flutterwave public key. Please contact support.');
+      }
+      
+      console.log('🔧 Flutterwave Payment Modal - Using key:', flutterwavePublicKey?.substring(0, 20) + '...');
+      console.log('🔧 Flutterwave Payment Modal - Full key length:', flutterwavePublicKey?.length);
+      console.log('🔧 Flutterwave Payment Modal - Key starts with:', flutterwavePublicKey?.substring(0, 10));
+      console.log('🔧 Flutterwave Payment Modal - Mode: live');
+      console.log('🔧 Flutterwave Payment Modal - Using live key: true');
 
       const tx_ref = `TKE_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 

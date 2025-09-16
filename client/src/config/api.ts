@@ -3,8 +3,8 @@
 
 const API_BASE = process.env.REACT_APP_API_URL || 
   (process.env.NODE_ENV === 'production' 
-    ? 'https://app.thekingezekielacademy.com/api' // Use production domain
-    : 'https://app.thekingezekielacademy.com/api');
+    ? '' // Use same domain as frontend in production (Vercel functions)
+    : 'http://localhost:5000');
 
 // API Configuration - Production Ready
 console.log('🔧 API Configuration Debug - CACHE BUST V7 - FINAL FIX:');
