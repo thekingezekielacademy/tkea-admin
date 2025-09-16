@@ -29,11 +29,7 @@ const SignUp: React.FC = () => {
   // Check if form is valid
   const isFormValid = () => {
     const passwordValid = 
-      formData.password.length >= 8 &&
-      /[A-Z]/.test(formData.password) &&
-      /[a-z]/.test(formData.password) &&
-      /\d/.test(formData.password) &&
-      /[!@#$%^&*(),.?":{}|<>]/.test(formData.password);
+      formData.password.length >= 6;
     
     return (
       formData.name.trim() !== '' &&
@@ -64,14 +60,10 @@ const SignUp: React.FC = () => {
 
     // Check password requirements
     const passwordValid = 
-      formData.password.length >= 8 &&
-      /[A-Z]/.test(formData.password) &&
-      /[a-z]/.test(formData.password) &&
-      /\d/.test(formData.password) &&
-      /[!@#$%^&*(),.?":{}|<>]/.test(formData.password);
+      formData.password.length >= 6;
     
     if (!passwordValid) {
-      setError('Password must meet all requirements (8+ chars, capital, lowercase, number, special char)');
+      setError('Password must be at least 6 characters long');
       return;
     }
 
@@ -250,35 +242,11 @@ const SignUp: React.FC = () => {
               <div className="mt-2 text-xs text-gray-600">
                 <p className="font-medium mb-1">Password must contain:</p>
                 <ul className="space-y-1">
-                  <li className={`flex items-center ${formData.password.length >= 8 ? 'text-green-600' : 'text-gray-500'}`}>
-                    <span className={`mr-1 ${formData.password.length >= 8 ? 'text-green-500' : 'text-gray-400'}`}>
-                      {formData.password.length >= 8 ? '✓' : '○'}
+                  <li className={`flex items-center ${formData.password.length >= 6 ? 'text-green-600' : 'text-gray-500'}`}>
+                    <span className={`mr-1 ${formData.password.length >= 6 ? 'text-green-500' : 'text-gray-400'}`}>
+                      {formData.password.length >= 6 ? '✓' : '○'}
                     </span>
-                    At least 8 characters
-                  </li>
-                  <li className={`flex items-center ${/[A-Z]/.test(formData.password) ? 'text-green-600' : 'text-gray-500'}`}>
-                    <span className={`mr-1 ${/[A-Z]/.test(formData.password) ? 'text-green-500' : 'text-gray-400'}`}>
-                      {/[A-Z]/.test(formData.password) ? '✓' : '○'}
-                    </span>
-                    At least 1 capital letter
-                  </li>
-                  <li className={`flex items-center ${/[a-z]/.test(formData.password) ? 'text-green-600' : 'text-gray-500'}`}>
-                    <span className={`mr-1 ${/[a-z]/.test(formData.password) ? 'text-green-500' : 'text-gray-400'}`}>
-                      {/[a-z]/.test(formData.password) ? '✓' : '○'}
-                    </span>
-                    At least 1 lowercase letter
-                  </li>
-                  <li className={`flex items-center ${/\d/.test(formData.password) ? 'text-green-600' : 'text-gray-500'}`}>
-                    <span className={`mr-1 ${/\d/.test(formData.password) ? 'text-green-500' : 'text-gray-400'}`}>
-                      {/\d/.test(formData.password) ? '✓' : '○'}
-                    </span>
-                    At least 1 number
-                  </li>
-                  <li className={`flex items-center ${/[!@#$%^&*(),.?":{}|<>]/.test(formData.password) ? 'text-green-600' : 'text-gray-500'}`}>
-                    <span className={`mr-1 ${/[!@#$%^&*(),.?":{}|<>]/.test(formData.password) ? 'text-green-500' : 'text-gray-400'}`}>
-                      {/[!@#$%^&*(),.?":{}|<>]/.test(formData.password) ? '✓' : '○'}
-                    </span>
-                    At least 1 special character
+                    At least 6 characters
                   </li>
                 </ul>
               </div>

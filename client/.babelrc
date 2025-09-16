@@ -3,9 +3,8 @@
     [
       "@babel/preset-env",
       {
-        "targets": {
-          "safari": ">= 13"
-        }
+        "useBuiltIns": "entry",
+        "corejs": 3
       }
     ],
     "@babel/preset-react",

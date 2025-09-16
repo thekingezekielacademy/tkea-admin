@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FaTimes, FaCreditCard, FaCheckCircle, FaExclamationTriangle } from 'react-icons/fa';
+import { API_ENDPOINTS, apiCall } from '../config/api';
 
 interface SimpleFlutterwaveModalProps {
   isOpen: boolean;
@@ -61,14 +62,9 @@ const SimpleFlutterwaveModal: React.FC<SimpleFlutterwaveModalProps> = ({
         (window as any).FlutterwaveDisableAnalytics = true;
       }
 
-      // Simple server call
-      const API_BASE_URL = process.env.REACT_APP_API_URL || (process.env.NODE_ENV === 'production' ? 'https://app.thekingezekielacademy.com/api' : 'http://localhost:5000/api');
-      
-      const response = await fetch(`${API_BASE_URL}/flutterwave/initialize-payment`, {
+      // Use centralized API configuration with proper error handling
+      const result = await apiCall(API_ENDPOINTS.FLUTTERWAVE_INITIALIZE_PAYMENT, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({
           email: validEmail,
           amount: amount,
@@ -78,8 +74,6 @@ const SimpleFlutterwaveModal: React.FC<SimpleFlutterwaveModalProps> = ({
           phone_number: phoneNumber.trim()
         })
       });
-
-      const result = await response.json();
       
       if (result.success && result.data?.link) {
         // Store transaction reference

@@ -6,6 +6,7 @@ import DOMPurify from 'dompurify';
 import { secureLog, secureError } from '../utils/secureLogger';
 import SEOHead from '../components/SEO/SEOHead';
 import { generateBlogPostStructuredData } from '../components/SEO/StructuredData';
+import { safeCopyToClipboard, isMiniBrowser } from '../utils/instagramBrowserFix';
 
 interface BlogPostData {
   id: string;
@@ -85,7 +86,15 @@ const BlogPost: React.FC = () => {
     let sanitizedContent = DOMPurify.sanitize(content);
     
     // Split content into sentences for better formatting
-    const sentences = sanitizedContent.split(/(?<=[.!?])\s+/);
+    // Using Safari-compatible regex instead of lookbehind
+    const sentences = sanitizedContent.split(/([.!?])\s+/).reduce((acc, part, index) => {
+      if (index % 2 === 0) {
+        acc.push(part);
+      } else {
+        acc[acc.length - 1] += part;
+      }
+      return acc;
+    }, [] as string[]);
     
     // Process each sentence to add proper spacing
     const formattedSentences = sentences.map(sentence => {
@@ -171,9 +180,18 @@ const BlogPost: React.FC = () => {
   const copyToClipboard = async () => {
     try {
       const url = window.location.href;
-      await navigator.clipboard.writeText(url);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      const success = await safeCopyToClipboard(url);
+      if (success) {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } else {
+        // Fallback for mini browsers - show URL for manual copy
+        if (isMiniBrowser()) {
+          alert(`Copy this URL: ${url}`);
+        } else {
+          secureError('Failed to copy link');
+        }
+      }
     } catch (err) {
       secureError('Failed to copy link:', err);
     }

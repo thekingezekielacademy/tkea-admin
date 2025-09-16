@@ -7,6 +7,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { TrialStatus, TrialManager } from '../../utils/trialManager';
 import secureStorage from '../../utils/secureStorage';
 import { notificationService } from '../../utils/notificationService';
+import LessonPlayerInstagramGuard from '../../components/LessonPlayerInstagramGuard';
 
 const LessonPlayer: React.FC = () => {
   const navigate = useNavigate();
@@ -650,35 +651,60 @@ const LessonPlayer: React.FC = () => {
   // Loading state
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 pt-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="text-center py-12">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
-            <p className="mt-2 text-gray-600">Loading lesson...</p>
+      <LessonPlayerInstagramGuard>
+        <div className="min-h-screen bg-gray-50 pt-16">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="text-center py-12">
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+              <p className="mt-2 text-gray-600">Loading lesson...</p>
+            </div>
           </div>
         </div>
-      </div>
+      </LessonPlayerInstagramGuard>
     );
   }
 
   // Error state
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 pt-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-            <p className="text-red-700 font-medium mb-3">{error}</p>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <button 
-                onClick={() => {
-                  setError(null);
-                  setLoading(true);
-                  fetchCourseAndLesson();
-                }}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-              >
-                Try Again
-              </button>
+      <LessonPlayerInstagramGuard>
+        <div className="min-h-screen bg-gray-50 pt-16">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+              <p className="text-red-700 font-medium mb-3">{error}</p>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <button 
+                  onClick={() => {
+                    setError(null);
+                    setLoading(true);
+                    fetchCourseAndLesson();
+                  }}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                >
+                  Try Again
+                </button>
+                <button 
+                  onClick={() => navigate('/courses')}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Back to Courses
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </LessonPlayerInstagramGuard>
+    );
+  }
+
+  // No course or video data
+  if (!course || !currentVideo) {
+    return (
+      <LessonPlayerInstagramGuard>
+        <div className="min-h-screen bg-gray-50 pt-16">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
+              <p className="text-yellow-700 font-medium mb-3">Lesson not found</p>
               <button 
                 onClick={() => navigate('/courses')}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -688,31 +714,13 @@ const LessonPlayer: React.FC = () => {
             </div>
           </div>
         </div>
-      </div>
-    );
-  }
-
-  // No course or video data
-  if (!course || !currentVideo) {
-    return (
-      <div className="min-h-screen bg-gray-50 pt-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
-            <p className="text-yellow-700 font-medium mb-3">Lesson not found</p>
-            <button 
-              onClick={() => navigate('/courses')}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              Back to Courses
-            </button>
-          </div>
-        </div>
-      </div>
+      </LessonPlayerInstagramGuard>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-16">
+    <LessonPlayerInstagramGuard>
+      <div className="min-h-screen bg-gray-50 pt-16">
       {/* Back to Courses Button */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         <button
@@ -939,6 +947,7 @@ const LessonPlayer: React.FC = () => {
         </aside>
       </div>
     </div>
+    </LessonPlayerInstagramGuard>
   );
 };
 

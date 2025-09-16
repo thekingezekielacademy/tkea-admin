@@ -13,7 +13,7 @@ router.post('/register', [
   body('lastName').trim().isLength({ min: 2 }).withMessage('Last name must be at least 2 characters'),
   body('email').isEmail().normalizeEmail().withMessage('Please enter a valid email'),
   body('phone').trim().isLength({ min: 10 }).withMessage('Please enter a valid phone number'),
-  body('password').isLength({ min: 8 }).withMessage('Password must be at least 8 characters'),
+  body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
   body('role').isIn(['student', 'parent', 'teacher', 'administrator']).withMessage('Please select a valid role')
 ], async (req, res) => {
   try {

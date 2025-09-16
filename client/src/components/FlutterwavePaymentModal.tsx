@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FaTimes, FaCreditCard, FaCheckCircle, FaExclamationTriangle } from 'react-icons/fa';
+import { API_ENDPOINTS, apiCall } from '../config/api';
 
 interface FlutterwavePaymentModalProps {
   isOpen: boolean;
@@ -113,31 +114,10 @@ const FlutterwavePaymentModal: React.FC<FlutterwavePaymentModalProps> = ({ isOpe
     setPaymentState({ status: 'processing' });
 
     try {
-      // Professional Flutterwave Configuration - Using new fresh keys
-      const flutterwavePublicKey = process.env.REACT_APP_FLUTTERWAVE_PUBLIC_KEY || 'FLWPUBK-454fa0a1faa931dcccf6672ed71645cd-X';
-      
-      // Enhanced Flutterwave key validation
-      if (!flutterwavePublicKey) {
-        console.error('❌ Flutterwave public key is missing');
-        throw new Error('Flutterwave payment system is not configured. Please contact support.');
-      }
-      
-      if (!flutterwavePublicKey.startsWith('FLWPUBK')) {
-        console.error('❌ Invalid Flutterwave public key format:', flutterwavePublicKey);
-        throw new Error('Invalid Flutterwave public key format. Please contact support.');
-      }
-      
-      // Check if key is properly formatted (should be at least 40 characters)
-      if (flutterwavePublicKey.length < 40) {
-        console.error('❌ Flutterwave public key is too short:', flutterwavePublicKey);
-        throw new Error('Invalid Flutterwave public key. Please contact support.');
-      }
-      
-      console.log('🔧 Flutterwave Payment Modal - Using key:', flutterwavePublicKey?.substring(0, 20) + '...');
-      console.log('🔧 Flutterwave Payment Modal - Full key length:', flutterwavePublicKey?.length);
-      console.log('🔧 Flutterwave Payment Modal - Key starts with:', flutterwavePublicKey?.substring(0, 10));
-      console.log('🔧 Flutterwave Payment Modal - Mode: live');
-      console.log('🔧 Flutterwave Payment Modal - Using live key: true');
+      // Professional Flutterwave Configuration - Using server-side initialization
+      // We don't need the public key on the client side since we're using server-side initialization
+      console.log('🔧 Flutterwave Payment Modal - Using server-side initialization (no client-side key needed)');
+      console.log('🔧 Flutterwave Payment Modal - Mode: server-side hosted payment');
 
       const tx_ref = `TKE_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
@@ -214,14 +194,10 @@ const FlutterwavePaymentModal: React.FC<FlutterwavePaymentModalProps> = ({ isOpe
       // Use server-side initialization to get hosted payment link
       console.log('🚀 Making request to Flutterwave API endpoint...');
       try {
-        const API_BASE_URL = process.env.REACT_APP_API_URL || (process.env.NODE_ENV === 'production' ? 'https://app.thekingezekielacademy.com/api' : 'http://localhost:5000/api');
-        console.log('🔗 API URL:', API_BASE_URL);
+        console.log('🔗 API URL:', API_ENDPOINTS.FLUTTERWAVE_INITIALIZE_PAYMENT);
         
-        const response = await fetch(`${API_BASE_URL}/flutterwave/initialize-payment`, {
+        const result = await apiCall(API_ENDPOINTS.FLUTTERWAVE_INITIALIZE_PAYMENT, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
           body: JSON.stringify({
             email: customerEmail,
             amount: Number(amount),
@@ -230,19 +206,9 @@ const FlutterwavePaymentModal: React.FC<FlutterwavePaymentModalProps> = ({ isOpe
             tx_ref: tx_ref,
             customer_name: formattedCustomerName,
             phone_number: finalPhoneNumber,
-          }),
+          })
         });
 
-        console.log('📡 Response status:', response.status);
-        console.log('📡 Response headers:', Object.fromEntries(response.headers.entries()));
-        
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error('❌ Server error response:', errorText);
-          throw new Error(`Server error: ${response.status} - ${errorText}`);
-        }
-
-        const result = await response.json();
         console.log('📡 Server response:', result);
         
         if (result.success && result.data) {

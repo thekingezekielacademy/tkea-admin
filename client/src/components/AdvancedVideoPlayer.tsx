@@ -79,6 +79,67 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
     return () => clearTimeout(timer);
   }, [src]);
 
+  // Cleanup branding interval on unmount
+  useEffect(() => {
+    return () => {
+      if (playerRef.current && (playerRef.current as any)._brandingInterval) {
+        clearInterval((playerRef.current as any)._brandingInterval);
+      }
+    };
+  }, []);
+
+  // Function to hide YouTube branding and native controls
+  const hideYouTubeBranding = () => {
+    if (!containerRef.current) return;
+    
+    try {
+      // Hide YouTube logo and branding
+      const iframe = containerRef.current.querySelector('iframe[src*="youtube.com"]') as HTMLIFrameElement;
+      if (iframe) {
+        // Add CSS to hide YouTube elements
+        iframe.style.pointerEvents = 'none';
+        iframe.style.filter = 'brightness(0.8)';
+        
+        // Try to access iframe content and hide elements (may not work due to CORS)
+        try {
+          const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+          if (iframeDoc) {
+            // Hide YouTube's native play button
+            const playButton = iframeDoc.querySelector('.ytp-large-play-button');
+            if (playButton) {
+              (playButton as HTMLElement).style.display = 'none';
+            }
+            
+            // Hide YouTube's "Watch on YouTube" text
+            const watchOnYoutube = iframeDoc.querySelector('.ytp-title');
+            if (watchOnYoutube) {
+              (watchOnYoutube as HTMLElement).style.display = 'none';
+            }
+            
+            // Hide YouTube logo
+            const logo = iframeDoc.querySelector('.ytp-youtube-button');
+            if (logo) {
+              (logo as HTMLElement).style.display = 'none';
+            }
+            
+            // Hide any other YouTube UI elements
+            const youtubeElements = iframeDoc.querySelectorAll('[class*="ytp-"]');
+            youtubeElements.forEach((element) => {
+              if (element instanceof HTMLElement) {
+                element.style.display = 'none';
+              }
+            });
+          }
+        } catch (e) {
+          // CORS error expected, continue with CSS approach
+          console.log('Cannot access iframe content due to CORS, using CSS approach');
+        }
+      }
+    } catch (error) {
+      console.warn('Error hiding YouTube branding:', error);
+    }
+  };
+
 
   useEffect(() => {
     if (type === "youtube") {
@@ -137,10 +198,16 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
               iv_load_policy: 3,
               cc_load_policy: 0,
               fs: 1,
-              disablekb: 0,
+              disablekb: 1,
               playsinline: 1,
               enablejsapi: 1,
-              origin: window.location.origin
+              origin: window.location.origin,
+              // Additional parameters to hide YouTube branding and controls
+              wmode: 'opaque',
+              html5: 1,
+              // Force hide all YouTube UI elements
+              start: 0,
+              end: 0
             },
             events: {
               onReady: (event: any) => {
@@ -150,6 +217,17 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
                   setIsLoading(false);
                   setIsPlayerReady(true);
                   console.log('YouTube player fully ready');
+                  
+                  // Hide YouTube branding and controls after player is ready
+                  hideYouTubeBranding();
+                  
+                  // Set up continuous monitoring to hide branding
+                  const brandingInterval = setInterval(() => {
+                    hideYouTubeBranding();
+                  }, 1000);
+                  
+                  // Store interval for cleanup
+                  (playerRef.current as any)._brandingInterval = brandingInterval;
                 }, 500);
                 
                 // Check available playback rates for this video
@@ -281,6 +359,11 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
         playerRef.current.playVideo();
         setIsPlaying(true);
         onPlay?.();
+        
+        // Hide YouTube branding after starting playback
+        setTimeout(() => {
+          hideYouTubeBranding();
+        }, 100);
       }
     } catch (error) {
       console.error('Error controlling YouTube player:', error);
@@ -506,9 +589,12 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
           setIsHovered(true);
         }}
         onMouseLeave={() => {
-          hoverTimeoutRef.current = setTimeout(() => {
-            setIsHovered(false);
-          }, 2000); // 2 seconds delay before hiding (gives users time to interact)
+          // Only hide controls on desktop, not mobile
+          if (window.innerWidth > 768) {
+            hoverTimeoutRef.current = setTimeout(() => {
+              setIsHovered(false);
+            }, 2000); // 2 seconds delay before hiding (gives users time to interact)
+          }
         }}
         onTouchStart={() => {
           if (hoverTimeoutRef.current) {
@@ -524,12 +610,14 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
             return;
           }
           
-          // For mobile, keep controls visible longer and add tap-to-toggle
+          // For mobile, keep controls always visible (don't hide them)
           if (window.innerWidth <= 768) {
-            // On mobile, controls stay visible for 5 seconds
-            hoverTimeoutRef.current = setTimeout(() => {
-              setIsHovered(false);
-            }, 5000);
+            // On mobile, controls stay visible permanently
+            setIsHovered(true);
+            // Clear any existing timeout
+            if (hoverTimeoutRef.current) {
+              clearTimeout(hoverTimeoutRef.current);
+            }
           } else {
             // On desktop, 2 seconds
             hoverTimeoutRef.current = setTimeout(() => {
@@ -547,15 +635,8 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
               clearTimeout(hoverTimeoutRef.current);
             }
             
-            // Toggle controls on tap
-            setIsHovered(!isHovered);
-            
-            // If showing controls, hide them after 5 seconds
-            if (!isHovered) {
-              hoverTimeoutRef.current = setTimeout(() => {
-                setIsHovered(false);
-              }, 5000);
-            }
+            // On mobile, keep controls always visible
+            setIsHovered(true);
           }
         }}
       >
@@ -694,16 +775,16 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
               clip: rect(0, auto, auto, 0) !important;
             }
             
-            /* Hide YouTube logo overlay */
+            /* Hide YouTube logo overlay and branding */
             .video-container::after {
               content: '';
               position: absolute;
               top: 0;
               right: 0;
-              width: 100px;
-              height: 40px;
+              width: 120px;
+              height: 50px;
               background: black;
-              z-index: 5;
+              z-index: 10;
               pointer-events: none;
             }
             
@@ -713,10 +794,58 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
               position: absolute;
               bottom: 0;
               right: 0;
-              width: 200px;
-              height: 30px;
+              width: 250px;
+              height: 40px;
               background: black;
-              z-index: 5;
+              z-index: 10;
+              pointer-events: none;
+            }
+            
+            /* Hide YouTube's native play button and controls */
+            .video-container iframe[src*="youtube.com"] {
+              pointer-events: none !important;
+            }
+            
+            /* Hide YouTube's "Watch on YouTube" text and play button */
+            .video-container iframe[src*="youtube.com"]::after {
+              content: '';
+              position: absolute;
+              top: 0;
+              left: 0;
+              right: 0;
+              bottom: 0;
+              background: black;
+              z-index: 15;
+              pointer-events: none;
+            }
+            
+            /* Additional aggressive hiding of YouTube elements */
+            .video-container iframe[src*="youtube.com"] {
+              filter: brightness(0.8) !important;
+            }
+            
+            /* Hide any YouTube overlay elements that might appear */
+            .video-container iframe[src*="youtube.com"]::before {
+              content: '';
+              position: absolute;
+              top: 0;
+              left: 0;
+              right: 0;
+              bottom: 0;
+              background: transparent;
+              z-index: 20;
+              pointer-events: none;
+            }
+            
+            /* Additional overlay to cover any remaining YouTube UI */
+            .video-container .youtube-overlay {
+              position: absolute;
+              top: 0;
+              left: 0;
+              right: 0;
+              bottom: 0;
+              background: transparent;
+              z-index: 20;
               pointer-events: none;
             }
             
@@ -725,7 +854,16 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
               .controls-overlay {
                 background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.4) 50%, transparent 100%) !important;
                 padding: 20px 10px 10px 10px !important;
+                opacity: 1 !important; /* Always visible on mobile */
+                z-index: 50 !important; /* Ensure controls are above all overlays */
               }
+            }
+            
+            /* Ensure controls are always on top */
+            .controls-overlay {
+              z-index: 50 !important;
+              position: relative !important;
+            }
               
               .controls-overlay button {
                 min-height: 44px !important;
@@ -749,11 +887,19 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
               }
             }
           `}</style>
-          {/* YouTube Branding Blocker Overlay */}
-          <div className="absolute inset-0 z-10 pointer-events-none">
+          {/* YouTube Branding Blocker Overlay - Lower z-index */}
+          <div className="absolute inset-0 z-5 pointer-events-none">
             {/* Cover any YouTube branding that might appear */}
             <div className="absolute top-0 right-0 w-20 h-8 bg-black opacity-0"></div>
             <div className="absolute bottom-0 right-0 w-32 h-6 bg-black opacity-0"></div>
+          </div>
+
+          {/* Additional YouTube UI Hider Overlay - Lower z-index */}
+          <div className="youtube-overlay absolute inset-0 z-10 pointer-events-none">
+            {/* Cover the center area where YouTube's play button appears */}
+            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-32 h-32 bg-black opacity-0"></div>
+            {/* Cover the bottom area where "Watch on YouTube" text appears - but not over controls */}
+            <div className="absolute bottom-16 left-1/2 transform -translate-x-1/2 w-48 h-8 bg-black opacity-0"></div>
           </div>
 
           {/* Fullscreen Experience Message */}
@@ -783,7 +929,7 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
           {/* Mobile touch indicator */}
           <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-40 md:hidden">
             <div className="w-16 h-16 bg-black bg-opacity-50 rounded-full flex items-center justify-center opacity-0 transition-opacity duration-150 pointer-events-none"
-                 style={{ opacity: isLoading ? 1 : (isPlaying ? (isHovered ? 1 : 0) : 1) }}>
+                 style={{ opacity: isLoading ? 1 : (isPlaying ? 0 : 1) }}>
               <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
               </svg>
@@ -793,8 +939,8 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
           {/* Mobile touch hint */}
           <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 z-40 md:hidden">
             <div className="bg-black bg-opacity-70 text-white px-3 py-1 rounded-full text-xs opacity-0 transition-opacity duration-150 pointer-events-none"
-                 style={{ opacity: isLoading ? 1 : (isPlaying ? (isHovered ? 1 : 0) : 1) }}>
-              {isLoading ? 'Loading...' : 'Tap to show/hide controls'}
+                 style={{ opacity: isLoading ? 1 : (isPlaying ? 0 : 1) }}>
+              {isLoading ? 'Loading...' : 'Tap to play'}
             </div>
           </div>
           <style>
@@ -945,10 +1091,16 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
             playsInline
           />
           
-          {/* Clickable overlay for play/pause */}
+          {/* Clickable overlay for play/pause - Below controls */}
           <div 
             className={`absolute inset-0 z-15 ${isPlayerReady ? 'cursor-pointer' : 'cursor-not-allowed'}`}
-            onClick={isPlayerReady ? togglePlay : undefined}
+            onClick={(e) => {
+              // Only handle click if not clicking on controls
+              const target = e.target as HTMLElement;
+              if (!target.closest('.controls-overlay') && isPlayerReady) {
+                togglePlay();
+              }
+            }}
             style={{ pointerEvents: isPlayerReady ? 'auto' : 'none' }}
           />
           
@@ -967,9 +1119,9 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
             </div>
           </div>
           
-          {/* Custom controls overlay */}
-          <div className={`absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black via-black to-transparent px-3 pb-0 pt-2 z-30 transition-opacity duration-300 controls-overlay ${
-            isLoading ? 'opacity-100' : (isPlaying ? (isHovered ? 'opacity-100' : 'opacity-0') : 'opacity-100')
+          {/* Custom controls overlay - Highest z-index */}
+          <div className={`absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black via-black to-transparent px-3 pb-0 pt-2 z-50 transition-opacity duration-300 controls-overlay ${
+            isLoading ? 'opacity-100' : (isPlaying ? (window.innerWidth <= 768 ? 'opacity-100' : (isHovered ? 'opacity-100' : 'opacity-0')) : 'opacity-100')
           }`}>
             {/* Progress bar */}
             <div className="mb-0">
@@ -1005,7 +1157,7 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
                   onClick={togglePlay} 
                   disabled={!isPlayerReady || isLoading}
                   className={`hover:text-blue-400 transition-colors transition-opacity p-1 md:p-0 ${
-                    isLoading || !isPlayerReady ? 'opacity-100' : (isPlaying ? (isHovered ? 'opacity-100' : 'opacity-0') : 'opacity-100')
+                    isLoading || !isPlayerReady ? 'opacity-100' : (isPlaying ? (window.innerWidth <= 768 ? 'opacity-100' : (isHovered ? 'opacity-100' : 'opacity-0')) : 'opacity-100')
                   } ${!isPlayerReady ? 'cursor-not-allowed' : 'cursor-pointer'}`}
                 >
                   {!isPlayerReady ? (

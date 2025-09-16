@@ -6,6 +6,7 @@
  */
 
 import { supabase } from '../lib/supabase';
+import { API_BASE } from '../config/api';
 
 export interface SubscriptionData {
   id: string;
@@ -34,8 +35,8 @@ class SubscriptionService {
   private baseUrl: string;
 
   constructor() {
-    // Use environment variable or fallback to a secure endpoint
-    this.baseUrl = process.env.REACT_APP_API_URL || (process.env.NODE_ENV === 'production' ? 'https://app.thekingezekielacademy.com/api' : 'http://localhost:5000/api');
+    // Use centralized API configuration
+    this.baseUrl = API_BASE;
   }
 
   /**

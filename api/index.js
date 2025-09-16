@@ -12,7 +12,12 @@ app.set('trust proxy', 1);
 
 // Middleware
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'https://app.thekingezekielacademy.com',
+  origin: [
+    'https://app.thekingezekielacademy.com',
+    'https://thekingezekielacademy.com'
+  ],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   credentials: true
 }));
 
@@ -105,12 +110,26 @@ app.post('/api/flutterwave/initialize-payment', validatePaymentInput, async (req
     const userAgent = req.headers['user-agent'] || '';
     const isMobile = /Mobile|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
 
+    // Ensure production URLs are always used in production
+    const baseUrl = process.env.NODE_ENV === 'production' 
+      ? 'https://app.thekingezekielacademy.com'
+      : (process.env.CLIENT_URL || 'https://app.thekingezekielacademy.com');
+    
+    console.log('🔧 Payment URL Configuration:', {
+      NODE_ENV: process.env.NODE_ENV,
+      CLIENT_URL: process.env.CLIENT_URL,
+      baseUrl: baseUrl,
+      redirect_url: `${baseUrl}/payment-verification`,
+      webhook_url: `${baseUrl}/api/flutterwave/webhook`,
+      logo: `${baseUrl}/favicon.svg`
+    });
+
     const paymentData = {
       tx_ref: transactionRef,
       amount: Number(amount),
       currency: 'NGN',
-      redirect_url: `${process.env.CLIENT_URL || 'https://app.thekingezekielacademy.com'}/payment-verification`,
-      webhook_url: `${process.env.CLIENT_URL || 'https://app.thekingezekielacademy.com'}/api/flutterwave/webhook`,
+      redirect_url: `${baseUrl}/payment-verification`,
+      webhook_url: `${baseUrl}/api/flutterwave/webhook`,
       payment_options: isMobile ? 'card,mobilemoney,ussd,banktransfer' : 'card,mobilemoney,ussd',
       customer: {
         email: email,
@@ -120,18 +139,29 @@ app.post('/api/flutterwave/initialize-payment', validatePaymentInput, async (req
       customizations: {
         title: 'King Ezekiel Academy',
         description: `Subscription: ${plan_name}`,
-        logo: `${process.env.CLIENT_URL || 'https://app.thekingezekielacademy.com'}/favicon.svg`
+        logo: `${baseUrl}/favicon.svg`
       },
       meta: {
         user_id: user_id || 'anonymous',
         plan_name: plan_name,
         source: 'king-ezekiel-academy',
         timestamp: new Date().toISOString(),
-        device_type: isMobile ? 'mobile' : 'desktop'
+        device_type: isMobile ? 'mobile' : 'desktop',
+        cache_bust: Date.now() // Add cache busting
       },
       disable_fingerprint: true,
       disable_tracking: true,
-      disable_analytics: true
+      disable_analytics: true,
+      // Additional parameters to prevent fingerprinting errors
+      fingerprinting: false,
+      tracking: false,
+      // Additional parameters to ensure proper configuration
+      init_url: `${baseUrl}/payment-verification`,
+      callback_url: `${baseUrl}/payment-verification`,
+      // Ensure proper redirect handling
+      redirect_url: `${baseUrl}/payment-verification`,
+      // Remove any parameters that might trigger premature cancel
+      cancel_url: `${baseUrl}/subscription`
     };
 
     const response = await axios.post('https://api.flutterwave.com/v3/payments', paymentData, {

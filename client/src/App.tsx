@@ -16,6 +16,11 @@ import analytics from './utils/analytics';
 import { notificationService } from './utils/notificationService';
 import './utils/polyfills'; // Load polyfills first
 import './utils/sentry'; // Initialize Sentry first
+import { isMiniBrowser, safeFeatureCheck } from './utils/instagramBrowserFix';
+import { isInstagramBrowser } from './utils/instagramMinimalMode';
+import InstagramBrowserBanner from './components/InstagramBrowserBanner';
+import InstagramMinimalApp from './components/InstagramMinimalApp';
+import InstagramBrowserGuard from './components/InstagramBrowserGuard';
 import Home from './pages/Home';
 import Courses from './pages/Courses';
 import About from './pages/About';
@@ -57,6 +62,8 @@ function App() {
   const [appError, setAppError] = React.useState<string | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
 
+  // Instagram browser detection is now handled by InstagramBrowserGuard
+
   useEffect(() => {
     // Disable Flutterwave fingerprinting globally to prevent errors
     if (typeof window !== 'undefined') {
@@ -76,25 +83,29 @@ function App() {
           console.warn('Analytics initialization failed:', error);
         }
 
-        // Initialize notifications (non-blocking)
+        // Initialize notifications (non-blocking) - skip for mini browsers
         try {
-          if ('Notification' in window && Notification.permission === 'granted') {
-            notificationService.initializeNotifications();
-          } else if ('Notification' in window && Notification.permission === 'default') {
-            setTimeout(async () => {
-              const permission = await Notification.requestPermission();
-              if (permission === 'granted') {
-                notificationService.initializeNotifications();
-              }
-            }, 3000);
+          if (!isMiniBrowser() && safeFeatureCheck.hasNotifications()) {
+            if (Notification.permission === 'granted') {
+              notificationService.initializeNotifications();
+            } else if (Notification.permission === 'default') {
+              setTimeout(async () => {
+                const permission = await Notification.requestPermission();
+                if (permission === 'granted') {
+                  notificationService.initializeNotifications();
+                }
+              }, 3000);
+            }
           }
         } catch (error) {
           console.warn('Notification initialization failed:', error);
         }
         
-        // Initialize service worker with better error handling
+        // Initialize service worker with better error handling - skip for mini browsers
         try {
-          await initializeServiceWorker();
+          if (!isMiniBrowser() && safeFeatureCheck.hasServiceWorker()) {
+            await initializeServiceWorker();
+          }
         } catch (error) {
           console.warn('Service worker initialization failed:', error);
         }
@@ -129,11 +140,23 @@ function App() {
   useEffect(() => {
     const handleError = (event: ErrorEvent) => {
       console.error('Global error caught:', event.error);
+      // For Instagram browser, show minimal app instead of error
+      if (isInstagramBrowser()) {
+        setAppError(null); // Don't show error, just reload with minimal app
+        window.location.reload();
+        return;
+      }
       setAppError('An error occurred while loading the application. Please try refreshing the page.');
     };
 
     const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
       console.error('Unhandled promise rejection:', event.reason);
+      // For Instagram browser, show minimal app instead of error
+      if (isInstagramBrowser()) {
+        setAppError(null); // Don't show error, just reload with minimal app
+        window.location.reload();
+        return;
+      }
       setAppError('An error occurred while loading the application. Please try refreshing the page.');
     };
 
@@ -235,14 +258,16 @@ function App() {
   }
 
   return (
-    <SafeErrorBoundary>
-      <AuthProvider>
-        <SidebarProvider>
-          <Router>
-            <FacebookPixelProvider />
-            <ScrollToTop />
-            <div className="App">
-              <Navbar />
+    <InstagramBrowserGuard>
+      <SafeErrorBoundary>
+        <AuthProvider>
+          <SidebarProvider>
+            <Router>
+              <FacebookPixelProvider />
+              <ScrollToTop />
+              <div className="App">
+                <InstagramBrowserBanner />
+                <Navbar />
               {/* <NetworkStatus /> */}
               <main>
               <Routes>
@@ -289,6 +314,7 @@ function App() {
         </SidebarProvider>
       </AuthProvider>
     </SafeErrorBoundary>
+    </InstagramBrowserGuard>
   );
 }
 

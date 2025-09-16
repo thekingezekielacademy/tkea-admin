@@ -53,11 +53,14 @@ self.addEventListener('activate', (event) => {
 
 // Fetch event - serve from cache when offline
 self.addEventListener('fetch', (event) => {
-  // Skip caching for API requests to prevent interference
+  // Skip caching for API requests and payment verification to prevent interference
   if (event.request.url.includes('supabase.co') || 
       event.request.url.includes('/api/') ||
       event.request.url.includes('auth/v1/') ||
-      event.request.url.includes('rest/v1/')) {
+      event.request.url.includes('rest/v1/') ||
+      event.request.url.includes('flutterwave') ||
+      event.request.url.includes('payment-verification') ||
+      event.request.url.includes('checkout.flutterwave.com')) {
     // For API requests, just fetch from network without caching
     event.respondWith(
       fetch(event.request).catch(error => {

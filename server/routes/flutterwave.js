@@ -108,6 +108,11 @@ const FLUTTERWAVE_PUBLIC_KEY = process.env.FLUTTERWAVE_PUBLIC_KEY || 'FLWPUBK-45
 const FLUTTERWAVE_ENCRYPTION_KEY = process.env.FLUTTERWAVE_ENCRYPTION_KEY || 'eb50a05e74e459b334aad266';
 const FLUTTERWAVE_PLAN_ID = process.env.FLUTTERWAVE_PLAN_ID || '146851';
 
+// Validate Flutterwave keys
+if (!FLUTTERWAVE_SECRET_KEY || !FLUTTERWAVE_PUBLIC_KEY) {
+  console.error('❌ Flutterwave keys are missing. Please set FLUTTERWAVE_SECRET_KEY and FLUTTERWAVE_PUBLIC_KEY environment variables.');
+}
+
 // Check if Flutterwave is configured
 console.log('✅ Flutterwave configured with credentials');
 console.log('🔑 Secret Key:', FLUTTERWAVE_SECRET_KEY ? 'SET' : 'NOT SET');
@@ -153,13 +158,18 @@ router.post('/initialize-payment', paymentLimiter, validatePaymentInput, async (
     
     console.log('📱 Device detection:', { userAgent, isMobile });
     
+    // Ensure production URLs are always used in production
+    const baseUrl = process.env.NODE_ENV === 'production' 
+      ? 'https://app.thekingezekielacademy.com'
+      : (process.env.CLIENT_URL || 'https://app.thekingezekielacademy.com');
+
     // Prepare payment data with mobile-optimized settings
     const paymentData = {
       tx_ref: transactionRef,
       amount: Number(amount),
       currency: 'NGN',
-      redirect_url: `${process.env.CLIENT_URL || 'http://localhost:3000'}/payment-verification`,
-      webhook_url: `${process.env.CLIENT_URL || 'http://localhost:5000'}/api/flutterwave/webhook`,
+      redirect_url: `${baseUrl}/payment-verification`,
+      webhook_url: `${baseUrl}/api/flutterwave/webhook`,
       payment_options: isMobile ? 'card,mobilemoney,ussd,banktransfer' : 'card,mobilemoney,ussd',
       customer: {
         email: email,
@@ -169,19 +179,30 @@ router.post('/initialize-payment', paymentLimiter, validatePaymentInput, async (
       customizations: {
         title: 'King Ezekiel Academy',
         description: `Subscription: ${plan_name}`,
-        logo: `${process.env.CLIENT_URL || 'http://localhost:3000'}/favicon.svg`
+        logo: `${baseUrl}/favicon.svg`
       },
       meta: {
         user_id: user_id || 'anonymous',
         plan_name: plan_name,
         source: 'king-ezekiel-academy',
         timestamp: new Date().toISOString(),
-        device_type: isMobile ? 'mobile' : 'desktop'
+        device_type: isMobile ? 'mobile' : 'desktop',
+        cache_bust: Date.now() // Add cache busting
       },
       // Disable fingerprinting to prevent errors
       disable_fingerprint: true,
       disable_tracking: true,
-      disable_analytics: true
+      disable_analytics: true,
+      // Additional parameters to prevent fingerprinting errors
+      fingerprinting: false,
+      tracking: false,
+      // Additional parameters to ensure proper configuration
+      init_url: `${baseUrl}/payment-verification`,
+      callback_url: `${baseUrl}/payment-verification`,
+      // Ensure proper redirect handling
+      redirect_url: `${baseUrl}/payment-verification`,
+      // Remove any parameters that might trigger premature cancel
+      cancel_url: `${baseUrl}/subscription`
     };
 
     // Simple Flutterwave API call using axios

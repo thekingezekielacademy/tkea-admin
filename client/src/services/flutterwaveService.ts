@@ -3,10 +3,9 @@ import { supabase } from '../lib/supabase';
 import { ErrorHandler } from '../utils/errorHandler';
 import { logInfo, logError, logApiCall } from '../utils/performanceLogger';
 
-// API Configuration - Use secure server-side endpoints
-const API_BASE_URL = process.env.REACT_APP_API_URL || (process.env.NODE_ENV === 'production' ? 'https://app.thekingezekielacademy.com/api' : 'http://localhost:5000/api');
+// API Configuration is now handled by the centralized config/api.ts file
 // Professional Flutterwave Configuration - Live Mode
-const FLUTTERWAVE_PUBLIC_KEY = process.env.REACT_APP_FLUTTERWAVE_PUBLIC_KEY || 'FLWPUBK-454fa0a1faa931dcccf6672ed71645cd-X';
+const FLUTTERWAVE_PUBLIC_KEY = process.env.REACT_APP_FLUTTERWAVE_PUBLIC_KEY;
 const FLUTTERWAVE_MODE = 'live';
 
 // Log current mode
@@ -69,12 +68,11 @@ class FlutterwaveService {
       
       logInfo('Initializing Flutterwave payment via secure server endpoint', { email, amount }, 'FlutterwaveService', 'initializePayment');
       
-      // Use secure API endpoint
-      const response = await fetch(`${API_BASE_URL}/flutterwave/initialize-payment`, {
+      // Use centralized API configuration with proper error handling
+      const { API_ENDPOINTS, apiCall } = await import('../config/api');
+      
+      const result = await apiCall(API_ENDPOINTS.FLUTTERWAVE_INITIALIZE_PAYMENT, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({
           email: email.trim(),
           amount,
@@ -87,15 +85,7 @@ class FlutterwaveService {
       });
 
       const duration = performance.now() - startTime;
-      logApiCall('POST', '/flutterwave/initialize-payment', response.status, duration);
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        logError('Secure API Error Response', { status: response.status, error: errorText }, 'FlutterwaveService', 'initializePayment');
-        throw new Error(`Secure API error: ${response.status} - ${errorText}`);
-      }
-
-      const result = await response.json();
+      logApiCall('POST', '/flutterwave/initialize-payment', 200, duration);
       logInfo('Payment initialized successfully via secure server', { success: result.success }, 'FlutterwaveService', 'initializePayment');
       
       if (result.success) {
