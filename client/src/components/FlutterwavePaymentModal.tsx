@@ -214,7 +214,7 @@ const FlutterwavePaymentModal: React.FC<FlutterwavePaymentModalProps> = ({ isOpe
       // Use server-side initialization to get hosted payment link
       console.log('🚀 Making request to Flutterwave API endpoint...');
       try {
-        const API_BASE_URL = process.env.REACT_APP_API_URL || (process.env.NODE_ENV === 'production' ? 'https://api.thekingezekielacademy.com/api' : 'http://localhost:5000/api');
+        const API_BASE_URL = process.env.REACT_APP_API_URL || (process.env.NODE_ENV === 'production' ? 'https://app.thekingezekielacademy.com/api' : 'http://localhost:5000/api');
         console.log('🔗 API URL:', API_BASE_URL);
         
         const response = await fetch(`${API_BASE_URL}/flutterwave/initialize-payment`, {

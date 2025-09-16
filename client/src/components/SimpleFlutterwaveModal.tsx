@@ -62,7 +62,7 @@ const SimpleFlutterwaveModal: React.FC<SimpleFlutterwaveModalProps> = ({
       }
 
       // Simple server call
-      const API_BASE_URL = process.env.REACT_APP_API_URL || (process.env.NODE_ENV === 'production' ? 'https://api.thekingezekielacademy.com/api' : 'http://localhost:5000/api');
+      const API_BASE_URL = process.env.REACT_APP_API_URL || (process.env.NODE_ENV === 'production' ? 'https://app.thekingezekielacademy.com/api' : 'http://localhost:5000/api');
       
       const response = await fetch(`${API_BASE_URL}/flutterwave/initialize-payment`, {
         method: 'POST',
