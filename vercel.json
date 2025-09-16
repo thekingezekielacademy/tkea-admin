@@ -91,10 +91,5 @@
         }
       ]
     }
-  ],
-  "functions": {
-    "client/build/static/js/*.js": {
-      "runtime": "nodejs18.x"
-    }
-  }
+  ]
 }
