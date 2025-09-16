@@ -7,8 +7,7 @@ module.exports = {
           safari: '>= 13'
         },
         useBuiltIns: 'usage',
-        corejs: 3,
-        modules: false
+        corejs: 3
       }
     ],
     '@babel/preset-react',
