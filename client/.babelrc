@@ -5,7 +5,9 @@
       {
         "targets": {
           "safari": ">= 13"
-        }
+        },
+        "useBuiltIns": "usage",
+        "corejs": 3
       }
     ],
     "@babel/preset-react",
