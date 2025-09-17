@@ -80,7 +80,7 @@ export const siteConfig: SEOSiteConfig = {
   locale: 'en_US',
   author: 'King Ezekiel',
   contactEmail: 'info@thekingezekielacademy.com',
-  contactPhone: '+234-XXX-XXX-XXXX',
+  contactPhone: '+234 810 169 2624',
   address: {
     street: 'Digital Marketing Hub',
     city: 'Lagos',

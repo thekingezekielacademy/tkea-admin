@@ -215,7 +215,7 @@ const Terms: React.FC = () => {
               </div>
               <div className="flex items-center space-x-3">
                 <FaPhone className="h-5 w-5 text-primary-600" />
-                <span className="text-primary-700">+234 (0) 123 456 7890</span>
+                <span className="text-primary-700">+234 810 169 2624</span>
               </div>
               <div className="flex items-center space-x-3">
                 <FaMapMarkerAlt className="h-5 w-5 text-primary-600" />

@@ -126,7 +126,17 @@ const Contact: React.FC = () => {
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-1">Email</h3>
-                  <p className="text-gray-600">info@thekingezekielacademy.com</p>
+                  <p className="text-gray-600 break-all">info@thekingezekielacademy.com</p>
+                </div>
+              </div>
+
+              <div className="flex items-start space-x-4">
+                <div className="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <FaPhone className="h-6 w-6 text-primary-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-1">Phone</h3>
+                  <p className="text-gray-600">+234 810 169 2624</p>
                 </div>
               </div>
 

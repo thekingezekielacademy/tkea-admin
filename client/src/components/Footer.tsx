@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { FaGraduationCap, FaFacebook, FaInstagram, FaTelegram, FaEnvelope, FaMapMarkerAlt, FaClock } from 'react-icons/fa';
+import { FaGraduationCap, FaFacebook, FaInstagram, FaTelegram, FaEnvelope, FaMapMarkerAlt, FaClock, FaPhone } from 'react-icons/fa';
 import { useAuth } from '../contexts/AuthContext';
 import { useSidebar } from '../contexts/SidebarContext';
 
@@ -111,7 +111,14 @@ const Footer: React.FC = () => {
                 <div className="w-8 h-8 bg-primary-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
                   <FaEnvelope className="h-4 w-4 text-primary-600" />
                 </div>
-                <span className="text-primary-600 text-sm">info@thekingezekielacademy.com</span>
+                <span className="text-primary-600 text-sm break-all">info@thekingezekielacademy.com</span>
+              </div>
+
+              <div className="flex items-start space-x-3">
+                <div className="w-8 h-8 bg-primary-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
+                  <FaPhone className="h-4 w-4 text-primary-600" />
+                </div>
+                <span className="text-primary-600 text-sm">+234 810 169 2624</span>
               </div>
 
               <div className="flex items-start space-x-3">

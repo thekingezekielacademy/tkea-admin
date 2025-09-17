@@ -17,10 +17,6 @@ import { notificationService } from './utils/notificationService';
 import './utils/polyfills'; // Load polyfills first
 import './utils/sentry'; // Initialize Sentry first
 import { isMiniBrowser, safeFeatureCheck } from './utils/instagramBrowserFix';
-import { isInstagramBrowser } from './utils/instagramMinimalMode';
-import InstagramBrowserBanner from './components/InstagramBrowserBanner';
-import InstagramMinimalApp from './components/InstagramMinimalApp';
-import InstagramBrowserGuard from './components/InstagramBrowserGuard';
 import { getBrowserCapabilities, isOldSafari, initSafariCompatibility } from './utils/safariCompatibility';
 import Home from './pages/Home';
 import Courses from './pages/Courses';
@@ -63,7 +59,6 @@ function App() {
   const [appError, setAppError] = React.useState<string | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
 
-  // Instagram browser detection is now handled by InstagramBrowserGuard
 
   useEffect(() => {
     // Initialize Safari compatibility fixes
@@ -154,23 +149,11 @@ function App() {
   useEffect(() => {
     const handleError = (event: ErrorEvent) => {
       console.error('Global error caught:', event.error);
-      // For Instagram browser, show minimal app instead of error
-      if (isInstagramBrowser()) {
-        setAppError(null); // Don't show error, just reload with minimal app
-        window.location.reload();
-        return;
-      }
       setAppError('An error occurred while loading the application. Please try refreshing the page.');
     };
 
     const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
       console.error('Unhandled promise rejection:', event.reason);
-      // For Instagram browser, show minimal app instead of error
-      if (isInstagramBrowser()) {
-        setAppError(null); // Don't show error, just reload with minimal app
-        window.location.reload();
-        return;
-      }
       setAppError('An error occurred while loading the application. Please try refreshing the page.');
     };
 
@@ -272,63 +255,60 @@ function App() {
   }
 
   return (
-    <InstagramBrowserGuard>
-      <SafeErrorBoundary>
-        <AuthProvider>
-          <SidebarProvider>
-            <Router>
-              <FacebookPixelProvider />
-              <ScrollToTop />
-              <div className="App">
-                <InstagramBrowserBanner />
-                <Navbar />
-              {/* <NetworkStatus /> */}
-              <main>
-              <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/courses" element={<Courses />} />
-              <Route path="/blog" element={<Blog />} />
-          <Route path="/blog/:slug" element={<BlogPost />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/contact" element={<Contact />} />
-              <Route path="/privacy" element={<Privacy />} />
-              <Route path="/terms" element={<Terms />} />
-              <Route path="/signin" element={<SignIn />} />
-              <Route path="/signup" element={<SignUp />} />
-              <Route path="/forgot-password" element={<ForgotPassword />} />
-              <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-              <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-              <Route path="/achievements" element={<ProtectedRoute><Achievements /></ProtectedRoute>} />
-              <Route path="/subscription" element={<ProtectedRoute><Subscription /></ProtectedRoute>} />
-              <Route path="/payment-verification" element={<ProtectedRoute><PaymentVerification /></ProtectedRoute>} />
-              <Route path="/dashboard-with-sidebar" element={<ProtectedRoute><DashboardWithSidebar /></ProtectedRoute>} />
-              <Route path="/course/:id" element={<ProtectedRoute><CourseOverview /></ProtectedRoute>} />
-              <Route path="/course/:id/overview" element={<ProtectedRoute><CourseOverview /></ProtectedRoute>} />
-              <Route path="/course/:id/lesson/:lessonId" element={<ProtectedRoute><LessonPlayer /></ProtectedRoute>} />
-              <Route path="/course/:id/complete" element={<ProtectedRoute><CourseComplete /></ProtectedRoute>} />
-              <Route path="/diploma" element={<ProtectedRoute><Diploma /></ProtectedRoute>} />
-              <Route path="/certificates" element={<ProtectedRoute><Certificates /></ProtectedRoute>} />
-              <Route path="/assessments" element={<ProtectedRoute><Assessments /></ProtectedRoute>} />
-              <Route path="/resume" element={<ProtectedRoute><Resume /></ProtectedRoute>} />
-              <Route path="/rooms" element={<ProtectedRoute><Rooms /></ProtectedRoute>} />
-              <Route path="/affiliates" element={<ProtectedRoute><Affiliates /></ProtectedRoute>} />
-              <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
-              <Route path="/admin/courses" element={<AdminRoute><AdminCourses /></AdminRoute>} />
-              <Route path="/admin/add-course" element={<AdminRoute><AdminAddCourseWizard /></AdminRoute>} />
-              <Route path="/admin/edit-course/:id" element={<AdminRoute><EditCourse /></AdminRoute>} />
-              <Route path="/admin/view-course/:id" element={<AdminRoute><CourseView /></AdminRoute>} />
-              <Route path="/admin/blog" element={<AdminRoute><AdminBlog /></AdminRoute>} />
-              <Route path="/admin/add-blog-post" element={<AdminRoute><AddBlogPost /></AdminRoute>} />
-              <Route path="/admin/view-blog-post/:id" element={<AdminRoute><ViewBlogPost /></AdminRoute>} />
-              </Routes>
-              </main>
-              <Footer />
-            </div>
-          </Router>
-        </SidebarProvider>
-      </AuthProvider>
-    </SafeErrorBoundary>
-    </InstagramBrowserGuard>
+    <SafeErrorBoundary>
+      <AuthProvider>
+        <SidebarProvider>
+          <Router>
+            <FacebookPixelProvider />
+            <ScrollToTop />
+            <div className="App">
+              <Navbar />
+            {/* <NetworkStatus /> */}
+            <main>
+            <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/courses" element={<Courses />} />
+            <Route path="/blog" element={<Blog />} />
+        <Route path="/blog/:slug" element={<BlogPost />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/privacy" element={<Privacy />} />
+            <Route path="/terms" element={<Terms />} />
+            <Route path="/signin" element={<SignIn />} />
+            <Route path="/signup" element={<SignUp />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+            <Route path="/achievements" element={<ProtectedRoute><Achievements /></ProtectedRoute>} />
+            <Route path="/subscription" element={<ProtectedRoute><Subscription /></ProtectedRoute>} />
+            <Route path="/payment-verification" element={<ProtectedRoute><PaymentVerification /></ProtectedRoute>} />
+            <Route path="/dashboard-with-sidebar" element={<ProtectedRoute><DashboardWithSidebar /></ProtectedRoute>} />
+            <Route path="/course/:id" element={<ProtectedRoute><CourseOverview /></ProtectedRoute>} />
+            <Route path="/course/:id/overview" element={<ProtectedRoute><CourseOverview /></ProtectedRoute>} />
+            <Route path="/course/:id/lesson/:lessonId" element={<ProtectedRoute><LessonPlayer /></ProtectedRoute>} />
+            <Route path="/course/:id/complete" element={<ProtectedRoute><CourseComplete /></ProtectedRoute>} />
+            <Route path="/diploma" element={<ProtectedRoute><Diploma /></ProtectedRoute>} />
+            <Route path="/certificates" element={<ProtectedRoute><Certificates /></ProtectedRoute>} />
+            <Route path="/assessments" element={<ProtectedRoute><Assessments /></ProtectedRoute>} />
+            <Route path="/resume" element={<ProtectedRoute><Resume /></ProtectedRoute>} />
+            <Route path="/rooms" element={<ProtectedRoute><Rooms /></ProtectedRoute>} />
+            <Route path="/affiliates" element={<ProtectedRoute><Affiliates /></ProtectedRoute>} />
+            <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+            <Route path="/admin/courses" element={<AdminRoute><AdminCourses /></AdminRoute>} />
+            <Route path="/admin/add-course" element={<AdminRoute><AdminAddCourseWizard /></AdminRoute>} />
+            <Route path="/admin/edit-course/:id" element={<AdminRoute><EditCourse /></AdminRoute>} />
+            <Route path="/admin/view-course/:id" element={<AdminRoute><CourseView /></AdminRoute>} />
+            <Route path="/admin/blog" element={<AdminRoute><AdminBlog /></AdminRoute>} />
+            <Route path="/admin/add-blog-post" element={<AdminRoute><AddBlogPost /></AdminRoute>} />
+            <Route path="/admin/view-blog-post/:id" element={<AdminRoute><ViewBlogPost /></AdminRoute>} />
+            </Routes>
+            </main>
+            <Footer />
+          </div>
+        </Router>
+      </SidebarProvider>
+    </AuthProvider>
+  </SafeErrorBoundary>
   );
 }
 
