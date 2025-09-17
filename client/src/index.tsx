@@ -9,15 +9,23 @@ import reportWebVitals from './reportWebVitals';
 import 'core-js/stable';
 import 'regenerator-runtime/runtime';
 
-// Global error logging for Safari debugging
+// Global error logging for Safari and in-app browser debugging
 window.onerror = function (message, source, lineno, colno, error) {
+  const userAgent = navigator.userAgent;
+  const isInstagram = /Instagram/i.test(userAgent);
+  const isFacebook = /FBAN|FBAV|FBIOS/i.test(userAgent);
+  const isSafari = /Safari/i.test(userAgent) && !/Chrome/i.test(userAgent);
+  
   console.error("❌ Global Error:", {
     message,
     source,
     lineno,
     colno,
     error: error?.stack || error,
-    userAgent: navigator.userAgent,
+    userAgent,
+    isInstagram,
+    isFacebook,
+    isSafari,
     timestamp: new Date().toISOString()
   });
   
@@ -25,7 +33,13 @@ window.onerror = function (message, source, lineno, colno, error) {
   if (typeof document !== 'undefined') {
     const errorDiv = document.createElement('div');
     errorDiv.style.cssText = 'position:fixed;top:0;left:0;right:0;background:red;color:white;padding:10px;z-index:9999;font-family:monospace;font-size:12px;';
-    errorDiv.textContent = `Safari Error: ${message} at ${source}:${lineno}:${colno}`;
+    
+    let browserType = 'Safari';
+    if (isInstagram) browserType = 'Instagram Browser';
+    else if (isFacebook) browserType = 'Facebook Browser';
+    else if (isSafari) browserType = 'Safari';
+    
+    errorDiv.textContent = `${browserType} Error: ${message} at ${source}:${lineno}:${colno}`;
     document.body.appendChild(errorDiv);
     
     // Remove after 10 seconds
@@ -38,10 +52,18 @@ window.onerror = function (message, source, lineno, colno, error) {
 };
 
 window.onunhandledrejection = function (event) {
+  const userAgent = navigator.userAgent;
+  const isInstagram = /Instagram/i.test(userAgent);
+  const isFacebook = /FBAN|FBAV|FBIOS/i.test(userAgent);
+  const isSafari = /Safari/i.test(userAgent) && !/Chrome/i.test(userAgent);
+  
   console.error("❌ Unhandled Promise Rejection:", {
     reason: event.reason,
     promise: event.promise,
-    userAgent: navigator.userAgent,
+    userAgent,
+    isInstagram,
+    isFacebook,
+    isSafari,
     timestamp: new Date().toISOString()
   });
   
@@ -49,7 +71,13 @@ window.onunhandledrejection = function (event) {
   if (typeof document !== 'undefined') {
     const errorDiv = document.createElement('div');
     errorDiv.style.cssText = 'position:fixed;top:50px;left:0;right:0;background:orange;color:white;padding:10px;z-index:9999;font-family:monospace;font-size:12px;';
-    errorDiv.textContent = `Safari Promise Rejection: ${event.reason}`;
+    
+    let browserType = 'Safari';
+    if (isInstagram) browserType = 'Instagram Browser';
+    else if (isFacebook) browserType = 'Facebook Browser';
+    else if (isSafari) browserType = 'Safari';
+    
+    errorDiv.textContent = `${browserType} Promise Rejection: ${event.reason}`;
     document.body.appendChild(errorDiv);
     
     // Remove after 10 seconds

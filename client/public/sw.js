@@ -8,7 +8,7 @@
  * - Offline functionality
  */
 
-const CACHE_NAME = 'king-ezekiel-academy-v3-safari-fix';
+const CACHE_NAME = 'king-ezekiel-academy-v4-safari-inapp-fix';
 const urlsToCache = [
   '/',
   '/static/js/bundle.js',
@@ -56,16 +56,50 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   console.log('Service Worker: Fetch event - BYPASSING CACHE for:', event.request.url);
   
-  // Safari-specific handling for JavaScript files
-  if (event.request.url.includes('.js') && event.request.url.includes('static')) {
-    // Add cache-busting for JS files to ensure Safari gets the latest version
+  // Detect if this is an in-app browser request
+  const userAgent = event.request.headers.get('user-agent') || '';
+  const isInAppBrowser = /Instagram|FBAN|FBAV|FBIOS|Line|Twitter|LinkedIn|WhatsApp|Telegram/i.test(userAgent);
+  const isSafari = /Safari/i.test(userAgent) && !/Chrome/i.test(userAgent);
+  
+  // Enhanced handling for Safari and in-app browsers
+  if ((isSafari || isInAppBrowser) && event.request.url.includes('.js') && event.request.url.includes('static')) {
+    // Add cache-busting for JS files to ensure Safari/in-app browsers get the latest version
     const url = new URL(event.request.url);
     url.searchParams.set('v', Date.now().toString());
+    if (isInAppBrowser) {
+      url.searchParams.set('_inapp', '1');
+    }
     
     event.respondWith(
-      fetch(url.toString()).catch(error => {
-        console.error('Service Worker: Safari JS fetch error:', error);
+      fetch(url.toString(), {
+        cache: 'no-cache',
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      }).catch(error => {
+        console.error('Service Worker: Safari/In-App JS fetch error:', error);
         // Fallback to original request
+        return fetch(event.request);
+      })
+    );
+  } else if (isInAppBrowser) {
+    // For in-app browsers, always add cache-busting
+    const url = new URL(event.request.url);
+    if (!url.searchParams.has('v')) {
+      url.searchParams.set('v', Date.now().toString());
+    }
+    url.searchParams.set('_inapp', '1');
+    
+    event.respondWith(
+      fetch(url.toString(), {
+        cache: 'no-cache',
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      }).catch(error => {
+        console.error('Service Worker: In-App browser fetch error:', error);
         return fetch(event.request);
       })
     );
