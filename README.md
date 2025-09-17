@@ -146,10 +146,9 @@ For support and questions, please contact the development team or create an issu
 ## 🚀 Deployment Status
 
 - ✅ **Local Development**: Running on localhost:3000 & localhost:5000
-- ✅ **Firebase Hosting**: Live at <https://thekingezekielacademy-ac3cb.web.app>
+- ✅ **Vercel Production**: Live at <https://king-ezekiel-academy.vercel.app>
 - ✅ **Custom Domain**: <https://app.thekingezekielacademy.com> (SSL pending)
-- 🔄 **Vercel**: Available at <https://king-ezekiel-academy.vercel.app>
-- 📋 **GitHub Pages**: Workflow disabled (migrated to Firebase)
+- 📋 **GitHub Pages**: Workflow disabled (migrated to Vercel)
 
 ## 🔧 **Latest Fixes Applied**
 
