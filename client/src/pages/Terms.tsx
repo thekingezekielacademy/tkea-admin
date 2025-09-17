@@ -82,19 +82,23 @@ const Terms: React.FC = () => {
               <ul className="space-y-3">
                 <li className="flex items-start">
                   <FaCreditCard className="h-5 w-5 text-primary-500 mr-3 mt-1 flex-shrink-0" />
-                  <span>Some services require payment. By subscribing or purchasing, you agree to provide accurate billing details</span>
+                  <span>Monthly subscriptions require recurring payment. By subscribing, you agree to provide accurate billing details and authorize automatic monthly charges</span>
                 </li>
                 <li className="flex items-start">
                   <FaCreditCard className="h-5 w-5 text-primary-500 mr-3 mt-1 flex-shrink-0" />
-                  <span>Payments are processed via trusted third-party providers (Flutterwave)</span>
+                  <span>Payments are processed securely via Flutterwave, our trusted payment processor</span>
                 </li>
                 <li className="flex items-start">
                   <FaCreditCard className="h-5 w-5 text-primary-500 mr-3 mt-1 flex-shrink-0" />
-                  <span>Subscriptions may automatically renew unless canceled before the renewal date</span>
+                  <span>Monthly subscriptions automatically renew every month unless canceled before the renewal date</span>
                 </li>
                 <li className="flex items-start">
                   <FaCreditCard className="h-5 w-5 text-primary-500 mr-3 mt-1 flex-shrink-0" />
-                  <span>Refunds are subject to our Refund Policy</span>
+                  <span>You can cancel your subscription at any time from your account dashboard</span>
+                </li>
+                <li className="flex items-start">
+                  <FaCreditCard className="h-5 w-5 text-primary-500 mr-3 mt-1 flex-shrink-0" />
+                  <span>Refunds are subject to our Refund Policy and Flutterwave's terms</span>
                 </li>
               </ul>
             </div>

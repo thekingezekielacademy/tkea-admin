@@ -2,6 +2,7 @@
 import { supabase } from '../lib/supabase';
 import { ErrorHandler } from '../utils/errorHandler';
 import { logInfo, logError, logApiCall } from '../utils/performanceLogger';
+import { API_BASE } from '../config/api';
 
 // API Configuration is now handled by the centralized config/api.ts file
 // Professional Flutterwave Configuration - Live Mode
@@ -146,7 +147,7 @@ class FlutterwaveService {
       }
       
       // Production subscription creation via Vercel API endpoint
-      const apiEndpoint = '/api/flutterwave/create-subscription';
+      const apiEndpoint = `${API_BASE}/flutterwave/create-subscription`;
       
       const response = await fetch(apiEndpoint, {
         method: 'POST',
@@ -215,7 +216,7 @@ class FlutterwaveService {
       }
       
       // Production verification via Vercel API endpoint
-      const apiEndpoint = '/api/flutterwave/verify-payment';
+      const apiEndpoint = `${API_BASE}/flutterwave/verify-payment`;
       
       const response = await fetch(apiEndpoint, {
         method: 'POST',
@@ -257,7 +258,7 @@ class FlutterwaveService {
       console.log('📊 Fetching Flutterwave subscription via server endpoint');
       
       // Use the Vercel API endpoint
-      const apiEndpoint = '/api/flutterwave/get-subscription';
+      const apiEndpoint = `${API_BASE}/flutterwave/get-subscription`;
       
       const response = await fetch(apiEndpoint, {
         method: 'POST',

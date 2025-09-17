@@ -53,10 +53,33 @@ const Privacy: React.FC = () => {
             <li>Comply with legal obligations</li>
           </ul>
 
-          <h2 className="text-2xl font-bold text-gray-900 mt-8 mb-4">Information Sharing</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mt-8 mb-4">Payment Processing</h2>
+          <p className="text-gray-700 mb-4">
+            We use <strong>Flutterwave</strong> as our payment processor to handle all subscription payments and transactions. When you make a payment:
+          </p>
+          <ul className="list-disc pl-6 text-gray-700 mb-4">
+            <li>Your payment information is processed securely by Flutterwave</li>
+            <li>We do not store your credit card or bank account details</li>
+            <li>Flutterwave is PCI DSS compliant and follows industry security standards</li>
+            <li>Your payment data is encrypted and protected during transmission</li>
+          </ul>
           <p className="text-gray-700 mb-6">
+            <strong>Refund Policy:</strong> We follow Flutterwave's refund policy. Refunds are processed within 5-10 business days and will be credited to your original payment method. For refund requests, please contact our support team.
+          </p>
+
+          <h2 className="text-2xl font-bold text-gray-900 mt-8 mb-4">Information Sharing</h2>
+          <p className="text-gray-700 mb-4">
             We do not sell, trade, or otherwise transfer your personal information to third parties without your consent, except as described in this policy or as required by law.
           </p>
+          <p className="text-gray-700 mb-6">
+            <strong>Third-Party Services:</strong> We may share your information with trusted third-party service providers, including:
+          </p>
+          <ul className="list-disc pl-6 text-gray-700 mb-6">
+            <li><strong>Flutterwave:</strong> For payment processing and subscription management</li>
+            <li><strong>Supabase:</strong> For database and authentication services</li>
+            <li><strong>Vercel:</strong> For hosting and application deployment</li>
+            <li>Other service providers who assist us in operating our platform</li>
+          </ul>
 
           <h2 className="text-2xl font-bold text-gray-900 mt-8 mb-4">Data Security</h2>
           <p className="text-gray-700 mb-6">
@@ -93,3 +116,4 @@ const Privacy: React.FC = () => {
 };
 
 export default Privacy;
+

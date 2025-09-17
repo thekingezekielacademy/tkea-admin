@@ -132,6 +132,28 @@ const MiniMeetTheTeam: React.FC = () => {
         { value: "100%", label: "Event Excellence" }
       ],
       statsColor: "text-pink-600"
+    },
+    {
+      id: 6,
+      name: "Feyisara Ajagbe",
+      title: "Email Marketing Expert & Executive Assistant",
+      badge: "Email Marketing Expert",
+      badgeColor: "bg-indigo-600",
+      subtitle: "Email Marketing Expert & Executive Assistant",
+      subtitleColor: "text-indigo-600",
+      image: "/img/feyi.jpg?v=1.0.2",
+      alt: "Feyisara Ajagbe - Email Marketing Expert & Executive Assistant",
+      description: [
+        "Feyisara Ajagbe is an Email Marketing Expert and Executive Assistant with over 3 years of experience helping businesses grow through strategic communication, campaign management, and efficient administrative support. She specializes in creating, organizing, and executing email campaigns that engage audiences and deliver measurable results, while also ensuring seamless coordination of schedules, workflows, and client communications.",
+        "Passionate about blending creativity with structure, Feyisara combines her expertise in digital marketing, data-driven reporting, and executive support to drive productivity and business growth. Her strong attention to detail, adaptability, and commitment to excellence make her a valuable asset in both marketing initiatives and operational efficiency.",
+        "Feyisara's comprehensive approach to email marketing and administrative excellence ensures that businesses not only reach their target audiences effectively but also maintain smooth operations and professional communication standards that drive long-term success."
+      ],
+      stats: [
+        { value: "3+", label: "Years Experience" },
+        { value: "100%", label: "Campaign Success" },
+        { value: "∞", label: "Administrative Excellence" }
+      ],
+      statsColor: "text-indigo-600"
     }
   ];
 

@@ -11,11 +11,13 @@
     
     <!-- Disable Flutterwave Fingerprinting and Prevent Cancel Popup -->
     <script>
+      // Disable all Flutterwave tracking and fingerprinting
       window.FlutterwaveDisableFingerprinting = true;
       window.FlutterwaveDisableTracking = true;
       window.FlutterwaveDisableAnalytics = true;
+      window.FlutterwaveDisableFingerprint = true;
       
-      // Prevent unexpected cancel popups
+      // Prevent unexpected cancel popups and auto-cancel dialogs
       window.addEventListener('beforeunload', function(e) {
         // Only show confirmation if user is actually trying to leave
         if (e.target.activeElement && e.target.activeElement.tagName === 'A') {
@@ -26,13 +28,33 @@
         e.returnValue = '';
       });
       
-      // Override any Flutterwave cancel confirmations
+      // Override any Flutterwave cancel confirmations and prevent auto-cancel
       window.addEventListener('message', function(event) {
-        if (event.data && event.data.type === 'flutterwave-cancel') {
+        if (event.data && (event.data.type === 'flutterwave-cancel' || event.data.type === 'cancel-payment')) {
           event.preventDefault();
           return false;
         }
       });
+      
+      // Prevent auto-cancel dialogs by overriding confirm function
+      const originalConfirm = window.confirm;
+      window.confirm = function(message) {
+        if (message && message.includes('cancel this payment')) {
+          console.log('Prevented auto-cancel dialog:', message);
+          return false; // Don't show the dialog
+        }
+        return originalConfirm.call(this, message);
+      };
+      
+      // Block fingerprinting API calls
+      const originalFetch = window.fetch;
+      window.fetch = function(url, options) {
+        if (url && (url.includes('metrics.flutterwave.com') || url.includes('api.fpjs.io'))) {
+          console.log('Blocked fingerprinting API call:', url);
+          return Promise.reject(new Error('Fingerprinting disabled'));
+        }
+        return originalFetch.call(this, url, options);
+      };
     </script>
     
     <!-- Mobile Browser Compatibility -->

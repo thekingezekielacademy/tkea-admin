@@ -3,7 +3,7 @@
 
 const API_BASE = process.env.REACT_APP_API_URL || 
   (process.env.NODE_ENV === 'production' 
-    ? '' // Use same domain as frontend in production (Vercel functions)
+    ? 'https://app.thekingezekielacademy.com/api' // Use production API URL
     : 'http://localhost:5000');
 
 // API Configuration - Production Ready
@@ -11,7 +11,7 @@ console.log('🔧 API Configuration Debug - CACHE BUST V7 - FINAL FIX:');
 console.log('NODE_ENV:', process.env.NODE_ENV);
 console.log('REACT_APP_API_URL:', process.env.REACT_APP_API_URL);
 console.log('API_BASE:', API_BASE);
-console.log('FLUTTERWAVE_INITIALIZE_PAYMENT:', `${API_BASE}/api/flutterwave/initialize-payment`);
+console.log('FLUTTERWAVE_INITIALIZE_PAYMENT:', `${API_BASE}/flutterwave/initialize-payment`);
 console.log('Current URL:', window.location.href);
 console.log('Timestamp:', new Date().toISOString());
 console.log('Build Hash:', 'V7-FINAL-FIX');
@@ -20,11 +20,11 @@ export { API_BASE };
 
 // Export specific API endpoints
 export const API_ENDPOINTS = {
-  FLUTTERWAVE_INITIALIZE_PAYMENT: `${API_BASE}/api/flutterwave/initialize-payment`,
-  FLUTTERWAVE_WEBHOOK: `${API_BASE}/api/flutterwave/webhook`,
-  HEALTH_CHECK: `${API_BASE}/api/health`,
-  SUBSCRIPTION: `${API_BASE}/api/subscription`,
-  PAYMENTS: `${API_BASE}/api/payments`
+  FLUTTERWAVE_INITIALIZE_PAYMENT: `${API_BASE}/flutterwave/initialize-payment`,
+  FLUTTERWAVE_WEBHOOK: `${API_BASE}/flutterwave/webhook`,
+  HEALTH_CHECK: `${API_BASE}/health`,
+  SUBSCRIPTION: `${API_BASE}/subscription`,
+  PAYMENTS: `${API_BASE}/payments`
 } as const;
 
 // Helper function to make API calls with proper error handling

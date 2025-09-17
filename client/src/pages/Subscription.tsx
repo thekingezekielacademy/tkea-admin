@@ -3,10 +3,11 @@ import { useAuth } from '../contexts/AuthContext';
 import { useSidebar } from '../contexts/SidebarContext';
 import { supabase } from '../lib/supabase';
 import DashboardSidebar from '../components/DashboardSidebar';
-import SimpleFlutterwaveModal from '../components/SimpleFlutterwaveModal';
+import DirectFlutterwavePayment from '../components/DirectFlutterwavePayment';
 import secureStorage from '../utils/secureStorage';
 import flutterwaveService from '../services/flutterwaveService';
 import DOMPurify from 'dompurify';
+import { API_BASE } from '../config/api';
 import { 
   FaCreditCard, 
   FaCrown, 
@@ -62,7 +63,7 @@ const Subscription: React.FC = () => {
   const [subscription, setSubscription] = useState<SubscriptionData | null>(null);
   const [billingHistory, setBillingHistory] = useState<BillingHistory[]>([]);
   const [showCancelModal, setShowCancelModal] = useState(false);
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showDirectPayment, setShowDirectPayment] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
   const [cancelFeedback, setCancelFeedback] = useState('');
 
@@ -489,7 +490,7 @@ const Subscription: React.FC = () => {
       try {
         console.log('🔄 Creating new Flutterwave subscription for customer:', subscription.flutterwave_customer_code);
         
-        const response = await fetch('/api/flutterwave/create-subscription', {
+        const response = await fetch(`${API_BASE}/flutterwave/create-subscription`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -723,7 +724,7 @@ const Subscription: React.FC = () => {
       console.log('📊 Exporting billing history...');
       
       // Use real API to export billing history
-      const response = await fetch(`/api/flutterwave/billing-history/${user.id}?format=csv`);
+      const response = await fetch(`${API_BASE}/flutterwave/billing-history/${user.id}?format=csv`);
       
       if (response.ok) {
         const csvContent = await response.text();
@@ -989,7 +990,7 @@ const Subscription: React.FC = () => {
                     You don't have an active subscription. Subscribe to access all courses and features.
                   </p>
                   <button 
-                    onClick={() => setShowPaymentModal(true)}
+                    onClick={() => setShowDirectPayment(true)}
                     className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
                   >
                     Subscribe Now
@@ -1078,7 +1079,7 @@ const Subscription: React.FC = () => {
                   {/* Re-subscribe button for canceled subscriptions */}
                   {subscription && subscription.status === 'canceled' && (
                     <button
-                      onClick={() => setShowPaymentModal(true)}
+                      onClick={() => setShowDirectPayment(true)}
                       className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
                     >
                       Subscribe Again
@@ -1216,12 +1217,13 @@ const Subscription: React.FC = () => {
         </div>
       )}
 
-      {/* Payment Modal */}
-      <SimpleFlutterwaveModal
-        isOpen={showPaymentModal}
-        onClose={() => setShowPaymentModal(false)}
-        onSuccess={() => {
-          setShowPaymentModal(false);
+      {/* Direct Payment Modal - Completely bypasses Flutterwave hosted page */}
+      <DirectFlutterwavePayment
+        isOpen={showDirectPayment}
+        onClose={() => setShowDirectPayment(false)}
+        onSuccess={(paymentData) => {
+          setShowDirectPayment(false);
+          setSuccess('Payment initiated successfully! Please complete the payment in the new window.');
           // Refresh subscription data
           fetchSubscriptionStatus();
         }}

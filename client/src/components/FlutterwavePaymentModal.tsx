@@ -28,6 +28,9 @@ declare global {
       fingerprintingEnabled?: boolean;
     };
     FlutterwaveDisableFingerprinting?: boolean;
+    FlutterwaveDisableTracking?: boolean;
+    FlutterwaveDisableAnalytics?: boolean;
+    FlutterwaveDisableFingerprint?: boolean;
   }
 }
 
@@ -42,7 +45,25 @@ const FlutterwavePaymentModal: React.FC<FlutterwavePaymentModalProps> = ({ isOpe
 
   // Disable Flutterwave fingerprinting globally to avoid 400 errors
   useEffect(() => {
+    // Disable all Flutterwave tracking and fingerprinting
     window.FlutterwaveDisableFingerprinting = true;
+    window.FlutterwaveDisableTracking = true;
+    window.FlutterwaveDisableAnalytics = true;
+    window.FlutterwaveDisableFingerprint = true;
+    
+    // Prevent auto-cancel dialogs
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data && (event.data.type === 'flutterwave-cancel' || event.data.type === 'cancel-payment')) {
+        event.preventDefault();
+        return false;
+      }
+    };
+    
+    window.addEventListener('message', handleMessage);
+    
+    return () => {
+      window.removeEventListener('message', handleMessage);
+    };
   }, []);
 
   // Load Flutterwave script
