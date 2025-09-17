@@ -21,7 +21,7 @@ import { isInstagramBrowser } from './utils/instagramMinimalMode';
 import InstagramBrowserBanner from './components/InstagramBrowserBanner';
 import InstagramMinimalApp from './components/InstagramMinimalApp';
 import InstagramBrowserGuard from './components/InstagramBrowserGuard';
-import { getBrowserCapabilities, isOldSafari } from './utils/safariCompatibility';
+import { getBrowserCapabilities, isOldSafari, initSafariCompatibility } from './utils/safariCompatibility';
 import Home from './pages/Home';
 import Courses from './pages/Courses';
 import About from './pages/About';
@@ -66,6 +66,9 @@ function App() {
   // Instagram browser detection is now handled by InstagramBrowserGuard
 
   useEffect(() => {
+    // Initialize Safari compatibility fixes
+    initSafariCompatibility();
+    
     // Disable Flutterwave fingerprinting globally to prevent errors
     if (typeof window !== 'undefined') {
       (window as any).FlutterwaveDisableFingerprinting = true;

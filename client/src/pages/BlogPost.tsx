@@ -7,7 +7,8 @@ import { secureLog, secureError } from '../utils/secureLogger';
 import SEOHead from '../components/SEO/SEOHead';
 import { generateBlogPostStructuredData } from '../components/SEO/StructuredData';
 import { safeCopyToClipboard, isMiniBrowser } from '../utils/instagramBrowserFix';
-import { createSafariCompatibleRegex, safeRegexReplace, isOldSafari } from '../utils/safariCompatibility';
+import { createSafariCompatibleRegex, safeRegexReplace } from '../utils/regexHelpers';
+import { isOldSafari } from '../utils/safariCompatibility';
 
 interface BlogPostData {
   id: string;

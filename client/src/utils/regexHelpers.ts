@@ -84,3 +84,16 @@ export function convertNamedGroups(pattern: string): {
   
   return { pattern: convertedPattern, groupMap };
 }
+
+/**
+ * Safely replace text using regex, with Safari compatibility
+ */
+export function safeRegexReplace(text: string, regex: RegExp, replacement: string): string {
+  try {
+    return text.replace(regex, replacement);
+  } catch (error) {
+    console.warn('Regex replace failed, using fallback:', error);
+    // Fallback to simple string replacement
+    return text.replace(regex.source, replacement);
+  }
+}

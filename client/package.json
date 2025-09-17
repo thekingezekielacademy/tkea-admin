@@ -50,16 +50,18 @@
   },
   "browserslist": {
     "production": [
-      ">0.5%",
-      "last 2 versions",
+      ">0.2%",
       "not dead",
-      "Safari >= 13",
-      "Chrome >= 60"
+      "safari >= 12",
+      "ios_saf >= 12",
+      "chrome >= 60",
+      "firefox >= 60"
     ],
     "development": [
       "last 1 chrome version",
       "last 1 firefox version",
-      "Safari >= 13"
+      "safari >= 12",
+      "ios_saf >= 12"
     ]
   },
   "devDependencies": {

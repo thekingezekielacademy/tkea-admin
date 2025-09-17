@@ -8,7 +8,7 @@
  * - Offline functionality
  */
 
-const CACHE_NAME = 'king-ezekiel-academy-v2';
+const CACHE_NAME = 'king-ezekiel-academy-v3-safari-fix';
 const urlsToCache = [
   '/',
   '/static/js/bundle.js',
@@ -55,8 +55,24 @@ self.addEventListener('activate', (event) => {
 // Fetch event - ALWAYS fetch from network (no caching)
 self.addEventListener('fetch', (event) => {
   console.log('Service Worker: Fetch event - BYPASSING CACHE for:', event.request.url);
-  // Always fetch from network - no caching at all
-  event.respondWith(fetch(event.request));
+  
+  // Safari-specific handling for JavaScript files
+  if (event.request.url.includes('.js') && event.request.url.includes('static')) {
+    // Add cache-busting for JS files to ensure Safari gets the latest version
+    const url = new URL(event.request.url);
+    url.searchParams.set('v', Date.now().toString());
+    
+    event.respondWith(
+      fetch(url.toString()).catch(error => {
+        console.error('Service Worker: Safari JS fetch error:', error);
+        // Fallback to original request
+        return fetch(event.request);
+      })
+    );
+  } else {
+    // Always fetch from network - no caching at all
+    event.respondWith(fetch(event.request));
+  }
 });
 
 // Push event - handle push notifications
