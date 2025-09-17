@@ -1,5 +1,6 @@
 // Instagram Browser Compatibility Script
 // This runs immediately when the page loads, before any React code
+// REDIRECTS DISABLED - React app will handle in-app browser experience
 
 (function() {
   'use strict';
@@ -29,41 +30,27 @@
            userAgent.includes('telegram');
   }
   
-  // Check if we should redirect to fallback
+  // DISABLED: Check if we should redirect to fallback
   function shouldRedirectToFallback() {
-    // Only redirect if we're in Instagram browser
-    if (!isInstagramBrowser()) return false;
-    
-    // Check if we're already on the fallback page
-    if (window.location.pathname.includes('instagram-fallback')) return false;
-    
-    return true;
+    // Always return false - no redirects allowed
+    return false;
   }
   
-  // Redirect to fallback page
+  // DISABLED: Redirect to fallback page
   function redirectToFallback() {
-    try {
-      var fallbackUrl = window.location.origin + '/instagram-fallback.html';
-      window.location.replace(fallbackUrl);
-    } catch (error) {
-      // If redirect fails, show a basic message
-      document.body.innerHTML = '<div style="padding:20px;text-align:center;font-family:Arial,sans-serif;"><h1>King Ezekiel Academy</h1><p>For the best experience, please open this link in your browser.</p><a href="https://thekingezekielacademy.com" style="color:#007bff;text-decoration:underline;">Open in Browser</a></div>';
-    }
+    // Do nothing - just log for debugging
+    console.log('Instagram redirect disabled - React app will handle in-app browser experience');
   }
   
-  // Run the check immediately
-  if (shouldRedirectToFallback()) {
-    // Small delay to ensure page is ready
-    setTimeout(redirectToFallback, 100);
+  // Log browser detection for debugging
+  if (isInstagramBrowser()) {
+    console.log('Instagram browser detected - React app will load normally');
   }
   
-  // Also check when DOM is ready as a backup
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function() {
-      if (shouldRedirectToFallback()) {
-        redirectToFallback();
-      }
-    });
+  if (isMiniBrowser()) {
+    console.log('Mini browser detected - React app will load normally');
   }
+  
+  // No redirects - React app loads normally for all browsers
   
 })();

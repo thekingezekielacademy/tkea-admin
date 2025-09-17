@@ -12,16 +12,9 @@ export const isInstagramBrowser = (): boolean => {
 };
 
 export const isMiniBrowser = (): boolean => {
-  if (typeof window === 'undefined') return false;
-  
-  const userAgent = window.navigator.userAgent.toLowerCase();
-  return userAgent.includes('instagram') || 
-         userAgent.includes('fbav') || 
-         userAgent.includes('fban') ||
-         userAgent.includes('fbsv') ||
-         userAgent.includes('line') ||
-         userAgent.includes('whatsapp') ||
-         userAgent.includes('telegram');
+  // DISABLED: Always return false to allow full app functionality
+  // Instagram/Facebook browsers should load the full React app
+  return false;
 };
 
 // Safe feature detection for mini browsers
@@ -30,7 +23,7 @@ export const safeFeatureCheck = {
   hasLocalStorage: (): boolean => {
     try {
       if (typeof window === 'undefined') return false;
-      if (isMiniBrowser()) return false; // Mini browsers often have limited storage
+      // Allow mini browsers to use localStorage - they often support it
       return 'localStorage' in window && window.localStorage !== null;
     } catch {
       return false;
@@ -41,7 +34,7 @@ export const safeFeatureCheck = {
   hasClipboard: (): boolean => {
     try {
       if (typeof window === 'undefined') return false;
-      if (isMiniBrowser()) return false; // Mini browsers don't support clipboard
+      // Allow mini browsers to attempt clipboard access
       return 'navigator' in window && 'clipboard' in navigator;
     } catch {
       return false;
@@ -52,7 +45,7 @@ export const safeFeatureCheck = {
   hasNotifications: (): boolean => {
     try {
       if (typeof window === 'undefined') return false;
-      if (isMiniBrowser()) return false; // Mini browsers don't support notifications
+      // Allow mini browsers to attempt notification access
       return 'Notification' in window;
     } catch {
       return false;
@@ -63,7 +56,7 @@ export const safeFeatureCheck = {
   hasServiceWorker: (): boolean => {
     try {
       if (typeof window === 'undefined') return false;
-      if (isMiniBrowser()) return false; // Mini browsers don't support service workers
+      // Allow mini browsers to attempt service worker access
       return 'serviceWorker' in navigator;
     } catch {
       return false;

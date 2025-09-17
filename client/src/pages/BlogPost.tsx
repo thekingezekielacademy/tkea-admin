@@ -6,7 +6,7 @@ import DOMPurify from 'dompurify';
 import { secureLog, secureError } from '../utils/secureLogger';
 import SEOHead from '../components/SEO/SEOHead';
 import { generateBlogPostStructuredData } from '../components/SEO/StructuredData';
-import { safeCopyToClipboard, isMiniBrowser } from '../utils/instagramBrowserFix';
+import { safeCopyToClipboard } from '../utils/instagramBrowserFix';
 import { createSafariCompatibleRegex, safeRegexReplace } from '../utils/regexHelpers';
 import { isOldSafari } from '../utils/safariCompatibility';
 
@@ -188,12 +188,8 @@ const BlogPost: React.FC = () => {
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
       } else {
-        // Fallback for mini browsers - show URL for manual copy
-        if (isMiniBrowser()) {
-          alert(`Copy this URL: ${url}`);
-        } else {
-          secureError('Failed to copy link');
-        }
+        // Show URL for manual copy if clipboard fails
+        alert(`Copy this URL: ${url}`);
       }
     } catch (err) {
       secureError('Failed to copy link:', err);

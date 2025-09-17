@@ -9,6 +9,33 @@ import reportWebVitals from './reportWebVitals';
 import 'core-js/stable';
 import 'regenerator-runtime/runtime';
 
+// Instagram/Facebook browser debugging
+if (typeof window !== 'undefined') {
+  const userAgent = navigator.userAgent;
+  const isInstagram = /Instagram/i.test(userAgent);
+  const isFacebook = /FBAN|FBAV|FBIOS/i.test(userAgent);
+  
+  if (isInstagram || isFacebook) {
+    console.log('📱 Instagram/Facebook browser detected - enabling FULL APP mode');
+    console.log('User Agent:', userAgent);
+    console.log('Browser Type:', isInstagram ? 'Instagram' : 'Facebook');
+    console.log('React will load normally - no restrictions applied');
+    
+    // Add visual indicator for debugging
+    const debugDiv = document.createElement('div');
+    debugDiv.style.cssText = 'position:fixed;top:0;left:0;right:0;background:green;color:white;padding:5px;z-index:9999;font-family:monospace;font-size:12px;text-align:center;';
+    debugDiv.textContent = `✅ ${isInstagram ? 'Instagram' : 'Facebook'} Browser - Full App Loading...`;
+    document.body.appendChild(debugDiv);
+    
+    // Remove after 5 seconds
+    setTimeout(() => {
+      if (debugDiv.parentNode) {
+        debugDiv.parentNode.removeChild(debugDiv);
+      }
+    }, 5000);
+  }
+}
+
 // Global error logging for Safari and in-app browser debugging
 window.onerror = function (message, source, lineno, colno, error) {
   const userAgent = navigator.userAgent;

@@ -16,7 +16,7 @@ import analytics from './utils/analytics';
 import { notificationService } from './utils/notificationService';
 import './utils/polyfills'; // Load polyfills first
 import './utils/sentry'; // Initialize Sentry first
-import { isMiniBrowser, safeFeatureCheck } from './utils/instagramBrowserFix';
+import { safeFeatureCheck } from './utils/instagramBrowserFix';
 import { getBrowserCapabilities, isOldSafari, initSafariCompatibility } from './utils/safariCompatibility';
 import Home from './pages/Home';
 import Courses from './pages/Courses';
@@ -92,9 +92,9 @@ function App() {
           console.warn('Analytics initialization failed:', error);
         }
 
-        // Initialize notifications (non-blocking) - skip for mini browsers
+        // Initialize notifications (non-blocking)
         try {
-          if (!isMiniBrowser() && safeFeatureCheck.hasNotifications()) {
+          if (safeFeatureCheck.hasNotifications()) {
             if (Notification.permission === 'granted') {
               notificationService.initializeNotifications();
             } else if (Notification.permission === 'default') {
@@ -110,9 +110,9 @@ function App() {
           console.warn('Notification initialization failed:', error);
         }
         
-        // Initialize service worker with better error handling - skip for mini browsers
+        // Initialize service worker with better error handling
         try {
-          if (!isMiniBrowser() && safeFeatureCheck.hasServiceWorker()) {
+          if (safeFeatureCheck.hasServiceWorker()) {
             await initializeServiceWorker();
           }
         } catch (error) {
