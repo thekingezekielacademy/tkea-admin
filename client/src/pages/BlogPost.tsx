@@ -7,6 +7,7 @@ import { secureLog, secureError } from '../utils/secureLogger';
 import SEOHead from '../components/SEO/SEOHead';
 import { generateBlogPostStructuredData } from '../components/SEO/StructuredData';
 import { safeCopyToClipboard, isMiniBrowser } from '../utils/instagramBrowserFix';
+import { createSafariCompatibleRegex, safeRegexReplace, isOldSafari } from '../utils/safariCompatibility';
 
 interface BlogPostData {
   id: string;
@@ -120,9 +121,10 @@ const BlogPost: React.FC = () => {
     }
     
     // Add extra spacing after sentences ending with periods within paragraphs
+    // Safari-compatible: Replace lookahead with string-based approach
     sanitizedContent = sanitizedContent.replace(
-      /\.(?=\s*[A-Z])/g, 
-      '.  '
+      /\.\s*([A-Z])/g, 
+      '.  $1'
     );
     
     // Ensure proper spacing between paragraphs with more breathing room
@@ -141,16 +143,16 @@ const BlogPost: React.FC = () => {
   };
 
   const extractConclusion = (content: string) => {
-    // Look for conclusion section in the content
-    const conclusionRegex = /##\s*Conclusion\s*\n([\s\S]*?)(?=\n##|$)/i;
-    const match = content.match(conclusionRegex);
+    // Use Safari-compatible regex for conclusion extraction
+    const conclusionRegex = createSafariCompatibleRegex('##\\s*Conclusion\\s*\\n([\\s\\S]*?)(?:\\n##|$)', 'i');
+    const conclusionMatch = content.match(conclusionRegex);
     
-    if (match && match[1]) {
-      return match[1].trim();
+    if (conclusionMatch && conclusionMatch[1]) {
+      return conclusionMatch[1].trim();
     }
     
-    // Fallback: look for "Conclusion" without ##
-    const fallbackRegex = /Conclusion\s*\n([\s\S]*?)(?=\n[A-Z]|$)/i;
+    // Fallback: look for "Conclusion" without ## - Safari-compatible approach
+    const fallbackRegex = createSafariCompatibleRegex('Conclusion\\s*\\n([\\s\\S]*?)(?:\\n[A-Z]|$)', 'i');
     const fallbackMatch = content.match(fallbackRegex);
     
     if (fallbackMatch && fallbackMatch[1]) {
@@ -162,16 +164,16 @@ const BlogPost: React.FC = () => {
   };
 
   const removeConclusion = (content: string) => {
-    // Remove conclusion section from the main content
-    const conclusionRegex = /##\s*Conclusion\s*\n[\s\S]*$/i;
-    const fallbackRegex = /Conclusion\s*\n[\s\S]*$/i;
+    // Remove conclusion section from the main content - Safari-compatible
+    const conclusionRegex = createSafariCompatibleRegex('##\\s*Conclusion\\s*\\n[\\s\\S]*$', 'i');
+    const fallbackRegex = createSafariCompatibleRegex('Conclusion\\s*\\n[\\s\\S]*$', 'i');
     
     // Try to remove with ## first
-    let cleanedContent = content.replace(conclusionRegex, '');
+    let cleanedContent = safeRegexReplace(content, conclusionRegex, '');
     
     // If no change, try without ##
     if (cleanedContent === content) {
-      cleanedContent = content.replace(fallbackRegex, '');
+      cleanedContent = safeRegexReplace(content, fallbackRegex, '');
     }
     
     return cleanedContent.trim();

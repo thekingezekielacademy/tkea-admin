@@ -21,6 +21,7 @@ import { isInstagramBrowser } from './utils/instagramMinimalMode';
 import InstagramBrowserBanner from './components/InstagramBrowserBanner';
 import InstagramMinimalApp from './components/InstagramMinimalApp';
 import InstagramBrowserGuard from './components/InstagramBrowserGuard';
+import { getBrowserCapabilities, isOldSafari } from './utils/safariCompatibility';
 import Home from './pages/Home';
 import Courses from './pages/Courses';
 import About from './pages/About';
@@ -70,6 +71,16 @@ function App() {
       (window as any).FlutterwaveDisableFingerprinting = true;
       (window as any).FlutterwaveDisableTracking = true;
       (window as any).FlutterwaveDisableAnalytics = true;
+    }
+
+    // Log Safari compatibility information for debugging
+    if (typeof window !== 'undefined') {
+      const capabilities = getBrowserCapabilities();
+      console.log('🔍 Browser Capabilities:', capabilities);
+      
+      if (isOldSafari()) {
+        console.warn('⚠️ Old Safari detected - using compatibility mode');
+      }
     }
 
     // Initialize app with error handling

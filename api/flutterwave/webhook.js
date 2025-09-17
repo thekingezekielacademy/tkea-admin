@@ -65,14 +65,48 @@ export default async function handler(req, res) {
 async function handlePaymentCompleted(data) {
   console.log('✅ Payment completed:', data);
   
-  // Here you can:
-  // - Update user subscription status
-  // - Send confirmation emails
-  // - Update database records
-  // - Trigger other business logic
-  
-  // Example: Update subscription status in database
-  // await updateSubscriptionStatus(data.customer.email, 'active');
+  try {
+    // Extract payment details
+    const {
+      id,
+      reference,
+      amount,
+      currency,
+      status,
+      customer: { email, name, phone_number },
+      created_at,
+      paid_at
+    } = data;
+
+    console.log('📊 Payment details:', {
+      id,
+      reference,
+      amount,
+      currency,
+      status,
+      email,
+      name,
+      phone_number
+    });
+
+    // Here you can:
+    // - Update user subscription status in Supabase
+    // - Send confirmation emails
+    // - Update database records
+    // - Trigger other business logic
+    
+    // Example: Update subscription status in database
+    // await updateSubscriptionStatus(email, 'active', {
+    //   reference,
+    //   amount,
+    //   currency,
+    //   paid_at
+    // });
+
+    console.log('✅ Payment processing completed successfully');
+  } catch (error) {
+    console.error('❌ Error processing payment completion:', error);
+  }
 }
 
 // Handle subscription creation

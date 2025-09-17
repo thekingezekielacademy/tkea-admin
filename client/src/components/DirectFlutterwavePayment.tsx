@@ -74,16 +74,51 @@ const DirectFlutterwavePayment: React.FC<DirectFlutterwavePaymentProps> = ({
         );
 
         if (paymentWindow) {
-          // Monitor the payment window
-          const checkClosed = setInterval(() => {
+          // Monitor the payment window and verify payment
+          const checkClosed = setInterval(async () => {
             if (paymentWindow.closed) {
               clearInterval(checkClosed);
-              // Assume payment was completed or cancelled
-              onSuccess({ 
-                success: true, 
-                message: 'Payment window closed. Please check your subscription status.' 
-              });
-              onClose();
+              
+              // Wait a moment for webhook to process
+              setTimeout(async () => {
+                try {
+                  // Verify payment using the reference
+                  const verifyResponse = await fetch(`${API_BASE}/flutterwave/verify-payment`, {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                      reference: result.data.reference,
+                      transaction_id: result.data.reference
+                    }),
+                  });
+
+                  const verifyResult = await verifyResponse.json();
+                  
+                  if (verifyResult.success) {
+                    onSuccess({ 
+                      success: true, 
+                      message: 'Payment verified successfully! Your subscription is now active.',
+                      data: verifyResult.data
+                    });
+                  } else {
+                    onSuccess({ 
+                      success: false, 
+                      message: verifyResult.message || 'Payment verification failed. Please contact support if payment was deducted.',
+                      error: true
+                    });
+                  }
+                } catch (verifyError) {
+                  console.error('Payment verification error:', verifyError);
+                  onSuccess({ 
+                    success: false, 
+                    message: 'Payment verification failed. Please contact support if payment was deducted.',
+                    error: true
+                  });
+                }
+                onClose();
+              }, 3000); // Wait 3 seconds for webhook processing
             }
           }, 1000);
 

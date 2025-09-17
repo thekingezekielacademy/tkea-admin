@@ -51,8 +51,8 @@ export function createSafariCompatibleRegex(pattern: string, flags?: string): Re
     return new RegExp(safariPattern, flags);
   } catch (error) {
     console.error('Invalid regex pattern:', pattern, error);
-    // Return a safe regex that matches nothing
-    return /(?!)/
+    // Return a safe regex that matches nothing - Safari-compatible
+    return /^$/
   }
 }
 
