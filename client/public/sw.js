@@ -8,7 +8,7 @@
  * - Offline functionality
  */
 
-const CACHE_NAME = 'king-ezekiel-academy-v4-safari-inapp-fix';
+const CACHE_NAME = 'king-ezekiel-academy-v5-no-instagram-fallback';
 const urlsToCache = [
   '/',
   '/static/js/bundle.js',
