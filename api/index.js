@@ -156,7 +156,14 @@ app.post('/api/flutterwave/initialize-payment', validatePaymentInput, async (req
       disable_analytics: true,
       // Additional parameters to ensure proper configuration
       init_url: `${baseUrl}/payment-verification`,
-      callback_url: `${baseUrl}/payment-verification`
+      callback_url: `${baseUrl}/payment-verification`,
+      // Force disable all fingerprinting and tracking
+      fingerprinting: false,
+      tracking: false,
+      analytics: false,
+      // Prevent auto-cancel dialogs
+      auto_close: false,
+      close_on_success: false
     };
 
     const response = await axios.post('https://api.flutterwave.com/v3/payments', paymentData, {
@@ -222,6 +229,213 @@ app.post('/api/flutterwave/webhook', verifyWebhookSignature, async (req, res) =>
   } catch (error) {
     console.error('Webhook processing error:', error);
     res.status(500).json({ error: 'Webhook processing failed' });
+  }
+});
+
+// Create Flutterwave subscription endpoint
+app.post('/api/flutterwave/create-subscription', async (req, res) => {
+  try {
+    const { customerCode, email, userId } = req.body;
+    
+    console.log('📝 Creating Flutterwave subscription:', { customerCode, email, userId });
+
+    const FLUTTERWAVE_SECRET_KEY = process.env.FLUTTERWAVE_SECRET_KEY;
+
+    if (!FLUTTERWAVE_SECRET_KEY) {
+      return res.status(500).json({ success: false, message: 'Flutterwave not configured on server' });
+    }
+
+    // Create subscription via Flutterwave API
+    const subscriptionData = {
+      customer: customerCode,
+      plan: process.env.FLUTTERWAVE_PLAN_ID || '146829', // Default plan ID
+      start_date: new Date().toISOString().split('T')[0] // Today's date
+    };
+
+    const response = await axios.post('https://api.flutterwave.com/v3/subscriptions', subscriptionData, {
+      headers: {
+        'Authorization': `Bearer ${FLUTTERWAVE_SECRET_KEY}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    const result = response.data;
+
+    if (result.status === 'success') {
+      res.json({
+        success: true,
+        message: 'Subscription created successfully',
+        data: result.data
+      });
+    } else {
+      res.status(400).json({
+        success: false,
+        message: result.message || 'Subscription creation failed'
+      });
+    }
+
+  } catch (error) {
+    console.error('❌ Flutterwave subscription creation error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Subscription creation failed. Please try again.' 
+    });
+  }
+});
+
+// Verify Flutterwave payment endpoint
+app.post('/api/flutterwave/verify-payment', async (req, res) => {
+  try {
+    const { reference, transaction_id } = req.body;
+    
+    console.log('📝 Verifying Flutterwave payment:', { reference, transaction_id });
+
+    const FLUTTERWAVE_SECRET_KEY = process.env.FLUTTERWAVE_SECRET_KEY;
+
+    if (!FLUTTERWAVE_SECRET_KEY) {
+      return res.status(500).json({ success: false, message: 'Flutterwave not configured on server' });
+    }
+
+    // Verify payment via Flutterwave API
+    const response = await axios.get(`https://api.flutterwave.com/v3/transactions/${reference}/verify`, {
+      headers: {
+        'Authorization': `Bearer ${FLUTTERWAVE_SECRET_KEY}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    const result = response.data;
+
+    if (result.status === 'success') {
+      res.json({
+        success: true,
+        message: 'Payment verified successfully',
+        data: result.data
+      });
+    } else {
+      res.status(400).json({
+        success: false,
+        message: result.message || 'Payment verification failed'
+      });
+    }
+
+  } catch (error) {
+    console.error('❌ Flutterwave payment verification error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Payment verification failed. Please try again.' 
+    });
+  }
+});
+
+// Get Flutterwave subscription endpoint
+app.post('/api/flutterwave/get-subscription', async (req, res) => {
+  try {
+    const { subscription_id } = req.body;
+    
+    console.log('📝 Getting Flutterwave subscription:', { subscription_id });
+
+    const FLUTTERWAVE_SECRET_KEY = process.env.FLUTTERWAVE_SECRET_KEY;
+
+    if (!FLUTTERWAVE_SECRET_KEY) {
+      return res.status(500).json({ success: false, message: 'Flutterwave not configured on server' });
+    }
+
+    // Get subscription via Flutterwave API
+    const response = await axios.get(`https://api.flutterwave.com/v3/subscriptions/${subscription_id}`, {
+      headers: {
+        'Authorization': `Bearer ${FLUTTERWAVE_SECRET_KEY}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    const result = response.data;
+
+    if (result.status === 'success') {
+      res.json({
+        success: true,
+        message: 'Subscription retrieved successfully',
+        data: result.data
+      });
+    } else {
+      res.status(400).json({
+        success: false,
+        message: result.message || 'Failed to retrieve subscription'
+      });
+    }
+
+  } catch (error) {
+    console.error('❌ Flutterwave subscription retrieval error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to retrieve subscription. Please try again.' 
+    });
+  }
+});
+
+// Get Flutterwave billing history endpoint
+app.get('/api/flutterwave/billing-history/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { format = 'json' } = req.query;
+    
+    console.log('📝 Getting Flutterwave billing history:', { userId, format });
+
+    const FLUTTERWAVE_SECRET_KEY = process.env.FLUTTERWAVE_SECRET_KEY;
+
+    if (!FLUTTERWAVE_SECRET_KEY) {
+      return res.status(500).json({ success: false, message: 'Flutterwave not configured on server' });
+    }
+
+    // Get transactions for the user
+    const response = await axios.get('https://api.flutterwave.com/v3/transactions', {
+      headers: {
+        'Authorization': `Bearer ${FLUTTERWAVE_SECRET_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      params: {
+        from: new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // Last year
+        to: new Date().toISOString().split('T')[0], // Today
+        page: 1,
+        per_page: 100
+      }
+    });
+
+    const result = response.data;
+
+    if (result.status === 'success') {
+      const transactions = result.data || [];
+      
+      if (format === 'csv') {
+        // Generate CSV format
+        const csvHeader = 'Date,Reference,Amount,Currency,Status,Description\n';
+        const csvRows = transactions.map(tx => 
+          `${tx.created_at?.split('T')[0] || ''},${tx.tx_ref || ''},${tx.amount || 0},${tx.currency || 'NGN'},${tx.status || ''},${tx.narration || ''}`
+        ).join('\n');
+        
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', `attachment; filename="billing-history-${userId}.csv"`);
+        res.send(csvHeader + csvRows);
+      } else {
+        res.json({
+          success: true,
+          message: 'Billing history retrieved successfully',
+          data: transactions
+        });
+      }
+    } else {
+      res.status(400).json({
+        success: false,
+        message: result.message || 'Failed to retrieve billing history'
+      });
+    }
+
+  } catch (error) {
+    console.error('❌ Flutterwave billing history error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to retrieve billing history. Please try again.' 
+    });
   }
 });
 
