@@ -25,6 +25,11 @@ export default async function handler(req, res) {
     const { reference, transaction_id } = req.body;
     
     console.log('📝 Verifying Flutterwave payment:', { reference, transaction_id });
+    console.log('🔧 Environment check:', {
+      NODE_ENV: process.env.NODE_ENV,
+      FLUTTERWAVE_SECRET_KEY_EXISTS: !!process.env.FLUTTERWAVE_SECRET_KEY,
+      FLUTTERWAVE_SECRET_KEY_PREFIX: process.env.FLUTTERWAVE_SECRET_KEY?.substring(0, 10) + '...'
+    });
 
     const FLUTTERWAVE_SECRET_KEY = process.env.FLUTTERWAVE_SECRET_KEY;
 
@@ -40,14 +45,18 @@ export default async function handler(req, res) {
 
     // Verify payment via Flutterwave API
     console.log('🔍 Calling Flutterwave API for verification...');
+    console.log('🔗 API URL:', `https://api.flutterwave.com/v3/transactions/${reference}/verify`);
+    
     const response = await axios.get(`https://api.flutterwave.com/v3/transactions/${reference}/verify`, {
       headers: {
         'Authorization': `Bearer ${FLUTTERWAVE_SECRET_KEY}`,
         'Content-Type': 'application/json'
-      }
+      },
+      timeout: 10000 // 10 second timeout
     });
 
-    console.log('📊 Flutterwave API response:', response.data);
+    console.log('📊 Flutterwave API response status:', response.status);
+    console.log('📊 Flutterwave API response data:', JSON.stringify(response.data, null, 2));
     const result = response.data;
 
     if (result.status === 'success' && result.data) {

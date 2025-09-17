@@ -82,30 +82,50 @@ const DirectFlutterwavePayment: React.FC<DirectFlutterwavePaymentProps> = ({
               // Wait a moment for webhook to process
               setTimeout(async () => {
                 try {
-                  // Verify payment using the reference
-                  const verifyResponse = await fetch(`${API_BASE}/flutterwave/verify-payment`, {
-                    method: 'POST',
-                    headers: {
-                      'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                      reference: result.data.reference,
-                      transaction_id: result.data.reference
-                    }),
-                  });
-
-                  const verifyResult = await verifyResponse.json();
+                  // Try verification with retries
+                  let verifyResult = null;
+                  let retryCount = 0;
+                  const maxRetries = 3;
                   
-                  if (verifyResult.success) {
+                  while (retryCount < maxRetries && !verifyResult?.success) {
+                    console.log(`🔄 Attempting payment verification (attempt ${retryCount + 1}/${maxRetries})`);
+                    
+                    const verifyResponse = await fetch(`${API_BASE}/flutterwave/verify-payment`, {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                      },
+                      body: JSON.stringify({
+                        reference: result.data.tx_ref,
+                        transaction_id: result.data.tx_ref
+                      }),
+                    });
+
+                    verifyResult = await verifyResponse.json();
+                    console.log('🔍 Verification response:', verifyResult);
+                    
+                    if (verifyResult.success) {
+                      break;
+                    }
+                    
+                    retryCount++;
+                    if (retryCount < maxRetries) {
+                      // Wait before retry
+                      await new Promise(resolve => setTimeout(resolve, 2000));
+                    }
+                  }
+                  
+                  if (verifyResult?.success) {
                     onSuccess({ 
                       success: true, 
                       message: 'Payment verified successfully! Your subscription is now active.',
                       data: verifyResult.data
                     });
                   } else {
+                    // If verification fails, show a message asking user to check their subscription status
                     onSuccess({ 
                       success: false, 
-                      message: verifyResult.message || 'Payment verification failed. Please contact support if payment was deducted.',
+                      message: 'Payment verification is taking longer than expected. Please check your subscription status in a few minutes. If payment was deducted but subscription is not active, please contact support.',
                       error: true
                     });
                   }
@@ -113,12 +133,12 @@ const DirectFlutterwavePayment: React.FC<DirectFlutterwavePaymentProps> = ({
                   console.error('Payment verification error:', verifyError);
                   onSuccess({ 
                     success: false, 
-                    message: 'Payment verification failed. Please contact support if payment was deducted.',
+                    message: 'Payment verification failed. Please check your subscription status in a few minutes. If payment was deducted but subscription is not active, please contact support.',
                     error: true
                   });
                 }
                 onClose();
-              }, 3000); // Wait 3 seconds for webhook processing
+              }, 5000); // Wait 5 seconds for webhook processing
             }
           }, 1000);
 
@@ -209,6 +229,25 @@ const DirectFlutterwavePayment: React.FC<DirectFlutterwavePaymentProps> = ({
             )}
 
             <div className="space-y-3">
+              {/* Payment Method Notice */}
+              <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <div className="flex items-start">
+                  <div className="flex-shrink-0">
+                    <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <h3 className="text-sm font-medium text-yellow-800">
+                      Payment Method Notice
+                    </h3>
+                    <div className="mt-1 text-sm text-yellow-700">
+                      <p>⚠️ Card transfers are currently not working. Please use <strong>Bank Transfer</strong> for payment.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <button
                 onClick={handlePayment}
                 disabled={loading}
