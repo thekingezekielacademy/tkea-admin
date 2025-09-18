@@ -398,10 +398,10 @@
                         var poly = false;
                         var hyd = null;
                         try {
-                            if (w && typeof (w as any) === 'object') {
-                                // Avoid TS casts; access defensively
-                                poly = !!(w && (w as any)['__KEA_POLYFILLS_LOADED__']);
-                                hyd = w && (w as any)['__KEA_HYDRATION_STATUS__'];
+                            if (w && typeof w === 'object') {
+                                // Access defensively without TS casts
+                                poly = !!(w && w['__KEA_POLYFILLS_LOADED__']);
+                                hyd = w && w['__KEA_HYDRATION_STATUS__'];
                             }
                         } catch (e) {
                             // ignore access issues
@@ -414,8 +414,8 @@
                             else addOutput(out, `Hydration: ⚠️ ${hyd}`, 'warning');
                         } else {
                             addOutput(out, 'Hydration: ⚠️ status not reported (waiting 1s)...', 'warning');
-                            setTimeout(() => {
-                                const hyd2 = w && (w as any).__KEA_HYDRATION_STATUS__;
+                            setTimeout(function() {
+                                var hyd2 = w && w['__KEA_HYDRATION_STATUS__'];
                                 if (hyd2) {
                                     if (hyd2 === 'ok') addOutput(out, 'Hydration (retry): ✅ OK', 'success');
                                     else if (hyd2 === 'no-children-after-render') addOutput(out, 'Hydration (retry): ❌ Root has no children', 'error');
