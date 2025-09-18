@@ -29,6 +29,7 @@ const EmbeddedFlutterwaveModal: React.FC<EmbeddedFlutterwaveModalProps> = ({
   
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [paymentUrl, setPaymentUrl] = useState<string>('');
+  const [iframeError, setIframeError] = useState(false);
 
   // Initialize user data when modal opens
   useEffect(() => {
@@ -128,6 +129,31 @@ const EmbeddedFlutterwaveModal: React.FC<EmbeddedFlutterwaveModalProps> = ({
         // Set payment URL to load in iframe
         setPaymentUrl(result.data.link);
         setPaymentState({ status: 'processing' });
+        
+        // Set a timeout to detect if iframe fails to load
+        const iframeTimeout = setTimeout(() => {
+          if (!iframeError) {
+            console.log('⏰ Iframe timeout - switching to popup');
+            setIframeError(true);
+            setPaymentState({ 
+              status: 'error', 
+              error: 'Payment form is taking too long to load. Switching to popup...' 
+            });
+            
+            setTimeout(() => {
+              window.open(result.data.link, '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
+              onClose();
+            }, 2000);
+          }
+        }, 10000); // 10 second timeout
+        
+        // Clear timeout when iframe loads successfully
+        const iframe = iframeRef.current;
+        if (iframe) {
+          iframe.onload = () => {
+            clearTimeout(iframeTimeout);
+          };
+        }
       } else {
         throw new Error(result.message || 'Failed to initialize payment');
       }
@@ -291,18 +317,56 @@ const EmbeddedFlutterwaveModal: React.FC<EmbeddedFlutterwaveModalProps> = ({
                   src={paymentUrl}
                   className="w-full h-96"
                   title="Flutterwave Payment"
-                  sandbox="allow-scripts allow-forms allow-same-origin allow-top-navigation"
-                  allow="payment"
+                  sandbox="allow-scripts allow-forms allow-same-origin allow-top-navigation allow-popups allow-popups-to-escape-sandbox"
+                  allow="payment; camera; microphone"
+                  onLoad={() => {
+                    console.log('🔄 Payment iframe loaded');
+                    // Disable fingerprinting in the iframe context
+                    try {
+                      if (iframeRef.current?.contentWindow) {
+                        iframeRef.current.contentWindow.FlutterwaveDisableFingerprinting = true;
+                        iframeRef.current.contentWindow.FlutterwaveDisableTracking = true;
+                        iframeRef.current.contentWindow.FlutterwaveDisableFingerprint = true;
+                      }
+                    } catch (error) {
+                      console.log('⚠️ Cannot access iframe content (expected for cross-origin)');
+                    }
+                  }}
+                  onError={(error) => {
+                    console.error('❌ Iframe load error:', error);
+                    setIframeError(true);
+                    setPaymentState({ 
+                      status: 'error', 
+                      error: 'Iframe failed to load. Switching to popup method...' 
+                    });
+                    
+                    // Auto-fallback to popup after 2 seconds
+                    setTimeout(() => {
+                      console.log('🔄 Auto-fallback to popup method');
+                      window.open(paymentUrl, '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
+                      onClose();
+                    }, 2000);
+                  }}
                 />
               </div>
 
-              {/* Cancel Button */}
-              <div className="text-center">
+              {/* Action Buttons */}
+              <div className="flex space-x-4 pt-4">
                 <button
                   onClick={handleClose}
-                  className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
                 >
                   Cancel Payment
+                </button>
+                <button
+                  onClick={() => {
+                    console.log('🔄 Manual fallback to popup method');
+                    window.open(paymentUrl, '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
+                    onClose();
+                  }}
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                >
+                  Open in New Tab
                 </button>
               </div>
             </div>
