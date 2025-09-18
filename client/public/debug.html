@@ -86,6 +86,12 @@
     </div>
     
         <div class="test-section">
+            <h3>⚛️ React Mount & Polyfills</h3>
+            <button onclick="checkReactMount()">Check React Mount</button>
+            <div id="react-output" class="output"></div>
+        </div>
+    
+        <div class="test-section">
             <h3>🔍 Environment Variables</h3>
             <button onclick="checkEnvironment()">Check Environment</button>
             <div id="env-output" class="output"></div>
@@ -348,6 +354,56 @@
             testBrowserCompatibility();
             testStorage();
         });
+
+        // New: Check React mount/polyfills on main app via iframe to avoid navigation away
+        function checkReactMount() {
+            const out = 'react-output';
+            clearOutput(out);
+            addOutput(out, 'Loading main app in hidden frame...', 'info');
+
+            try {
+                const frame = document.createElement('iframe');
+                frame.style.width = '0';
+                frame.style.height = '0';
+                frame.style.border = '0';
+                frame.referrerPolicy = 'no-referrer-when-downgrade';
+                frame.src = '/#/';
+
+                frame.onload = () => {
+                    try {
+                        const w = frame.contentWindow;
+                        const poly = w && (w as any).__KEA_POLYFILLS_LOADED__;
+                        const hyd = w && (w as any).__KEA_HYDRATION_STATUS__;
+                        addOutput(out, `Polyfills Loaded: ${poly ? '✅ yes' : '❌ no'}`, poly ? 'success' : 'error');
+                        if (hyd) {
+                            if (hyd === 'ok') addOutput(out, 'Hydration: ✅ OK', 'success');
+                            else if (hyd === 'no-children-after-render') addOutput(out, 'Hydration: ❌ Root has no children', 'error');
+                            else if (hyd === 'no-root-after-render') addOutput(out, 'Hydration: ❌ Root missing after render', 'error');
+                            else addOutput(out, `Hydration: ⚠️ ${hyd}`, 'warning');
+                        } else {
+                            addOutput(out, 'Hydration: ⚠️ status not reported (waiting 1s)...', 'warning');
+                            setTimeout(() => {
+                                const hyd2 = w && (w as any).__KEA_HYDRATION_STATUS__;
+                                if (hyd2) {
+                                    if (hyd2 === 'ok') addOutput(out, 'Hydration (retry): ✅ OK', 'success');
+                                    else if (hyd2 === 'no-children-after-render') addOutput(out, 'Hydration (retry): ❌ Root has no children', 'error');
+                                    else if (hyd2 === 'no-root-after-render') addOutput(out, 'Hydration (retry): ❌ Root missing after render', 'error');
+                                    else addOutput(out, `Hydration (retry): ⚠️ ${hyd2}`, 'warning');
+                                } else {
+                                    addOutput(out, 'Hydration: ❌ no status after retry', 'error');
+                                }
+                            }, 1000);
+                        }
+                    } catch (e) {
+                        addOutput(out, `❌ Could not read frame status: ${e.message}`, 'error');
+                    }
+                };
+
+                document.body.appendChild(frame);
+            } catch (e) {
+                addOutput(out, `❌ Failed to create test frame: ${e.message}`, 'error');
+            }
+        }
     </script>
 </body>
 </html>

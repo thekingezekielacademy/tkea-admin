@@ -125,6 +125,7 @@
   }
 
   console.log('[Polyfills Loaded]');
+  (window as any).__KEA_POLYFILLS_LOADED__ = true;
 })();
 
 import './utils/polyfills';
@@ -333,9 +334,12 @@ setTimeout(() => {
   const el = document.getElementById('root');
   if (!el) {
     console.error('[Hydration Error] Root element not found in DOM after render.');
+    (window as any).__KEA_HYDRATION_STATUS__ = 'no-root-after-render';
   } else if (!el.firstChild) {
     console.error('[Hydration Error] Root element has no children after render (React did not mount).');
+    (window as any).__KEA_HYDRATION_STATUS__ = 'no-children-after-render';
   } else {
     console.log('[Hydration OK] React mounted content inside #root.');
+    (window as any).__KEA_HYDRATION_STATUS__ = 'ok';
   }
 }, 500);
