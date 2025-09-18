@@ -20,6 +20,7 @@ import {
   FaChevronLeft,
   FaChevronRight
 } from 'react-icons/fa';
+import { FaNairaSign } from 'react-icons/fa6';
 
 interface SidebarItem {
   id: string;
@@ -102,7 +103,7 @@ const DashboardSidebar: React.FC = () => {
     {
       id: 'affiliates',
       label: 'Affiliates (soon...)',
-      icon: <FaShareAlt className="w-5 h-5" />,
+      icon: <FaNairaSign className="w-5 h-5" />,
       path: '/affiliates'
     },
     {
