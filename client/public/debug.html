@@ -62,50 +62,69 @@
 
         <div class="test-section">
             <h3>🌐 Network & Connectivity</h3>
-            <button onclick="testConnectivity()">Test Connectivity</button>
+            <button id="btn-connectivity">Test Connectivity</button>
             <div id="connectivity-output" class="output"></div>
         </div>
 
         <div class="test-section">
             <h3>🔧 Browser Compatibility</h3>
-            <button onclick="testBrowserCompatibility()">Test Browser Features</button>
+            <button id="btn-browser">Test Browser Features</button>
             <div id="browser-output" class="output"></div>
     </div>
     
         <div class="test-section">
             <h3>💾 Storage & Cache</h3>
-            <button onclick="testStorage()">Test Storage</button>
-            <button onclick="clearAllStorage()">Clear All Storage</button>
+            <button id="btn-storage">Test Storage</button>
+            <button id="btn-clear-storage">Clear All Storage</button>
             <div id="storage-output" class="output"></div>
     </div>
     
         <div class="test-section">
             <h3>🚀 Application Status</h3>
-            <button onclick="testAppStatus()">Check App Status</button>
+            <button id="btn-app-status">Check App Status</button>
             <div id="app-output" class="output"></div>
     </div>
     
         <div class="test-section">
             <h3>⚛️ React Mount & Polyfills</h3>
-            <button onclick="checkReactMount()">Check React Mount</button>
+            <button id="btn-react-mount">Check React Mount</button>
             <div id="react-output" class="output"></div>
         </div>
     
         <div class="test-section">
             <h3>🔍 Environment Variables</h3>
-            <button onclick="checkEnvironment()">Check Environment</button>
+            <button id="btn-env">Check Environment</button>
             <div id="env-output" class="output"></div>
     </div>
     
         <div class="test-section">
             <h3>📊 Quick Actions</h3>
-            <button onclick="goToMainApp()">Go to Main App</button>
-            <button onclick="hardRefresh()">Hard Refresh</button>
-            <button onclick="downloadDebugInfo()">Download Debug Info</button>
+            <button id="btn-go-main">Go to Main App</button>
+            <button id="btn-hard-refresh">Hard Refresh</button>
+            <button id="btn-download-debug">Download Debug Info</button>
         </div>
     </div>
 
     <script>
+        // Programmatic listeners (some in-app browsers block inline handlers)
+        document.addEventListener('DOMContentLoaded', () => {
+            const map = [
+                ['btn-connectivity', testConnectivity],
+                ['btn-browser', testBrowserCompatibility],
+                ['btn-storage', testStorage],
+                ['btn-clear-storage', clearAllStorage],
+                ['btn-app-status', testAppStatus],
+                ['btn-react-mount', checkReactMount],
+                ['btn-env', checkEnvironment],
+                ['btn-go-main', goToMainApp],
+                ['btn-hard-refresh', hardRefresh],
+                ['btn-download-debug', downloadDebugInfo],
+            ];
+            map.forEach(([id, fn]) => {
+                const el = document.getElementById(id as string);
+                if (el) el.addEventListener('click', fn as any, { passive: true });
+            });
+        });
         function addOutput(elementId, message, type = 'info') {
             const output = document.getElementById(elementId);
             const timestamp = new Date().toLocaleTimeString();
