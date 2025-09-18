@@ -190,14 +190,7 @@ router.post('/initialize-payment', paymentLimiter, validatePaymentInput, async (
       disable_analytics: true,
       // Additional parameters to ensure proper configuration
       init_url: `${baseUrl}/payment-verification`,
-      callback_url: `${baseUrl}/payment-verification`,
-      // Force disable all tracking and fingerprinting
-      fingerprinting: false,
-      tracking: false,
-      analytics: false,
-      // Add cache busting to prevent cached fingerprinting scripts
-      _t: Date.now(),
-      _v: '1.0.0'
+      callback_url: `${baseUrl}/payment-verification`
     };
 
     // Simple Flutterwave API call using axios

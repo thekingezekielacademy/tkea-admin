@@ -69,7 +69,8 @@ const DirectFlutterwavePayment: React.FC<DirectFlutterwavePaymentProps> = ({
         // Open payment in new tab to avoid popup blockers
         const paymentWindow = window.open(
           result.data.link,
-          '_blank'
+          '_blank',
+          'noopener,noreferrer'
         );
 
         if (paymentWindow) {
