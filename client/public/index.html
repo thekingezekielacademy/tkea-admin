@@ -135,29 +135,41 @@
       gtag('config', 'G-8DXQN4Q7LD');
     </script>
     
-    <!-- Meta Pixel Code -->
+    <!-- Meta Pixel Code (guarded for in-app browsers) -->
     <script>
-    !function(f,b,e,v,n,t,s)
-    {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-    n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-    if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-    n.queue=[];t=b.createElement(e);t.async=!0;
-    t.src=v;s=b.getElementsByTagName(e)[0];
-    s.parentNode.insertBefore(t,s)}(window, document,'script',
-    'https://connect.facebook.net/en_US/fbevents.js');
-    fbq('init', '1991898708291767');
-    fbq('track', 'PageView');
+    (function() {
+      var ua = navigator.userAgent || '';
+      var isInApp = /FBAN|FBAV|FBIOS|Instagram/i.test(ua);
+
+      // Define a safe no-op fbq so calls won't crash in any environment
+      if (!window.fbq) {
+        var q = function(){ try { (window.fbq.q = window.fbq.q || []).push(arguments); } catch(e) {} };
+        window.fbq = q; window._fbq = q; window.fbq.loaded = false; window.fbq.version = '2.0';
+      }
+
+      if (isInApp) {
+        console.log('Skipping Meta Pixel script in in-app browser');
+        return;
+      }
+
+      // Load Meta Pixel only for regular browsers
+      !function(f,b,e,v,n,t,s){
+        if(f.fbq && f.fbq.loaded) return; n=f.fbq; if(!n) n=f.fbq=function(){ n.callMethod ?
+        n.callMethod.apply(n,arguments) : n.queue.push(arguments) };
+        if(!f._fbq) f._fbq=n; n.push=n; n.loaded=true; n.version='2.0'; n.queue=[];
+        t=b.createElement(e); t.async=true; t.src=v; s=b.getElementsByTagName(e)[0]; s.parentNode.insertBefore(t,s);
+      }(window, document, 'script', 'https://connect.facebook.net/en_US/fbevents.js');
+
+      try { fbq('init', '1991898708291767'); fbq('track', 'PageView'); } catch(e) {}
+    })();
     </script>
-    <noscript><img height="1" width="1" style="display:none"
-    src="https://www.facebook.com/tr?id=1991898708291767&ev=PageView&noscript=1"
-    /></noscript>
+    <noscript><img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=1991898708291767&ev=PageView&noscript=1" /></noscript>
     <!-- End Meta Pixel Code -->
     
     <!-- Instagram In-App Browser Compatibility -->
     <script src="./instagram-compatibility.js"></script>
     
-    <!-- Flutterwave Checkout Script -->
-    <script src="https://checkout.flutterwave.com/v3.js"></script>
+    <!-- Flutterwave script removed here; loaded dynamically when needed -->
     
     <!-- Structured Data for Organization -->
     <script type="application/ld+json">
