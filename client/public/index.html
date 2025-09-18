@@ -23,12 +23,29 @@
           }
 
           // Unregister any existing Service Workers in in-app browsers to avoid stale shells
-          if (isInApp && 'serviceWorker' in navigator) {
-            navigator.serviceWorker.getRegistrations().then(function(regs){
-              for (var i = 0; i < regs.length; i++) {
-                try { regs[i].unregister(); } catch (e) {}
+          if (isInApp) {
+            var reloadKey = '__KEA_SW_FIX__';
+            var alreadyFixed = false;
+            try { alreadyFixed = !!(window.sessionStorage && sessionStorage.getItem(reloadKey)); } catch (e) {}
+
+            var doOneTimeReload = function(){
+              if (!alreadyFixed) {
+                try { if (window.sessionStorage) sessionStorage.setItem(reloadKey, '1'); } catch (e) {}
+                var href = location.href;
+                var sep = href.indexOf('?') === -1 ? '?' : '&';
+                location.replace(href + sep + '_inapp_fix=' + new Date().getTime());
               }
-            });
+            };
+
+            if ('serviceWorker' in navigator) {
+              navigator.serviceWorker.getRegistrations().then(function(regs){
+                for (var i = 0; i < regs.length; i++) { try { regs[i].unregister(); } catch (e) {} }
+                // Force a one-time reload to drop SW control
+                doOneTimeReload();
+              }).catch(function(){ doOneTimeReload(); });
+            } else {
+              doOneTimeReload();
+            }
           }
         } catch (e) {}
       })();
