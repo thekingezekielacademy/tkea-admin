@@ -66,11 +66,10 @@ const DirectFlutterwavePayment: React.FC<DirectFlutterwavePaymentProps> = ({
       if (result.success && result.data?.link) {
         setPaymentUrl(result.data.link);
         
-        // Open payment in new tab
+        // Open payment in new tab to avoid popup blockers
         const paymentWindow = window.open(
           result.data.link,
-          'flutterwave_payment',
-          'width=800,height=600,scrollbars=yes,resizable=yes'
+          '_blank'
         );
 
         if (paymentWindow) {
@@ -145,7 +144,7 @@ const DirectFlutterwavePayment: React.FC<DirectFlutterwavePaymentProps> = ({
           // Close this modal
           onClose();
         } else {
-          throw new Error('Unable to open payment window. Please check your popup blocker settings.');
+          throw new Error('Unable to open payment window. Please check your browser settings and try again.');
         }
       } else {
         throw new Error(result.message || 'Payment initialization failed');
@@ -281,7 +280,7 @@ const DirectFlutterwavePayment: React.FC<DirectFlutterwavePaymentProps> = ({
                 🔒 Secure payment powered by Flutterwave
               </p>
               <p className="text-xs text-gray-400 mt-1">
-                Payment will open in a new window
+                Payment will open in a new tab
               </p>
             </div>
           </div>

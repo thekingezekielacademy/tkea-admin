@@ -266,8 +266,8 @@ const FlutterwavePaymentModal: React.FC<FlutterwavePaymentModalProps> = ({ isOpe
               localStorage.setItem('pending_payment_tx_ref', txRef);
             }
             
-            // Open in new tab to avoid fingerprinting issues
-            const paymentWindow = window.open(result.data.link, '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
+            // Open in new tab to avoid popup blockers
+            const paymentWindow = window.open(result.data.link, '_blank');
             
             if (!paymentWindow) {
               // Fallback to same window if popup blocked
@@ -300,8 +300,8 @@ const FlutterwavePaymentModal: React.FC<FlutterwavePaymentModalProps> = ({ isOpe
               localStorage.setItem('pending_payment_tx_ref', txRef);
             }
             
-            // Open in new tab to avoid fingerprinting issues
-            const paymentWindow = window.open(result.data.authorization_url, '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
+            // Open in new tab to avoid popup blockers
+            const paymentWindow = window.open(result.data.authorization_url, '_blank');
             
             if (!paymentWindow) {
               // Fallback to same window if popup blocked

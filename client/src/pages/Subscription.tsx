@@ -4,7 +4,6 @@ import { useSidebar } from '../contexts/SidebarContext';
 import { supabase } from '../lib/supabase';
 import DashboardSidebar from '../components/DashboardSidebar';
 import DirectFlutterwavePayment from '../components/DirectFlutterwavePayment';
-import EmbeddedFlutterwaveModal from '../components/EmbeddedFlutterwaveModal';
 import secureStorage from '../utils/secureStorage';
 import flutterwaveService from '../services/flutterwaveService';
 import DOMPurify from 'dompurify';
@@ -65,7 +64,6 @@ const Subscription: React.FC = () => {
   const [billingHistory, setBillingHistory] = useState<BillingHistory[]>([]);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [showDirectPayment, setShowDirectPayment] = useState(false);
-  const [showEmbeddedPayment, setShowEmbeddedPayment] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
   const [cancelFeedback, setCancelFeedback] = useState('');
 
@@ -991,20 +989,12 @@ const Subscription: React.FC = () => {
                   <p className="text-gray-600 mb-4">
                     You don't have an active subscription. Subscribe to access all courses and features.
                   </p>
-                  <div className="flex space-x-3">
-                    <button 
-                      onClick={() => setShowEmbeddedPayment(true)}
-                      className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
-                    >
-                      Subscribe Now (Embedded)
-                    </button>
-                    <button 
-                      onClick={() => setShowDirectPayment(true)}
-                      className="bg-gray-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-gray-700 transition-colors"
-                    >
-                      Subscribe (Popup)
-                    </button>
-                  </div>
+                  <button 
+                    onClick={() => setShowDirectPayment(true)}
+                    className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                  >
+                    Subscribe Now
+                  </button>
                 </div>
               )}
             </div>
@@ -1088,20 +1078,12 @@ const Subscription: React.FC = () => {
                   
                   {/* Re-subscribe button for canceled subscriptions */}
                   {subscription && subscription.status === 'canceled' && (
-                    <div className="flex space-x-3">
-                      <button
-                        onClick={() => setShowEmbeddedPayment(true)}
-                        className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
-                      >
-                        Subscribe Again (Embedded)
-                      </button>
-                      <button
-                        onClick={() => setShowDirectPayment(true)}
-                        className="bg-gray-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-gray-700 transition-colors"
-                      >
-                        Subscribe (Popup)
-                      </button>
-                    </div>
+                    <button
+                      onClick={() => setShowDirectPayment(true)}
+                      className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                    >
+                      Subscribe Again
+                    </button>
                   )}
                   
                   {/* Development: Re-subscribe button for testing - only show if explicitly needed */}
@@ -1234,21 +1216,6 @@ const Subscription: React.FC = () => {
           </div>
         </div>
       )}
-
-      {/* Embedded Payment Modal - No popup blockers */}
-      <EmbeddedFlutterwaveModal
-        isOpen={showEmbeddedPayment}
-        onClose={() => setShowEmbeddedPayment(false)}
-        onSuccess={(paymentData) => {
-          setShowEmbeddedPayment(false);
-          setSuccess('Payment completed successfully! Your subscription is now active.');
-          // Refresh subscription data
-          fetchSubscriptionStatus();
-        }}
-        user={user}
-        planName="Monthly Membership"
-        amount={2500}
-      />
 
       {/* Direct Payment Modal - Completely bypasses Flutterwave hosted page */}
       <DirectFlutterwavePayment
