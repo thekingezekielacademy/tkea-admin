@@ -46,15 +46,22 @@
         return originalConfirm.call(this, message);
       };
       
-      // Block fingerprinting API calls
-      const originalFetch = window.fetch;
-      window.fetch = function(url, options) {
-        if (url && (url.includes('metrics.flutterwave.com') || url.includes('api.fpjs.io'))) {
-          console.log('Blocked fingerprinting API call:', url);
-          return Promise.reject(new Error('Fingerprinting disabled'));
-        }
-        return originalFetch.call(this, url, options);
-      };
+      // Block fingerprinting API calls - safe for Request objects in in-app browsers
+      (function() {
+        const originalFetch = window.fetch;
+        window.fetch = function(input, init) {
+          try {
+            const urlStr = typeof input === 'string' ? input : (input && input.url) || '';
+            if (urlStr && (urlStr.includes('metrics.flutterwave.com') || urlStr.includes('api.fpjs.io'))) {
+              console.log('Blocked fingerprinting API call:', urlStr);
+              return Promise.reject(new Error('Fingerprinting disabled'));
+            }
+          } catch (e) {
+            // Never break fetch in constrained browsers
+          }
+          return originalFetch.call(this, input, init);
+        };
+      })();
     </script>
     
     <!-- Mobile Browser Compatibility -->
