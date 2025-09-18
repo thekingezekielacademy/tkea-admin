@@ -385,6 +385,7 @@ async function loadApp() {
         try {
           const regs = await navigator.serviceWorker.getRegistrations();
           await Promise.all(regs.map((r) => r.unregister().catch(() => {})));
+          console.log('🛑 SW disabled in mini browser');
         } catch {}
       } else {
         try {
@@ -395,22 +396,16 @@ async function loadApp() {
       }
     }
 
-    // Dynamic import ReactDOM and App to block hydration until polyfills + DOM ready
+    // Dynamic import App with guard and retry
     console.log('[Boot] Loading React and App modules...');
     let AppMod: any = null;
     try {
       AppMod = (await import('./App')).default;
     } catch (e) {
-      console.error('[App Import Error]', e);
-      (window as any).__KEA_BOOT_ERROR__ = 'app-import';
-      // Retry once after a tick
-      try {
-        await new Promise((r) => setTimeout(r, 200));
-        AppMod = (await import('./App')).default;
-      } catch (e2) {
-        console.error('[App Import Retry Failed]', e2);
+      console.warn('[Boot] dynamic import failed, trying require fallback');
+      try { AppMod = require('./App').default; } catch (e2) {
+        console.error('[App Import Error]', e);
         (window as any).__KEA_HYDRATION_STATUS__ = 'boot-error';
-        // Show banner and abort boot (avoid replacing body)
         const warn = document.createElement('div');
         warn.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#111;color:#fff;padding:10px;font:12px/1.4 monospace;z-index:99999;text-align:center;';
         warn.textContent = 'App failed to load. Please refresh or open in external browser.';
@@ -418,74 +413,87 @@ async function loadApp() {
         return;
       }
     }
-    let createRootFn: any = null;
-    let ReactDOMLegacy: any = null;
-    let usingLegacy = false;
-    try {
-      if (isOldSafari || isInApp) {
-        throw new Error('Force legacy renderer for old Safari / in-app');
-      }
-      const reactDomClient = await import('react-dom/client');
-      createRootFn = (reactDomClient as any).createRoot;
-    } catch {
-      usingLegacy = true;
-      ReactDOMLegacy = await import('react-dom');
-    }
-    (window as any).__KEA_BOOT_PROGRESS__ = usingLegacy ? 'legacy-renderer' : 'modules-loaded';
-    console.log(usingLegacy ? '🟡 legacy render' : '✅ modern render');
 
     const rootEl = (document.getElementById('root') as HTMLElement) || document.body.appendChild(Object.assign(document.createElement('div'), { id: 'root' }));
-    try {
-      if (createRootFn && !usingLegacy) {
-        const root = createRootFn(rootEl);
-root.render(
-  <React.StrictMode>
-            <AppMod />
-  </React.StrictMode>
-);
-      } else if (ReactDOMLegacy && (ReactDOMLegacy as any).render) {
-        (ReactDOMLegacy as any).render(<AppMod />, rootEl);
-      } else {
-        throw new Error('No React DOM renderer available');
+
+    // Legacy Render Path for old Safari / in-app browsers
+    if (isOldSafari || isInApp) {
+      try {
+        const ReactDOM = await import('react-dom');
+        rootEl.innerHTML = '';
+        (ReactDOM as any).render(<AppMod />, rootEl);
+        (window as any).__KEA_HYDRATION_STATUS__ = 'client-only-legacy';
+        (window as any).__KEA_BOOT_MODE__ = 'legacy';
+        console.log('🟡 Legacy Render Path Activated');
+      } catch (renderErr) {
+        console.error('[Legacy Render Error]', renderErr);
+        (window as any).__KEA_HYDRATION_STATUS__ = 'render-error';
       }
-    } catch (renderErr) {
-      console.error('[Render Error]', renderErr);
-      (window as any).__KEA_HYDRATION_STATUS__ = 'render-error';
-      throw renderErr;
+    } else {
+      // Modern Path: hydrateRoot if SSR markup exists, else createRoot
+      try {
+        const rdc = await import('react-dom/client');
+        const hasSSR = !!rootEl.firstChild;
+        if ((rdc as any).hydrateRoot && hasSSR) {
+          (rdc as any).hydrateRoot(rootEl, <AppMod />);
+          (window as any).__KEA_BOOT_MODE__ = 'modern-hydrate';
+          console.log('✅ modern hydrate');
+        } else {
+          const root = (rdc as any).createRoot(rootEl);
+          root.render(
+            <React.StrictMode>
+              <AppMod />
+            </React.StrictMode>
+          );
+          (window as any).__KEA_BOOT_MODE__ = 'modern-render';
+          console.log('✅ modern render');
+        }
+      } catch (renderErr) {
+        // Fallback to client-only render
+        console.warn('⚠️ hydrate/createRoot error, falling back to client-only render', renderErr);
+        try {
+          const ReactDOM = await import('react-dom');
+          rootEl.innerHTML = '';
+          (ReactDOM as any).render(<AppMod />, rootEl);
+          (window as any).__KEA_HYDRATION_STATUS__ = 'client-only-fallback';
+          (window as any).__KEA_BOOT_MODE__ = 'fallback-render';
+          console.warn('⚠️ Hydration failed, client-only render applied.');
+        } catch (e2) {
+          console.error('[Final Render Error]', e2);
+          (window as any).__KEA_HYDRATION_STATUS__ = 'fallback-render-error';
+        }
+      }
+
+      // 2s timeout: if not ok, switch to client-only render
+      setTimeout(async () => {
+        if ((window as any).__KEA_HYDRATION_STATUS__ === 'ok') return;
+        const el = document.getElementById('root');
+        if (!el) { (window as any).__KEA_HYDRATION_STATUS__ = 'no-root-after-render'; return; }
+        if (el.firstChild) { (window as any).__KEA_HYDRATION_STATUS__ = 'ok'; return; }
+        try {
+          const ReactDOM = await import('react-dom');
+          el.innerHTML = '';
+          (ReactDOM as any).render(<AppMod />, el);
+          (window as any).__KEA_HYDRATION_STATUS__ = 'client-only-fallback';
+          console.warn('⚠️ Hydration timed out, client-only render applied.');
+        } catch (e3) {
+          console.error('[Timeout Fallback Error]', e3);
+          (window as any).__KEA_HYDRATION_STATUS__ = 'fallback-render-error';
+        }
+      }, 2000);
     }
 
-    // Post-render hydration verification + fallback to client-only render
-    setTimeout(async () => {
-      const el = document.getElementById('root');
-      if (!el) {
-        console.error('[Hydration Error] Root element not found in DOM after render.');
-        (window as any).__KEA_HYDRATION_STATUS__ = 'no-root-after-render';
-        return;
+    // Dev diagnostics overlay
+    try {
+      if (process.env.NODE_ENV !== 'production') {
+        const bar = document.createElement('div');
+        bar.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:#111;color:#fff;padding:6px 10px;font:11px/1.4 monospace;z-index:99999;text-align:center;opacity:.9;';
+        const mode = (window as any).__KEA_BOOT_MODE__ || (isOldSafari || isInApp ? 'legacy' : 'modern');
+        const hyd = (window as any).__KEA_HYDRATION_STATUS__ || 'pending';
+        bar.textContent = `Mode: ${mode} | Polyfills: ✅ | Hydration: ${hyd}`;
+        document.body.appendChild(bar);
       }
-      if (!el.firstChild) {
-        console.error('[Hydration Error] Root element has no children after render (React did not mount).');
-        (window as any).__KEA_HYDRATION_STATUS__ = 'no-children-after-render';
-      } else {
-        (window as any).__KEA_HYDRATION_STATUS__ = 'ok';
-        return;
-      }
-
-      // If not ok within 2s from boot, force client-only legacy render
-      setTimeout(async () => {
-        if ((window as any).__KEA_HYDRATION_STATUS__ !== 'ok') {
-          try {
-            const ReactDOM = await import('react-dom');
-            el.innerHTML = '';
-            (ReactDOM as any).render(<AppMod />, el);
-            (window as any).__KEA_HYDRATION_STATUS__ = 'client-only-fallback';
-            console.warn('⚠️ Hydration failed, re-rendered client-only.');
-          } catch (e) {
-            console.error('[Fallback Render Error]', e);
-            (window as any).__KEA_HYDRATION_STATUS__ = 'fallback-render-error';
-          }
-        }
-      }, 1500);
-    }, 500);
+    } catch {}
   } catch (err) {
     console.error('❌ Failed to load app', err);
     try { (window as any).__KEA_HYDRATION_STATUS__ = 'boot-error'; } catch {}
