@@ -8,40 +8,54 @@
  * - Offline functionality
  */
 
-const CACHE_NAME = 'king-ezekiel-academy-v5-no-instagram-fallback';
-const urlsToCache = [
-  '/',
-  '/static/js/bundle.js',
-  '/static/css/main.css',
+const CACHE_NAME = 'king-ezekiel-academy-v6-smart-cache';
+const STATIC_CACHE_NAME = 'king-ezekiel-academy-static-v6';
+const DYNAMIC_CACHE_NAME = 'king-ezekiel-academy-dynamic-v6';
+
+// Only cache truly static assets that rarely change
+const staticUrlsToCache = [
   '/favicon.svg',
   '/manifest.json'
 ];
 
-// Install event - cache resources
+// Install event - cache only static assets
 self.addEventListener('install', (event) => {
-  console.log('Service Worker: Install event - DISABLING CACHE');
-  // Completely disable caching to force fresh loads
+  console.log('Service Worker: Install event - Smart caching enabled');
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          console.log('Service Worker: Deleting ALL caches:', cacheName);
-          return caches.delete(cacheName);
-        })
-      );
+    caches.open(STATIC_CACHE_NAME).then((cache) => {
+      console.log('Service Worker: Caching static assets');
+      return cache.addAll(staticUrlsToCache);
+    }).then(() => {
+      // Clean up old caches but keep current ones
+      return caches.keys().then((cacheNames) => {
+        return Promise.all(
+          cacheNames.map((cacheName) => {
+            if (cacheName.startsWith('king-ezekiel-academy-') && 
+                cacheName !== CACHE_NAME && 
+                cacheName !== STATIC_CACHE_NAME && 
+                cacheName !== DYNAMIC_CACHE_NAME) {
+              console.log('Service Worker: Deleting old cache:', cacheName);
+              return caches.delete(cacheName);
+            }
+          })
+        );
+      });
     })
   );
   self.skipWaiting();
 });
 
-// Activate event - clean up old caches
+// Activate event - clean up old caches conservatively
 self.addEventListener('activate', (event) => {
-  console.log('Service Worker: Activate event');
+  console.log('Service Worker: Activate event - Smart cache active');
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME) {
+          // Only delete very old caches, keep recent ones
+          if (cacheName.startsWith('king-ezekiel-academy-') && 
+              !cacheName.includes('v6') && 
+              !cacheName.includes('v5')) {
             console.log('Service Worker: Deleting old cache', cacheName);
             return caches.delete(cacheName);
           }
@@ -52,61 +66,134 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// Fetch event - ALWAYS fetch from network (no caching)
+// Fetch event - Smart caching with browser compatibility
 self.addEventListener('fetch', (event) => {
-  console.log('Service Worker: Fetch event - BYPASSING CACHE for:', event.request.url);
+  const request = event.request;
+  const url = new URL(request.url);
+  
+  // Skip non-GET requests and non-http(s) requests
+  if (request.method !== 'GET' || !url.protocol.startsWith('http')) {
+    return;
+  }
   
   // Detect if this is an in-app browser request
-  const userAgent = event.request.headers.get('user-agent') || '';
+  const userAgent = request.headers.get('user-agent') || '';
   const isInAppBrowser = /Instagram|FBAN|FBAV|FBIOS|Line|Twitter|LinkedIn|WhatsApp|Telegram/i.test(userAgent);
   const isSafari = /Safari/i.test(userAgent) && !/Chrome/i.test(userAgent);
   
-  // Enhanced handling for Safari and in-app browsers
-  if ((isSafari || isInAppBrowser) && event.request.url.includes('.js') && event.request.url.includes('static')) {
-    // Add cache-busting for JS files to ensure Safari/in-app browsers get the latest version
-    const url = new URL(event.request.url);
-    url.searchParams.set('v', Date.now().toString());
-    if (isInAppBrowser) {
-      url.searchParams.set('_inapp', '1');
-    }
+  // For in-app browsers and Safari, use existing cache-busting logic
+  if (isInAppBrowser || isSafari) {
+    console.log('Service Worker: In-App/Safari browser - using cache-busting for:', url.pathname);
     
-    event.respondWith(
-      fetch(url.toString(), {
-        cache: 'no-cache',
-        headers: {
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache'
-        }
-      }).catch(error => {
-        console.error('Service Worker: Safari/In-App JS fetch error:', error);
-        // Fallback to original request
-        return fetch(event.request);
-      })
-    );
-  } else if (isInAppBrowser) {
-    // For in-app browsers, always add cache-busting
-    const url = new URL(event.request.url);
-    if (!url.searchParams.has('v')) {
-      url.searchParams.set('v', Date.now().toString());
+    if ((isSafari || isInAppBrowser) && request.url.includes('.js') && request.url.includes('static')) {
+      const urlWithCacheBust = new URL(request.url);
+      urlWithCacheBust.searchParams.set('v', Date.now().toString());
+      if (isInAppBrowser) {
+        urlWithCacheBust.searchParams.set('_inapp', '1');
+      }
+      
+      event.respondWith(
+        fetch(urlWithCacheBust.toString(), {
+          cache: 'no-cache',
+          headers: {
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache'
+          }
+        }).catch(error => {
+          console.error('Service Worker: Safari/In-App JS fetch error:', error);
+          return fetch(request);
+        })
+      );
+    } else if (isInAppBrowser) {
+      const urlWithCacheBust = new URL(request.url);
+      if (!urlWithCacheBust.searchParams.has('v')) {
+        urlWithCacheBust.searchParams.set('v', Date.now().toString());
+      }
+      urlWithCacheBust.searchParams.set('_inapp', '1');
+      
+      event.respondWith(
+        fetch(urlWithCacheBust.toString(), {
+          cache: 'no-cache',
+          headers: {
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache'
+          }
+        }).catch(error => {
+          console.error('Service Worker: In-App browser fetch error:', error);
+          return fetch(request);
+        })
+      );
+    } else {
+      event.respondWith(fetch(request));
     }
-    url.searchParams.set('_inapp', '1');
-    
-    event.respondWith(
-      fetch(url.toString(), {
-        cache: 'no-cache',
-        headers: {
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache'
-        }
-      }).catch(error => {
-        console.error('Service Worker: In-App browser fetch error:', error);
-        return fetch(event.request);
-      })
-    );
-  } else {
-    // Always fetch from network - no caching at all
-    event.respondWith(fetch(event.request));
+    return;
   }
+  
+  // Smart caching for regular browsers
+  console.log('Service Worker: Smart caching for:', url.pathname);
+  
+  // Strategy 1: Static assets (JS, CSS, images) - Cache First
+  if (url.pathname.match(/\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot)$/)) {
+    event.respondWith(
+      caches.open(STATIC_CACHE_NAME).then(cache => {
+        return cache.match(request).then(response => {
+          if (response) {
+            console.log('Service Worker: Serving static asset from cache:', url.pathname);
+            return response;
+          }
+          return fetch(request).then(fetchResponse => {
+            // Only cache successful responses
+            if (fetchResponse.status === 200) {
+              cache.put(request, fetchResponse.clone());
+            }
+            return fetchResponse;
+          });
+        });
+      })
+    );
+    return;
+  }
+  
+  // Strategy 2: API calls - Network First (always fresh data)
+  if (url.pathname.startsWith('/api/') || url.hostname.includes('supabase') || url.hostname.includes('flutterwave')) {
+    console.log('Service Worker: API call - fetching fresh from network:', url.pathname);
+    event.respondWith(
+      fetch(request).catch(() => {
+        // If network fails, try cache as fallback
+        return caches.open(DYNAMIC_CACHE_NAME).then(cache => {
+          return cache.match(request);
+        });
+      })
+    );
+    return;
+  }
+  
+  // Strategy 3: HTML pages - Network First with cache fallback
+  if (request.headers.get('accept')?.includes('text/html')) {
+    event.respondWith(
+      fetch(request).then(response => {
+        // Cache successful HTML responses
+        if (response.status === 200) {
+          const responseClone = response.clone();
+          caches.open(DYNAMIC_CACHE_NAME).then(cache => {
+            cache.put(request, responseClone);
+          });
+        }
+        return response;
+      }).catch(() => {
+        // Fallback to cache for offline
+        return caches.match(request);
+      })
+    );
+    return;
+  }
+  
+  // Default: Network first for everything else
+  event.respondWith(
+    fetch(request).catch(() => {
+      return caches.match(request);
+    })
+  );
 });
 
 // Push event - handle push notifications
