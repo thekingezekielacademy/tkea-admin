@@ -389,7 +389,7 @@ async function loadApp() {
         try { AppMod = require('./App').default; } catch { AppMod = (await import('./App')).default; }
         rootEl.innerHTML = '';
         (ReactDOM as any).render(<AppMod />, rootEl);
-        (window as any).__KEA_HYDRATION_STATUS__ = 'client-only-legacy-preflight';
+        (window as any).__KEA_HYDRATION_STATUS__ = 'ok';
         (window as any).__KEA_BOOT_MODE__ = 'legacy-preflight';
         console.log('🟡 Forced Legacy Path (Pre-flight)');
         // Ensure SW is disabled in mini browsers
@@ -450,7 +450,7 @@ async function loadApp() {
         const ReactDOM = await import('react-dom');
         rootEl.innerHTML = '';
         (ReactDOM as any).render(<AppMod />, rootEl);
-        (window as any).__KEA_HYDRATION_STATUS__ = 'client-only-legacy';
+        (window as any).__KEA_HYDRATION_STATUS__ = 'ok';
         (window as any).__KEA_BOOT_MODE__ = 'legacy';
         console.log('🟡 Legacy Render Path Activated');
       } catch (renderErr) {
@@ -464,6 +464,7 @@ async function loadApp() {
         const hasSSR = !!rootEl.firstChild;
         if ((rdc as any).hydrateRoot && hasSSR) {
           (rdc as any).hydrateRoot(rootEl, <AppMod />);
+          (window as any).__KEA_HYDRATION_STATUS__ = 'ok';
           (window as any).__KEA_BOOT_MODE__ = 'modern-hydrate';
           console.log('✅ modern hydrate');
         } else {
@@ -473,6 +474,7 @@ async function loadApp() {
               <AppMod />
             </React.StrictMode>
           );
+          (window as any).__KEA_HYDRATION_STATUS__ = 'ok';
           (window as any).__KEA_BOOT_MODE__ = 'modern-render';
           console.log('✅ modern render');
         }
@@ -482,8 +484,8 @@ async function loadApp() {
         try {
           const ReactDOM = await import('react-dom');
           rootEl.innerHTML = '';
-          (ReactDOM as any).render(<AppMod />, rootEl);
-          (window as any).__KEA_HYDRATION_STATUS__ = 'client-only-fallback';
+        (ReactDOM as any).render(<AppMod />, rootEl);
+        (window as any).__KEA_HYDRATION_STATUS__ = 'ok';
           (window as any).__KEA_BOOT_MODE__ = 'fallback-render';
           console.warn('⚠️ Hydration failed, client-only render applied.');
         } catch (e2) {
@@ -501,8 +503,8 @@ async function loadApp() {
         try {
           const ReactDOM = await import('react-dom');
           el.innerHTML = '';
-          (ReactDOM as any).render(<AppMod />, el);
-          (window as any).__KEA_HYDRATION_STATUS__ = 'client-only-fallback';
+        (ReactDOM as any).render(<AppMod />, el);
+        (window as any).__KEA_HYDRATION_STATUS__ = 'ok';
           console.warn('⚠️ Hydration timed out, client-only render applied.');
         } catch (e3) {
           console.error('[Timeout Fallback Error]', e3);
