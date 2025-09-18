@@ -66,7 +66,7 @@ const FlutterwavePaymentModal: React.FC<FlutterwavePaymentModalProps> = ({ isOpe
     };
   }, []);
 
-  // Load Flutterwave script with proper configuration
+  // Load Flutterwave script
   useEffect(() => {
     const loadFlutterwaveScript = () => {
       return new Promise((resolve, reject) => {
@@ -81,26 +81,6 @@ const FlutterwavePaymentModal: React.FC<FlutterwavePaymentModalProps> = ({ isOpe
         script.async = true;
         script.onload = () => {
           console.log('✅ Flutterwave script loaded successfully');
-          
-          // Configure Flutterwave with public key immediately after script loads
-          const publicKey = process.env.REACT_APP_FLUTTERWAVE_PUBLIC_KEY;
-          if (publicKey && window.FlutterwaveCheckout) {
-            // Set global Flutterwave configuration
-            window.FlutterwaveConfig = {
-              publicKey: publicKey,
-              txRef: '',
-              amount: 0,
-              currency: 'NGN',
-              country: 'NG',
-              email: '',
-              phone_number: '',
-              name: '',
-              disableFingerprinting: true,
-              fingerprintingEnabled: false
-            };
-            console.log('✅ Flutterwave configured with public key');
-          }
-          
           resolve(true);
         };
         script.onerror = () => {
@@ -286,16 +266,13 @@ const FlutterwavePaymentModal: React.FC<FlutterwavePaymentModalProps> = ({ isOpe
               localStorage.setItem('pending_payment_tx_ref', txRef);
             }
             
-            // Open in new tab to avoid popup blockers
-            const paymentWindow = window.open(result.data.link, '_blank', 'noopener,noreferrer');
+            // Open in new tab to avoid fingerprinting issues
+            const paymentWindow = window.open(result.data.link, '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
             
             if (!paymentWindow) {
               // Fallback to same window if popup blocked
-              console.log('⚠️ Popup blocked, redirecting to same window');
               window.location.href = result.data.link;
             } else {
-              console.log('✅ Payment window opened successfully');
-              
               // Monitor the payment window
               const checkClosed = setInterval(() => {
                 if (paymentWindow.closed) {
@@ -323,16 +300,13 @@ const FlutterwavePaymentModal: React.FC<FlutterwavePaymentModalProps> = ({ isOpe
               localStorage.setItem('pending_payment_tx_ref', txRef);
             }
             
-            // Open in new tab to avoid popup blockers
-            const paymentWindow = window.open(result.data.authorization_url, '_blank', 'noopener,noreferrer');
+            // Open in new tab to avoid fingerprinting issues
+            const paymentWindow = window.open(result.data.authorization_url, '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
             
             if (!paymentWindow) {
               // Fallback to same window if popup blocked
-              console.log('⚠️ Popup blocked, redirecting to same window');
               window.location.href = result.data.authorization_url;
             } else {
-              console.log('✅ Payment window opened successfully');
-              
               // Monitor the payment window
               const checkClosed = setInterval(() => {
                 if (paymentWindow.closed) {
