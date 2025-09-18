@@ -107,8 +107,8 @@
 
     <script>
         // Programmatic listeners (some in-app browsers block inline handlers)
-        document.addEventListener('DOMContentLoaded', () => {
-            const map = [
+        document.addEventListener('DOMContentLoaded', function() {
+            var map = [
                 ['btn-connectivity', testConnectivity],
                 ['btn-browser', testBrowserCompatibility],
                 ['btn-storage', testStorage],
@@ -118,11 +118,15 @@
                 ['btn-env', checkEnvironment],
                 ['btn-go-main', goToMainApp],
                 ['btn-hard-refresh', hardRefresh],
-                ['btn-download-debug', downloadDebugInfo],
+                ['btn-download-debug', downloadDebugInfo]
             ];
-            map.forEach(([id, fn]) => {
-                const el = document.getElementById(id as string);
-                if (el) el.addEventListener('click', fn as any, { passive: true });
+            map.forEach(function(pair) {
+                var id = pair[0];
+                var fn = pair[1];
+                var el = document.getElementById(id);
+                if (el && typeof fn === 'function') {
+                    el.addEventListener('click', fn, { passive: true });
+                }
             });
         });
         function addOutput(elementId, message, type = 'info') {
