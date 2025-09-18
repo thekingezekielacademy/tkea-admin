@@ -110,27 +110,20 @@ function App() {
           console.warn('Notification initialization failed:', error);
         }
         
-        // Initialize service worker with better error handling - TEMPORARILY DISABLED
-        // try {
-        //   if (safeFeatureCheck.hasServiceWorker()) {
-        //     await initializeServiceWorker();
-        //   }
-        // } catch (error) {
-        //   console.warn('Service worker initialization failed:', error);
-        // }
-        console.log('Service Worker: TEMPORARILY DISABLED for testing');
-        
-        // Unregister any existing service workers
+        // Initialize service worker with enhanced browser detection
         try {
-          if ('serviceWorker' in navigator) {
-            const registrations = await navigator.serviceWorker.getRegistrations();
-            for (let registration of registrations) {
-              console.log('Unregistering existing service worker:', registration.scope);
-              await registration.unregister();
-            }
+          const browserInfo = (window as any).browserInfo;
+          const shouldRegisterSW = browserInfo?.supportsServiceWorker || 
+            (safeFeatureCheck.hasServiceWorker() && !browserInfo?.isInApp);
+          
+          if (shouldRegisterSW) {
+            console.log('✅ Registering service worker for regular browser');
+            await initializeServiceWorker();
+          } else {
+            console.log('🚫 Skipping service worker registration for in-app browser');
           }
         } catch (error) {
-          console.warn('Failed to unregister service workers:', error);
+          console.warn('Service worker initialization failed:', error);
         }
         
         // Initialize course scheduler (non-blocking)

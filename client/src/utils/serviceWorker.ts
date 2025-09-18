@@ -8,17 +8,20 @@
  * - Performance monitoring
  */
 
-// Service worker registration
+// Service worker registration with enhanced browser detection
 export const registerServiceWorker = async (): Promise<void> => {
+  // Use global browser info if available, fallback to direct detection
+  const browserInfo = (window as any).browserInfo;
+  const isInApp = browserInfo?.isInApp || /FBAN|FBAV|FBIOS|Instagram|Line|Twitter|LinkedIn|WhatsApp|Telegram/i.test(navigator.userAgent);
+  
   if (!('serviceWorker' in navigator)) {
     console.log('Service Worker not supported in this browser');
     return;
   }
 
-  // Don't register service worker in Instagram/Facebook in-app browsers
-  const userAgent = navigator.userAgent;
-  if (/Instagram|FBAN|FBAV/.test(userAgent)) {
-    console.log('Instagram/Facebook in-app browser detected - skipping service worker registration');
+  // Skip service worker registration in in-app browsers
+  if (isInApp) {
+    console.log('🚫 In-app browser detected - skipping service worker registration');
     return;
   }
 

@@ -10,8 +10,20 @@ const PWAInstall: React.FC<PWAInstallProps> = ({ className = '' }) => {
   const [isInstalled, setIsInstalled] = useState(false);
   const [showInstallPrompt, setShowInstallPrompt] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [isInAppBrowser, setIsInAppBrowser] = useState(false);
 
   useEffect(() => {
+    // Check browser compatibility first
+    const browserInfo = (window as any).browserInfo;
+    const isInApp = browserInfo?.isInApp || /FBAN|FBAV|FBIOS|Instagram|Line|Twitter|LinkedIn|WhatsApp|Telegram/i.test(navigator.userAgent);
+    setIsInAppBrowser(isInApp);
+    
+    // Don't show PWA install in in-app browsers
+    if (isInApp) {
+      console.log('🚫 PWA install component disabled for in-app browser');
+      return;
+    }
+
     // Check if mobile device
     const checkMobile = () => {
       const userAgent = navigator.userAgent.toLowerCase();
@@ -81,8 +93,8 @@ const PWAInstall: React.FC<PWAInstallProps> = ({ className = '' }) => {
     }
   };
 
-  // Don't show if not mobile, already installed, or no install prompt
-  if (!isMobile || isInstalled || (!showInstallPrompt && !deferredPrompt)) {
+  // Don't show if in-app browser, not mobile, already installed, or no install prompt
+  if (isInAppBrowser || !isMobile || isInstalled || (!showInstallPrompt && !deferredPrompt)) {
     return null;
   }
 
