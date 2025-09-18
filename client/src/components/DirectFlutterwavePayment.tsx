@@ -37,6 +37,9 @@ const DirectFlutterwavePayment: React.FC<DirectFlutterwavePaymentProps> = ({
       setLoading(true);
       setError(null);
 
+      // Pre-open a blank tab synchronously to avoid popup blockers
+      const preOpenedWindow = window.open('about:blank', '_blank');
+
       // Validate inputs
       if (!email || !email.includes('@')) {
         throw new Error('Please enter a valid email address');
@@ -66,12 +69,14 @@ const DirectFlutterwavePayment: React.FC<DirectFlutterwavePaymentProps> = ({
       if (result.success && result.data?.link) {
         setPaymentUrl(result.data.link);
         
-        // Open payment in new tab
-        const paymentWindow = window.open(
-          result.data.link,
-          'flutterwave_payment',
-          'width=800,height=600,scrollbars=yes,resizable=yes'
-        );
+        // Navigate the pre-opened tab to the payment URL
+        let paymentWindow: Window | null = null;
+        if (preOpenedWindow && !preOpenedWindow.closed) {
+          preOpenedWindow.location.href = result.data.link;
+          paymentWindow = preOpenedWindow;
+        } else {
+          paymentWindow = window.open(result.data.link, '_blank') as Window | null;
+        }
 
         if (paymentWindow) {
           // Monitor the payment window and verify payment
@@ -145,7 +150,9 @@ const DirectFlutterwavePayment: React.FC<DirectFlutterwavePaymentProps> = ({
           // Close this modal
           onClose();
         } else {
-          throw new Error('Unable to open payment window. Please check your popup blocker settings.');
+          // As a last resort, redirect current tab
+          window.location.href = result.data.link;
+          return;
         }
       } else {
         throw new Error(result.message || 'Payment initialization failed');

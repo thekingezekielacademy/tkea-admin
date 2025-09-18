@@ -51,22 +51,6 @@ const FlutterwavePaymentModal: React.FC<FlutterwavePaymentModalProps> = ({ isOpe
     window.FlutterwaveDisableAnalytics = true;
     window.FlutterwaveDisableFingerprint = true;
     
-    // Block fingerprinting requests at the network level
-    const originalFetch = window.fetch;
-    window.fetch = function(...args) {
-      const url = args[0];
-      if (typeof url === 'string' && (
-        url.includes('metrics.flutterwave.com') ||
-        url.includes('api.fpjs.io') ||
-        url.includes('fingerprint-pro') ||
-        url.includes('fingerprintjs')
-      )) {
-        console.log('🚫 Blocked Flutterwave fingerprinting request:', url);
-        return Promise.reject(new Error('Fingerprinting disabled'));
-      }
-      return originalFetch.apply(this, args);
-    };
-    
     // Prevent auto-cancel dialogs
     const handleMessage = (event: MessageEvent) => {
       if (event.data && (event.data.type === 'flutterwave-cancel' || event.data.type === 'cancel-payment')) {
@@ -79,8 +63,6 @@ const FlutterwavePaymentModal: React.FC<FlutterwavePaymentModalProps> = ({ isOpe
     
     return () => {
       window.removeEventListener('message', handleMessage);
-      // Restore original fetch
-      window.fetch = originalFetch;
     };
   }, []);
 
@@ -151,6 +133,9 @@ const FlutterwavePaymentModal: React.FC<FlutterwavePaymentModalProps> = ({ isOpe
 
     setLoading(true);
     setPaymentState({ status: 'processing' });
+
+    // Pre-open a blank tab synchronously to avoid popup blockers
+    const preOpenedWindow = window.open('about:blank', '_blank');
 
     try {
       // Professional Flutterwave Configuration - Using new fresh keys
@@ -284,24 +269,37 @@ const FlutterwavePaymentModal: React.FC<FlutterwavePaymentModalProps> = ({ isOpe
               localStorage.setItem('pending_payment_tx_ref', txRef);
             }
             
-            // Open in new tab (no popup window dimensions to avoid popup blockers)
-            const paymentTab = window.open(result.data.link, '_blank');
-            
-            if (!paymentTab) {
-              // Fallback to same window if new tab blocked
-              window.location.href = result.data.link;
+            // Navigate the pre-opened tab to avoid popup blockers
+            let paymentWindow: Window | null = null;
+            if (preOpenedWindow && !preOpenedWindow.closed) {
+              preOpenedWindow.location.href = result.data.link;
+              paymentWindow = preOpenedWindow;
             } else {
-              // Show processing message immediately since we can't monitor tab closure reliably
-              setPaymentState({ 
-                status: 'processing', 
-                error: 'Payment opened in new tab. Please complete payment and return here. Check your email for confirmation.' 
-              });
-              setLoading(false);
-              
-              // Clear the pending payment reference after a delay
-              setTimeout(() => {
-                localStorage.removeItem('pending_payment_tx_ref');
-              }, 300000); // 5 minutes
+              // Fallback: open now or redirect same window
+              paymentWindow = window.open(result.data.link, '_blank') as Window | null;
+              if (!paymentWindow) {
+                window.location.href = result.data.link;
+                return;
+              }
+            }
+
+            if (paymentWindow) {
+              // Monitor the payment window
+              const checkClosed = setInterval(() => {
+                if (paymentWindow.closed) {
+                  clearInterval(checkClosed);
+                  
+                  // When window closes, show a message asking user to confirm payment status
+                  setPaymentState({ 
+                    status: 'processing', 
+                    error: 'Please check your email for payment confirmation or try again if payment failed.' 
+                  });
+                  setLoading(false);
+                  
+                  // Clear the pending payment reference
+                  localStorage.removeItem('pending_payment_tx_ref');
+                }
+              }, 1000);
             }
             return;
           } else if (result.data.authorization_url) {
@@ -313,24 +311,37 @@ const FlutterwavePaymentModal: React.FC<FlutterwavePaymentModalProps> = ({ isOpe
               localStorage.setItem('pending_payment_tx_ref', txRef);
             }
             
-            // Open in new tab (no popup window dimensions to avoid popup blockers)
-            const paymentTab = window.open(result.data.authorization_url, '_blank');
-            
-            if (!paymentTab) {
-              // Fallback to same window if new tab blocked
-              window.location.href = result.data.authorization_url;
+            // Navigate the pre-opened tab to avoid popup blockers
+            let paymentWindow: Window | null = null;
+            if (preOpenedWindow && !preOpenedWindow.closed) {
+              preOpenedWindow.location.href = result.data.authorization_url;
+              paymentWindow = preOpenedWindow;
             } else {
-              // Show processing message immediately since we can't monitor tab closure reliably
-              setPaymentState({ 
-                status: 'processing', 
-                error: 'Payment opened in new tab. Please complete payment and return here. Check your email for confirmation.' 
-              });
-              setLoading(false);
-              
-              // Clear the pending payment reference after a delay
-              setTimeout(() => {
-                localStorage.removeItem('pending_payment_tx_ref');
-              }, 300000); // 5 minutes
+              // Fallback: open now or redirect same window
+              paymentWindow = window.open(result.data.authorization_url, '_blank') as Window | null;
+              if (!paymentWindow) {
+                window.location.href = result.data.authorization_url;
+                return;
+              }
+            }
+
+            if (paymentWindow) {
+              // Monitor the payment window
+              const checkClosed = setInterval(() => {
+                if (paymentWindow.closed) {
+                  clearInterval(checkClosed);
+                  
+                  // When window closes, show a message asking user to confirm payment status
+                  setPaymentState({ 
+                    status: 'processing', 
+                    error: 'Please check your email for payment confirmation or try again if payment failed.' 
+                  });
+                  setLoading(false);
+                  
+                  // Clear the pending payment reference
+                  localStorage.removeItem('pending_payment_tx_ref');
+                }
+              }, 1000);
             }
             return;
           } else {
