@@ -177,38 +177,35 @@ const EmbeddedFlutterwaveModal: React.FC<EmbeddedFlutterwaveModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b">
-          <h2 className="text-2xl font-bold text-gray-900">
-            Complete Your Payment
-          </h2>
-          <button
-            onClick={handleClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-
-        {/* Content */}
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
+      <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
         <div className="p-6">
-          {!paymentUrl ? (
-            // Payment Form
-            <div className="space-y-6">
-              {/* Plan Summary */}
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <h3 className="font-semibold text-lg text-gray-900">{planName}</h3>
-                <p className="text-2xl font-bold text-green-600">
-                  ₦{amount.toLocaleString()}
-                </p>
-              </div>
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-bold text-gray-900">
+              Complete Payment
+            </h2>
+            <button
+              onClick={handleClose}
+              className="text-gray-400 hover:text-gray-600 text-2xl"
+            >
+              ×
+            </button>
+          </div>
 
-              {/* Payment Form */}
-              <div className="space-y-4">
+          <div className="space-y-4">
+            {!paymentUrl ? (
+              // Payment Form
+              <>
+                <div className="p-4 bg-blue-50 rounded-lg">
+                  <h3 className="font-medium text-blue-900">{planName}</h3>
+                  <p className="text-2xl font-bold text-blue-600">
+                    ₦{amount.toLocaleString()}
+                  </p>
+                  <p className="text-sm text-blue-700 mt-1">
+                    Monthly recurring payment • Billed every month
+                  </p>
+                </div>
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Email Address *
@@ -217,160 +214,184 @@ const EmbeddedFlutterwaveModal: React.FC<EmbeddedFlutterwaveModalProps> = ({
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Enter your email address"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="your@email.com"
                     required
                   />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Phone Number
+                    Phone Number *
                   </label>
                   <input
                     type="tel"
                     value={phoneNumber}
                     onChange={(e) => setPhoneNumber(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Enter your phone number (optional)"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="08012345678"
+                    required
                   />
                 </div>
-              </div>
 
-              {/* Error/Success Messages */}
-              {paymentState.status === 'error' && (
-                <div className="bg-red-50 border border-red-200 rounded-md p-4">
-                  <div className="flex">
-                    <svg className="w-5 h-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                    </svg>
+                {/* Error/Success Messages */}
+                {paymentState.status === 'error' && (
+                  <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <p className="text-red-600 text-sm">{paymentState.error}</p>
+                  </div>
+                )}
+
+                {paymentState.status === 'success' && (
+                  <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                    <p className="text-green-600 text-sm">Payment successful! Redirecting...</p>
+                  </div>
+                )}
+
+                {/* Payment Method Notice */}
+                <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <div className="flex items-start">
+                    <div className="flex-shrink-0">
+                      <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                      </svg>
+                    </div>
                     <div className="ml-3">
-                      <p className="text-sm text-red-800">{paymentState.error}</p>
+                      <h3 className="text-sm font-medium text-yellow-800">
+                        Payment Method Notice
+                      </h3>
+                      <div className="mt-1 text-sm text-yellow-700">
+                        <p>⚠️ Card transfers are currently not working. Please use <strong>Bank Transfer</strong> for payment.</p>
+                      </div>
                     </div>
                   </div>
                 </div>
-              )}
 
-              {paymentState.status === 'success' && (
-                <div className="bg-green-50 border border-green-200 rounded-md p-4">
-                  <div className="flex">
-                    <svg className="w-5 h-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                    </svg>
-                    <div className="ml-3">
-                      <p className="text-sm text-green-800">Payment successful! Redirecting...</p>
+                <div className="space-y-3">
+                  <button
+                    onClick={handlePayment}
+                    disabled={loading || !email.trim() || !phoneNumber.trim()}
+                    className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
+                  >
+                    {loading ? (
+                      <>
+                        <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Processing...
+                      </>
+                    ) : (
+                      'Pay with Flutterwave (Embedded)'
+                    )}
+                  </button>
+                </div>
+
+                <div className="text-center">
+                  <p className="text-sm text-gray-500">
+                    🔒 Secure payment powered by Flutterwave
+                  </p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    Payment will load in this window
+                  </p>
+                </div>
+              </>
+            ) : (
+              // Payment Iframe
+              <>
+                <div className="p-4 bg-blue-50 rounded-lg">
+                  <h3 className="font-medium text-blue-900">{planName}</h3>
+                  <p className="text-2xl font-bold text-blue-600">
+                    ₦{amount.toLocaleString()}
+                  </p>
+                  <p className="text-sm text-blue-700 mt-1">
+                    Complete your payment below
+                  </p>
+                </div>
+
+                {/* Payment Status */}
+                {paymentState.status === 'processing' && (
+                  <div className="text-center py-4">
+                    <div className="inline-flex items-center">
+                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Processing payment...
                     </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {/* Action Buttons */}
-              <div className="flex space-x-4 pt-4">
-                <button
-                  onClick={handleClose}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handlePayment}
-                  disabled={loading || !email.trim()}
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  {loading ? 'Processing...' : 'Proceed to Payment'}
-                </button>
-              </div>
-            </div>
-          ) : (
-            // Payment Iframe
-            <div className="space-y-4">
-              <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
-                <div className="flex">
-                  <svg className="w-5 h-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                  </svg>
-                  <div className="ml-3">
-                    <p className="text-sm text-blue-800">
-                      Complete your payment in the secure form below. Do not close this window until payment is complete.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Payment Status */}
-              {paymentState.status === 'processing' && (
-                <div className="text-center py-4">
-                  <div className="inline-flex items-center">
-                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Processing payment...
-                  </div>
-                </div>
-              )}
-
-              {/* Payment Iframe */}
-              <div className="border border-gray-300 rounded-lg overflow-hidden">
-                <iframe
-                  ref={iframeRef}
-                  src={paymentUrl}
-                  className="w-full h-96"
-                  title="Flutterwave Payment"
-                  sandbox="allow-scripts allow-forms allow-same-origin allow-top-navigation allow-popups allow-popups-to-escape-sandbox"
-                  allow="payment; camera; microphone"
-                  onLoad={() => {
-                    console.log('🔄 Payment iframe loaded');
-                    // Disable fingerprinting in the iframe context
-                    try {
-                      if (iframeRef.current?.contentWindow) {
-                        iframeRef.current.contentWindow.FlutterwaveDisableFingerprinting = true;
-                        iframeRef.current.contentWindow.FlutterwaveDisableTracking = true;
-                        iframeRef.current.contentWindow.FlutterwaveDisableFingerprint = true;
+                {/* Payment Iframe */}
+                <div className="border border-gray-300 rounded-lg overflow-hidden">
+                  <iframe
+                    ref={iframeRef}
+                    src={paymentUrl}
+                    className="w-full h-96"
+                    title="Flutterwave Payment"
+                    sandbox="allow-scripts allow-forms allow-same-origin allow-top-navigation allow-popups allow-popups-to-escape-sandbox"
+                    allow="payment; camera; microphone"
+                    onLoad={() => {
+                      console.log('🔄 Payment iframe loaded');
+                      // Disable fingerprinting in the iframe context
+                      try {
+                        if (iframeRef.current?.contentWindow) {
+                          iframeRef.current.contentWindow.FlutterwaveDisableFingerprinting = true;
+                          iframeRef.current.contentWindow.FlutterwaveDisableTracking = true;
+                          iframeRef.current.contentWindow.FlutterwaveDisableFingerprint = true;
+                        }
+                      } catch (error) {
+                        console.log('⚠️ Cannot access iframe content (expected for cross-origin)');
                       }
-                    } catch (error) {
-                      console.log('⚠️ Cannot access iframe content (expected for cross-origin)');
-                    }
-                  }}
-                  onError={(error) => {
-                    console.error('❌ Iframe load error:', error);
-                    setIframeError(true);
-                    setPaymentState({ 
-                      status: 'error', 
-                      error: 'Iframe failed to load. Switching to popup method...' 
-                    });
-                    
-                    // Auto-fallback to popup after 2 seconds
-                    setTimeout(() => {
-                      console.log('🔄 Auto-fallback to popup method');
+                    }}
+                    onError={(error) => {
+                      console.error('❌ Iframe load error:', error);
+                      setIframeError(true);
+                      setPaymentState({ 
+                        status: 'error', 
+                        error: 'Iframe failed to load. Switching to popup method...' 
+                      });
+                      
+                      // Auto-fallback to popup after 2 seconds
+                      setTimeout(() => {
+                        console.log('🔄 Auto-fallback to popup method');
+                        window.open(paymentUrl, '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
+                        onClose();
+                      }, 2000);
+                    }}
+                  />
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex space-x-3">
+                  <button
+                    onClick={handleClose}
+                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                  >
+                    Cancel Payment
+                  </button>
+                  <button
+                    onClick={() => {
+                      console.log('🔄 Manual fallback to popup method');
                       window.open(paymentUrl, '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
                       onClose();
-                    }, 2000);
-                  }}
-                />
-              </div>
+                    }}
+                    className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors"
+                  >
+                    Open in New Tab
+                  </button>
+                </div>
 
-              {/* Action Buttons */}
-              <div className="flex space-x-4 pt-4">
-                <button
-                  onClick={handleClose}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
-                >
-                  Cancel Payment
-                </button>
-                <button
-                  onClick={() => {
-                    console.log('🔄 Manual fallback to popup method');
-                    window.open(paymentUrl, '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
-                    onClose();
-                  }}
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-                >
-                  Open in New Tab
-                </button>
-              </div>
-            </div>
-          )}
+                <div className="text-center">
+                  <p className="text-sm text-gray-500">
+                    🔒 Secure payment powered by Flutterwave
+                  </p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    If payment form doesn't load, click "Open in New Tab"
+                  </p>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </div>
     </div>
