@@ -1,5 +1,9 @@
 import 'core-js/stable';
 import 'regenerator-runtime/runtime';
+// Fetch polyfill must be first for older webviews
+import 'whatwg-fetch';
+// URL polyfill via core-js is already included; ensure presence
+import 'core-js/web/url';
 
 /* Ultra-safe synchronous global polyfills for IG/FB in-app browsers */
 (function () {
@@ -42,6 +46,33 @@ import 'regenerator-runtime/runtime';
         } catch (e) { reject(e); }
       });
     };
+  }
+
+  // IntersectionObserver - minimal no-op fallback to avoid crashes in old Safari/in-app
+  if (typeof window !== 'undefined' && !(window as any).IntersectionObserver) {
+    (window as any).IntersectionObserver = function (this: any, cb: any) {
+      this.observe = function () { try { cb && cb([{ isIntersecting: true }]); } catch {} };
+      this.unobserve = function () {};
+      this.disconnect = function () {};
+    } as any;
+  }
+
+  // TextEncoder/TextDecoder minimal UTF-8 fallback for crypto/supabase usage
+  if (typeof (window as any).TextEncoder === 'undefined') {
+    (window as any).TextEncoder = class {
+      encode(str: string) {
+        try { return new Uint8Array(unescape(encodeURIComponent(str)).split('').map((c) => c.charCodeAt(0))); }
+        catch { return new Uint8Array([]); }
+      }
+    } as any;
+  }
+  if (typeof (window as any).TextDecoder === 'undefined') {
+    (window as any).TextDecoder = class {
+      decode(arr: Uint8Array) {
+        try { return decodeURIComponent(escape(String.fromCharCode.apply(null, Array.from(arr as any)))); }
+        catch { return ''; }
+      }
+    } as any;
   }
 
   // Object.assign
@@ -323,6 +354,9 @@ async function loadApp() {
     // In-app detection and hash bootstrap for HashRouter
     const ua = navigator.userAgent || '';
     const isInApp = /FBAN|FBAV|FBIOS|Instagram|wv\)/i.test(ua);
+    const safariMatch = ua.match(/Version\/(\d+).+Safari/i);
+    const safariMajor = safariMatch ? parseInt(safariMatch[1], 10) : null;
+    const isOldSafari = !!safariMajor && safariMajor <= 12;
     if (isInApp && (!location.hash || location.hash === '#')) {
       location.hash = '/';
     }
@@ -348,35 +382,32 @@ async function loadApp() {
 
     // Dynamic import ReactDOM and App to block hydration until polyfills + DOM ready
     console.log('[Boot] Loading React and App modules...');
+    const App = (await import('./App')).default;
     let createRootFn: any = null;
     let ReactDOMLegacy: any = null;
+    let usingLegacy = false;
     try {
+      if (isOldSafari || isInApp) {
+        throw new Error('Force legacy renderer for old Safari / in-app');
+      }
       const reactDomClient = await import('react-dom/client');
       createRootFn = (reactDomClient as any).createRoot;
-    } catch (e) {
-      console.warn('[Boot] react-dom/client not available, falling back to legacy render');
-      (window as any).__KEA_BOOT_PROGRESS__ = 'fallback-reactdom';
+    } catch {
+      usingLegacy = true;
       ReactDOMLegacy = await import('react-dom');
     }
-    const App = (await import('./App')).default;
-    (window as any).__KEA_BOOT_PROGRESS__ = 'modules-loaded';
+    (window as any).__KEA_BOOT_PROGRESS__ = usingLegacy ? 'legacy-renderer' : 'modules-loaded';
+    console.log(usingLegacy ? '🟡 legacy render' : '✅ modern render');
 
     const rootEl = (document.getElementById('root') as HTMLElement) || document.body.appendChild(Object.assign(document.createElement('div'), { id: 'root' }));
-    // Avoid StrictMode in in-app browsers to reduce double-invoke quirks
-    const uaRender = navigator.userAgent || '';
-    const isInAppRender = /FBAN|FBAV|FBIOS|Instagram|wv\)/i.test(uaRender);
     try {
-      if (createRootFn) {
+      if (createRootFn && !usingLegacy) {
         const root = createRootFn(rootEl);
-        if (isInAppRender) {
-          root.render(<App />);
-        } else {
-          root.render(
-            <React.StrictMode>
-              <App />
-            </React.StrictMode>
-          );
-        }
+root.render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
+);
       } else if (ReactDOMLegacy && (ReactDOMLegacy as any).render) {
         (ReactDOMLegacy as any).render(<App />, rootEl);
       } else {
@@ -384,23 +415,41 @@ async function loadApp() {
       }
     } catch (renderErr) {
       console.error('[Render Error]', renderErr);
-      try { (window as any).__KEA_HYDRATION_STATUS__ = 'render-error'; } catch {}
+      (window as any).__KEA_HYDRATION_STATUS__ = 'render-error';
       throw renderErr;
     }
 
-    // Post-render hydration verification
-    setTimeout(() => {
+    // Post-render hydration verification + fallback to client-only render
+    setTimeout(async () => {
       const el = document.getElementById('root');
       if (!el) {
         console.error('[Hydration Error] Root element not found in DOM after render.');
         (window as any).__KEA_HYDRATION_STATUS__ = 'no-root-after-render';
-      } else if (!el.firstChild) {
+        return;
+      }
+      if (!el.firstChild) {
         console.error('[Hydration Error] Root element has no children after render (React did not mount).');
         (window as any).__KEA_HYDRATION_STATUS__ = 'no-children-after-render';
       } else {
-        console.log('[Hydration OK] React mounted content inside #root.');
         (window as any).__KEA_HYDRATION_STATUS__ = 'ok';
+        return;
       }
+
+      // If not ok within 2s from boot, force client-only legacy render
+      setTimeout(async () => {
+        if ((window as any).__KEA_HYDRATION_STATUS__ !== 'ok') {
+          try {
+            const ReactDOM = await import('react-dom');
+            el.innerHTML = '';
+            (ReactDOM as any).render(<App />, el);
+            (window as any).__KEA_HYDRATION_STATUS__ = 'client-only-fallback';
+            console.warn('⚠️ Hydration failed, re-rendered client-only.');
+          } catch (e) {
+            console.error('[Fallback Render Error]', e);
+            (window as any).__KEA_HYDRATION_STATUS__ = 'fallback-render-error';
+          }
+        }
+      }, 1500);
     }, 500);
   } catch (err) {
     console.error('❌ Failed to load app', err);
