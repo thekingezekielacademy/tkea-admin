@@ -1,3 +1,6 @@
+import 'core-js/stable';
+import 'regenerator-runtime/runtime';
+
 /* Ultra-safe synchronous global polyfills for IG/FB in-app browsers */
 (function () {
   // fetch (synchronous minimal fallback)
@@ -130,15 +133,9 @@
 
 import './utils/polyfills';
 import React from 'react';
-import ReactDOM from 'react-dom/client';
 import './index.css';
 import 'plyr/dist/plyr.css';
-import App from './App';
 import reportWebVitals from './reportWebVitals';
-
-// Comprehensive Safari polyfills for older versions
-import 'core-js/stable';
-import 'regenerator-runtime/runtime';
 
 // Additional polyfills for Safari < 12 compatibility
 if (typeof window !== 'undefined') {
@@ -316,30 +313,90 @@ window.onunhandledrejection = function (event) {
   }
 };
 
-const root = ReactDOM.createRoot(
-  (document.getElementById('root') as HTMLElement) || document.body.appendChild(Object.assign(document.createElement('div'), { id: 'root' }))
-);
-root.render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
-);
+async function loadApp() {
+  try {
+    // Ensure DOM is ready
+    if (document.readyState === 'loading') {
+      await new Promise<void>((resolve) => document.addEventListener('DOMContentLoaded', () => resolve(), { once: true }));
+    }
+
+    // In-app detection and hash bootstrap for HashRouter
+    const ua = navigator.userAgent || '';
+    const isInApp = /FBAN|FBAV|FBIOS|Instagram|wv\)/i.test(ua);
+    if (isInApp && (!location.hash || location.hash === '#')) {
+      location.hash = '/';
+    }
+
+    console.log('✅ Polyfills Loaded');
+    (window as any).__KEA_BOOT_PROGRESS__ = 'polyfills-ready';
+
+    // Conditional Service Worker: skip in in-app browsers
+    if ('serviceWorker' in navigator) {
+      if (isInApp) {
+        try {
+          const regs = await navigator.serviceWorker.getRegistrations();
+          await Promise.all(regs.map((r) => r.unregister().catch(() => {})));
+        } catch {}
+      } else {
+        try {
+          await navigator.serviceWorker.register('/sw.js');
+        } catch (e) {
+          console.warn('Service worker registration skipped/failed:', e);
+        }
+      }
+    }
+
+    // Dynamic import ReactDOM and App to block hydration until polyfills + DOM ready
+    console.log('[Boot] Loading React and App modules...');
+    const { createRoot } = await import('react-dom/client');
+    const App = (await import('./App')).default;
+    (window as any).__KEA_BOOT_PROGRESS__ = 'modules-loaded';
+
+    const rootEl = (document.getElementById('root') as HTMLElement) || document.body.appendChild(Object.assign(document.createElement('div'), { id: 'root' }));
+    const root = createRoot(rootEl);
+    try {
+      root.render(
+        <React.StrictMode>
+          <App />
+        </React.StrictMode>
+      );
+    } catch (renderErr) {
+      console.error('[Render Error]', renderErr);
+      (window as any).__KEA_HYDRATION_STATUS__ = 'render-error';
+      throw renderErr;
+    }
+
+    // Post-render hydration verification
+    setTimeout(() => {
+      const el = document.getElementById('root');
+      if (!el) {
+        console.error('[Hydration Error] Root element not found in DOM after render.');
+        (window as any).__KEA_HYDRATION_STATUS__ = 'no-root-after-render';
+      } else if (!el.firstChild) {
+        console.error('[Hydration Error] Root element has no children after render (React did not mount).');
+        (window as any).__KEA_HYDRATION_STATUS__ = 'no-children-after-render';
+      } else {
+        console.log('[Hydration OK] React mounted content inside #root.');
+        (window as any).__KEA_HYDRATION_STATUS__ = 'ok';
+      }
+    }, 500);
+  } catch (err) {
+    console.error('❌ Failed to load app', err);
+    try { (window as any).__KEA_HYDRATION_STATUS__ = 'boot-error'; } catch {}
+    // Show a small non-intrusive banner instead of replacing the whole page
+    try {
+      const warn = document.createElement('div');
+      warn.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#111;color:#fff;padding:10px;font:12px/1.4 monospace;z-index:99999;text-align:center;';
+      warn.textContent = 'Browser encountered a boot error. Please refresh or open in external browser.';
+      document.body.appendChild(warn);
+    } catch {}
+  }
+}
+
+// Kick off app load
+loadApp();
 
 // If you want to start measuring performance in your app, pass a function
 // to log results (for example: reportWebVitals(console.log))
 // or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
 reportWebVitals();
-// Post-render hydration verification
-setTimeout(() => {
-  const el = document.getElementById('root');
-  if (!el) {
-    console.error('[Hydration Error] Root element not found in DOM after render.');
-    (window as any).__KEA_HYDRATION_STATUS__ = 'no-root-after-render';
-  } else if (!el.firstChild) {
-    console.error('[Hydration Error] Root element has no children after render (React did not mount).');
-    (window as any).__KEA_HYDRATION_STATUS__ = 'no-children-after-render';
-  } else {
-    console.log('[Hydration OK] React mounted content inside #root.');
-    (window as any).__KEA_HYDRATION_STATUS__ = 'ok';
-  }
-}, 500);
