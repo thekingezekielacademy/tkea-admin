@@ -348,21 +348,43 @@ async function loadApp() {
 
     // Dynamic import ReactDOM and App to block hydration until polyfills + DOM ready
     console.log('[Boot] Loading React and App modules...');
-    const { createRoot } = await import('react-dom/client');
+    let createRootFn: any = null;
+    let ReactDOMLegacy: any = null;
+    try {
+      const reactDomClient = await import('react-dom/client');
+      createRootFn = (reactDomClient as any).createRoot;
+    } catch (e) {
+      console.warn('[Boot] react-dom/client not available, falling back to legacy render');
+      (window as any).__KEA_BOOT_PROGRESS__ = 'fallback-reactdom';
+      ReactDOMLegacy = await import('react-dom');
+    }
     const App = (await import('./App')).default;
     (window as any).__KEA_BOOT_PROGRESS__ = 'modules-loaded';
 
     const rootEl = (document.getElementById('root') as HTMLElement) || document.body.appendChild(Object.assign(document.createElement('div'), { id: 'root' }));
-    const root = createRoot(rootEl);
+    // Avoid StrictMode in in-app browsers to reduce double-invoke quirks
+    const uaRender = navigator.userAgent || '';
+    const isInAppRender = /FBAN|FBAV|FBIOS|Instagram|wv\)/i.test(uaRender);
     try {
-      root.render(
-        <React.StrictMode>
-          <App />
-        </React.StrictMode>
-      );
+      if (createRootFn) {
+        const root = createRootFn(rootEl);
+        if (isInAppRender) {
+          root.render(<App />);
+        } else {
+          root.render(
+            <React.StrictMode>
+              <App />
+            </React.StrictMode>
+          );
+        }
+      } else if (ReactDOMLegacy && (ReactDOMLegacy as any).render) {
+        (ReactDOMLegacy as any).render(<App />, rootEl);
+      } else {
+        throw new Error('No React DOM renderer available');
+      }
     } catch (renderErr) {
       console.error('[Render Error]', renderErr);
-      (window as any).__KEA_HYDRATION_STATUS__ = 'render-error';
+      try { (window as any).__KEA_HYDRATION_STATUS__ = 'render-error'; } catch {}
       throw renderErr;
     }
 
