@@ -126,8 +126,15 @@ const EmbeddedFlutterwaveModal: React.FC<EmbeddedFlutterwaveModalProps> = ({
         // Store transaction reference
         localStorage.setItem('pending_payment_tx_ref', tx_ref);
         
-        // Set payment URL to load in iframe
-        setPaymentUrl(result.data.link);
+        // Set payment URL to load in iframe with fingerprinting disabled
+        const paymentUrlWithParams = new URL(result.data.link);
+        paymentUrlWithParams.searchParams.set('disable_fingerprint', 'true');
+        paymentUrlWithParams.searchParams.set('disable_tracking', 'true');
+        paymentUrlWithParams.searchParams.set('disable_analytics', 'true');
+        paymentUrlWithParams.searchParams.set('_t', Date.now().toString());
+        paymentUrlWithParams.searchParams.set('_v', '1.0.0');
+        
+        setPaymentUrl(paymentUrlWithParams.toString());
         setPaymentState({ status: 'processing' });
         
         // Set a timeout to detect if iframe fails to load
@@ -328,8 +335,9 @@ const EmbeddedFlutterwaveModal: React.FC<EmbeddedFlutterwaveModalProps> = ({
                     src={paymentUrl}
                     className="w-full h-96"
                     title="Flutterwave Payment"
-                    sandbox="allow-scripts allow-forms allow-same-origin allow-top-navigation allow-popups allow-popups-to-escape-sandbox"
+                    sandbox="allow-scripts allow-forms allow-same-origin allow-top-navigation allow-popups allow-popups-to-escape-sandbox allow-modals"
                     allow="payment; camera; microphone"
+                    referrerPolicy="no-referrer"
                     onLoad={() => {
                       console.log('🔄 Payment iframe loaded');
                       // Disable fingerprinting in the iframe context
