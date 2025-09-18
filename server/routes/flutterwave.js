@@ -1,6 +1,7 @@
 const express = require('express');
 const axios = require('axios');
 const router = express.Router();
+const subscriptionService = require('../services/subscriptionService');
 const crypto = require('crypto');
 const rateLimit = require('express-rate-limit');
 
@@ -252,17 +253,22 @@ router.post('/initialize-payment', paymentLimiter, validatePaymentInput, async (
 // Verify Flutterwave payment
 router.post('/verify-payment', async (req, res) => {
   try {
-    const { tx_ref } = req.body;
-    
-    if (!tx_ref) {
+    const { tx_ref, reference, transaction_id } = req.body;
+    const ref = tx_ref || reference || transaction_id;
+    if (!ref) {
       return res.status(400).json({ 
         success: false, 
         message: 'Transaction reference is required' 
       });
     }
 
-    // Call Flutterwave API to verify payment
-    const response = await fetch(`https://api.flutterwave.com/v3/transactions/${tx_ref}/verify`, {
+    // Choose correct verification endpoint (by id vs by reference)
+    const isNumericId = /^\d+$/.test(String(ref));
+    const verifyUrl = isNumericId
+      ? `https://api.flutterwave.com/v3/transactions/${ref}/verify`
+      : `https://api.flutterwave.com/v3/transactions/verify_by_reference?tx_ref=${encodeURIComponent(ref)}`;
+
+    const response = await fetch(verifyUrl, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${FLUTTERWAVE_SECRET_KEY}`,
@@ -272,7 +278,7 @@ router.post('/verify-payment', async (req, res) => {
 
     const result = await response.json();
 
-    if (result.status === 'success' && result.data.status === 'successful') {
+    if (result.status === 'success' && result.data && (result.data.status === 'successful' || result.data.processor_response === 'Approved')) {
       // Payment is successful
       const paymentData = {
         tx_ref: result.data.tx_ref,
@@ -285,6 +291,56 @@ router.post('/verify-payment', async (req, res) => {
       };
       
       console.log('✅ Payment verified successfully:', paymentData.tx_ref);
+
+      // Persist subscription/payment to Supabase
+      try {
+        const supabase = req.app.locals.supabase;
+        const email = paymentData.customerEmail;
+
+        // Find user by email
+        const { data: user, error: userError } = await supabase
+          .from('profiles')
+          .select('id, email')
+          .eq('email', email)
+          .single();
+
+        if (userError || !user) {
+          console.error('❌ User not found for verified payment:', email, userError);
+        } else {
+          // Map Flutterwave data into our existing schema expectations
+          const planName = (paymentData.metadata && (paymentData.metadata.plan_name || paymentData.metadata.plan)) || 'Monthly Membership';
+          const amountKobo = Math.round(Number(paymentData.amount) * 100);
+
+          const paystackLike = {
+            subscription_code: paymentData.tx_ref || result.data.id || result.data.flw_ref,
+            reference: paymentData.tx_ref || result.data.id || result.data.flw_ref,
+            customer_code: result.data.customer && (result.data.customer.id || result.data.customer.email) || user.id,
+            plan_name: planName,
+            amount: Number.isFinite(amountKobo) ? amountKobo : 250000
+          };
+
+          try {
+            await subscriptionService.createSubscription(user.id, paystackLike);
+          } catch (createErr) {
+            console.warn('⚠️ createSubscription failed, attempting status update:', createErr?.message || createErr);
+            // If already exists, mark existing as active by reference/subscription_code
+            try {
+              const { data: existing, error: findErr } = await supabase
+                .from('user_subscriptions')
+                .select('id')
+                .eq('paystack_subscription_id', paystackLike.subscription_code)
+                .single();
+              if (!findErr && existing) {
+                await subscriptionService.updateSubscriptionStatus(existing.id, { status: 'active' });
+              }
+            } catch (updateErr) {
+              console.error('❌ Failed to update existing subscription status:', updateErr);
+            }
+          }
+        }
+      } catch (persistErr) {
+        console.error('❌ Error persisting verified payment:', persistErr);
+      }
       
       res.json({ 
         success: true, 
@@ -532,14 +588,60 @@ router.post('/webhook', webhookLimiter, verifyWebhookSignature, async (req, res)
     
     // Handle different webhook events
     switch (event.event) {
-      case 'charge.completed':
+      case 'charge.completed': {
         // Payment was successful
         const payment = event.data;
-        console.log('✅ Payment completed:', payment.tx_ref);
-        
-        // TODO: Update user subscription in database
-        // await processSuccessfulPayment(payment);
+        console.log('✅ Payment completed (webhook):', payment.tx_ref);
+        try {
+          const supabase = req.app.locals.supabase;
+          const email = payment.customer?.email;
+          if (!email) break;
+
+          // Find user by email
+          const { data: user, error: userError } = await supabase
+            .from('profiles')
+            .select('id, email')
+            .eq('email', email)
+            .single();
+
+          if (userError || !user) {
+            console.error('❌ User not found for webhook payment:', email, userError);
+            break;
+          }
+
+          // Build payload compatible with subscriptionService
+          const planName = (payment.meta && (payment.meta.plan_name || payment.meta.plan)) || 'Monthly Membership';
+          const amountKobo = Math.round(Number(payment.amount) * 100);
+          const paystackLike = {
+            subscription_code: payment.tx_ref || payment.id || payment.flw_ref,
+            reference: payment.tx_ref || payment.id || payment.flw_ref,
+            customer_code: payment.customer?.id || payment.customer?.email || user.id,
+            plan_name: planName,
+            amount: Number.isFinite(amountKobo) ? amountKobo : 250000
+          };
+
+          try {
+            await subscriptionService.createSubscription(user.id, paystackLike);
+          } catch (createErr) {
+            console.warn('⚠️ Webhook createSubscription failed, attempting status update:', createErr?.message || createErr);
+            try {
+              const { data: existing, error: findErr } = await supabase
+                .from('user_subscriptions')
+                .select('id')
+                .eq('paystack_subscription_id', paystackLike.subscription_code)
+                .single();
+              if (!findErr && existing) {
+                await subscriptionService.updateSubscriptionStatus(existing.id, { status: 'active' });
+              }
+            } catch (updateErr) {
+              console.error('❌ Webhook failed to update existing subscription status:', updateErr);
+            }
+          }
+        } catch (err) {
+          console.error('❌ Webhook persistence error:', err);
+        }
         break;
+      }
         
       case 'charge.failed':
         // Payment failed
