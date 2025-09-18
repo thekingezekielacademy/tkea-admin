@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, HashRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { SidebarProvider } from './contexts/SidebarContext';
 import { initializeServiceWorker, clearAllCaches } from './utils/serviceWorker';
@@ -265,7 +265,12 @@ function App() {
     <SafeErrorBoundary>
       <AuthProvider>
         <SidebarProvider>
-          <Router>
+          {(() => {
+            const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
+            const isInApp = /FBAN|FBAV|FBIOS|Instagram|wv\)/i.test(ua);
+            const RouterComponent: any = isInApp ? HashRouter : BrowserRouter;
+            return (
+              <RouterComponent>
             <FacebookPixelProvider />
             <ScrollToTop />
             <div className="App">
@@ -312,7 +317,9 @@ function App() {
             </main>
             <Footer />
           </div>
-        </Router>
+              </RouterComponent>
+            );
+          })()}
       </SidebarProvider>
     </AuthProvider>
   </SafeErrorBoundary>

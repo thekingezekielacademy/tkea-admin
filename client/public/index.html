@@ -11,6 +11,47 @@
     
     <!-- Disable Flutterwave Fingerprinting and Prevent Cancel Popup -->
     <script>
+      // Force-clear SW and caches early for IG/FB in-app browsers to avoid stale SW blank screens
+      (function() {
+        try {
+          var ua = navigator.userAgent || '';
+          var isInApp = /FBAN|FBAV|FBIOS|Instagram/i.test(ua);
+          if (isInApp) {
+            if ('serviceWorker' in navigator) {
+              navigator.serviceWorker.getRegistrations().then(function(regs){
+                regs.forEach(function(r){ r.unregister().catch(function(){}); });
+              }).catch(function(){});
+            }
+            if ('caches' in window) {
+              caches.keys().then(function(keys){
+                return Promise.all(keys.map(function(k){ return caches.delete(k); }));
+              }).catch(function(){});
+            }
+            // Add a cache-busting query to subsequent resource loads
+            (function(addBust){
+              var origCreateElement = document.createElement;
+              document.createElement = function(tag){
+                var el = origCreateElement.call(document, tag);
+                if (tag === 'script' || tag === 'link') {
+                  var setAttr = el.setAttribute;
+                  el.setAttribute = function(name, value){
+                    try {
+                      if ((name === 'src' || name === 'href') && typeof value === 'string' && value.indexOf('http') === 0) {
+                        var url = new URL(value);
+                        url.searchParams.set('_inapp', Date.now().toString());
+                        value = url.toString();
+                      }
+                    } catch(e) {}
+                    return setAttr.call(this, name, value);
+                  };
+                }
+                return el;
+              };
+            })();
+          }
+        } catch (e) {}
+      })();
+
       // Disable all Flutterwave tracking and fingerprinting
       window.FlutterwaveDisableFingerprinting = true;
       window.FlutterwaveDisableTracking = true;
