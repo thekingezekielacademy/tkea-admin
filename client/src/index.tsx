@@ -379,6 +379,34 @@ async function loadApp() {
     console.log('✅ Polyfills Loaded');
     (window as any).__KEA_BOOT_PROGRESS__ = 'polyfills-ready';
 
+    // Pre-flight: force legacy client-only render for old Safari / IG/FB before any dynamic imports
+    if (isOldSafari || isInApp) {
+      try {
+        const rootEl = (document.getElementById('root') as HTMLElement) || document.body.appendChild(Object.assign(document.createElement('div'), { id: 'root' }));
+        let ReactDOM: any = null;
+        try { ReactDOM = require('react-dom'); } catch { ReactDOM = await import('react-dom'); }
+        let AppMod: any = null;
+        try { AppMod = require('./App').default; } catch { AppMod = (await import('./App')).default; }
+        rootEl.innerHTML = '';
+        (ReactDOM as any).render(<AppMod />, rootEl);
+        (window as any).__KEA_HYDRATION_STATUS__ = 'client-only-legacy-preflight';
+        (window as any).__KEA_BOOT_MODE__ = 'legacy-preflight';
+        console.log('🟡 Forced Legacy Path (Pre-flight)');
+        // Ensure SW is disabled in mini browsers
+        if ('serviceWorker' in navigator && isInApp) {
+          try {
+            const regs = await navigator.serviceWorker.getRegistrations();
+            await Promise.all(regs.map((r) => r.unregister().catch(() => {})));
+            console.log('🛑 SW disabled in mini browser');
+          } catch {}
+        }
+        return;
+      } catch (e) {
+        console.error('[Pre-flight Legacy Error]', e);
+        // Continue to modern flow if pre-flight fails
+      }
+    }
+
     // Conditional Service Worker: skip in in-app browsers
     if ('serviceWorker' in navigator) {
       if (isInApp) {
