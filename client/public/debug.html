@@ -392,11 +392,20 @@
                 frame.referrerPolicy = 'no-referrer-when-downgrade';
                 frame.src = '/#/';
 
-                frame.onload = () => {
+                frame.onload = function() {
                     try {
-                        const w = frame.contentWindow;
-                        const poly = w && (w as any).__KEA_POLYFILLS_LOADED__;
-                        const hyd = w && (w as any).__KEA_HYDRATION_STATUS__;
+                        var w = frame.contentWindow;
+                        var poly = false;
+                        var hyd = null;
+                        try {
+                            if (w && typeof (w as any) === 'object') {
+                                // Avoid TS casts; access defensively
+                                poly = !!(w && (w as any)['__KEA_POLYFILLS_LOADED__']);
+                                hyd = w && (w as any)['__KEA_HYDRATION_STATUS__'];
+                            }
+                        } catch (e) {
+                            // ignore access issues
+                        }
                         addOutput(out, `Polyfills Loaded: ${poly ? '✅ yes' : '❌ no'}`, poly ? 'success' : 'error');
                         if (hyd) {
                             if (hyd === 'ok') addOutput(out, 'Hydration: ✅ OK', 'success');
