@@ -25,11 +25,11 @@
           // Unregister any existing Service Workers in in-app browsers to avoid stale shells
           if (isInApp) {
             var reloadKey = '__KEA_SW_FIX__';
-            var alreadyFixed = false;
-            try { alreadyFixed = !!(window.sessionStorage && sessionStorage.getItem(reloadKey)); } catch (e) {}
+            var alreadyReloaded = false;
+            try { alreadyReloaded = !!(window.sessionStorage && sessionStorage.getItem(reloadKey)); } catch (e) {}
 
             var doOneTimeReload = function(){
-              if (!alreadyFixed) {
+              if (!alreadyReloaded) {
                 try { if (window.sessionStorage) sessionStorage.setItem(reloadKey, '1'); } catch (e) {}
                 var href = location.href;
                 var sep = href.indexOf('?') === -1 ? '?' : '&';
@@ -40,7 +40,10 @@
             if ('serviceWorker' in navigator) {
               navigator.serviceWorker.getRegistrations().then(function(regs){
                 for (var i = 0; i < regs.length; i++) { try { regs[i].unregister(); } catch (e) {} }
-                // Force a one-time reload to drop SW control
+                // Best-effort clear caches to drop stale shell
+                if ('caches' in window) {
+                  caches.keys().then(function(keys){ keys.forEach(function(k){ try { caches.delete(k); } catch (e) {} }); });
+                }
                 doOneTimeReload();
               }).catch(function(){ doOneTimeReload(); });
             } else {
