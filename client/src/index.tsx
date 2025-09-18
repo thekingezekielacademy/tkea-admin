@@ -1,3 +1,132 @@
+/* Ultra-safe synchronous global polyfills for IG/FB in-app browsers */
+(function () {
+  // fetch (synchronous minimal fallback)
+  if (!(window as any).fetch) {
+    (window as any).fetch = function (input: any, init?: any) {
+      return new Promise((resolve, reject) => {
+        try {
+          const url = typeof input === 'string' ? input : input?.url;
+          const method = init?.method || 'GET';
+          const headers = init?.headers || {};
+          const body = init?.body;
+
+          const xhr = new XMLHttpRequest();
+          xhr.open(method, url, true);
+
+          if (headers && typeof headers === 'object') {
+            Object.keys(headers).forEach((k) => xhr.setRequestHeader(k, (headers as any)[k]));
+          }
+
+          xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4) {
+              const response = {
+                ok: xhr.status >= 200 && xhr.status < 300,
+                status: xhr.status,
+                statusText: xhr.statusText,
+                url,
+                text: () => Promise.resolve(xhr.responseText),
+                json: () => {
+                  try { return Promise.resolve(JSON.parse(xhr.responseText)); } catch (e) { return Promise.reject(e); }
+                },
+                headers: { get: (name: string) => xhr.getResponseHeader(name) }
+              } as any;
+              resolve(response);
+            }
+          };
+
+          xhr.onerror = () => reject(new Error('Network error'));
+          if (body != null) xhr.send(body); else xhr.send();
+        } catch (e) { reject(e); }
+      });
+    };
+  }
+
+  // Object.assign
+  if (!Object.assign) {
+    Object.assign = function (target: any, ...sources: any[]) {
+      if (target == null) throw new TypeError('Cannot convert undefined or null to object');
+      const to = Object(target);
+      for (let i = 0; i < sources.length; i++) {
+        const src = sources[i];
+        if (src != null) {
+          for (const key in src) {
+            if (Object.prototype.hasOwnProperty.call(src, key)) {
+              (to as any)[key] = src[key];
+            }
+          }
+        }
+      }
+      return to;
+    } as any;
+  }
+
+  // Array.prototype.includes
+  if (!Array.prototype.includes) {
+    Object.defineProperty(Array.prototype, 'includes', {
+      value: function (searchElement: any, fromIndex?: number) {
+        if (this == null) throw new TypeError('"this" is null or not defined');
+        const o = Object(this) as any;
+        const len = o.length >>> 0;
+        if (len === 0) return false;
+        let n = fromIndex | 0;
+        let k = Math.max(n >= 0 ? n : len - Math.abs(n), 0);
+        while (k < len) {
+          if (o[k] === searchElement || (Number.isNaN && Number.isNaN(o[k]) && Number.isNaN(searchElement))) return true;
+          k++;
+        }
+        return false;
+      },
+      configurable: true,
+      writable: true
+    });
+  }
+
+  // String.prototype.startsWith
+  if (!String.prototype.startsWith) {
+    Object.defineProperty(String.prototype, 'startsWith', {
+      value: function (search: string, pos?: number) {
+        const position = pos ? Number(pos) : 0;
+        return this.substring(position, position + String(search).length) === String(search);
+      },
+      configurable: true,
+      writable: true
+    });
+  }
+
+  // String.prototype.endsWith
+  if (!String.prototype.endsWith) {
+    Object.defineProperty(String.prototype, 'endsWith', {
+      value: function (search: string, this_len?: number) {
+        const str = String(this);
+        const end = this_len === undefined || this_len > str.length ? str.length : this_len;
+        const start = end - String(search).length;
+        return str.substring(start, end) === String(search);
+      },
+      configurable: true,
+      writable: true
+    });
+  }
+
+  // Intl minimal fallback (NumberFormat/DateTimeFormat)
+  if (!(window as any).Intl) {
+    (window as any).Intl = {
+      NumberFormat: function (locale?: string, options?: any) {
+        return { format: (n: number) => (typeof (n as any)?.toLocaleString === 'function' ? n.toLocaleString(locale as any, options) : String(n)) } as any;
+      },
+      DateTimeFormat: function (locale?: string, options?: any) {
+        return {
+          format: (d: Date | number | string) => {
+            try { const date = d instanceof Date ? d : new Date(d); return (date as any)?.toLocaleString ? date.toLocaleString(locale as any, options) : String(date); }
+            catch { return String(d); }
+          }
+        } as any;
+      }
+    } as any;
+  }
+
+  console.log('[Polyfills Loaded]');
+})();
+
 import './utils/polyfills';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
@@ -187,7 +316,7 @@ window.onunhandledrejection = function (event) {
 };
 
 const root = ReactDOM.createRoot(
-  document.getElementById('root') as HTMLElement
+  (document.getElementById('root') as HTMLElement) || document.body.appendChild(Object.assign(document.createElement('div'), { id: 'root' }))
 );
 root.render(
   <React.StrictMode>
@@ -199,3 +328,14 @@ root.render(
 // to log results (for example: reportWebVitals(console.log))
 // or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
 reportWebVitals();
+// Post-render hydration verification
+setTimeout(() => {
+  const el = document.getElementById('root');
+  if (!el) {
+    console.error('[Hydration Error] Root element not found in DOM after render.');
+  } else if (!el.firstChild) {
+    console.error('[Hydration Error] Root element has no children after render (React did not mount).');
+  } else {
+    console.log('[Hydration OK] React mounted content inside #root.');
+  }
+}, 500);
