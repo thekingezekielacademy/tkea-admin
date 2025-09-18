@@ -158,6 +158,21 @@ import 'core-js/web/url';
     } as any;
   }
 
+  // crypto.getRandomValues fallback (non-crypto safe, but prevents boot crashes)
+  try {
+    if (typeof (window as any).crypto === 'undefined') {
+      (window as any).crypto = {} as any;
+    }
+    if (!(window as any).crypto.getRandomValues) {
+      (window as any).crypto.getRandomValues = function (arr: Uint8Array) {
+        for (let i = 0; i < arr.length; i++) {
+          arr[i] = Math.floor(Math.random() * 256);
+        }
+        return arr;
+      };
+    }
+  } catch {}
+
   console.log('[Polyfills Loaded]');
   (window as any).__KEA_POLYFILLS_LOADED__ = true;
 })();
@@ -382,7 +397,27 @@ async function loadApp() {
 
     // Dynamic import ReactDOM and App to block hydration until polyfills + DOM ready
     console.log('[Boot] Loading React and App modules...');
-    const App = (await import('./App')).default;
+    let AppMod: any = null;
+    try {
+      AppMod = (await import('./App')).default;
+    } catch (e) {
+      console.error('[App Import Error]', e);
+      (window as any).__KEA_BOOT_ERROR__ = 'app-import';
+      // Retry once after a tick
+      try {
+        await new Promise((r) => setTimeout(r, 200));
+        AppMod = (await import('./App')).default;
+      } catch (e2) {
+        console.error('[App Import Retry Failed]', e2);
+        (window as any).__KEA_HYDRATION_STATUS__ = 'boot-error';
+        // Show banner and abort boot (avoid replacing body)
+        const warn = document.createElement('div');
+        warn.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#111;color:#fff;padding:10px;font:12px/1.4 monospace;z-index:99999;text-align:center;';
+        warn.textContent = 'App failed to load. Please refresh or open in external browser.';
+        try { document.body.appendChild(warn); } catch {}
+        return;
+      }
+    }
     let createRootFn: any = null;
     let ReactDOMLegacy: any = null;
     let usingLegacy = false;
@@ -405,11 +440,11 @@ async function loadApp() {
         const root = createRootFn(rootEl);
 root.render(
   <React.StrictMode>
-    <App />
+            <AppMod />
   </React.StrictMode>
 );
       } else if (ReactDOMLegacy && (ReactDOMLegacy as any).render) {
-        (ReactDOMLegacy as any).render(<App />, rootEl);
+        (ReactDOMLegacy as any).render(<AppMod />, rootEl);
       } else {
         throw new Error('No React DOM renderer available');
       }
@@ -441,7 +476,7 @@ root.render(
           try {
             const ReactDOM = await import('react-dom');
             el.innerHTML = '';
-            (ReactDOM as any).render(<App />, el);
+            (ReactDOM as any).render(<AppMod />, el);
             (window as any).__KEA_HYDRATION_STATUS__ = 'client-only-fallback';
             console.warn('⚠️ Hydration failed, re-rendered client-only.');
           } catch (e) {
