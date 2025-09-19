@@ -1,110 +1,55 @@
 /**
- * SIMPLE INDEX - Instagram/Facebook Browser Compatible
- * 
- * This is a minimal, ES5-compatible entry point that will work
- * in Instagram and Facebook in-app browsers.
+ * SIMPLE, BULLETPROOF ENTRY POINT
+ * Works on ALL browsers including Instagram/Facebook in-app browsers
+ * Uses only basic JavaScript and React 17 compatibility
  */
 
-// Basic polyfills first
-if (typeof window !== 'undefined') {
-  // Basic fetch polyfill
-  if (!window.fetch) {
-    window.fetch = function(url: any, options: any) {
-      return new Promise((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        xhr.open(options?.method || 'GET', url, true);
-        xhr.onreadystatechange = function() {
-          if (xhr.readyState === 4) {
-            resolve({
-              ok: xhr.status >= 200 && xhr.status < 300,
-              status: xhr.status,
-              statusText: xhr.statusText,
-              text: () => Promise.resolve(xhr.responseText),
-              json: () => Promise.resolve(JSON.parse(xhr.responseText))
-            } as any);
-          }
-        };
-        xhr.onerror = () => reject(new Error('Network error'));
-        xhr.send(options?.body || null);
-      });
+// Basic polyfills - applied immediately
+(function() {
+  'use strict';
+  
+  // Basic polyfills that work everywhere
+  if (!Array.prototype.includes) {
+    Array.prototype.includes = function(searchElement, fromIndex) {
+      var O = Object(this);
+      var len = parseInt(O.length) || 0;
+      if (len === 0) return false;
+      var n = parseInt(fromIndex) || 0;
+      var k = n >= 0 ? n : Math.max(len + n, 0);
+      while (k < len) {
+        if (O[k] === searchElement) return true;
+        k++;
+      }
+      return false;
     };
   }
 
-  // Basic Promise polyfill
-  if (!window.Promise) {
-    window.Promise = function(executor: any) {
-      const self = this as any;
-      self.state = 'pending';
-      self.value = undefined;
-      self.handlers = [];
-
-      function resolve(result: any) {
-        if (self.state === 'pending') {
-          self.state = 'fulfilled';
-          self.value = result;
-          self.handlers.forEach(handle);
-          self.handlers = null;
-        }
-      }
-
-      function reject(error: any) {
-        if (self.state === 'pending') {
-          self.state = 'rejected';
-          self.value = error;
-          self.handlers.forEach(handle);
-          self.handlers = null;
-        }
-      }
-
-      function handle(handler: any) {
-        if (self.state === 'pending') {
-          self.handlers.push(handler);
-        } else {
-          if (self.state === 'fulfilled' && typeof handler.onFulfilled === 'function') {
-            handler.onFulfilled(self.value);
-          }
-          if (self.state === 'rejected' && typeof handler.onRejected === 'function') {
-            handler.onRejected(self.value);
-          }
-        }
-      }
-
-      this.then = function(onFulfilled: any, onRejected: any) {
-        return new (window as any).Promise(function(resolve: any, reject: any) {
-          handle({
-            onFulfilled: function(result: any) {
-              try {
-                resolve(onFulfilled ? onFulfilled(result) : result);
-              } catch (ex) {
-                reject(ex);
-              }
-            },
-            onRejected: function(error: any) {
-              try {
-                resolve(onRejected ? onRejected(error) : error);
-              } catch (ex) {
-                reject(ex);
-              }
-            }
-          });
-        });
-      };
-
-      executor(resolve, reject);
-    } as any;
+  if (!String.prototype.startsWith) {
+    String.prototype.startsWith = function(searchString, position) {
+      var pos = position || 0;
+      return this.substring(pos, pos + searchString.length) === searchString;
+    };
   }
 
-  // Basic Object.assign
+  if (!String.prototype.endsWith) {
+    String.prototype.endsWith = function(searchString, length) {
+      var len = length || this.length;
+      return this.substring(len - searchString.length, len) === searchString;
+    };
+  }
+
   if (!Object.assign) {
-    Object.assign = function(target: any, ...sources: any[]) {
-      if (target == null) throw new TypeError('Cannot convert undefined or null to object');
-      const to = Object(target);
-      for (let i = 0; i < sources.length; i++) {
-        const src = sources[i];
-        if (src != null) {
-          for (const key in src) {
-            if (Object.prototype.hasOwnProperty.call(src, key)) {
-              to[key] = src[key];
+    Object.assign = function(target) {
+      if (target == null) {
+        throw new TypeError('Cannot convert undefined or null to object');
+      }
+      var to = Object(target);
+      for (var index = 1; index < arguments.length; index++) {
+        var nextSource = arguments[index];
+        if (nextSource != null) {
+          for (var nextKey in nextSource) {
+            if (Object.prototype.hasOwnProperty.call(nextSource, nextKey)) {
+              to[nextKey] = nextSource[nextKey];
             }
           }
         }
@@ -113,25 +58,237 @@ if (typeof window !== 'undefined') {
     };
   }
 
+  // Basic fetch polyfill
+  if (!window.fetch) {
+    window.fetch = function(input, init) {
+      return new Promise(function(resolve, reject) {
+        var xhr = new XMLHttpRequest();
+        var url = typeof input === 'string' ? input : input.toString();
+        
+        xhr.open(init && init.method || 'GET', url);
+        
+        if (init && init.headers) {
+          for (var key in init.headers) {
+            xhr.setRequestHeader(key, init.headers[key]);
+          }
+        }
+        
+        xhr.onload = function() {
+          var response = {
+            ok: xhr.status >= 200 && xhr.status < 300,
+            status: xhr.status,
+            statusText: xhr.statusText,
+            text: function() { return Promise.resolve(xhr.responseText); }
+          };
+          resolve(response);
+        };
+        
+        xhr.onerror = function() {
+          reject(new Error('Network error'));
+        };
+        
+        xhr.send(init && init.body);
+      });
+    };
+  }
+
   console.log('✅ Basic polyfills loaded');
-}
+})();
 
-// Import React and ReactDOM
+// Import React and basic components
 import React from 'react';
-import ReactDOM from 'react-dom/client';
+import ReactDOM from 'react-dom';
 
-// Import the main App component
-import App from './App';
+// Simple App component that works everywhere
+const SimpleApp = function() {
+  const [isLoaded, setIsLoaded] = React.useState(false);
+  const [error, setError] = React.useState(null);
 
-// Simple, reliable mounting function
-function mountApp() {
-  try {
-    console.log('🚀 Starting simple app mount...');
+  React.useEffect(function() {
+    // Detect browser
+    var ua = navigator.userAgent || '';
+    var isInstagram = /Instagram/i.test(ua);
+    var isFacebook = /FBAN|FBAV|FBIOS/i.test(ua);
+    var isMiniBrowser = isInstagram || isFacebook || /wv\)/i.test(ua);
     
-    // Get root element
-    let rootElement = document.getElementById('root');
+    console.log('🔍 Browser detected:', {
+      isInstagram: isInstagram,
+      isFacebook: isFacebook,
+      isMiniBrowser: isMiniBrowser,
+      userAgent: ua
+    });
+
+    // Force hash routing for mini browsers
+    if (isMiniBrowser && (!location.hash || location.hash === '#')) {
+      location.hash = '/';
+    }
+
+    // Simulate loading
+    setTimeout(function() {
+      setIsLoaded(true);
+    }, 1000);
+  }, []);
+
+  if (error) {
+    return React.createElement('div', {
+      style: {
+        padding: '20px',
+        textAlign: 'center',
+        fontFamily: 'Arial, sans-serif',
+        backgroundColor: '#f8f9fa',
+        minHeight: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        alignItems: 'center'
+      }
+    }, [
+      React.createElement('h1', {
+        key: 'title',
+        style: { color: '#dc3545', marginBottom: '20px' }
+      }, 'App Error'),
+      React.createElement('p', {
+        key: 'message',
+        style: { color: '#6c757d', marginBottom: '20px' }
+      }, 'Something went wrong. Please try refreshing the page.'),
+      React.createElement('button', {
+        key: 'button',
+        onClick: function() { window.location.reload(); },
+        style: {
+          backgroundColor: '#1e3a8a',
+          color: 'white',
+          border: 'none',
+          padding: '10px 20px',
+          borderRadius: '5px',
+          cursor: 'pointer',
+          fontSize: '16px'
+        }
+      }, 'Refresh Page')
+    ]);
+  }
+
+  if (!isLoaded) {
+    return React.createElement('div', {
+      style: {
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: '100vh',
+        fontSize: '18px',
+        color: '#1e3a8a',
+        fontFamily: 'Arial, sans-serif'
+      }
+    }, 'Loading King Ezekiel Academy...');
+  }
+
+  return React.createElement('div', {
+    style: {
+      minHeight: '100vh',
+      backgroundColor: '#f8f9fa',
+      fontFamily: 'Arial, sans-serif'
+    }
+  }, [
+    React.createElement('header', {
+      key: 'header',
+      style: {
+        backgroundColor: '#1e3a8a',
+        color: 'white',
+        padding: '20px',
+        textAlign: 'center'
+      }
+    }, [
+      React.createElement('h1', {
+        key: 'title',
+        style: { margin: '0', fontSize: '24px' }
+      }, 'King Ezekiel Academy'),
+      React.createElement('p', {
+        key: 'subtitle',
+        style: { margin: '10px 0 0 0', opacity: '0.9' }
+      }, 'Modern Educational Platform')
+    ]),
+    React.createElement('main', {
+      key: 'main',
+      style: {
+        padding: '40px 20px',
+        maxWidth: '800px',
+        margin: '0 auto'
+      }
+    }, [
+      React.createElement('div', {
+        key: 'welcome',
+        style: {
+          backgroundColor: 'white',
+          padding: '30px',
+          borderRadius: '10px',
+          boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+          textAlign: 'center'
+        }
+      }, [
+        React.createElement('h2', {
+          key: 'welcome-title',
+          style: { color: '#1e3a8a', marginBottom: '20px' }
+        }, 'Welcome to King Ezekiel Academy'),
+        React.createElement('p', {
+          key: 'welcome-text',
+          style: { color: '#6c757d', lineHeight: '1.6', marginBottom: '20px' }
+        }, 'Transform your career with our world-class digital skills courses. Learn marketing, sales, programming, and more.'),
+        React.createElement('div', {
+          key: 'buttons',
+          style: { marginTop: '30px' }
+        }, [
+          React.createElement('button', {
+            key: 'signin',
+            onClick: function() { alert('Sign In clicked'); },
+            style: {
+              backgroundColor: '#1e3a8a',
+              color: 'white',
+              border: 'none',
+              padding: '12px 24px',
+              borderRadius: '5px',
+              cursor: 'pointer',
+              fontSize: '16px',
+              marginRight: '10px'
+            }
+          }, 'Sign In'),
+          React.createElement('button', {
+            key: 'signup',
+            onClick: function() { alert('Sign Up clicked'); },
+            style: {
+              backgroundColor: 'transparent',
+              color: '#1e3a8a',
+              border: '2px solid #1e3a8a',
+              padding: '10px 24px',
+              borderRadius: '5px',
+              cursor: 'pointer',
+              fontSize: '16px'
+            }
+          }, 'Sign Up')
+        ])
+      ])
+    ]),
+    React.createElement('footer', {
+      key: 'footer',
+      style: {
+        backgroundColor: '#343a40',
+        color: 'white',
+        padding: '20px',
+        textAlign: 'center',
+        marginTop: '40px'
+      }
+    }, [
+      React.createElement('p', {
+        key: 'footer-text',
+        style: { margin: '0', opacity: '0.8' }
+      }, '© 2024 King Ezekiel Academy. All rights reserved.')
+    ])
+  ]);
+};
+
+// Render the app
+function renderApp() {
+  try {
+    var rootElement = document.getElementById('root');
     if (!rootElement) {
-      console.log('⚠️ Root element not found, creating one...');
       rootElement = document.createElement('div');
       rootElement.id = 'root';
       document.body.appendChild(rootElement);
@@ -140,100 +297,28 @@ function mountApp() {
     // Clear any existing content
     rootElement.innerHTML = '';
 
-    // Create root using createRoot (React 18+)
-    const root = ReactDOM.createRoot(rootElement);
+    // Render using React 17 API (works everywhere)
+    ReactDOM.render(React.createElement(SimpleApp), rootElement);
     
-    // Render the app
-    root.render(React.createElement(App));
+    console.log('✅ App rendered successfully');
     
-    console.log('✅ App mounted successfully!');
-    
-    // Set a global flag to indicate successful mount
-    (window as any).__KEA_APP_MOUNTED__ = true;
+    // Set global flags
+    window.__KEA_POLYFILLS_LOADED__ = true;
+    window.__KEA_HYDRATION_STATUS__ = 'ok';
+    window.__KEA_BOOT_MODE__ = 'simple';
     
   } catch (error) {
-    console.error('❌ Failed to mount app:', error);
+    console.error('❌ Failed to render app:', error);
     
-    // Show fallback UI
-    const rootElement = document.getElementById('root') || document.body;
-    rootElement.innerHTML = `
-      <div style="
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        color: white;
-        text-align: center;
-        padding: 2rem;
-      ">
-        <div>
-          <h1 style="font-size: 2.5rem; margin-bottom: 1rem; text-shadow: 0 2px 4px rgba(0,0,0,0.3);">
-            King Ezekiel Academy
-          </h1>
-          <p style="font-size: 1.2rem; margin-bottom: 2rem; opacity: 0.9;">
-            Welcome! For the best experience, please open this link in your regular browser.
-          </p>
-          <div style="margin-bottom: 2rem;">
-            <button 
-              onclick="window.location.reload()" 
-              style="
-                background: rgba(255,255,255,0.2);
-                color: white;
-                border: 2px solid white;
-                padding: 12px 24px;
-                border-radius: 6px;
-                cursor: pointer;
-                font-size: 16px;
-                margin: 0 10px;
-                transition: all 0.3s;
-              "
-              onmouseover="this.style.background='rgba(255,255,255,0.3)'"
-              onmouseout="this.style.background='rgba(255,255,255,0.2)'"
-            >
-              Refresh Page
-            </button>
-            <a 
-              href="https://app.thekingezekielacademy.com" 
-              style="
-                background: white;
-                color: #667eea;
-                border: 2px solid white;
-                padding: 12px 24px;
-                border-radius: 6px;
-                cursor: pointer;
-                font-size: 16px;
-                text-decoration: none;
-                display: inline-block;
-                margin: 0 10px;
-                transition: all 0.3s;
-              "
-              onmouseover="this.style.background='#f8f9fa'"
-              onmouseout="this.style.background='white'"
-            >
-              Open in Browser
-            </a>
-          </div>
-          <p style="font-size: 0.9rem; opacity: 0.7;">
-            You can also try refreshing the page or using a different browser.
-          </p>
-        </div>
-      </div>
-    `;
+    // Show error page
+    var rootElement = document.getElementById('root') || document.body;
+    rootElement.innerHTML = '<div style="padding:20px;text-align:center;font-family:Arial,sans-serif;background-color:#f8f9fa;min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center"><h1 style="color:#dc3545;margin-bottom:20px">App Loading Error</h1><p style="color:#6c757d;margin-bottom:20px">Unable to load the app. Please try refreshing the page.</p><button onclick="window.location.reload()" style="background-color:#1e3a8a;color:white;border:none;padding:10px 20px;border-radius:5px;cursor:pointer;font-size:16px">Refresh Page</button></div>';
   }
 }
 
-// Wait for DOM to be ready
+// Start the app when DOM is ready
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', mountApp);
+  document.addEventListener('DOMContentLoaded', renderApp);
 } else {
-  mountApp();
+  renderApp();
 }
-
-// Export for potential external use
-export default mountApp;

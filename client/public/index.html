@@ -188,69 +188,32 @@
     <!-- Manifest -->
     <link rel="manifest" href="./manifest.json" />
     
-    <!-- Dynamic Script Loading Based on Browser Detection -->
+    <!-- SIMPLE SCRIPT LOADING - WORKS EVERYWHERE -->
     <script>
         (function() {
-            // Get browser detection results
-            var browserInfo = window.__KEA_BROWSER_INFO__ || {};
-            var needsMiniMode = browserInfo.needsMiniMode || false;
+            console.log('📦 Loading simple app bundle...');
             
-            console.log('📦 Loading scripts for:', needsMiniMode ? 'Mini Browser' : 'Standard Browser');
-            
-            // Load CSS first
+            // Load CSS
             var cssLink = document.createElement('link');
             cssLink.rel = 'stylesheet';
             cssLink.href = '/static/css/main.[contenthash].css';
             document.head.appendChild(cssLink);
             
-            // Load appropriate JavaScript bundle
+            // Load the simple JavaScript bundle
             var script = document.createElement('script');
             script.defer = true;
-            
-            if (needsMiniMode) {
-                console.log('📱 Loading mini browser bundle...');
-                script.src = '/static/js/mini.[contenthash].js';
-                script.onload = function() {
-                    console.log('✅ Mini browser bundle loaded');
-                };
-                script.onerror = function() {
-                    console.error('❌ Mini browser bundle failed, falling back to main bundle');
-                    loadMainBundle();
-                };
-            } else {
-                console.log('🌐 Loading standard browser bundle...');
-                script.src = '/static/js/main.[contenthash].js';
-                script.onload = function() {
-                    console.log('✅ Standard browser bundle loaded');
-                };
-                script.onerror = function() {
-                    console.error('❌ Standard browser bundle failed, falling back to mini bundle');
-                    loadMiniBundle();
-                };
-            }
+            script.src = '/static/js/main.[contenthash].js';
+            script.onload = function() {
+                console.log('✅ Simple app bundle loaded');
+            };
+            script.onerror = function() {
+                console.error('❌ Simple app bundle failed');
+                // Show fallback message
+                var root = document.getElementById('root') || document.body;
+                root.innerHTML = '<div style="padding:20px;text-align:center;font-family:Arial,sans-serif;background-color:#f8f9fa;min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center"><h1 style="color:#dc3545;margin-bottom:20px">Loading Error</h1><p style="color:#6c757d;margin-bottom:20px">Unable to load the app. Please try refreshing the page.</p><button onclick="window.location.reload()" style="background-color:#1e3a8a;color:white;border:none;padding:10px 20px;border-radius:5px;cursor:pointer;font-size:16px">Refresh Page</button></div>';
+            };
             
             document.head.appendChild(script);
-            
-            // Fallback functions
-            function loadMainBundle() {
-                var fallbackScript = document.createElement('script');
-                fallbackScript.defer = true;
-                fallbackScript.src = '/static/js/main.[contenthash].js';
-                fallbackScript.onload = function() {
-                    console.log('✅ Fallback main bundle loaded');
-                };
-                document.head.appendChild(fallbackScript);
-            }
-            
-            function loadMiniBundle() {
-                var fallbackScript = document.createElement('script');
-                fallbackScript.defer = true;
-                fallbackScript.src = '/static/js/mini.[contenthash].js';
-                fallbackScript.onload = function() {
-                    console.log('✅ Fallback mini bundle loaded');
-                };
-                document.head.appendChild(fallbackScript);
-            }
         })();
     </script>
 </head>
