@@ -188,31 +188,38 @@
     <!-- Manifest -->
     <link rel="manifest" href="./manifest.json" />
     
-    <!-- SIMPLE SCRIPT LOADING - WORKS EVERYWHERE -->
+    <!-- SIMPLE BULLETPROOF SCRIPT LOADING -->
     <script>
         (function() {
-            console.log('📦 Loading simple app bundle...');
+            // Ultra-simple detection
+            var ua = navigator.userAgent || '';
+            var isMini = /Instagram|FBAN|FBAV|FBIOS|TikTok|Twitter|Snapchat|wv\)/i.test(ua);
+            var isOldSafari = /Safari/i.test(ua) && /Version\/([0-9]+)/.test(ua) && parseInt(RegExp.$1) <= 12;
+            var needsMini = isMini || isOldSafari;
+            
+            console.log('🔍 Browser:', needsMini ? 'MINI' : 'STANDARD');
+            console.log('📱 User Agent:', ua);
+            
+            // Force hash for mini browsers
+            if (isMini && (!location.hash || location.hash === '#')) {
+                location.hash = '/';
+            }
             
             // Load CSS
-            var cssLink = document.createElement('link');
-            cssLink.rel = 'stylesheet';
-            cssLink.href = '/static/css/main.[contenthash].css';
-            document.head.appendChild(cssLink);
+            var css = document.createElement('link');
+            css.rel = 'stylesheet';
+            css.href = '/static/css/main.90417a73.css';
+            document.head.appendChild(css);
             
-            // Load the simple JavaScript bundle
+            // Load main script (works for both)
             var script = document.createElement('script');
-            script.defer = true;
-            script.src = '/static/js/main.[contenthash].js';
+            script.src = '/static/js/main.4e554ada.js';
             script.onload = function() {
-                console.log('✅ Simple app bundle loaded');
+                console.log('✅ Main script loaded');
             };
             script.onerror = function() {
-                console.error('❌ Simple app bundle failed');
-                // Show fallback message
-                var root = document.getElementById('root') || document.body;
-                root.innerHTML = '<div style="padding:20px;text-align:center;font-family:Arial,sans-serif;background-color:#f8f9fa;min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center"><h1 style="color:#dc3545;margin-bottom:20px">Loading Error</h1><p style="color:#6c757d;margin-bottom:20px">Unable to load the app. Please try refreshing the page.</p><button onclick="window.location.reload()" style="background-color:#1e3a8a;color:white;border:none;padding:10px 20px;border-radius:5px;cursor:pointer;font-size:16px">Refresh Page</button></div>';
+                console.error('❌ Script failed');
             };
-            
             document.head.appendChild(script);
         })();
     </script>

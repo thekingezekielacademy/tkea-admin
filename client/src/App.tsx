@@ -1,5 +1,13 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter, HashRouter, Routes, Route } from 'react-router-dom';
+
+// Simple browser detection for mini browsers
+const ua = navigator.userAgent || '';
+const isMiniBrowser = /Instagram|FBAN|FBAV|FBIOS|TikTok|Twitter|Snapchat|wv\)/i.test(ua);
+const isOldSafariVersion = /Safari/i.test(ua) && /Version\/([0-9]+)/.test(ua) && parseInt(RegExp.$1) <= 12;
+const useHashRouter = isMiniBrowser || isOldSafariVersion;
+
+console.log('🔍 App Router Decision:', { isMiniBrowser, isOldSafariVersion, useHashRouter });
 import { HelmetProvider } from 'react-helmet-async';
 import { AuthProvider } from './contexts/AuthContext';
 import { SidebarProvider } from './contexts/SidebarContext';
@@ -268,9 +276,8 @@ function App() {
         <AuthProvider>
         <SidebarProvider>
           {(() => {
-            const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
-            const isInApp = /FBAN|FBAV|FBIOS|Instagram|wv\)/i.test(ua);
-            const RouterComponent: any = isInApp ? HashRouter : BrowserRouter;
+            const RouterComponent: any = useHashRouter ? HashRouter : BrowserRouter;
+            console.log('🔀 Using router:', useHashRouter ? 'HashRouter' : 'BrowserRouter');
             return (
               <RouterComponent>
             <FacebookPixelProvider />

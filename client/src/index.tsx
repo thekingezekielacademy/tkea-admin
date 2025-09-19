@@ -1,55 +1,26 @@
 /**
- * SIMPLE, BULLETPROOF ENTRY POINT
- * Works on ALL browsers including Instagram/Facebook in-app browsers
- * Uses only basic JavaScript and React 17 compatibility
+ * ULTRA-SIMPLE ENTRY POINT - WORKS IN ALL BROWSERS
+ * No complex detection, no dynamic imports, just works
  */
 
-// Basic polyfills - applied immediately
-(function() {
-  'use strict';
-  
-  // Basic polyfills that work everywhere
-  if (!Array.prototype.includes) {
-    Array.prototype.includes = function(searchElement, fromIndex) {
-      var O = Object(this);
-      var len = parseInt(O.length) || 0;
-      if (len === 0) return false;
-      var n = parseInt(String(fromIndex)) || 0;
-      var k = n >= 0 ? n : Math.max(len + n, 0);
-      while (k < len) {
-        if (O[k] === searchElement) return true;
-        k++;
-      }
-      return false;
-    };
-  }
+// Apply polyfills FIRST
+import 'core-js/stable';
+import 'regenerator-runtime/runtime';
+import 'whatwg-fetch';
 
-  if (!String.prototype.startsWith) {
-    String.prototype.startsWith = function(searchString, position) {
-      var pos = position || 0;
-      return this.substring(pos, pos + searchString.length) === searchString;
-    };
-  }
-
-  if (!String.prototype.endsWith) {
-    String.prototype.endsWith = function(searchString, length) {
-      var len = length || this.length;
-      return this.substring(len - searchString.length, len) === searchString;
-    };
-  }
-
+// Basic polyfills for older browsers
+if (typeof window !== 'undefined') {
+  // Object.assign
   if (!Object.assign) {
-    Object.assign = function(target) {
-      if (target == null) {
-        throw new TypeError('Cannot convert undefined or null to object');
-      }
-      var to = Object(target);
-      for (var index = 1; index < arguments.length; index++) {
-        var nextSource = arguments[index];
-        if (nextSource != null) {
-          for (var nextKey in nextSource) {
-            if (Object.prototype.hasOwnProperty.call(nextSource, nextKey)) {
-              to[nextKey] = nextSource[nextKey];
+    Object.assign = function(target, ...sources) {
+      if (target == null) throw new TypeError('Cannot convert undefined or null to object');
+      const to = Object(target);
+      for (let i = 0; i < sources.length; i++) {
+        const source = sources[i];
+        if (source != null) {
+          for (const key in source) {
+            if (Object.prototype.hasOwnProperty.call(source, key)) {
+              to[key] = source[key];
             }
           }
         }
@@ -58,267 +29,140 @@
     };
   }
 
-  // Basic fetch polyfill
-  if (!window.fetch) {
-    window.fetch = function(input, init) {
-      return new Promise(function(resolve, reject) {
-        var xhr = new XMLHttpRequest();
-        var url = typeof input === 'string' ? input : input.toString();
-        
-        xhr.open(init && init.method || 'GET', url);
-        
-        if (init && init.headers) {
-          for (var key in init.headers) {
-            xhr.setRequestHeader(key, init.headers[key]);
-          }
-        }
-        
-        xhr.onload = function() {
-          var response = {
-            ok: xhr.status >= 200 && xhr.status < 300,
-            status: xhr.status,
-            statusText: xhr.statusText,
-            text: function() { return Promise.resolve(xhr.responseText); }
-          } as any;
-          resolve(response);
-        };
-        
-        xhr.onerror = function() {
-          reject(new Error('Network error'));
-        };
-        
-        xhr.send(init && init.body as any);
-      });
+  // Array.includes
+  if (!Array.prototype.includes) {
+    Array.prototype.includes = function(searchElement, fromIndex) {
+      if (this == null) throw new TypeError('Array.prototype.includes called on null or undefined');
+      const O = Object(this);
+      const len = parseInt(O.length) || 0;
+      if (len === 0) return false;
+      const n = parseInt(String(fromIndex)) || 0;
+      let k = n >= 0 ? n : Math.max(len + n, 0);
+      while (k < len) {
+        if (O[k] === searchElement) return true;
+        k++;
+      }
+      return false;
     };
   }
 
-  console.log('✅ Basic polyfills loaded');
-})();
+  // String.includes
+  if (!String.prototype.includes) {
+    String.prototype.includes = function(searchString, position) {
+      return this.indexOf(searchString, position) !== -1;
+    };
+  }
 
-// Import React and basic components
+  // String.startsWith
+  if (!String.prototype.startsWith) {
+    String.prototype.startsWith = function(searchString, position) {
+      const pos = position || 0;
+      return this.substring(pos, pos + searchString.length) === searchString;
+    };
+  }
+
+  // String.endsWith
+  if (!String.prototype.endsWith) {
+    String.prototype.endsWith = function(searchString, length) {
+      const len = length || this.length;
+      return this.substring(len - searchString.length, len) === searchString;
+    };
+  }
+
+  // Promise polyfill
+  if (!window.Promise) {
+    window.Promise = require('es6-promise').Promise;
+  }
+
+  // Fetch polyfill
+  if (!window.fetch) {
+    window.fetch = require('whatwg-fetch').fetch;
+  }
+
+  console.log('✅ Polyfills loaded');
+}
+
+// Import React and App
 import React from 'react';
 import ReactDOM from 'react-dom';
+import App from './App';
+import './index.css';
 
-// Simple App component that works everywhere
-const SimpleApp = function() {
-  const [isLoaded, setIsLoaded] = React.useState(false);
-  const [error, setError] = React.useState(null);
-
-  React.useEffect(function() {
-    // Detect browser
-    var ua = navigator.userAgent || '';
-    var isInstagram = /Instagram/i.test(ua);
-    var isFacebook = /FBAN|FBAV|FBIOS/i.test(ua);
-    var isMiniBrowser = isInstagram || isFacebook || /wv\)/i.test(ua);
-    
-    console.log('🔍 Browser detected:', {
-      isInstagram: isInstagram,
-      isFacebook: isFacebook,
-      isMiniBrowser: isMiniBrowser,
-      userAgent: ua
-    });
-
-    // Force hash routing for mini browsers
-    if (isMiniBrowser && (!location.hash || location.hash === '#')) {
-      location.hash = '/';
-    }
-
-    // Simulate loading
-    setTimeout(function() {
-      setIsLoaded(true);
-    }, 1000);
-  }, []);
-
-  if (error) {
-    return React.createElement('div', {
-      style: {
-        padding: '20px',
-        textAlign: 'center',
-        fontFamily: 'Arial, sans-serif',
-        backgroundColor: '#f8f9fa',
-        minHeight: '100vh',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'center',
-        alignItems: 'center'
-      }
-    }, [
-      React.createElement('h1', {
-        key: 'title',
-        style: { color: '#dc3545', marginBottom: '20px' }
-      }, 'App Error'),
-      React.createElement('p', {
-        key: 'message',
-        style: { color: '#6c757d', marginBottom: '20px' }
-      }, 'Something went wrong. Please try refreshing the page.'),
-      React.createElement('button', {
-        key: 'button',
-        onClick: function() { window.location.reload(); },
-        style: {
-          backgroundColor: '#1e3a8a',
-          color: 'white',
-          border: 'none',
-          padding: '10px 20px',
-          borderRadius: '5px',
-          cursor: 'pointer',
-          fontSize: '16px'
-        }
-      }, 'Refresh Page')
-    ]);
-  }
-
-  if (!isLoaded) {
-    return React.createElement('div', {
-      style: {
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        height: '100vh',
-        fontSize: '18px',
-        color: '#1e3a8a',
-        fontFamily: 'Arial, sans-serif'
-      }
-    }, 'Loading King Ezekiel Academy...');
-  }
-
-  return React.createElement('div', {
-    style: {
-      minHeight: '100vh',
-      backgroundColor: '#f8f9fa',
-      fontFamily: 'Arial, sans-serif'
-    }
-  }, [
-    React.createElement('header', {
-      key: 'header',
-      style: {
-        backgroundColor: '#1e3a8a',
-        color: 'white',
-        padding: '20px',
-        textAlign: 'center'
-      }
-    }, [
-      React.createElement('h1', {
-        key: 'title',
-        style: { margin: '0', fontSize: '24px' }
-      }, 'King Ezekiel Academy'),
-      React.createElement('p', {
-        key: 'subtitle',
-        style: { margin: '10px 0 0 0', opacity: '0.9' }
-      }, 'Modern Educational Platform')
-    ]),
-    React.createElement('main', {
-      key: 'main',
-      style: {
-        padding: '40px 20px',
-        maxWidth: '800px',
-        margin: '0 auto'
-      }
-    }, [
-      React.createElement('div', {
-        key: 'welcome',
-        style: {
-          backgroundColor: 'white',
-          padding: '30px',
-          borderRadius: '10px',
-          boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
-          textAlign: 'center'
-        }
-      }, [
-        React.createElement('h2', {
-          key: 'welcome-title',
-          style: { color: '#1e3a8a', marginBottom: '20px' }
-        }, 'Welcome to King Ezekiel Academy'),
-        React.createElement('p', {
-          key: 'welcome-text',
-          style: { color: '#6c757d', lineHeight: '1.6', marginBottom: '20px' }
-        }, 'Transform your career with our world-class digital skills courses. Learn marketing, sales, programming, and more.'),
-        React.createElement('div', {
-          key: 'buttons',
-          style: { marginTop: '30px' }
-        }, [
-          React.createElement('button', {
-            key: 'signin',
-            onClick: function() { alert('Sign In clicked'); },
-            style: {
-              backgroundColor: '#1e3a8a',
-              color: 'white',
-              border: 'none',
-              padding: '12px 24px',
-              borderRadius: '5px',
-              cursor: 'pointer',
-              fontSize: '16px',
-              marginRight: '10px'
-            }
-          }, 'Sign In'),
-          React.createElement('button', {
-            key: 'signup',
-            onClick: function() { alert('Sign Up clicked'); },
-            style: {
-              backgroundColor: 'transparent',
-              color: '#1e3a8a',
-              border: '2px solid #1e3a8a',
-              padding: '10px 24px',
-              borderRadius: '5px',
-              cursor: 'pointer',
-              fontSize: '16px'
-            }
-          }, 'Sign Up')
-        ])
-      ])
-    ]),
-    React.createElement('footer', {
-      key: 'footer',
-      style: {
-        backgroundColor: '#343a40',
-        color: 'white',
-        padding: '20px',
-        textAlign: 'center',
-        marginTop: '40px'
-      }
-    }, [
-      React.createElement('p', {
-        key: 'footer-text',
-        style: { margin: '0', opacity: '0.8' }
-      }, '© 2024 King Ezekiel Academy. All rights reserved.')
-    ])
-  ]);
+// Global error handlers
+window.onerror = function(message, source, lineno, colno, error) {
+  console.error('Global Error:', message, 'at', source + ':' + lineno + ':' + colno, error);
+  return false;
 };
 
-// Render the app
-function renderApp() {
+window.onunhandledrejection = function(event) {
+  console.error('Unhandled Promise Rejection:', event.reason);
+  event.preventDefault();
+};
+
+// Main app loading function
+function loadApp() {
   try {
-    var rootElement = document.getElementById('root');
-    if (!rootElement) {
-      rootElement = document.createElement('div');
-      rootElement.id = 'root';
-      document.body.appendChild(rootElement);
+    console.log('🚀 Starting app load...');
+    
+    // Get root element
+    let rootEl = document.getElementById('root');
+    if (!rootEl) {
+      rootEl = document.createElement('div');
+      rootEl.id = 'root';
+      document.body.appendChild(rootEl);
     }
 
     // Clear any existing content
-    rootElement.innerHTML = '';
+    rootEl.innerHTML = '';
 
-    // Render using React 17 API (works everywhere)
-    ReactDOM.render(React.createElement(SimpleApp), rootElement);
+    // Detect browser type
+    const ua = navigator.userAgent || '';
+    const isMini = /Instagram|FBAN|FBAV|FBIOS|TikTok|Twitter|Snapchat|wv\)/i.test(ua);
+    const isOldSafari = /Safari/i.test(ua) && /Version\/([0-9]+)/.test(ua) && parseInt(RegExp.$1) <= 12;
     
-    console.log('✅ App rendered successfully');
-    
-    // Set global flags
-    (window as any).__KEA_POLYFILLS_LOADED__ = true;
-    (window as any).__KEA_HYDRATION_STATUS__ = 'ok';
-    (window as any).__KEA_BOOT_MODE__ = 'simple';
-    
+    console.log('🔍 Browser detection:', { isMini, isOldSafari, ua });
+
+    // Force hash routing for mini browsers
+    if (isMini && (!location.hash || location.hash === '#')) {
+      location.hash = '/';
+      console.log('📱 Set hash route for mini browser');
+    }
+
+    // Disable service worker for mini browsers
+    if (isMini && 'serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function(regs) {
+        regs.forEach(function(reg) {
+          reg.unregister().catch(function() {});
+        });
+        console.log('🛑 Disabled service worker for mini browser');
+      }).catch(function() {});
+    }
+
+    // Render the app using ReactDOM.render (works everywhere)
+    console.log('⚛️ Rendering app...');
+    ReactDOM.render(React.createElement(App), rootEl, function() {
+      console.log('✅ App rendered successfully!');
+      
+      // Set global flags
+      (window as any).__KEA_POLYFILLS_LOADED__ = true;
+      (window as any).__KEA_HYDRATION_STATUS__ = 'ok';
+      (window as any).__KEA_BOOT_MODE__ = isMini ? 'mini-browser' : 'standard';
+      
+      console.log('🎉 App fully loaded and ready!');
+    });
+
   } catch (error) {
-    console.error('❌ Failed to render app:', error);
+    console.error('❌ Failed to load app:', error);
     
-    // Show error page
-    var rootElement = document.getElementById('root') || document.body;
-    rootElement.innerHTML = '<div style="padding:20px;text-align:center;font-family:Arial,sans-serif;background-color:#f8f9fa;min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center"><h1 style="color:#dc3545;margin-bottom:20px">App Loading Error</h1><p style="color:#6c757d;margin-bottom:20px">Unable to load the app. Please try refreshing the page.</p><button onclick="window.location.reload()" style="background-color:#1e3a8a;color:white;border:none;padding:10px 20px;border-radius:5px;cursor:pointer;font-size:16px">Refresh Page</button></div>';
+    // Show simple error message
+    const rootEl = document.getElementById('root') || document.body;
+    rootEl.innerHTML = '<div style="padding:20px;text-align:center;font-family:Arial,sans-serif;"><h1>Loading Error</h1><p>Please refresh the page or try a different browser.</p><button onclick="window.location.reload()" style="padding:10px 20px;background:#1e3a8a;color:white;border:none;border-radius:5px;cursor:pointer;">Refresh</button></div>';
   }
 }
 
 // Start the app when DOM is ready
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', renderApp);
+  document.addEventListener('DOMContentLoaded', loadApp);
 } else {
-  renderApp();
+  loadApp();
 }
