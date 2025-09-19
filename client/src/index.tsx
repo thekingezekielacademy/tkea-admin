@@ -412,7 +412,8 @@ async function loadApp() {
 
     // Render AppBootstrap which handles all rendering strategies
     const ReactDOM = await import('react-dom');
-    ReactDOM.render(<AppBootstrap />, rootElement);
+    const React = await import('react');
+    ReactDOM.render(React.createElement(AppBootstrap), rootElement);
 
     console.log('✅ App Bootstrap Component Rendered');
 
