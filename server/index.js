@@ -92,28 +92,27 @@ if (process.env.NODE_ENV === 'production') {
   // Serve static assets
   app.use(express.static(path.join(__dirname, '../client/build')));
   
-  // Main route handler with conditional serving
-  app.get('*', (req, res) => {
-    const userAgent = req.get('User-Agent') || '';
-    
-    // Check if this browser requires ES5 fallback
-    if (requiresES5Fallback(userAgent)) {
-      console.log('📱 Serving ES5 fallback for:', userAgent);
-      
-      // Serve the ES5-compatible fallback HTML
-      const fallbackPath = path.join(__dirname, '../client/build-es5', 'index.html');
-      
-      // Check if ES5 build exists, otherwise serve static mini HTML
-      if (fs.existsSync(fallbackPath)) {
-        res.sendFile(fallbackPath);
-      } else {
-        // Serve static mini HTML for Instagram/Facebook browsers
-        const miniHtmlPath = path.join(__dirname, '../client/public/index-mini.html');
-        if (fs.existsSync(miniHtmlPath)) {
-          res.sendFile(miniHtmlPath);
-        } else {
-          // Final fallback - serve minimal HTML
-          res.send(`
+        // Main route handler with conditional serving
+        app.get('*', (req, res) => {
+          const userAgent = req.get('User-Agent') || '';
+          const browserInfo = req.browserInfo || {};
+          
+          // Check if this browser requires mini browser fallback
+          if (browserInfo.isMiniBrowser) {
+            console.log('📱 Serving mini browser fallback for:', userAgent);
+            console.log('Browser Info:', {
+              isInstagram: browserInfo.isInstagram,
+              isFacebook: browserInfo.isFacebook,
+              isMiniBrowser: browserInfo.isMiniBrowser
+            });
+            
+            // Serve static mini HTML for Instagram/Facebook browsers
+            const miniHtmlPath = path.join(__dirname, '../client/public/index-mini.html');
+            if (fs.existsSync(miniHtmlPath)) {
+              res.sendFile(miniHtmlPath);
+            } else {
+              // Fallback if file doesn't exist
+              res.send(`
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -149,37 +148,16 @@ if (process.env.NODE_ENV === 'production') {
         <br><br>
         <a href="https://app.thekingezekielacademy.com" class="btn">Open in Browser</a>
     </div>
-    
-    <script>
-        // Basic compatibility check
-        console.log('ES5 Fallback loaded for:', navigator.userAgent);
-        
-        // Try to redirect to regular browser if possible
-        function tryRedirect() {
-            if (window.location.href.includes('instagram') || window.location.href.includes('facebook')) {
-                // Show instructions for opening in browser
-                document.body.innerHTML = '<div class="container"><h1>King Ezekiel Academy</h1><p>For the best experience, please tap the menu button and select "Open in Browser" or copy the link to your regular browser.</p><a href="https://app.thekingezekielacademy.com" class="btn">Open in Browser</a></div>';
-            }
-        }
-        
-        // Run after page load
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', tryRedirect);
-        } else {
-            tryRedirect();
-        }
-    </script>
 </body>
 </html>
-        `);
-        }
-      }
-    } else {
-      // Serve normal React build for modern browsers
-      console.log('🌐 Serving modern build for:', userAgent);
-      res.sendFile(path.join(__dirname, '../client/build', 'index.html'));
-    }
-  });
+              `);
+            }
+          } else {
+            // Serve normal React build for modern browsers
+            console.log('🌐 Serving modern build for:', userAgent);
+            res.sendFile(path.join(__dirname, '../client/build', 'index.html'));
+          }
+        });
 }
 
 // Error handling middleware
