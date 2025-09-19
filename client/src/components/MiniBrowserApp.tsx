@@ -14,6 +14,7 @@ import SignUp from '../pages/SignUp';
 import CourseOverview from '../pages/course/CourseOverview';
 import Profile from '../pages/Profile';
 import Home from '../pages/Home';
+import PWAInstall from '../pages/PWAInstall';
 
 // Simplified loading component
 const LoadingSpinner: React.FC = () => (
@@ -125,6 +126,7 @@ const MiniBrowserApp: React.FC = () => {
             <Route path="/" element={<Home />} />
             <Route path="/signin" element={<SignIn />} />
             <Route path="/signup" element={<SignUp />} />
+            <Route path="/install" element={<PWAInstall />} />
             
             {/* Protected routes */}
             <Route path="/dashboard" element={<Dashboard />} />

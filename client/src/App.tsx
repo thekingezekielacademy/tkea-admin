@@ -1,13 +1,5 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter, HashRouter, Routes, Route } from 'react-router-dom';
-
-// Simple browser detection for mini browsers
-const ua = navigator.userAgent || '';
-const isMiniBrowser = /Instagram|FBAN|FBAV|FBIOS|TikTok|Twitter|Snapchat|wv\)/i.test(ua);
-const isOldSafariVersion = /Safari/i.test(ua) && /Version\/([0-9]+)/.test(ua) && parseInt(RegExp.$1) <= 12;
-const useHashRouter = isMiniBrowser || isOldSafariVersion;
-
-console.log('🔍 App Router Decision:', { isMiniBrowser, isOldSafariVersion, useHashRouter });
 import { HelmetProvider } from 'react-helmet-async';
 import { AuthProvider } from './contexts/AuthContext';
 import { SidebarProvider } from './contexts/SidebarContext';
@@ -61,6 +53,7 @@ import Assessments from './pages/Assessments';
 import Resume from './pages/Resume';
 import Rooms from './pages/Rooms';
 import Affiliates from './pages/Affiliates';
+import PWAInstall from './pages/PWAInstall';
 import './App.css';
 import './styles/orientation.css'; // Import orientation CSS
 
@@ -276,8 +269,9 @@ function App() {
         <AuthProvider>
         <SidebarProvider>
           {(() => {
-            const RouterComponent: any = useHashRouter ? HashRouter : BrowserRouter;
-            console.log('🔀 Using router:', useHashRouter ? 'HashRouter' : 'BrowserRouter');
+            const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
+            const isInApp = /FBAN|FBAV|FBIOS|Instagram|wv\)/i.test(ua);
+            const RouterComponent: any = isInApp ? HashRouter : BrowserRouter;
             return (
               <RouterComponent>
             <FacebookPixelProvider />
@@ -295,6 +289,7 @@ function App() {
             <Route path="/contact" element={<Contact />} />
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/terms" element={<Terms />} />
+            <Route path="/install" element={<PWAInstall />} />
             <Route path="/signin" element={<SignIn />} />
             <Route path="/signup" element={<SignUp />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />

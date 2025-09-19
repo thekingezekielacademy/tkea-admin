@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
+<head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
     <meta name="theme-color" content="#1e3a8a">
@@ -57,12 +57,12 @@
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-8DXQN4Q7LD"></script>
     <script>
         function gtag(){dataLayer.push(arguments)}
-      window.dataLayer = window.dataLayer || [];
-      gtag('js', new Date());
-      gtag('config', 'G-8DXQN4Q7LD');
+        window.dataLayer = window.dataLayer || [];
+        gtag('js', new Date());
+        gtag('config', 'G-8DXQN4Q7LD');
     </script>
     
-    <!-- Smart Browser Redirect - Like Africa Startup Festival -->
+    <!-- Browser Detection and Script Loading -->
     <script>
         (function() {
             // Detect mini browsers
@@ -74,201 +74,39 @@
             var isSnapchat = /Snapchat/i.test(ua);
             var isMiniBrowser = isInstagram || isFacebook || isTikTok || isTwitter || isSnapchat || /wv\)/i.test(ua);
             
+            // Check for old Safari
+            var safariMatch = ua.match(/Version\/(\d+).+Safari/i);
+            var safariMajor = safariMatch ? parseInt(safariMatch[1], 10) : null;
+            var isOldSafari = !!safariMajor && safariMajor <= 12;
+            
+            var needsMiniMode = isMiniBrowser || isOldSafari;
+            
             console.log('🔍 Browser Detection:', {
                 isMiniBrowser: isMiniBrowser,
                 isInstagram: isInstagram,
                 isFacebook: isFacebook,
+                isOldSafari: isOldSafari,
+                needsMiniMode: needsMiniMode,
                 userAgent: ua
             });
             
-            // Smart redirect for mini browsers (like Africa Startup Festival)
-            if (isMiniBrowser) {
-                console.log('📱 Mini browser detected - preparing redirect to main browser');
-                
-                // Show redirect message
-                document.body.innerHTML = `
-                    <div style="
-                        position: fixed;
-                        top: 0;
-                        left: 0;
-                        right: 0;
-                        bottom: 0;
-                        background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
-                        color: white;
-                        display: flex;
-                        flex-direction: column;
-                        justify-content: center;
-                        align-items: center;
-                        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                        text-align: center;
-                        padding: 20px;
-                        z-index: 9999;
-                    ">
-                        <div style="max-width: 400px;">
-                            <div style="font-size: 48px; margin-bottom: 20px;">🎓</div>
-                            <h1 style="font-size: 28px; margin-bottom: 16px; font-weight: 700;">
-                                King Ezekiel Academy
-                            </h1>
-                            <p style="font-size: 18px; margin-bottom: 24px; opacity: 0.9; line-height: 1.5;">
-                                For the best learning experience, please open this link in your main browser
-                            </p>
-                            <div style="margin-bottom: 24px;">
-                                <button onclick="openInMainBrowser()" style="
-                                    background: white;
-                                    color: #1e3a8a;
-                                    border: none;
-                                    padding: 16px 32px;
-                                    border-radius: 8px;
-                                    font-size: 16px;
-                                    font-weight: 600;
-                                    cursor: pointer;
-                                    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-                                    transition: transform 0.2s;
-                                " onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
-                                    Open in Main Browser
-                                </button>
-                            </div>
-                            <p style="font-size: 14px; opacity: 0.7; margin-bottom: 16px;">
-                                Tap the button above or copy the link below
-                            </p>
-                            <div style="
-                                background: rgba(255,255,255,0.1);
-                                padding: 12px;
-                                border-radius: 6px;
-                                font-size: 12px;
-                                word-break: break-all;
-                                margin-bottom: 16px;
-                            ">
-                                ${window.location.href}
-                            </div>
-                            <button onclick="copyLink()" style="
-                                background: transparent;
-                                color: white;
-                                border: 1px solid rgba(255,255,255,0.3);
-                                padding: 8px 16px;
-                                border-radius: 6px;
-                                font-size: 14px;
-                                cursor: pointer;
-                            ">
-                                Copy Link
-                            </button>
-                        </div>
-                    </div>
-                `;
-                
-                // Function to open in main browser
-                window.openInMainBrowser = function() {
-                    var currentUrl = window.location.href;
-                    var newUrl = currentUrl;
-                    
-                    // Add utm parameters for tracking
-                    var separator = newUrl.includes('?') ? '&' : '?';
-                    newUrl += separator + 'utm_source=social&utm_medium=redirect&utm_campaign=mini_browser_redirect';
-                    
-                    // Try to open in main browser
-                    try {
-                        // For Instagram/Facebook, try to open in external browser
-                        if (isInstagram || isFacebook) {
-                            // Create a temporary link and click it
-                            var link = document.createElement('a');
-                            link.href = newUrl;
-                            link.target = '_blank';
-                            link.rel = 'noopener noreferrer';
-                            document.body.appendChild(link);
-                            link.click();
-                            document.body.removeChild(link);
-                        } else {
-                            // For other mini browsers, try window.open
-                            window.open(newUrl, '_blank', 'noopener,noreferrer');
-                        }
-                    } catch (e) {
-                        console.log('Could not open in main browser, showing copy instructions');
-                        showCopyInstructions();
-                    }
-                };
-                
-                // Function to copy link
-                window.copyLink = function() {
-                    var currentUrl = window.location.href;
-                    var separator = currentUrl.includes('?') ? '&' : '?';
-                    var urlWithUtm = currentUrl + separator + 'utm_source=social&utm_medium=redirect&utm_campaign=mini_browser_redirect';
-                    
-                    if (navigator.clipboard) {
-                        navigator.clipboard.writeText(urlWithUtm).then(function() {
-                            alert('Link copied! Paste it in your main browser');
-                        });
-                    } else {
-                        // Fallback for older browsers
-                        var textArea = document.createElement('textarea');
-                        textArea.value = urlWithUtm;
-                        document.body.appendChild(textArea);
-                        textArea.select();
-                        document.execCommand('copy');
-                        document.body.removeChild(textArea);
-                        alert('Link copied! Paste it in your main browser');
-                    }
-                };
-                
-                // Show copy instructions if open fails
-                function showCopyInstructions() {
-                    document.body.innerHTML = `
-                        <div style="
-                            position: fixed;
-                            top: 0;
-                            left: 0;
-                            right: 0;
-                            bottom: 0;
-                            background: #1e3a8a;
-                            color: white;
-                            display: flex;
-                            flex-direction: column;
-                            justify-content: center;
-                            align-items: center;
-                            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                            text-align: center;
-                            padding: 20px;
-                        ">
-                            <h2>Copy this link and open in your main browser:</h2>
-                            <div style="
-                                background: rgba(255,255,255,0.1);
-                                padding: 12px;
-                                border-radius: 6px;
-                                font-size: 12px;
-                                word-break: break-all;
-                                margin: 20px 0;
-                            ">
-                                ${window.location.href}
-                            </div>
-                            <button onclick="copyLink()" style="
-                                background: white;
-                                color: #1e3a8a;
-                                border: none;
-                                padding: 12px 24px;
-                                border-radius: 6px;
-                                font-size: 16px;
-                                cursor: pointer;
-                            ">
-                                Copy Link
-                            </button>
-                        </div>
-                    `;
-                }
-                
-                return; // Stop execution for mini browsers
-            }
-            
-            // Store detection results globally for regular browsers
+            // Store detection results globally
             window.__KEA_BROWSER_INFO__ = {
-                isMiniBrowser: false,
-                isInstagram: false,
-                isFacebook: false,
-                isTikTok: false,
-                isTwitter: false,
-                isSnapchat: false,
-                isOldSafari: false,
-                needsMiniMode: false,
+                isMiniBrowser: isMiniBrowser,
+                isInstagram: isInstagram,
+                isFacebook: isFacebook,
+                isTikTok: isTikTok,
+                isTwitter: isTwitter,
+                isSnapchat: isSnapchat,
+                isOldSafari: isOldSafari,
+                needsMiniMode: needsMiniMode,
                 userAgent: ua
             };
+            
+            // Force hash routing for mini browsers
+            if (isMiniBrowser && (!location.hash || location.hash === '#')) {
+                location.hash = '/';
+            }
         })();
     </script>
     
@@ -315,79 +153,109 @@
     <!-- Structured Data for Organization -->
     <script type="application/ld+json">
     {
-      "@context": "https://schema.org",
-      "@type": "EducationalOrganization",
-      "name": "King Ezekiel Academy",
-      "description": "Modern Educational Platform offering digital skills courses in marketing, sales, programming, and more.",
-      "url": "https://app.thekingezekielacademy.com",
-      "logo": "https://app.thekingezekielacademy.com/img/linkpreview_image.jpg",
-      "sameAs": [
-        "https://facebook.com/thekingezekielacademy",
-        "https://instagram.com/thekingezekielacademy",
-        "https://t.me/thekingezekielacademy"
-      ],
-      "contactPoint": {
-        "@type": "ContactPoint",
-        "email": "info@thekingezekielacademy.com",
-        "contactType": "customer service",
-        "areaServed": "NG",
-        "availableLanguage": "English"
-      },
-      "address": {
-        "@type": "PostalAddress",
-        "addressLocality": "Lagos",
-        "addressCountry": "NG"
-      },
-      "foundingDate": "2024",
-      "numberOfEmployees": "10-50",
-      "serviceArea": {
-        "@type": "Country",
-        "name": "Nigeria"
-      }
+        "@context": "https://schema.org",
+        "@type": "EducationalOrganization",
+        "name": "King Ezekiel Academy",
+        "description": "Modern Educational Platform offering digital skills courses in marketing, sales, programming, and more.",
+        "url": "https://app.thekingezekielacademy.com",
+        "logo": "https://app.thekingezekielacademy.com/img/linkpreview_image.jpg",
+        "sameAs": [
+            "https://facebook.com/thekingezekielacademy",
+            "https://instagram.com/thekingezekielacademy",
+            "https://t.me/thekingezekielacademy"
+        ],
+        "contactPoint": {
+            "@type": "ContactPoint",
+            "email": "info@thekingezekielacademy.com",
+            "contactType": "customer service",
+            "areaServed": "NG",
+            "availableLanguage": "English"
+        },
+        "address": {
+            "@type": "PostalAddress",
+            "addressLocality": "Lagos",
+            "addressCountry": "NG"
+        },
+        "foundingDate": "2024",
+        "numberOfEmployees": "10-50",
+        "serviceArea": {
+            "@type": "Country",
+            "name": "Nigeria"
+        }
     }
     </script>
     
     <!-- Manifest -->
     <link rel="manifest" href="./manifest.json" />
     
-    <!-- SIMPLE BULLETPROOF SCRIPT LOADING -->
+    <!-- Dynamic Script Loading Based on Browser Detection -->
     <script>
         (function() {
-            // Ultra-simple detection
-            var ua = navigator.userAgent || '';
-            var isMini = /Instagram|FBAN|FBAV|FBIOS|TikTok|Twitter|Snapchat|wv\)/i.test(ua);
-            var isOldSafari = /Safari/i.test(ua) && /Version\/([0-9]+)/.test(ua) && parseInt(RegExp.$1) <= 12;
-            var needsMini = isMini || isOldSafari;
+            // Get browser detection results
+            var browserInfo = window.__KEA_BROWSER_INFO__ || {};
+            var needsMiniMode = browserInfo.needsMiniMode || false;
             
-            console.log('🔍 Browser:', needsMini ? 'MINI' : 'STANDARD');
-            console.log('📱 User Agent:', ua);
+            console.log('📦 Loading scripts for:', needsMiniMode ? 'Mini Browser' : 'Standard Browser');
             
-            // Force hash for mini browsers
-            if (isMini && (!location.hash || location.hash === '#')) {
-                location.hash = '/';
+            // Load CSS first
+            var cssLink = document.createElement('link');
+            cssLink.rel = 'stylesheet';
+            cssLink.href = '/static/css/main.[contenthash].css';
+            document.head.appendChild(cssLink);
+            
+            // Load appropriate JavaScript bundle
+            var script = document.createElement('script');
+            script.defer = true;
+            
+            if (needsMiniMode) {
+                console.log('📱 Loading mini browser bundle...');
+                script.src = '/static/js/mini.[contenthash].js';
+                script.onload = function() {
+                    console.log('✅ Mini browser bundle loaded');
+                };
+                script.onerror = function() {
+                    console.error('❌ Mini browser bundle failed, falling back to main bundle');
+                    loadMainBundle();
+                };
+            } else {
+                console.log('🌐 Loading standard browser bundle...');
+                script.src = '/static/js/main.[contenthash].js';
+                script.onload = function() {
+                    console.log('✅ Standard browser bundle loaded');
+                };
+                script.onerror = function() {
+                    console.error('❌ Standard browser bundle failed, falling back to mini bundle');
+                    loadMiniBundle();
+                };
             }
             
-            // Load CSS
-            var css = document.createElement('link');
-            css.rel = 'stylesheet';
-            css.href = '/static/css/main.90417a73.css';
-            document.head.appendChild(css);
-            
-            // Load main script (works for both)
-            var script = document.createElement('script');
-            script.src = '/static/js/main.4e554ada.js';
-            script.onload = function() {
-                console.log('✅ Main script loaded');
-            };
-            script.onerror = function() {
-                console.error('❌ Script failed');
-            };
             document.head.appendChild(script);
+            
+            // Fallback functions
+            function loadMainBundle() {
+                var fallbackScript = document.createElement('script');
+                fallbackScript.defer = true;
+                fallbackScript.src = '/static/js/main.[contenthash].js';
+                fallbackScript.onload = function() {
+                    console.log('✅ Fallback main bundle loaded');
+                };
+                document.head.appendChild(fallbackScript);
+            }
+            
+            function loadMiniBundle() {
+                var fallbackScript = document.createElement('script');
+                fallbackScript.defer = true;
+                fallbackScript.src = '/static/js/mini.[contenthash].js';
+                fallbackScript.onload = function() {
+                    console.log('✅ Fallback mini bundle loaded');
+                };
+                document.head.appendChild(fallbackScript);
+            }
         })();
     </script>
-  </head>
-  <body>
+</head>
+<body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
     <div id="root"></div>
-  </body>
+</body>
 </html>
