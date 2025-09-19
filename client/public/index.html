@@ -139,27 +139,6 @@
     -->
     <link rel="manifest" href="./manifest.json" />
     
-    <!-- CLIENT-SIDE MINI BROWSER DETECTION AND FALLBACK -->
-    <script>
-        (function() {
-            // Detect mini browsers immediately
-            var ua = navigator.userAgent || '';
-            var isInApp = /FBAN|FBAV|FBIOS|Instagram|Line|Twitter|LinkedIn|WhatsApp|Telegram/i.test(ua);
-            
-            console.log('🔍 Browser Detection:', {
-                userAgent: ua,
-                isInApp: isInApp
-            });
-            
-            // Only apply fallback for actual mini browsers, not regular browsers
-            if (isInApp) {
-                console.log('📱 Mini browser detected - serving fallback UI');
-                
-                // Replace the entire page with fallback content
-                document.documentElement.innerHTML = '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>King Ezekiel Academy</title><style>body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;margin:0;padding:20px;background:#f8f9fa;text-align:center}.container{max-width:600px;margin:0 auto;padding:40px 20px;background:white;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,0.1)}h1{color:#333;margin-bottom:20px}p{color:#666;line-height:1.6;margin-bottom:30px}.btn{background:#007bff;color:white;border:none;padding:12px 24px;border-radius:6px;cursor:pointer;font-size:16px;text-decoration:none;display:inline-block}.btn:hover{background:#0056b3}</style></head><body><div class="container"><h1>King Ezekiel Academy</h1><p>Welcome to King Ezekiel Academy! For the best experience, please open this link in your regular browser.</p><p>You can also try refreshing the page or using a different browser.</p><a href="javascript:window.location.reload()" class="btn">Refresh Page</a><br><br><a href="https://app.thekingezekielacademy.com" class="btn">Open in Browser</a></div><script>console.log("Client-side Fallback loaded for:",navigator.userAgent)</script></body></html>';
-            }
-        })();
-    </script>
 </head>
 <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
