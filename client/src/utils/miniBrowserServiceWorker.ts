@@ -5,19 +5,21 @@
  * to prevent cache-related issues and compatibility problems.
  */
 
-import { isMiniBrowser, getMiniBrowserType } from './miniBrowserDetection';
+import { detectMiniBrowser, shouldDisableServiceWorker as shouldDisableSW } from './miniBrowserDetection';
 
 /**
  * Disable service worker in mini browsers
  * This prevents cache bugs and compatibility issues
  */
 export const disableServiceWorkerInMiniBrowser = async (): Promise<void> => {
-  if (!isMiniBrowser() || !('serviceWorker' in navigator)) {
+  const browserInfo = detectMiniBrowser();
+  if (!browserInfo.isMiniBrowser || !('serviceWorker' in navigator)) {
     return;
   }
 
   try {
-    console.log(`🛑 Disabling service worker for ${getMiniBrowserType() || 'mini'} browser`);
+    const browserType = browserInfo.isInstagram ? 'Instagram' : browserInfo.isFacebook ? 'Facebook' : 'mini';
+    console.log(`🛑 Disabling service worker for ${browserType} browser`);
     
     // Get all existing service worker registrations
     const registrations = await navigator.serviceWorker.getRegistrations();
@@ -63,8 +65,10 @@ export const disableServiceWorkerInMiniBrowser = async (): Promise<void> => {
  */
 export const safeServiceWorkerRegistration = async (): Promise<boolean> => {
   // Skip registration for mini browsers
-  if (isMiniBrowser()) {
-    console.log(`🚫 Skipping service worker registration for ${getMiniBrowserType() || 'mini'} browser`);
+  const browserInfo = detectMiniBrowser();
+  if (browserInfo.isMiniBrowser) {
+    const browserType = browserInfo.isInstagram ? 'Instagram' : browserInfo.isFacebook ? 'Facebook' : 'mini';
+    console.log(`🚫 Skipping service worker registration for ${browserType} browser`);
     await disableServiceWorkerInMiniBrowser();
     return false;
   }
@@ -120,9 +124,10 @@ export const safeServiceWorkerRegistration = async (): Promise<boolean> => {
  * Initialize service worker management based on browser type
  */
 export const initializeServiceWorkerManagement = async (): Promise<void> => {
-  const miniBrowserType = getMiniBrowserType();
+  const browserInfo = detectMiniBrowser();
+  const miniBrowserType = browserInfo.isInstagram ? 'Instagram' : browserInfo.isFacebook ? 'Facebook' : 'mini';
   
-  if (isMiniBrowser()) {
+  if (browserInfo.isMiniBrowser) {
     console.log(`📱 Mini browser detected: ${miniBrowserType || 'unknown'}`);
     await disableServiceWorkerInMiniBrowser();
     
@@ -164,7 +169,8 @@ export const initializeServiceWorkerManagement = async (): Promise<void> => {
  * This helps prevent storage-related issues
  */
 export const clearMiniBrowserStorage = async (): Promise<void> => {
-  if (!isMiniBrowser()) {
+  const browserInfo = detectMiniBrowser();
+  if (!browserInfo.isMiniBrowser) {
     return;
   }
   
@@ -225,5 +231,6 @@ export const clearMiniBrowserStorage = async (): Promise<void> => {
  * Check if service worker should be disabled
  */
 export const shouldDisableServiceWorker = (): boolean => {
-  return isMiniBrowser();
+  const browserInfo = detectMiniBrowser();
+  return browserInfo.isMiniBrowser;
 };

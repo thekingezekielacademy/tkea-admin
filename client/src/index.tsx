@@ -1,176 +1,167 @@
-// Comprehensive polyfills for mini browser compatibility
-import 'core-js/stable';
-import 'regenerator-runtime/runtime';
-import 'whatwg-fetch';
+/**
+ * Main Entry Point with Mini Browser Detection
+ * Automatically routes to appropriate rendering mode based on browser capabilities
+ */
 
-// Additional polyfills for older browsers
-if (typeof window !== 'undefined') {
-  // Polyfill for Object.assign
-  if (!Object.assign) {
-    Object.assign = function(target, ...sources) {
-      if (target == null) {
-        throw new TypeError('Cannot convert undefined or null to object');
-      }
-      const to = Object(target);
-      for (let index = 0; index < sources.length; index++) {
-        const nextSource = sources[index];
-        if (nextSource != null) {
-          for (const nextKey in nextSource) {
-            if (Object.prototype.hasOwnProperty.call(nextSource, nextKey)) {
-              to[nextKey] = nextSource[nextKey];
-            }
-          }
-        }
-      }
-      return to;
-    };
-  }
+// Import mini browser detection first
+import { detectMiniBrowser, needsReact17Mode, shouldDisableServiceWorker } from './utils/miniBrowserDetection';
 
-  // Polyfill for Array.includes
-  if (!Array.prototype.includes) {
-    Array.prototype.includes = function(searchElement, fromIndex) {
-      if (this == null) {
-        throw new TypeError('Array.prototype.includes called on null or undefined');
-      }
-      const O = Object(this);
-      const len = parseInt(O.length) || 0;
-      if (len === 0) return false;
-      const n = parseInt(String(fromIndex)) || 0;
-      let k = n >= 0 ? n : Math.max(len + n, 0);
-      while (k < len) {
-        if (O[k] === searchElement) {
-          return true;
-        }
-        k++;
-      }
-      return false;
-    };
-  }
+// Check if we need mini browser mode
+const browserInfo = detectMiniBrowser();
+const needsMiniBrowserMode = browserInfo.isMiniBrowser || needsReact17Mode();
 
-  // Polyfill for String.includes
-  if (!String.prototype.includes) {
-    String.prototype.includes = function(search, start) {
-      if (typeof start !== 'number') {
-        start = 0;
-      }
-      if (start + search.length > this.length) {
-        return false;
-      } else {
-        return this.indexOf(search, start) !== -1;
-      }
-    };
-  }
+console.log('🔍 Browser Detection:', {
+  isMiniBrowser: browserInfo.isMiniBrowser,
+  isInstagram: browserInfo.isInstagram,
+  isFacebook: browserInfo.isFacebook,
+  needsLegacyMode: browserInfo.needsLegacyMode,
+  userAgent: browserInfo.userAgent
+});
 
-  // Polyfill for String.startsWith
-  if (!String.prototype.startsWith) {
-    String.prototype.startsWith = function(searchString, position) {
-      position = position || 0;
-      return this.substr(position, searchString.length) === searchString;
-    };
-  }
+if (needsMiniBrowserMode) {
+  console.log('📱 Redirecting to mini browser mode...');
+  // Redirect to mini browser entry point
+  // This will be handled by the build system
+  import('./index-mini');
+} else {
+  console.log('🌐 Using standard browser mode...');
+  // Use the standard React 18 entry point
+  loadStandardApp();
+}
 
-  // Polyfill for String.endsWith
-  if (!String.prototype.endsWith) {
-    String.prototype.endsWith = function(searchString, length) {
-      if (length === undefined || length > this.length) {
-        length = this.length;
+/**
+ * Standard app loading for modern browsers
+ */
+async function loadStandardApp(): Promise<void> {
+  try {
+    // Apply polyfills for modern browsers
+    await import('core-js/stable');
+    await import('regenerator-runtime/runtime');
+    await import('whatwg-fetch');
+    
+    // Import React and other dependencies
+    const React = await import('react');
+    const ReactDOM = await import('react-dom/client');
+    const App = (await import('./App')).default;
+    
+    // CSS will be loaded by webpack
+    
+    // Ensure DOM is ready
+    if (document.readyState === 'loading') {
+      await new Promise<void>((resolve) => {
+        document.addEventListener('DOMContentLoaded', () => resolve(), { once: true });
+      });
+    }
+
+    // Handle service worker
+    if (!shouldDisableServiceWorker() && 'serviceWorker' in navigator) {
+      try {
+        await navigator.serviceWorker.register('/sw.js');
+        console.log('✅ Service Worker registered');
+      } catch (error) {
+        console.warn('⚠️ Service Worker registration failed:', error);
       }
-      return this.substring(length - searchString.length, length) === searchString;
-    };
-  }
+    }
 
-  // Polyfill for Promise
-  if (!window.Promise) {
-    window.Promise = require('es6-promise').Promise;
-  }
+    // Get root element
+    let rootEl = document.getElementById('root');
+    if (!rootEl) {
+      rootEl = document.createElement('div');
+      rootEl.id = 'root';
+      document.body.appendChild(rootEl);
+    }
 
-  // Polyfill for Array.from
-  if (!Array.from) {
-    (Array as any).from = function(arrayLike: any, mapFn?: any, thisArg?: any) {
-      const C = this;
-      const items = Object(arrayLike);
-      const len = parseInt(items.length) || 0;
-      const A = typeof C === 'function' ? Object(new C(len)) : new Array(len);
-      let k = 0;
-      while (k < len) {
-        const kValue = items[k];
-        if (mapFn) {
-          A[k] = typeof thisArg === 'undefined' ? mapFn(kValue, k) : mapFn.call(thisArg, kValue, k);
-        } else {
-          A[k] = kValue;
-        }
-        k += 1;
-      }
-      A.length = len;
-      return A;
-    };
-  }
+    // Check for SSR content
+    const hasSSR = !!rootEl.firstChild;
+    
+    if (hasSSR && ReactDOM.hydrateRoot) {
+      // Hydrate existing content
+      console.log('🔄 Hydrating existing content...');
+      ReactDOM.hydrateRoot(rootEl, React.createElement(App));
+      (window as any).__KEA_HYDRATION_STATUS__ = 'ok';
+      (window as any).__KEA_BOOT_MODE__ = 'modern-hydrate';
+    } else {
+      // Create new root
+      console.log('🆕 Creating new root...');
+      const root = ReactDOM.createRoot(rootEl);
+      root.render(React.createElement(React.StrictMode, null, React.createElement(App)));
+      (window as any).__KEA_HYDRATION_STATUS__ = 'ok';
+      (window as any).__KEA_BOOT_MODE__ = 'modern-render';
+    }
 
-  // Polyfill for Object.keys
-  if (!Object.keys) {
-    Object.keys = function(obj) {
-      if (obj !== Object(obj)) {
-        throw new TypeError('Object.keys called on non-object');
-      }
-      const result = [];
-      for (const prop in obj) {
-        if (Object.prototype.hasOwnProperty.call(obj, prop)) {
-          result.push(prop);
-        }
-      }
-      return result;
-    };
-  }
+    // Set global flags
+    (window as any).__KEA_POLYFILLS_LOADED__ = true;
+    
+    console.log('✅ Standard app loaded successfully');
 
-  // Polyfill for console.log (some mini browsers have limited console)
-  if (!console.log) {
-    console.log = function() {};
+  } catch (error) {
+    console.error('❌ Failed to load standard app:', error);
+    
+    // Fallback to mini browser mode
+    console.log('🔄 Falling back to mini browser mode...');
+    try {
+      const { default: MiniApp } = await import('./components/MiniBrowserApp');
+      const React = await import('react');
+      const ReactDOM = await import('react-dom');
+      
+      const rootEl = document.getElementById('root') || document.body;
+      rootEl.innerHTML = '';
+      ReactDOM.render(React.createElement(MiniApp), rootEl);
+      
+      (window as any).__KEA_HYDRATION_STATUS__ = 'fallback';
+      (window as any).__KEA_BOOT_MODE__ = 'fallback-mini';
+      
+      console.log('✅ Fallback to mini browser mode successful');
+    } catch (fallbackError) {
+      console.error('❌ Fallback also failed:', fallbackError);
+      
+      // Show error page
+      const rootEl = document.getElementById('root') || document.body;
+      rootEl.innerHTML = `
+        <div style="
+          padding: 20px;
+          text-align: center;
+          font-family: Arial, sans-serif;
+          background-color: #f8f9fa;
+          min-height: 100vh;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          align-items: center;
+        ">
+          <h1 style="color: #dc3545; margin-bottom: 20px;">
+            🚫 App Loading Failed
+          </h1>
+          <p style="color: #6c757d; margin-bottom: 20px;">
+            Unable to load the app. Please try refreshing the page or using a different browser.
+          </p>
+          <button
+            onclick="window.location.reload()"
+            style="
+              background-color: #1e3a8a;
+              color: white;
+              border: none;
+              padding: 10px 20px;
+              border-radius: 5px;
+              cursor: pointer;
+              font-size: 16px;
+            "
+          >
+            Refresh Page
+          </button>
+        </div>
+      `;
+    }
   }
 }
 
-import React from 'react';
-import ReactDOM from 'react-dom/client';
-import App from './App';
-import './index.css';
+// Global error handlers
+window.onerror = function(message, source, lineno, colno, error) {
+  console.error(`Global Error: ${message} at ${source}:${lineno}:${colno}`, error);
+  return false;
+};
 
-console.log('🚀 React App Starting - Loading with comprehensive polyfills');
-
-// Force immediate React app loading to prevent interference
-if (typeof window !== 'undefined') {
-  // Override any potential interference from cached scripts
-  window.addEventListener('load', function() {
-    console.log('✅ Page fully loaded - React app should be running');
-  });
-  
-  // Prevent any script from replacing the page content
-  const originalWrite = document.write;
-  document.write = function(content) {
-    console.log('🚫 Blocked document.write attempt:', content.substring(0, 100));
-    // Don't execute the write - let React handle the content
-  };
-  
-  // Override any attempts to replace innerHTML
-  const rootElement = document.getElementById('root');
-  if (rootElement) {
-    const originalInnerHTML = Object.getOwnPropertyDescriptor(Element.prototype, 'innerHTML');
-    Object.defineProperty(rootElement, 'innerHTML', {
-      get: originalInnerHTML.get,
-      set: function(value) {
-        console.log('🚫 Blocked innerHTML replacement attempt');
-        // Don't allow replacement of root content
-      }
-    });
-  }
-}
-
-const root = ReactDOM.createRoot(
-  document.getElementById('root') as HTMLElement
-);
-
-root.render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
-);
-
-console.log('✅ Simple Test Index - React app rendered');
+window.onunhandledrejection = function(event) {
+  console.error('Unhandled Promise Rejection:', event.reason);
+  event.preventDefault();
+};

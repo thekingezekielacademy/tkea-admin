@@ -13,11 +13,10 @@ import { createRoot, hydrateRoot } from 'react-dom/client';
 import App from '../App';
 import UnsupportedBrowserBanner from './UnsupportedBrowserBanner';
 import { 
-  isMiniBrowser, 
-  shouldUseClientOnlyRender, 
-  getRenderingStrategy,
-  getBrowserInfo,
-  logBrowserInfo 
+  detectMiniBrowser,
+  needsReact17Mode,
+  shouldDisableServiceWorker,
+  logWithPrefix
 } from '../utils/miniBrowserDetection';
 import { initializeServiceWorkerManagement } from '../utils/miniBrowserServiceWorker';
 
@@ -32,6 +31,7 @@ const AppBootstrap: React.FC<AppBootstrapProps> = ({ onBootstrapComplete }) => {
   const [error, setError] = useState<string | null>(null);
   const [strategy, setStrategy] = useState<string>('unknown');
   const [retryCount, setRetryCount] = useState(0);
+  const [browserInfo, setBrowserInfo] = useState<any>(null);
 
   const bootstrapApp = useCallback(async () => {
     try {
@@ -43,14 +43,15 @@ const AppBootstrap: React.FC<AppBootstrapProps> = ({ onBootstrapComplete }) => {
       (window as any).__KEA_BOOT_PROGRESS__ = 'bootstrap-start';
       
       // Log browser information for debugging
-      logBrowserInfo();
-      const browserInfo = getBrowserInfo();
+      const detectedBrowserInfo = detectMiniBrowser();
+      setBrowserInfo(detectedBrowserInfo);
+      logWithPrefix('Starting app bootstrap...');
       
       // Initialize service worker management
       await initializeServiceWorkerManagement();
       
       // Get rendering strategy
-      const renderingStrategy = getRenderingStrategy();
+      const renderingStrategy = needsReact17Mode() ? 'client-only' : 'modern-hydration';
       setStrategy(renderingStrategy);
       
       console.log(`🚀 Starting app bootstrap with strategy: ${renderingStrategy}`);
@@ -69,15 +70,11 @@ const AppBootstrap: React.FC<AppBootstrapProps> = ({ onBootstrapComplete }) => {
       // Apply rendering strategy
       switch (renderingStrategy) {
         case 'client-only':
-          await renderClientOnly(rootElement, browserInfo);
-          break;
-          
-        case 'ssr-hydration':
-          await renderSSRHydration(rootElement, browserInfo);
+          await renderClientOnly(rootElement, detectedBrowserInfo);
           break;
           
         case 'modern-hydration':
-          await renderModernHydration(rootElement, browserInfo);
+          await renderModernHydration(rootElement, detectedBrowserInfo);
           break;
           
         default:
@@ -101,7 +98,7 @@ const AppBootstrap: React.FC<AppBootstrapProps> = ({ onBootstrapComplete }) => {
     console.log('📱 Using client-only rendering for mini browser');
     
     // Force location.hash for HashRouter in mini browsers
-    if (isMiniBrowser() && (!location.hash || location.hash === '#')) {
+    if (browserInfo.isMiniBrowser && (!location.hash || location.hash === '#')) {
       location.hash = '/';
     }
     
@@ -240,7 +237,7 @@ const AppBootstrap: React.FC<AppBootstrapProps> = ({ onBootstrapComplete }) => {
   if (status === 'error') {
     return (
       <UnsupportedBrowserBanner
-        browserType={getBrowserInfo().miniBrowserType || 'current'}
+        browserType={browserInfo?.isInstagram ? 'Instagram' : browserInfo?.isFacebook ? 'Facebook' : 'current'}
         errorMessage={error || undefined}
         onRetry={handleRetry}
         onDismiss={handleDismiss}
@@ -258,7 +255,7 @@ const AppBootstrap: React.FC<AppBootstrapProps> = ({ onBootstrapComplete }) => {
             Loading King Ezekiel Academy
           </h2>
           <p className="text-gray-600">
-            Initializing for {getBrowserInfo().miniBrowserType || 'your browser'}...
+            Initializing for {browserInfo?.isInstagram ? 'Instagram' : browserInfo?.isFacebook ? 'Facebook' : 'your browser'}...
           </p>
           {retryCount > 0 && (
             <p className="text-sm text-blue-600 mt-2">
