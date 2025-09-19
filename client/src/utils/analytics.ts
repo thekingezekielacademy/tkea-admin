@@ -1,3 +1,5 @@
+import { getSEOCompatibilityConfig } from './browserCompatibility';
+
 interface AnalyticsConfig {
   enabled: boolean;
   measurementId?: string;
@@ -22,6 +24,13 @@ class Analytics {
 
   public async initialize() {
     if (!this.config.enabled || !this.config.measurementId) return;
+
+    // Check browser compatibility
+    const compatibilityConfig = getSEOCompatibilityConfig();
+    if (!compatibilityConfig.enableAnalytics) {
+      console.log('Analytics disabled for browser compatibility');
+      return;
+    }
 
     try {
       // Load Google Analytics script

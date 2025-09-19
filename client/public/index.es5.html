@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#1e3a8a">
+    <meta name="description" content="King Ezekiel Academy - Modern Educational Platform | Digital Skills & Online Learning">
+    
+    <!-- Favicon -->
+    <link rel="icon" href="./favicon.ico" type="image/x-icon">
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+    
+    <!-- Basic SEO Meta Tags -->
+    <title>King Ezekiel Academy - Modern Educational Platform</title>
+    <meta name="title" content="King Ezekiel Academy - Modern Educational Platform">
+    <meta name="author" content="King Ezekiel Academy">
+    <meta name="robots" content="index, follow">
+    
+    <!-- Open Graph Meta Tags -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://app.thekingezekielacademy.com">
+    <meta property="og:title" content="King Ezekiel Academy - Modern Educational Platform">
+    <meta property="og:description" content="Transform your career with King Ezekiel Academy's world-class digital skills courses.">
+    <meta property="og:image" content="https://app.thekingezekielacademy.com/img/linkpreview_image.jpg">
+    <meta property="og:site_name" content="King Ezekiel Academy">
+    
+    <!-- Twitter Card Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="https://app.thekingezekielacademy.com">
+    <meta name="twitter:title" content="King Ezekiel Academy - Modern Educational Platform">
+    <meta name="twitter:description" content="Transform your career with King Ezekiel Academy's world-class digital skills courses.">
+    <meta name="twitter:image" content="https://app.thekingezekielacademy.com/img/linkpreview_image.jpg">
+    
+    <!-- In-App Browser Compatibility -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="format-detection" content="telephone=no">
+    
+    <!-- Preload critical resources -->
+    <link rel="preload" href="./static/css/main.css" as="style">
+    <link rel="preload" href="./static/js/main.js" as="script">
+    
+    <!-- Critical CSS -->
+    <style>
+        /* Critical CSS for loading state */
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        .loading-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+        
+        .loading-content {
+            text-align: center;
+            color: white;
+            padding: 2rem;
+        }
+        
+        .logo {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .loading-text {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(255,255,255,0.3);
+            border-top: 4px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .fallback-message {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: white;
+            padding: 2rem;
+            text-align: center;
+            z-index: 10000;
+        }
+        
+        .fallback-content {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .fallback-title {
+            color: #333;
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+        
+        .fallback-text {
+            color: #666;
+            margin-bottom: 2rem;
+            line-height: 1.6;
+        }
+        
+        .btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            text-decoration: none;
+            display: inline-block;
+            margin: 0 10px;
+            transition: background-color 0.3s;
+        }
+        
+        .btn:hover {
+            background: #0056b3;
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+        }
+        
+        .btn-secondary:hover {
+            background: #545b62;
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div class="loading-container" id="loading">
+        <div class="loading-content">
+            <div class="logo">King Ezekiel Academy</div>
+            <div class="loading-text">Loading your educational experience...</div>
+            <div class="spinner"></div>
+        </div>
+    </div>
+    
+    <!-- Fallback Message (hidden by default) -->
+    <div class="fallback-message" id="fallback">
+        <div class="fallback-content">
+            <h1 class="fallback-title">King Ezekiel Academy</h1>
+            <p class="fallback-text">
+                Welcome to King Ezekiel Academy! For the best experience, please open this link in your regular browser.
+            </p>
+            <p class="fallback-text">
+                You can also try refreshing the page or using a different browser.
+            </p>
+            <a href="javascript:window.location.reload()" class="btn">Refresh Page</a>
+            <a href="https://app.thekingezekielacademy.com" class="btn btn-secondary">Open in Browser</a>
+        </div>
+    </div>
+    
+    <!-- Root element for React app -->
+    <div id="root"></div>
+    
+    <!-- ES5-compatible polyfills -->
+    <script>
+        // Basic polyfills for older browsers
+        if (!Array.prototype.forEach) {
+            Array.prototype.forEach = function(callback, thisArg) {
+                for (var i = 0; i < this.length; i++) {
+                    callback.call(thisArg, this[i], i, this);
+                }
+            };
+        }
+        
+        if (!Array.prototype.map) {
+            Array.prototype.map = function(callback, thisArg) {
+                var result = [];
+                for (var i = 0; i < this.length; i++) {
+                    result.push(callback.call(thisArg, this[i], i, this));
+                }
+                return result;
+            };
+        }
+        
+        if (!Array.prototype.filter) {
+            Array.prototype.filter = function(callback, thisArg) {
+                var result = [];
+                for (var i = 0; i < this.length; i++) {
+                    if (callback.call(thisArg, this[i], i, this)) {
+                        result.push(this[i]);
+                    }
+                }
+                return result;
+            };
+        }
+        
+        if (!Object.assign) {
+            Object.assign = function(target) {
+                for (var i = 1; i < arguments.length; i++) {
+                    var source = arguments[i];
+                    for (var key in source) {
+                        if (source.hasOwnProperty(key)) {
+                            target[key] = source[key];
+                        }
+                    }
+                }
+                return target;
+            };
+        }
+        
+        if (!Promise) {
+            window.Promise = function(executor) {
+                var self = this;
+                self.state = 'pending';
+                self.value = undefined;
+                self.handlers = [];
+                
+                function resolve(result) {
+                    if (self.state === 'pending') {
+                        self.state = 'fulfilled';
+                        self.value = result;
+                        self.handlers.forEach(handle);
+                        self.handlers = null;
+                    }
+                }
+                
+                function reject(error) {
+                    if (self.state === 'pending') {
+                        self.state = 'rejected';
+                        self.value = error;
+                        self.handlers.forEach(handle);
+                        self.handlers = null;
+                    }
+                }
+                
+                function handle(handler) {
+                    if (self.state === 'pending') {
+                        self.handlers.push(handler);
+                    } else {
+                        if (self.state === 'fulfilled' && typeof handler.onFulfilled === 'function') {
+                            handler.onFulfilled(self.value);
+                        }
+                        if (self.state === 'rejected' && typeof handler.onRejected === 'function') {
+                            handler.onRejected(self.value);
+                        }
+                    }
+                }
+                
+                this.then = function(onFulfilled, onRejected) {
+                    return new Promise(function(resolve, reject) {
+                        handle({
+                            onFulfilled: function(result) {
+                                try {
+                                    resolve(onFulfilled ? onFulfilled(result) : result);
+                                } catch (ex) {
+                                    reject(ex);
+                                }
+                            },
+                            onRejected: function(error) {
+                                try {
+                                    resolve(onRejected ? onRejected(error) : error);
+                                } catch (ex) {
+                                    reject(ex);
+                                }
+                            }
+                        });
+                    });
+                };
+                
+                executor(resolve, reject);
+            };
+        }
+        
+        // Basic fetch polyfill for older browsers
+        if (!window.fetch) {
+            window.fetch = function(url, options) {
+                return new Promise(function(resolve, reject) {
+                    var xhr = new XMLHttpRequest();
+                    var method = (options && options.method) || 'GET';
+                    var headers = (options && options.headers) || {};
+                    
+                    xhr.open(method, url, true);
+                    
+                    for (var key in headers) {
+                        if (headers.hasOwnProperty(key)) {
+                            xhr.setRequestHeader(key, headers[key]);
+                        }
+                    }
+                    
+                    xhr.onreadystatechange = function() {
+                        if (xhr.readyState === 4) {
+                            if (xhr.status >= 200 && xhr.status < 300) {
+                                resolve({
+                                    ok: true,
+                                    status: xhr.status,
+                                    statusText: xhr.statusText,
+                                    text: function() {
+                                        return Promise.resolve(xhr.responseText);
+                                    },
+                                    json: function() {
+                                        return Promise.resolve(JSON.parse(xhr.responseText));
+                                    }
+                                });
+                            } else {
+                                reject(new Error('Network request failed'));
+                            }
+                        }
+                    };
+                    
+                    xhr.onerror = function() {
+                        reject(new Error('Network request failed'));
+                    };
+                    
+                    xhr.send((options && options.body) || null);
+                });
+            };
+        }
+        
+        // Console polyfill for older browsers
+        if (!window.console) {
+            window.console = {
+                log: function() {},
+                error: function() {},
+                warn: function() {},
+                info: function() {}
+            };
+        }
+        
+        // Basic error handling
+        window.onerror = function(message, source, lineno, colno, error) {
+            console.error('Global Error:', {
+                message: message,
+                source: source,
+                line: lineno,
+                column: colno,
+                error: error
+            });
+        };
+        
+        // Browser detection
+        var userAgent = navigator.userAgent || '';
+        var isInApp = /FBAN|FBAV|FBIOS|Instagram|Line|Twitter|LinkedIn|WhatsApp|Telegram/i.test(userAgent);
+        var isOldSafari = /Safari/i.test(userAgent) && !/Chrome/i.test(userAgent) && /Version\/([0-9]+)/.test(userAgent) && parseInt(userAgent.match(/Version\/([0-9]+)/)[1]) < 12;
+        
+        console.log('ES5 Fallback loaded for:', userAgent);
+        console.log('In-app browser:', isInApp);
+        console.log('Old Safari:', isOldSafari);
+        
+        // Show fallback message for problematic browsers
+        function showFallback() {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('fallback').style.display = 'block';
+        }
+        
+        // Try to load the React app
+        function loadApp() {
+            try {
+                // Check if we can load the main script
+                var script = document.createElement('script');
+                script.src = './static/js/main.js';
+                script.onload = function() {
+                    console.log('Main script loaded successfully');
+                    document.getElementById('loading').style.display = 'none';
+                };
+                script.onerror = function() {
+                    console.error('Failed to load main script');
+                    showFallback();
+                };
+                document.head.appendChild(script);
+                
+                // Timeout fallback
+                setTimeout(function() {
+                    if (document.getElementById('loading').style.display !== 'none') {
+                        console.log('App loading timeout, showing fallback');
+                        showFallback();
+                    }
+                }, 10000); // 10 second timeout
+                
+            } catch (error) {
+                console.error('Error loading app:', error);
+                showFallback();
+            }
+        }
+        
+        // Start loading when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', loadApp);
+        } else {
+            loadApp();
+        }
+    </script>
+</body>
+</html>

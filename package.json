@@ -9,16 +9,18 @@
     "client": "cd client && npm start",
     "dev": "concurrently \"npm run server\" \"npm run client\"",
     "build": "cd client && npm run build",
+    "build:es5": "cd client && npm run build:es5",
+    "build:all": "cd client && npm run build:all",
     "install-client": "cd client && npm install",
     "install-server": "npm install",
     "install-all": "npm run install-server && npm run install-client",
     "pre-deploy": "./scripts/pre-deploy.sh",
     "deploy": "./scripts/deploy.sh",
-    "build-check": "npm run build && echo '✅ Build check passed!'",
+    "build-check": "npm run build:all && echo '✅ Build check passed!'",
     "test-deployment": "./scripts/test-deployment.sh",
     "health-check": "./scripts/health-check.sh",
     "rollback": "./scripts/rollback.sh",
-    "safe-deploy": "npm run test-deployment && npm run build && git add . && git commit -m 'Safe deployment' && git push origin main && npx vercel --prod && npm run health-check"
+    "safe-deploy": "npm run test-deployment && npm run build:all && git add . && git commit -m 'Safe deployment with ES5 fallback' && git push origin main && npx vercel --prod && npm run health-check"
   },
   "keywords": [
     "education",

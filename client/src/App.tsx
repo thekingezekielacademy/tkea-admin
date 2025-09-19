@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter, HashRouter, Routes, Route } from 'react-router-dom';
+import { HelmetProvider } from 'react-helmet-async';
 import { AuthProvider } from './contexts/AuthContext';
 import { SidebarProvider } from './contexts/SidebarContext';
 import { initializeServiceWorker, clearAllCaches } from './utils/serviceWorker';
@@ -262,8 +263,9 @@ function App() {
   }
 
   return (
-    <SafeErrorBoundary>
-      <AuthProvider>
+    <HelmetProvider>
+      <SafeErrorBoundary>
+        <AuthProvider>
         <SidebarProvider>
           {(() => {
             const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
@@ -320,9 +322,10 @@ function App() {
               </RouterComponent>
             );
           })()}
-      </SidebarProvider>
-    </AuthProvider>
-  </SafeErrorBoundary>
+        </SidebarProvider>
+      </AuthProvider>
+    </SafeErrorBoundary>
+    </HelmetProvider>
   );
 }
 

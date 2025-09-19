@@ -1,0 +1,268 @@
+/* Dashboard Sidebar Styles */
+.dashboard-sidebar {
+  position: fixed;
+  left: 0;
+  top: 0;
+  height: 100vh;
+  z-index: 40; /* Lower than navbar/footer */
+  transition: all 0.3s ease-in-out;
+}
+
+.dashboard-sidebar.collapsed {
+  width: 4rem;
+}
+
+.dashboard-sidebar.expanded {
+  width: 16rem;
+}
+
+.dashboard-main {
+  transition: margin-left 0.3s ease-in-out;
+}
+
+.dashboard-main.with-sidebar {
+  margin-left: 16rem;
+}
+
+.dashboard-main.with-sidebar-collapsed {
+  margin-left: 4rem;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .dashboard-sidebar {
+    transform: translateX(-100%);
+  }
+  
+  .dashboard-sidebar.mobile-open {
+    transform: translateX(0);
+  }
+  
+  .dashboard-main {
+    margin-left: 0 !important;
+  }
+}
+
+/* Sidebar item hover effects */
+.sidebar-item {
+  transition: all 0.2s ease-in-out;
+}
+
+.sidebar-item:hover {
+  transform: translateX(4px);
+}
+
+.sidebar-item.active {
+  background-color: rgb(239 246 255);
+  color: rgb(29 78 216);
+  border-right: 2px solid rgb(37 99 235);
+}
+
+/* Coming soon badge */
+.coming-soon-badge {
+  background-color: rgb(219 234 254);
+  color: rgb(234 88 12);
+  border: 1px solid rgb(251 146 60);
+  border-radius: 9999px;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+/* Smooth transitions */
+* {
+  transition: margin-left 0.3s ease-in-out;
+}
+
+/* Custom styles for King Ezekiel Academy */
+.App {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+main {
+  flex: 1;
+}
+
+/* Ensure immediate scrolling for mobile navigation */
+html {
+  scroll-behavior: auto !important;
+}
+
+body {
+  scroll-behavior: auto !important;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Blog content readability improvements */
+.blog-content p {
+  margin-bottom: 1.2rem !important;
+  line-height: 1.7 !important;
+  font-size: 1rem !important;
+  letter-spacing: 0.01em !important;
+  text-align: justify;
+  word-spacing: 0.05em;
+}
+
+.blog-content p:last-child {
+  margin-bottom: 0 !important;
+}
+
+.blog-content p + p {
+  margin-top: 1.2rem !important;
+}
+
+/* Mobile optimization */
+@media (max-width: 768px) {
+  .blog-content p {
+    margin-bottom: 1rem !important;
+    line-height: 1.6 !important;
+    font-size: 0.95rem !important;
+    text-align: left !important;
+    padding: 0 0.5rem !important;
+  }
+  
+  .blog-content p + p {
+    margin-top: 1rem !important;
+  }
+}
+
+/* Tablet optimization */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .blog-content p {
+    margin-bottom: 1.1rem !important;
+    line-height: 1.65 !important;
+    font-size: 1rem !important;
+  }
+  
+  .blog-content p + p {
+    margin-top: 1.1rem !important;
+  }
+}
+
+/* PWA Orientation Support */
+@media screen and (orientation: landscape) {
+  /* Video player adjustments for landscape */
+  .video-container {
+    height: 100vh !important;
+    max-height: 100vh !important;
+  }
+  
+  /* Hide sidebar in landscape on mobile */
+  @media (max-width: 768px) {
+    .lesson-sidebar {
+      display: none !important;
+    }
+    
+    .lesson-main {
+      width: 100% !important;
+    }
+  }
+  
+  /* Full screen video in landscape */
+  .fullscreen-video {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    z-index: 9999 !important;
+    background: black !important;
+  }
+}
+
+/* Prevent zoom on orientation change */
+html {
+  -webkit-text-size-adjust: 100%;
+  -ms-text-size-adjust: 100%;
+}
+
+/* Better mobile viewport handling */
+@viewport {
+  width: device-width;
+  initial-scale: 1.0;
+  maximum-scale: 5.0;
+  user-scalable: yes;
+}
+
+/* Landscape-specific styles for better UX */
+@media screen and (orientation: landscape) and (max-width: 1024px) {
+  /* Make video player take full height in landscape */
+  .lesson-player-video {
+    height: 100vh !important;
+    max-height: 100vh !important;
+  }
+  
+  /* Hide non-essential elements in landscape on mobile */
+  @media (max-width: 768px) {
+    .lesson-sidebar,
+    .lesson-right-rail {
+      display: none !important;
+    }
+    
+    .lesson-main {
+      width: 100% !important;
+      max-width: 100% !important;
+    }
+  }
+}
+
+/* PWA specific orientation handling */
+@media screen and (display-mode: standalone) {
+  /* Better handling for PWA in landscape */
+  @media (orientation: landscape) {
+    body {
+      overflow-x: hidden;
+      height: 100vh;
+      width: 100vw;
+    }
+    
+    html {
+      height: 100vh;
+      width: 100vw;
+    }
+    
+    #root {
+      height: 100vh;
+      width: 100vw;
+    }
+    
+    /* Ensure video containers work well in landscape PWA */
+    .video-player-container {
+      width: 100vw !important;
+      height: 100vh !important;
+    }
+  }
+}
+
+/* Force landscape orientation support for PWA */
+@media screen and (display-mode: standalone) and (orientation: landscape) {
+  body {
+    transform: none !important;
+    -webkit-transform: none !important;
+  }
+  
+  /* Prevent any CSS that might lock orientation */
+  * {
+    transform: none !important;
+  }
+}
+

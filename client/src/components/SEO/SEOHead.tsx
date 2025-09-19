@@ -1,5 +1,6 @@
 import React from 'react';
-import { Helmet } from 'react-helmet';
+import { Helmet } from 'react-helmet-async';
+import { getSEOCompatibilityConfig } from '../../utils/browserCompatibility';
 
 export interface SEOHeadProps {
   title: string;
@@ -42,6 +43,9 @@ const SEOHead: React.FC<SEOHeadProps> = ({
   const fullTitle = `${title} | ${siteName}`;
   const fullCanonical = canonical ? `${siteUrl}${canonical}` : siteUrl;
 
+  // Get browser compatibility configuration
+  const compatibilityConfig = getSEOCompatibilityConfig();
+
   // Robots meta tag
   const robotsContent = [
     noIndex ? 'noindex' : 'index',
@@ -75,24 +79,28 @@ const SEOHead: React.FC<SEOHeadProps> = ({
 
       {/* Additional Meta Tags */}
       <meta name="author" content="King Ezekiel" />
-      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <meta name="viewport" content={compatibilityConfig.viewport} />
       <meta name="theme-color" content="#1f2937" />
       
       {/* Facebook Domain Verification */}
       <meta name="facebook-domain-verification" content="c3qxn9yu9frspb8s9tceoh01uap0tr" />
       
-      {/* Structured Data (JSON-LD) */}
-      {structuredData && (
+      {/* Structured Data (JSON-LD) - Only for compatible browsers */}
+      {structuredData && compatibilityConfig.enableStructuredData && (
         <script type="application/ld+json">
           {JSON.stringify(structuredData)}
         </script>
       )}
 
-      {/* Preconnect to external domains for performance */}
-      <link rel="preconnect" href="https://fonts.googleapis.com" />
-      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-      <link rel="preconnect" href="https://www.googletagmanager.com" />
-      <link rel="preconnect" href="https://www.google-analytics.com" />
+      {/* Preconnect to external domains for performance - Only for compatible browsers */}
+      {compatibilityConfig.enablePreconnect && (
+        <>
+          <link rel="preconnect" href="https://fonts.googleapis.com" />
+          <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+          <link rel="preconnect" href="https://www.googletagmanager.com" />
+          <link rel="preconnect" href="https://www.google-analytics.com" />
+        </>
+      )}
     </Helmet>
   );
 };
