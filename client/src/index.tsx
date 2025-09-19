@@ -35,7 +35,7 @@ if (typeof window !== 'undefined') {
       const O = Object(this);
       const len = parseInt(O.length) || 0;
       if (len === 0) return false;
-      const n = parseInt(fromIndex) || 0;
+      const n = parseInt(String(fromIndex)) || 0;
       let k = n >= 0 ? n : Math.max(len + n, 0);
       while (k < len) {
         if (O[k] === searchElement) {
