@@ -1,8 +1,20 @@
+/**
+ * King Ezekiel Academy - Main Entry Point
+ * 
+ * Enhanced for Instagram/Facebook mini browser compatibility:
+ * - Forces client-only rendering for mini browsers
+ * - Uses SSR hydration for regular browsers with SSR markup
+ * - Falls back gracefully on errors
+ * - Disables service workers in mini browsers
+ */
+
+// ============================================================================
+// POLYFILLS - Load FIRST for maximum compatibility
+// ============================================================================
+
 import 'core-js/stable';
 import 'regenerator-runtime/runtime';
-// Fetch polyfill must be first for older webviews
 import 'whatwg-fetch';
-// URL polyfill via core-js is already included; ensure presence
 import 'core-js/web/url';
 
 /* Ultra-safe synchronous global polyfills for IG/FB in-app browsers */
@@ -48,7 +60,7 @@ import 'core-js/web/url';
     };
   }
 
-  // IntersectionObserver - minimal no-op fallback to avoid crashes in old Safari/in-app
+  // IntersectionObserver - minimal no-op fallback
   if (typeof window !== 'undefined' && !(window as any).IntersectionObserver) {
     (window as any).IntersectionObserver = function (this: any, cb: any) {
       this.observe = function () { try { cb && cb([{ isIntersecting: true }]); } catch {} };
@@ -57,7 +69,7 @@ import 'core-js/web/url';
     } as any;
   }
 
-  // TextEncoder/TextDecoder minimal UTF-8 fallback for crypto/supabase usage
+  // TextEncoder/TextDecoder minimal UTF-8 fallback
   if (typeof (window as any).TextEncoder === 'undefined') {
     (window as any).TextEncoder = class {
       encode(str: string) {
@@ -141,7 +153,7 @@ import 'core-js/web/url';
     });
   }
 
-  // Intl minimal fallback (NumberFormat/DateTimeFormat)
+  // Intl minimal fallback
   if (!(window as any).Intl) {
     (window as any).Intl = {
       NumberFormat: function (locale?: string, options?: any) {
@@ -158,7 +170,7 @@ import 'core-js/web/url';
     } as any;
   }
 
-  // crypto.getRandomValues fallback (non-crypto safe, but prevents boot crashes)
+  // crypto.getRandomValues fallback
   try {
     if (typeof (window as any).crypto === 'undefined') {
       (window as any).crypto = {} as any;
@@ -176,6 +188,10 @@ import 'core-js/web/url';
   console.log('[Polyfills Loaded]');
   (window as any).__KEA_POLYFILLS_LOADED__ = true;
 })();
+
+// ============================================================================
+// ADDITIONAL POLYFILLS AND COMPATIBILITY
+// ============================================================================
 
 import './utils/polyfills';
 import React from 'react';
@@ -235,6 +251,10 @@ if (typeof window !== 'undefined') {
   }
 }
 
+// ============================================================================
+// BROWSER DETECTION AND GLOBAL SETUP
+// ============================================================================
+
 // Enhanced in-app browser detection and PWA compatibility
 if (typeof window !== 'undefined') {
   const ua = navigator.userAgent + ' ' + (navigator.vendor || '') + ' ' + ((window as any).opera || '');
@@ -257,18 +277,20 @@ if (typeof window !== 'undefined') {
     console.log('User Agent:', ua);
     console.log('PWA features will be skipped for optimal compatibility');
     
-    // Add visual indicator for debugging
-    const debugDiv = document.createElement('div');
-    debugDiv.style.cssText = 'position:fixed;top:0;left:0;right:0;background:blue;color:white;padding:5px;z-index:9999;font-family:monospace;font-size:12px;text-align:center;';
-    debugDiv.textContent = `📱 In-App Browser - PWA Disabled for Compatibility`;
-    document.body.appendChild(debugDiv);
-    
-    // Remove after 3 seconds
-    setTimeout(() => {
-      if (debugDiv.parentNode) {
-        debugDiv.parentNode.removeChild(debugDiv);
-      }
-    }, 3000);
+    // Add visual indicator for debugging (only in development)
+    if (process.env.NODE_ENV === 'development') {
+      const debugDiv = document.createElement('div');
+      debugDiv.style.cssText = 'position:fixed;top:0;left:0;right:0;background:blue;color:white;padding:5px;z-index:9999;font-family:monospace;font-size:12px;text-align:center;';
+      debugDiv.textContent = `📱 In-App Browser - PWA Disabled for Compatibility`;
+      document.body.appendChild(debugDiv);
+      
+      // Remove after 3 seconds
+      setTimeout(() => {
+        if (debugDiv.parentNode) {
+          debugDiv.parentNode.removeChild(debugDiv);
+        }
+      }, 3000);
+    }
   } else if (isSafariOld) {
     console.log('🍎 Old Safari detected - Enhanced compatibility mode');
     console.log('User Agent:', ua);
@@ -278,6 +300,10 @@ if (typeof window !== 'undefined') {
     console.log('User Agent:', ua);
   }
 }
+
+// ============================================================================
+// GLOBAL ERROR HANDLING
+// ============================================================================
 
 // Global error logging for Safari and in-app browser debugging
 window.onerror = function (message, source, lineno, colno, error) {
@@ -359,6 +385,10 @@ window.onunhandledrejection = function (event) {
   }
 };
 
+// ============================================================================
+// APP BOOTSTRAP
+// ============================================================================
+
 async function loadApp() {
   try {
     // Ensure DOM is ready
@@ -366,181 +396,77 @@ async function loadApp() {
       await new Promise<void>((resolve) => document.addEventListener('DOMContentLoaded', () => resolve(), { once: true }));
     }
 
-    // In-app detection and hash bootstrap for HashRouter
-    const ua = navigator.userAgent || '';
-    const isInApp = /FBAN|FBAV|FBIOS|Instagram|wv\)/i.test(ua);
-    const safariMatch = ua.match(/Version\/(\d+).+Safari/i);
-    const safariMajor = safariMatch ? parseInt(safariMatch[1], 10) : null;
-    const isOldSafari = !!safariMajor && safariMajor <= 12;
-    if (isInApp && (!location.hash || location.hash === '#')) {
-      location.hash = '/';
+    console.log('✅ DOM Ready - Starting App Bootstrap');
+    (window as any).__KEA_BOOT_PROGRESS__ = 'dom-ready';
+
+    // Import and render AppBootstrap component
+    const { default: AppBootstrap } = await import('./components/AppBootstrap');
+    
+    // Get root element
+    let rootElement = document.getElementById('root');
+    if (!rootElement) {
+      rootElement = document.createElement('div');
+      rootElement.id = 'root';
+      document.body.appendChild(rootElement);
     }
 
-    console.log('✅ Polyfills Loaded');
-    (window as any).__KEA_BOOT_PROGRESS__ = 'polyfills-ready';
+    // Render AppBootstrap which handles all rendering strategies
+    const ReactDOM = await import('react-dom');
+    ReactDOM.render(<AppBootstrap />, rootElement);
 
-    // Pre-flight: force legacy client-only render for old Safari / IG/FB before any dynamic imports
-    if (isOldSafari || isInApp) {
-      try {
-        const rootEl = (document.getElementById('root') as HTMLElement) || document.body.appendChild(Object.assign(document.createElement('div'), { id: 'root' }));
-        let ReactDOM: any = null;
-        try { ReactDOM = require('react-dom'); } catch { ReactDOM = await import('react-dom'); }
-        let AppMod: any = null;
-        try { AppMod = require('./App').default; } catch { AppMod = (await import('./App')).default; }
-        rootEl.innerHTML = '';
-        (ReactDOM as any).render(<AppMod />, rootEl);
-        (window as any).__KEA_HYDRATION_STATUS__ = 'ok';
-        (window as any).__KEA_BOOT_MODE__ = 'legacy-preflight';
-        console.log('🟡 Forced Legacy Path (Pre-flight)');
-        // Ensure SW is disabled in mini browsers
-        if ('serviceWorker' in navigator && isInApp) {
-          try {
-            const regs = await navigator.serviceWorker.getRegistrations();
-            await Promise.all(regs.map((r) => r.unregister().catch(() => {})));
-            console.log('🛑 SW disabled in mini browser');
-          } catch {}
-        }
-        return;
-      } catch (e) {
-        console.error('[Pre-flight Legacy Error]', e);
-        // Continue to modern flow if pre-flight fails
-      }
-    }
+    console.log('✅ App Bootstrap Component Rendered');
 
-    // Conditional Service Worker: skip in in-app browsers
-    if ('serviceWorker' in navigator) {
-      if (isInApp) {
-        try {
-          const regs = await navigator.serviceWorker.getRegistrations();
-          await Promise.all(regs.map((r) => r.unregister().catch(() => {})));
-          console.log('🛑 SW disabled in mini browser');
-        } catch {}
-      } else {
-        try {
-          await navigator.serviceWorker.register('/sw.js');
-        } catch (e) {
-          console.warn('Service worker registration skipped/failed:', e);
-        }
-      }
-    }
-
-    // Dynamic import App with guard and retry
-    console.log('[Boot] Loading React and App modules...');
-    let AppMod: any = null;
-    try {
-      AppMod = (await import('./App')).default;
-    } catch (e) {
-      console.warn('[Boot] dynamic import failed, trying require fallback');
-      try { AppMod = require('./App').default; } catch (e2) {
-        console.error('[App Import Error]', e);
-        (window as any).__KEA_HYDRATION_STATUS__ = 'boot-error';
-        const warn = document.createElement('div');
-        warn.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#111;color:#fff;padding:10px;font:12px/1.4 monospace;z-index:99999;text-align:center;';
-        warn.textContent = 'App failed to load. Please refresh or open in external browser.';
-        try { document.body.appendChild(warn); } catch {}
-        return;
-      }
-    }
-
-    const rootEl = (document.getElementById('root') as HTMLElement) || document.body.appendChild(Object.assign(document.createElement('div'), { id: 'root' }));
-
-    // Legacy Render Path for old Safari / in-app browsers
-    if (isOldSafari || isInApp) {
-      try {
-        const ReactDOM = await import('react-dom');
-        rootEl.innerHTML = '';
-        (ReactDOM as any).render(<AppMod />, rootEl);
-        (window as any).__KEA_HYDRATION_STATUS__ = 'ok';
-        (window as any).__KEA_BOOT_MODE__ = 'legacy';
-        console.log('🟡 Legacy Render Path Activated');
-      } catch (renderErr) {
-        console.error('[Legacy Render Error]', renderErr);
-        (window as any).__KEA_HYDRATION_STATUS__ = 'render-error';
-      }
-    } else {
-      // Modern Path: hydrateRoot if SSR markup exists, else createRoot
-      try {
-        const rdc = await import('react-dom/client');
-        const hasSSR = !!rootEl.firstChild;
-        if ((rdc as any).hydrateRoot && hasSSR) {
-          (rdc as any).hydrateRoot(rootEl, <AppMod />);
-          (window as any).__KEA_HYDRATION_STATUS__ = 'ok';
-          (window as any).__KEA_BOOT_MODE__ = 'modern-hydrate';
-          console.log('✅ modern hydrate');
-        } else {
-          const root = (rdc as any).createRoot(rootEl);
-          root.render(
-            <React.StrictMode>
-              <AppMod />
-            </React.StrictMode>
-          );
-          (window as any).__KEA_HYDRATION_STATUS__ = 'ok';
-          (window as any).__KEA_BOOT_MODE__ = 'modern-render';
-          console.log('✅ modern render');
-        }
-      } catch (renderErr) {
-        // Fallback to client-only render
-        console.warn('⚠️ hydrate/createRoot error, falling back to client-only render', renderErr);
-        try {
-          const ReactDOM = await import('react-dom');
-          rootEl.innerHTML = '';
-        (ReactDOM as any).render(<AppMod />, rootEl);
-        (window as any).__KEA_HYDRATION_STATUS__ = 'ok';
-          (window as any).__KEA_BOOT_MODE__ = 'fallback-render';
-          console.warn('⚠️ Hydration failed, client-only render applied.');
-        } catch (e2) {
-          console.error('[Final Render Error]', e2);
-          (window as any).__KEA_HYDRATION_STATUS__ = 'fallback-render-error';
-        }
-      }
-
-      // 2s timeout: if not ok, switch to client-only render
-      setTimeout(async () => {
-        if ((window as any).__KEA_HYDRATION_STATUS__ === 'ok') return;
-        const el = document.getElementById('root');
-        if (!el) { (window as any).__KEA_HYDRATION_STATUS__ = 'no-root-after-render'; return; }
-        if (el.firstChild) { (window as any).__KEA_HYDRATION_STATUS__ = 'ok'; return; }
-        try {
-          const ReactDOM = await import('react-dom');
-          el.innerHTML = '';
-        (ReactDOM as any).render(<AppMod />, el);
-        (window as any).__KEA_HYDRATION_STATUS__ = 'ok';
-          console.warn('⚠️ Hydration timed out, client-only render applied.');
-        } catch (e3) {
-          console.error('[Timeout Fallback Error]', e3);
-          (window as any).__KEA_HYDRATION_STATUS__ = 'fallback-render-error';
-        }
-      }, 2000);
-    }
-
-    // Dev diagnostics overlay
-    try {
-      if (process.env.NODE_ENV !== 'production') {
-        const bar = document.createElement('div');
-        bar.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:#111;color:#fff;padding:6px 10px;font:11px/1.4 monospace;z-index:99999;text-align:center;opacity:.9;';
-        const mode = (window as any).__KEA_BOOT_MODE__ || (isOldSafari || isInApp ? 'legacy' : 'modern');
-        const hyd = (window as any).__KEA_HYDRATION_STATUS__ || 'pending';
-        bar.textContent = `Mode: ${mode} | Polyfills: ✅ | Hydration: ${hyd}`;
-        document.body.appendChild(bar);
-      }
-    } catch {}
   } catch (err) {
     console.error('❌ Failed to load app', err);
-    try { (window as any).__KEA_HYDRATION_STATUS__ = 'boot-error'; } catch {}
-    // Show a small non-intrusive banner instead of replacing the whole page
+    
+    // Show a minimal fallback UI
     try {
-      const warn = document.createElement('div');
-      warn.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#111;color:#fff;padding:10px;font:12px/1.4 monospace;z-index:99999;text-align:center;';
-      warn.textContent = 'Browser encountered a boot error. Please refresh or open in external browser.';
-      document.body.appendChild(warn);
-    } catch {}
+      const rootElement = document.getElementById('root') || document.body;
+      rootElement.innerHTML = `
+        <div style="
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: #f8f9fa;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        ">
+          <div style="text-align: center; padding: 2rem;">
+            <h1 style="color: #333; margin-bottom: 1rem;">King Ezekiel Academy</h1>
+            <p style="color: #666; margin-bottom: 2rem;">Unable to load the application.</p>
+            <button 
+              onclick="window.location.reload()" 
+              style="
+                background: #007bff;
+                color: white;
+                border: none;
+                padding: 12px 24px;
+                border-radius: 6px;
+                cursor: pointer;
+                font-size: 16px;
+              "
+            >
+              Refresh Page
+            </button>
+          </div>
+        </div>
+      `;
+    } catch (fallbackError) {
+      console.error('❌ Even fallback UI failed:', fallbackError);
+    }
   }
 }
+
+// ============================================================================
+// START APPLICATION
+// ============================================================================
 
 // Kick off app load
 loadApp();
 
-// If you want to start measuring performance in your app, pass a function
-// to log results (for example: reportWebVitals(console.log))
-// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
+// Web Vitals reporting
 reportWebVitals();
