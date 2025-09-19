@@ -56,16 +56,17 @@
     "production": [
       ">0.2%",
       "not dead",
-      "safari >= 12",
-      "ios_saf >= 12",
-      "chrome >= 60",
-      "firefox >= 60"
+      "safari >= 11",
+      "ios_saf >= 11",
+      "chrome >= 58",
+      "firefox >= 58",
+      "ie >= 11"
     ],
     "development": [
       "last 1 chrome version",
       "last 1 firefox version",
-      "safari >= 12",
-      "ios_saf >= 12"
+      "safari >= 11",
+      "ios_saf >= 11"
     ]
   },
   "devDependencies": {
