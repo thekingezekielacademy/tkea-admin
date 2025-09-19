@@ -38,6 +38,10 @@ const AppBootstrap: React.FC<AppBootstrapProps> = ({ onBootstrapComplete }) => {
       setStatus('loading');
       setError(null);
       
+      // Set initial global status
+      (window as any).__KEA_HYDRATION_STATUS__ = 'initializing';
+      (window as any).__KEA_BOOT_PROGRESS__ = 'bootstrap-start';
+      
       // Log browser information for debugging
       logBrowserInfo();
       const browserInfo = getBrowserInfo();
@@ -87,6 +91,7 @@ const AppBootstrap: React.FC<AppBootstrapProps> = ({ onBootstrapComplete }) => {
       console.error('❌ App bootstrap failed:', error);
       setError(error instanceof Error ? error.message : 'Unknown error occurred');
       setStatus('error');
+      (window as any).__KEA_HYDRATION_STATUS__ = 'bootstrap-error';
       onBootstrapComplete?.(strategy, 'error');
     }
   }, [onBootstrapComplete, strategy]);
@@ -100,6 +105,10 @@ const AppBootstrap: React.FC<AppBootstrapProps> = ({ onBootstrapComplete }) => {
       location.hash = '/';
     }
     
+    // Set global status for monitoring
+    (window as any).__KEA_HYDRATION_STATUS__ = 'loading';
+    (window as any).__KEA_BOOT_MODE__ = 'client-only';
+    
     // Use ReactDOM.render for maximum compatibility
     ReactDOM.render(
       <React.StrictMode>
@@ -107,11 +116,18 @@ const AppBootstrap: React.FC<AppBootstrapProps> = ({ onBootstrapComplete }) => {
       </React.StrictMode>,
       rootElement
     );
+    
+    // Set success status
+    (window as any).__KEA_HYDRATION_STATUS__ = 'ok';
   };
 
   // SSR hydration for browsers with existing markup
   const renderSSRHydration = async (rootElement: HTMLElement, browserInfo: any) => {
     console.log('🔄 Using SSR hydration');
+    
+    // Set global status for monitoring
+    (window as any).__KEA_HYDRATION_STATUS__ = 'loading';
+    (window as any).__KEA_BOOT_MODE__ = 'ssr-hydration';
     
     // Check if we have SSR markup
     const hasSSRMarkup = rootElement.children.length > 0;
@@ -119,9 +135,11 @@ const AppBootstrap: React.FC<AppBootstrapProps> = ({ onBootstrapComplete }) => {
     if (hasSSRMarkup && hydrateRoot) {
       try {
         hydrateRoot(rootElement, <App />);
+        (window as any).__KEA_HYDRATION_STATUS__ = 'ok';
         return;
       } catch (hydrationError) {
         console.warn('⚠️ SSR hydration failed, falling back to client-only:', hydrationError);
+        (window as any).__KEA_HYDRATION_STATUS__ = 'hydration-error';
         // Fall through to client-only fallback
       }
     }
@@ -133,11 +151,16 @@ const AppBootstrap: React.FC<AppBootstrapProps> = ({ onBootstrapComplete }) => {
       </React.StrictMode>,
       rootElement
     );
+    (window as any).__KEA_HYDRATION_STATUS__ = 'ok';
   };
 
   // Modern hydration for regular browsers
   const renderModernHydration = async (rootElement: HTMLElement, browserInfo: any) => {
     console.log('⚡ Using modern hydration');
+    
+    // Set global status for monitoring
+    (window as any).__KEA_HYDRATION_STATUS__ = 'loading';
+    (window as any).__KEA_BOOT_MODE__ = 'modern-hydration';
     
     try {
       // Try createRoot first
@@ -148,6 +171,7 @@ const AppBootstrap: React.FC<AppBootstrapProps> = ({ onBootstrapComplete }) => {
             <App />
           </React.StrictMode>
         );
+        (window as any).__KEA_HYDRATION_STATUS__ = 'ok';
         return;
       }
       
@@ -155,6 +179,7 @@ const AppBootstrap: React.FC<AppBootstrapProps> = ({ onBootstrapComplete }) => {
       
     } catch (modernError) {
       console.warn('⚠️ Modern rendering failed, falling back to client-only:', modernError);
+      (window as any).__KEA_HYDRATION_STATUS__ = 'modern-error';
       
       // Fallback to ReactDOM.render
       ReactDOM.render(
@@ -163,6 +188,7 @@ const AppBootstrap: React.FC<AppBootstrapProps> = ({ onBootstrapComplete }) => {
         </React.StrictMode>,
         rootElement
       );
+      (window as any).__KEA_HYDRATION_STATUS__ = 'ok';
     }
   };
 
