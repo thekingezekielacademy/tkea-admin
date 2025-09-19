@@ -83,6 +83,49 @@ if (typeof window !== 'undefined') {
   if (!window.Promise) {
     window.Promise = require('es6-promise').Promise;
   }
+
+  // Polyfill for Array.from
+  if (!Array.from) {
+    (Array as any).from = function(arrayLike: any, mapFn?: any, thisArg?: any) {
+      const C = this;
+      const items = Object(arrayLike);
+      const len = parseInt(items.length) || 0;
+      const A = typeof C === 'function' ? Object(new C(len)) : new Array(len);
+      let k = 0;
+      while (k < len) {
+        const kValue = items[k];
+        if (mapFn) {
+          A[k] = typeof thisArg === 'undefined' ? mapFn(kValue, k) : mapFn.call(thisArg, kValue, k);
+        } else {
+          A[k] = kValue;
+        }
+        k += 1;
+      }
+      A.length = len;
+      return A;
+    };
+  }
+
+  // Polyfill for Object.keys
+  if (!Object.keys) {
+    Object.keys = function(obj) {
+      if (obj !== Object(obj)) {
+        throw new TypeError('Object.keys called on non-object');
+      }
+      const result = [];
+      for (const prop in obj) {
+        if (Object.prototype.hasOwnProperty.call(obj, prop)) {
+          result.push(prop);
+        }
+      }
+      return result;
+    };
+  }
+
+  // Polyfill for console.log (some mini browsers have limited console)
+  if (!console.log) {
+    console.log = function() {};
+  }
 }
 
 import React from 'react';
