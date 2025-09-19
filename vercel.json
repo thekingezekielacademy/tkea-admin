@@ -1,6 +1,6 @@
 {
-  "version": 2,
-  "buildCommand": "npm run build:all",
+  "version": 3,
+  "buildCommand": "npm run build:all && echo 'FORCE REDEPLOY'",
   "outputDirectory": "client/build",
   "installCommand": "npm install && cd client && npm install",
   "functions": {
