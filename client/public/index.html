@@ -157,7 +157,8 @@
                 needsFallback: needsFallback
             });
             
-            if (needsFallback) {
+            // Only apply fallback for actual mini browsers, not regular browsers
+            if (isInApp) {
                 console.log('📱 Mini browser detected - serving fallback UI');
                 
                 // Replace the entire page with fallback content
