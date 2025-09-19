@@ -5,7 +5,7 @@
 (function() {
     'use strict';
     
-    console.log('🚀 Instagram Compatibility Script Loading...');
+    console.log('🚀 Instagram Compatibility Script Loading v2...');
     
     // Detect mini browsers
     function isMiniBrowser() {
