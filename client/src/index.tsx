@@ -133,7 +133,35 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import './index.css';
 
-console.log('🚀 Simple Test Index - Starting React app');
+console.log('🚀 React App Starting - Loading with comprehensive polyfills');
+
+// Force immediate React app loading to prevent interference
+if (typeof window !== 'undefined') {
+  // Override any potential interference from cached scripts
+  window.addEventListener('load', function() {
+    console.log('✅ Page fully loaded - React app should be running');
+  });
+  
+  // Prevent any script from replacing the page content
+  const originalWrite = document.write;
+  document.write = function(content) {
+    console.log('🚫 Blocked document.write attempt:', content.substring(0, 100));
+    // Don't execute the write - let React handle the content
+  };
+  
+  // Override any attempts to replace innerHTML
+  const rootElement = document.getElementById('root');
+  if (rootElement) {
+    const originalInnerHTML = Object.getOwnPropertyDescriptor(Element.prototype, 'innerHTML');
+    Object.defineProperty(rootElement, 'innerHTML', {
+      get: originalInnerHTML.get,
+      set: function(value) {
+        console.log('🚫 Blocked innerHTML replacement attempt');
+        // Don't allow replacement of root content
+      }
+    });
+  }
+}
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
