@@ -188,71 +188,9 @@
     <!-- Manifest -->
     <link rel="manifest" href="./manifest.json" />
     
-    <!-- Dynamic Script Loading Based on Browser Detection -->
-    <script>
-        (function() {
-            // Get browser detection results
-            var browserInfo = window.__KEA_BROWSER_INFO__ || {};
-            var needsMiniMode = browserInfo.needsMiniMode || false;
-            
-            console.log('📦 Loading scripts for:', needsMiniMode ? 'Mini Browser' : 'Standard Browser');
-            
-            // Load CSS first
-            var cssLink = document.createElement('link');
-            cssLink.rel = 'stylesheet';
-            cssLink.href = '/static/css/main.[contenthash].css';
-            document.head.appendChild(cssLink);
-            
-            // Load appropriate JavaScript bundle
-            var script = document.createElement('script');
-            script.defer = true;
-            
-            if (needsMiniMode) {
-                console.log('📱 Loading mini browser bundle...');
-                script.src = '/static/js/mini.[contenthash].js';
-                script.onload = function() {
-                    console.log('✅ Mini browser bundle loaded');
-                };
-                script.onerror = function() {
-                    console.error('❌ Mini browser bundle failed, falling back to main bundle');
-                    loadMainBundle();
-                };
-            } else {
-                console.log('🌐 Loading standard browser bundle...');
-                script.src = '/static/js/main.[contenthash].js';
-                script.onload = function() {
-                    console.log('✅ Standard browser bundle loaded');
-                };
-                script.onerror = function() {
-                    console.error('❌ Standard browser bundle failed, falling back to mini bundle');
-                    loadMiniBundle();
-                };
-            }
-            
-            document.head.appendChild(script);
-            
-            // Fallback functions
-            function loadMainBundle() {
-                var fallbackScript = document.createElement('script');
-                fallbackScript.defer = true;
-                fallbackScript.src = '/static/js/main.[contenthash].js';
-                fallbackScript.onload = function() {
-                    console.log('✅ Fallback main bundle loaded');
-                };
-                document.head.appendChild(fallbackScript);
-            }
-            
-            function loadMiniBundle() {
-                var fallbackScript = document.createElement('script');
-                fallbackScript.defer = true;
-                fallbackScript.src = '/static/js/mini.[contenthash].js';
-                fallbackScript.onload = function() {
-                    console.log('✅ Fallback mini bundle loaded');
-                };
-                document.head.appendChild(fallbackScript);
-            }
-        })();
-    </script>
+    <!-- React App Scripts - Standard Build -->
+    <script defer="defer" src="/static/js/main.94348bb1.js"></script>
+    <link href="/static/css/main.680.c7c66923.chunk.css" rel="stylesheet" />
 </head>
 <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
