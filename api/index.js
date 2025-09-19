@@ -41,6 +41,10 @@ app.get('*', (req, res) => {
   const userAgent = req.get('User-Agent') || '';
   const browserInfo = req.browserInfo || {};
   
+  console.log('🚀 Serverless function called for:', req.url);
+  console.log('User Agent:', userAgent);
+  console.log('Browser Info:', browserInfo);
+  
   // Check if this browser requires ES5 fallback
   if (browserInfo.isMiniBrowser) {
     console.log('📱 Serving ES5 build for mini browser:', userAgent);
