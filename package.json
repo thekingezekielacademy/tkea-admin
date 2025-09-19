@@ -10,7 +10,7 @@
     "dev": "concurrently \"npm run server\" \"npm run client\"",
     "build": "cd client && npm run build",
     "build:es5": "cd client && npm run build:es5",
-    "build:all": "cd client && npm run build:all",
+    "build:all": "cd client && npm run build && cd client && npm run build:es5",
     "install-client": "cd client && npm install",
     "install-server": "npm install",
     "install-all": "npm run install-server && npm run install-client",

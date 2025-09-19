@@ -1,12 +1,16 @@
 {
   "version": 2,
-  "buildCommand": "cd client && npm run build",
-  "outputDirectory": "client/build",
+  "buildCommand": "npm run build:all",
   "installCommand": "npm install && cd client && npm install",
-  "rewrites": [
+  "functions": {
+    "api/index.js": {
+      "runtime": "nodejs18.x"
+    }
+  },
+  "routes": [
     {
-      "source": "/((?!static/|favicon|manifest|img/|api/).*)",
-      "destination": "/index.html"
+      "src": "/(.*)",
+      "dest": "/api/index.js"
     }
   ],
   "headers": [

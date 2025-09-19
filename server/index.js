@@ -89,30 +89,36 @@ app.get('/sw.js', (req, res) => {
 
 // Serve static files from React build
 if (process.env.NODE_ENV === 'production') {
-  // Serve static assets
+  // Serve static assets from both builds
   app.use(express.static(path.join(__dirname, '../client/build')));
+  app.use('/build-es5', express.static(path.join(__dirname, '../client/build-es5')));
   
-        // Main route handler with conditional serving
-        app.get('*', (req, res) => {
-          const userAgent = req.get('User-Agent') || '';
-          const browserInfo = req.browserInfo || {};
-          
-          // Check if this browser requires mini browser fallback
-          if (browserInfo.isMiniBrowser) {
-            console.log('📱 Serving mini browser fallback for:', userAgent);
-            console.log('Browser Info:', {
-              isInstagram: browserInfo.isInstagram,
-              isFacebook: browserInfo.isFacebook,
-              isMiniBrowser: browserInfo.isMiniBrowser
-            });
-            
-            // Serve static mini HTML for Instagram/Facebook browsers
-            const miniHtmlPath = path.join(__dirname, '../client/public/index-mini.html');
-            if (fs.existsSync(miniHtmlPath)) {
-              res.sendFile(miniHtmlPath);
-            } else {
-              // Fallback if file doesn't exist
-              res.send(`
+  // Main route handler with conditional serving
+  app.get('*', (req, res) => {
+    const userAgent = req.get('User-Agent') || '';
+    const browserInfo = req.browserInfo || {};
+    
+    // Check if this browser requires ES5 fallback
+    if (browserInfo.isMiniBrowser) {
+      console.log('📱 Serving ES5 build for mini browser:', userAgent);
+      console.log('Browser Info:', {
+        isInstagram: browserInfo.isInstagram,
+        isFacebook: browserInfo.isFacebook,
+        isMiniBrowser: browserInfo.isMiniBrowser
+      });
+      
+      // Serve ES5-compatible build for Instagram/Facebook browsers
+      const es5Path = path.join(__dirname, '../client/build-es5', 'index.html');
+      if (fs.existsSync(es5Path)) {
+        res.sendFile(es5Path);
+      } else {
+        // Fallback to mini HTML if ES5 build doesn't exist
+        const miniHtmlPath = path.join(__dirname, '../client/public/index-mini.html');
+        if (fs.existsSync(miniHtmlPath)) {
+          res.sendFile(miniHtmlPath);
+        } else {
+          // Final fallback
+          res.send(`
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -150,14 +156,15 @@ if (process.env.NODE_ENV === 'production') {
     </div>
 </body>
 </html>
-              `);
-            }
-          } else {
-            // Serve normal React build for modern browsers
-            console.log('🌐 Serving modern build for:', userAgent);
-            res.sendFile(path.join(__dirname, '../client/build', 'index.html'));
-          }
-        });
+          `);
+        }
+      }
+    } else {
+      // Serve normal React build for modern browsers
+      console.log('🌐 Serving modern build for:', userAgent);
+      res.sendFile(path.join(__dirname, '../client/build', 'index.html'));
+    }
+  });
 }
 
 // Error handling middleware
