@@ -207,6 +207,29 @@
     <link rel="manifest" href="./manifest.json" />
     
     <!-- React App Scripts will be injected automatically by the build process -->
+    
+    <!-- CRITICAL: Expose React globally for mini browser compatibility -->
+    <script>
+        // Wait for the main bundle to load and expose React globally
+        window.addEventListener('load', function() {
+            // Check if React is available in the bundle
+            if (typeof window.React === 'undefined' && typeof window.ReactDOM === 'undefined') {
+                console.log('🔧 Exposing React globally for mini browser compatibility...');
+                
+                // Try to access React from the bundle's module system
+                try {
+                    // This will be available after the main bundle loads
+                    if (typeof require !== 'undefined') {
+                        window.React = require('react');
+                        window.ReactDOM = require('react-dom');
+                        console.log('✅ React exposed globally via require');
+                    }
+                } catch (e) {
+                    console.log('⚠️ Could not expose React via require:', e);
+                }
+            }
+        });
+    </script>
 </head>
 <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
