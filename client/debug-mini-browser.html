@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5, user-scalable=yes">
+    <title>🔍 King Ezekiel Academy - Mini Browser Debug</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        
+        .debug-section {
+            padding: 30px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .debug-section:last-child {
+            border-bottom: none;
+        }
+        
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #1e3a8a;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .test-card {
+            background: #f8fafc;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+        
+        .test-card:hover {
+            border-color: #3b82f6;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
+        }
+        
+        .test-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #374151;
+        }
+        
+        .test-result {
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-weight: 500;
+            margin: 5px 0;
+        }
+        
+        .success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+        }
+        
+        .error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fca5a5;
+        }
+        
+        .warning {
+            background: #fef3c7;
+            color: #92400e;
+            border: 1px solid #fde68a;
+        }
+        
+        .info {
+            background: #dbeafe;
+            color: #1e40af;
+            border: 1px solid #93c5fd;
+        }
+        
+        .code-block {
+            background: #1f2937;
+            color: #f9fafb;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 14px;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+        
+        .button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 5px;
+        }
+        
+        .button:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
+        }
+        
+        .button.secondary {
+            background: #6b7280;
+        }
+        
+        .button.secondary:hover {
+            background: #4b5563;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-success { background: #10b981; }
+        .status-error { background: #ef4444; }
+        .status-warning { background: #f59e0b; }
+        .status-info { background: #3b82f6; }
+        
+        .mini-browser-test {
+            background: #fef3c7;
+            border: 2px solid #f59e0b;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .react-test {
+            background: #ecfdf5;
+            border: 2px solid #10b981;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .error-log {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            border-radius: 8px;
+            padding: 15px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .error-log pre {
+            font-size: 12px;
+            color: #dc2626;
+        }
+        
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .test-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .container {
+                margin: 10px;
+                border-radius: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 Mini Browser Debug Center</h1>
+            <p>Comprehensive diagnostics for Instagram, Facebook, and iPhone Safari compatibility</p>
+        </div>
+
+        <!-- Browser Detection Section -->
+        <div class="debug-section">
+            <div class="section-title">
+                <span class="status-indicator status-info"></span>
+                Browser Detection
+            </div>
+            <div class="test-grid">
+                <div class="test-card">
+                    <div class="test-title">User Agent</div>
+                    <div class="code-block" id="user-agent"></div>
+                </div>
+                <div class="test-card">
+                    <div class="test-title">Browser Type</div>
+                    <div id="browser-type"></div>
+                </div>
+                <div class="test-card">
+                    <div class="test-title">Device Type</div>
+                    <div id="device-type"></div>
+                </div>
+                <div class="test-card">
+                    <div class="test-title">Screen Size</div>
+                    <div id="screen-size"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- JavaScript Capabilities -->
+        <div class="debug-section">
+            <div class="section-title">
+                <span class="status-indicator status-info"></span>
+                JavaScript Capabilities
+            </div>
+            <div class="test-grid">
+                <div class="test-card">
+                    <div class="test-title">ES6 Support</div>
+                    <div id="es6-support"></div>
+                </div>
+                <div class="test-card">
+                    <div class="test-title">Fetch API</div>
+                    <div id="fetch-support"></div>
+                </div>
+                <div class="test-card">
+                    <div class="test-title">Local Storage</div>
+                    <div id="localstorage-support"></div>
+                </div>
+                <div class="test-card">
+                    <div class="test-title">Service Worker</div>
+                    <div id="serviceworker-support"></div>
+                </div>
+                <div class="test-card">
+                    <div class="test-title">WebGL</div>
+                    <div id="webgl-support"></div>
+                </div>
+                <div class="test-card">
+                    <div class="test-title">Touch Events</div>
+                    <div id="touch-support"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- React Loading Test -->
+        <div class="debug-section">
+            <div class="section-title">
+                <span class="status-indicator status-info"></span>
+                React App Loading Test
+            </div>
+            <div class="react-test">
+                <div class="test-title">React App Status</div>
+                <div id="react-status"></div>
+                <div id="react-details"></div>
+                <button class="button" onclick="testReactLoading()">Test React Loading</button>
+                <button class="button secondary" onclick="clearReactTest()">Clear Test</button>
+            </div>
+        </div>
+
+        <!-- Mini Browser Specific Tests -->
+        <div class="debug-section">
+            <div class="section-title">
+                <span class="status-indicator status-warning"></span>
+                Mini Browser Specific Tests
+            </div>
+            <div class="mini-browser-test">
+                <div class="test-title">Instagram/Facebook In-App Browser Tests</div>
+                <div id="mini-browser-tests"></div>
+                <button class="button" onclick="testMiniBrowserFeatures()">Run Mini Browser Tests</button>
+            </div>
+        </div>
+
+        <!-- Hash Router Test -->
+        <div class="debug-section">
+            <div class="section-title">
+                <span class="status-indicator status-info"></span>
+                Hash Router Test
+            </div>
+            <div class="test-grid">
+                <div class="test-card">
+                    <div class="test-title">Current Hash</div>
+                    <div id="current-hash"></div>
+                </div>
+                <div class="test-card">
+                    <div class="test-title">Hash Change Test</div>
+                    <div id="hash-change-test"></div>
+                    <button class="button" onclick="testHashChange()">Test Hash Change</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Error Logging -->
+        <div class="debug-section">
+            <div class="section-title">
+                <span class="status-indicator status-error"></span>
+                Error Log
+            </div>
+            <div class="error-log">
+                <div id="error-log"></div>
+            </div>
+            <button class="button secondary" onclick="clearErrorLog()">Clear Error Log</button>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="debug-section">
+            <div class="section-title">
+                <span class="status-indicator status-info"></span>
+                Actions
+            </div>
+            <button class="button" onclick="runAllTests()">Run All Tests</button>
+            <button class="button secondary" onclick="copyDebugInfo()">Copy Debug Info</button>
+            <button class="button secondary" onclick="location.reload()">Refresh Page</button>
+        </div>
+    </div>
+
+    <script>
+        // Global error tracking
+        let errorLog = [];
+        let testResults = {};
+
+        // Error handlers
+        window.addEventListener('error', function(e) {
+            const error = {
+                type: 'JavaScript Error',
+                message: e.message,
+                filename: e.filename,
+                lineno: e.lineno,
+                colno: e.colno,
+                timestamp: new Date().toISOString()
+            };
+            errorLog.push(error);
+            updateErrorLog();
+        });
+
+        window.addEventListener('unhandledrejection', function(e) {
+            const error = {
+                type: 'Unhandled Promise Rejection',
+                message: e.reason?.toString() || 'Unknown error',
+                timestamp: new Date().toISOString()
+            };
+            errorLog.push(error);
+            updateErrorLog();
+        });
+
+        function updateErrorLog() {
+            const logElement = document.getElementById('error-log');
+            if (errorLog.length === 0) {
+                logElement.innerHTML = '<div class="info">No errors detected</div>';
+            } else {
+                logElement.innerHTML = errorLog.map(error => 
+                    `<pre>${error.timestamp} - ${error.type}: ${error.message}${error.filename ? ` (${error.filename}:${error.lineno})` : ''}</pre>`
+                ).join('');
+            }
+        }
+
+        function clearErrorLog() {
+            errorLog = [];
+            updateErrorLog();
+        }
+
+        function addTestResult(testName, result, details = '') {
+            testResults[testName] = { result, details };
+        }
+
+        function createResultElement(result, details = '') {
+            const div = document.createElement('div');
+            div.className = `test-result ${result}`;
+            div.innerHTML = `<span class="status-indicator status-${result}"></span>${result.toUpperCase()}${details ? `: ${details}` : ''}`;
+            return div;
+        }
+
+        // Browser Detection Tests
+        function runBrowserDetection() {
+            const ua = navigator.userAgent || '';
+            document.getElementById('user-agent').textContent = ua;
+
+            // Browser type detection
+            const isInstagram = /Instagram/i.test(ua);
+            const isFacebook = /FBAN|FBAV|FBIOS/i.test(ua);
+            const isTikTok = /TikTok/i.test(ua);
+            const isTwitter = /Twitter/i.test(ua);
+            const isSnapchat = /Snapchat/i.test(ua);
+            const isMiniBrowser = isInstagram || isFacebook || isTikTok || isTwitter || isSnapchat || /wv\)/i.test(ua);
+            const isSafari = /Safari/i.test(ua) && !/Chrome|CriOS|EdgA|Firefox|FxiOS|OPR|Vivaldi/i.test(ua);
+            const isChrome = /Chrome/i.test(ua) && !/EdgA|OPR|Vivaldi/i.test(ua);
+            const isFirefox = /Firefox/i.test(ua);
+
+            let browserType = 'Unknown';
+            if (isInstagram) browserType = 'Instagram In-App Browser';
+            else if (isFacebook) browserType = 'Facebook In-App Browser';
+            else if (isTikTok) browserType = 'TikTok In-App Browser';
+            else if (isTwitter) browserType = 'Twitter In-App Browser';
+            else if (isSnapchat) browserType = 'Snapchat In-App Browser';
+            else if (isMiniBrowser) browserType = 'Other Mini Browser';
+            else if (isSafari) browserType = 'Safari';
+            else if (isChrome) browserType = 'Chrome';
+            else if (isFirefox) browserType = 'Firefox';
+
+            document.getElementById('browser-type').innerHTML = '';
+            document.getElementById('browser-type').appendChild(createResultElement(
+                isMiniBrowser ? 'warning' : 'success',
+                browserType
+            ));
+
+            // Device type
+            const isMobile = /Android|webos|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
+            const isIOS = /iPad|iPhone|iPod/.test(ua);
+            const isAndroid = /Android/i.test(ua);
+            const isDesktop = !isMobile;
+
+            let deviceType = 'Unknown';
+            if (isIOS) deviceType = 'iOS Device';
+            else if (isAndroid) deviceType = 'Android Device';
+            else if (isDesktop) deviceType = 'Desktop';
+
+            document.getElementById('device-type').innerHTML = '';
+            document.getElementById('device-type').appendChild(createResultElement(
+                'success',
+                deviceType
+            ));
+
+            // Screen size
+            const screenInfo = `${screen.width}x${screen.height} (${window.innerWidth}x${window.innerHeight} viewport)`;
+            document.getElementById('screen-size').innerHTML = '';
+            document.getElementById('screen-size').appendChild(createResultElement(
+                'info',
+                screenInfo
+            ));
+
+            addTestResult('browser-detection', isMiniBrowser ? 'warning' : 'success', browserType);
+        }
+
+        // JavaScript Capabilities Tests
+        function runJavaScriptTests() {
+            // ES6 Support
+            try {
+                const es6Test = () => {
+                    const arrow = () => 'test';
+                    const { destructuring } = { destructuring: 'test' };
+                    const template = `template ${'string'}`;
+                    const spread = [...[1, 2, 3]];
+                    return arrow() === 'test' && destructuring === 'test' && template === 'template string' && spread.length === 3;
+                };
+                const es6Supported = es6Test();
+                document.getElementById('es6-support').innerHTML = '';
+                document.getElementById('es6-support').appendChild(createResultElement(
+                    es6Supported ? 'success' : 'error',
+                    es6Supported ? 'Supported' : 'Not Supported'
+                ));
+                addTestResult('es6-support', es6Supported ? 'success' : 'error');
+            } catch (e) {
+                document.getElementById('es6-support').innerHTML = '';
+                document.getElementById('es6-support').appendChild(createResultElement('error', 'Error: ' + e.message));
+                addTestResult('es6-support', 'error', e.message);
+            }
+
+            // Fetch API
+            const fetchSupported = typeof fetch !== 'undefined';
+            document.getElementById('fetch-support').innerHTML = '';
+            document.getElementById('fetch-support').appendChild(createResultElement(
+                fetchSupported ? 'success' : 'error',
+                fetchSupported ? 'Supported' : 'Not Supported'
+            ));
+            addTestResult('fetch-support', fetchSupported ? 'success' : 'error');
+
+            // Local Storage
+            try {
+                const localStorageSupported = typeof Storage !== 'undefined' && localStorage !== null;
+                if (localStorageSupported) {
+                    localStorage.setItem('test', 'test');
+                    localStorage.removeItem('test');
+                }
+                document.getElementById('localstorage-support').innerHTML = '';
+                document.getElementById('localstorage-support').appendChild(createResultElement(
+                    localStorageSupported ? 'success' : 'error',
+                    localStorageSupported ? 'Supported' : 'Not Supported'
+                ));
+                addTestResult('localstorage-support', localStorageSupported ? 'success' : 'error');
+            } catch (e) {
+                document.getElementById('localstorage-support').innerHTML = '';
+                document.getElementById('localstorage-support').appendChild(createResultElement('error', 'Error: ' + e.message));
+                addTestResult('localstorage-support', 'error', e.message);
+            }
+
+            // Service Worker
+            const serviceWorkerSupported = 'serviceWorker' in navigator;
+            document.getElementById('serviceworker-support').innerHTML = '';
+            document.getElementById('serviceworker-support').appendChild(createResultElement(
+                serviceWorkerSupported ? 'success' : 'error',
+                serviceWorkerSupported ? 'Supported' : 'Not Supported'
+            ));
+            addTestResult('serviceworker-support', serviceWorkerSupported ? 'success' : 'error');
+
+            // WebGL
+            try {
+                const canvas = document.createElement('canvas');
+                const webglSupported = !!(canvas.getContext('webgl') || canvas.getContext('experimental-webgl'));
+                document.getElementById('webgl-support').innerHTML = '';
+                document.getElementById('webgl-support').appendChild(createResultElement(
+                    webglSupported ? 'success' : 'error',
+                    webglSupported ? 'Supported' : 'Not Supported'
+                ));
+                addTestResult('webgl-support', webglSupported ? 'success' : 'error');
+            } catch (e) {
+                document.getElementById('webgl-support').innerHTML = '';
+                document.getElementById('webgl-support').appendChild(createResultElement('error', 'Error: ' + e.message));
+                addTestResult('webgl-support', 'error', e.message);
+            }
+
+            // Touch Events
+            const touchSupported = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+            document.getElementById('touch-support').innerHTML = '';
+            document.getElementById('touch-support').appendChild(createResultElement(
+                touchSupported ? 'success' : 'error',
+                touchSupported ? 'Supported' : 'Not Supported'
+            ));
+            addTestResult('touch-support', touchSupported ? 'success' : 'error');
+        }
+
+        // React Loading Test
+        function testReactLoading() {
+            const statusElement = document.getElementById('react-status');
+            const detailsElement = document.getElementById('react-details');
+            
+            statusElement.innerHTML = '';
+            detailsElement.innerHTML = '';
+
+            // Test 1: Check if React is available
+            if (typeof React !== 'undefined') {
+                statusElement.appendChild(createResultElement('success', 'React is available'));
+                addTestResult('react-available', 'success');
+            } else {
+                statusElement.appendChild(createResultElement('error', 'React is not available'));
+                addTestResult('react-available', 'error');
+            }
+
+            // Test 2: Check if ReactDOM is available
+            if (typeof ReactDOM !== 'undefined') {
+                statusElement.appendChild(createResultElement('success', 'ReactDOM is available'));
+                addTestResult('reactdom-available', 'success');
+            } else {
+                statusElement.appendChild(createResultElement('error', 'ReactDOM is not available'));
+                addTestResult('reactdom-available', 'error');
+            }
+
+            // Test 3: Check if root element exists
+            const rootElement = document.getElementById('root');
+            if (rootElement) {
+                statusElement.appendChild(createResultElement('success', 'Root element exists'));
+                addTestResult('root-element', 'success');
+            } else {
+                statusElement.appendChild(createResultElement('error', 'Root element not found'));
+                addTestResult('root-element', 'error');
+            }
+
+            // Test 4: Try to load the main app script
+            const script = document.createElement('script');
+            script.src = 'https://king-ezekiel-academy-c0tw56mkt-king-ezekiel-academys-projects.vercel.app/static/js/main.a37cd3c4.js';
+            script.onload = function() {
+                statusElement.appendChild(createResultElement('success', 'Main app script loaded'));
+                addTestResult('main-script-loaded', 'success');
+                
+                // Wait a bit then check if React app mounted
+                setTimeout(() => {
+                    const rootContent = document.getElementById('root')?.innerHTML;
+                    if (rootContent && rootContent.trim() !== '') {
+                        statusElement.appendChild(createResultElement('success', 'React app mounted successfully'));
+                        addTestResult('react-app-mounted', 'success');
+                        detailsElement.innerHTML = `<div class="info">Root content: ${rootContent.substring(0, 200)}...</div>`;
+                    } else {
+                        statusElement.appendChild(createResultElement('error', 'React app failed to mount - root is empty'));
+                        addTestResult('react-app-mounted', 'error');
+                    }
+                }, 2000);
+            };
+            script.onerror = function() {
+                statusElement.appendChild(createResultElement('error', 'Failed to load main app script'));
+                addTestResult('main-script-loaded', 'error');
+            };
+            document.head.appendChild(script);
+        }
+
+        function clearReactTest() {
+            document.getElementById('react-status').innerHTML = '';
+            document.getElementById('react-details').innerHTML = '';
+        }
+
+        // Mini Browser Specific Tests
+        function testMiniBrowserFeatures() {
+            const container = document.getElementById('mini-browser-tests');
+            container.innerHTML = '';
+
+            const ua = navigator.userAgent || '';
+            const isMiniBrowser = /FBAN|FBAV|FBIOS|Instagram|Line|Twitter|LinkedIn|WhatsApp|Telegram|wv\)/i.test(ua);
+
+            if (!isMiniBrowser) {
+                container.appendChild(createResultElement('info', 'Not a mini browser - skipping mini browser tests'));
+                return;
+            }
+
+            // Test 1: Hash routing
+            const currentHash = location.hash;
+            container.appendChild(createResultElement(
+                currentHash ? 'success' : 'warning',
+                `Current hash: ${currentHash || 'empty'}`
+            ));
+
+            // Test 2: Location changes
+            try {
+                const originalHash = location.hash;
+                location.hash = '#test';
+                setTimeout(() => {
+                    if (location.hash === '#test') {
+                        container.appendChild(createResultElement('success', 'Hash changes work'));
+                        addTestResult('hash-changes', 'success');
+                    } else {
+                        container.appendChild(createResultElement('error', 'Hash changes blocked'));
+                        addTestResult('hash-changes', 'error');
+                    }
+                    location.hash = originalHash;
+                }, 100);
+            } catch (e) {
+                container.appendChild(createResultElement('error', 'Hash changes error: ' + e.message));
+                addTestResult('hash-changes', 'error', e.message);
+            }
+
+            // Test 3: Window.open
+            try {
+                const testWindow = window.open('about:blank', '_blank', 'width=100,height=100');
+                if (testWindow) {
+                    container.appendChild(createResultElement('success', 'Window.open works'));
+                    addTestResult('window-open', 'success');
+                    testWindow.close();
+                } else {
+                    container.appendChild(createResultElement('warning', 'Window.open blocked or failed'));
+                    addTestResult('window-open', 'warning');
+                }
+            } catch (e) {
+                container.appendChild(createResultElement('error', 'Window.open error: ' + e.message));
+                addTestResult('window-open', 'error', e.message);
+            }
+
+            // Test 4: Local Storage in mini browser
+            try {
+                localStorage.setItem('mini-browser-test', 'test-value');
+                const retrieved = localStorage.getItem('mini-browser-test');
+                if (retrieved === 'test-value') {
+                    container.appendChild(createResultElement('success', 'Local Storage works in mini browser'));
+                    addTestResult('mini-localstorage', 'success');
+                } else {
+                    container.appendChild(createResultElement('error', 'Local Storage not working in mini browser'));
+                    addTestResult('mini-localstorage', 'error');
+                }
+                localStorage.removeItem('mini-browser-test');
+            } catch (e) {
+                container.appendChild(createResultElement('error', 'Local Storage error: ' + e.message));
+                addTestResult('mini-localstorage', 'error', e.message);
+            }
+
+            // Test 5: Fetch in mini browser
+            fetch('https://httpbin.org/get')
+                .then(response => response.json())
+                .then(data => {
+                    container.appendChild(createResultElement('success', 'Fetch API works in mini browser'));
+                    addTestResult('mini-fetch', 'success');
+                })
+                .catch(error => {
+                    container.appendChild(createResultElement('error', 'Fetch API failed: ' + error.message));
+                    addTestResult('mini-fetch', 'error', error.message);
+                });
+        }
+
+        // Hash Router Test
+        function testHashChange() {
+            const container = document.getElementById('hash-change-test');
+            container.innerHTML = '';
+
+            const originalHash = location.hash;
+            let hashChanged = false;
+
+            const hashChangeHandler = () => {
+                hashChanged = true;
+                container.appendChild(createResultElement('success', `Hash changed to: ${location.hash}`));
+                window.removeEventListener('hashchange', hashChangeHandler);
+            };
+
+            window.addEventListener('hashchange', hashChangeHandler);
+            location.hash = '#test-hash-' + Date.now();
+
+            setTimeout(() => {
+                if (!hashChanged) {
+                    container.appendChild(createResultElement('error', 'Hash change event not fired'));
+                }
+                location.hash = originalHash;
+            }, 1000);
+        }
+
+        // Update current hash display
+        function updateCurrentHash() {
+            document.getElementById('current-hash').innerHTML = '';
+            document.getElementById('current-hash').appendChild(createResultElement(
+                'info',
+                location.hash || 'empty'
+            ));
+        }
+
+        // Copy debug info
+        function copyDebugInfo() {
+            const debugInfo = {
+                timestamp: new Date().toISOString(),
+                userAgent: navigator.userAgent,
+                screenSize: `${screen.width}x${screen.height}`,
+                viewportSize: `${window.innerWidth}x${window.innerHeight}`,
+                testResults: testResults,
+                errors: errorLog
+            };
+
+            navigator.clipboard.writeText(JSON.stringify(debugInfo, null, 2))
+                .then(() => {
+                    alert('Debug info copied to clipboard!');
+                })
+                .catch(() => {
+                    // Fallback for older browsers
+                    const textArea = document.createElement('textarea');
+                    textArea.value = JSON.stringify(debugInfo, null, 2);
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                    alert('Debug info copied to clipboard!');
+                });
+        }
+
+        // Run all tests
+        function runAllTests() {
+            runBrowserDetection();
+            runJavaScriptTests();
+            testMiniBrowserFeatures();
+            updateCurrentHash();
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            runAllTests();
+            updateCurrentHash();
+            
+            // Update hash display when hash changes
+            window.addEventListener('hashchange', updateCurrentHash);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5, user-scalable=yes">
+    <title>🧪 React Loading Test - King Ezekiel Academy</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+        }
+        
+        .status {
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-weight: 500;
+        }
+        
+        .success { background: #d1fae5; color: #065f46; }
+        .error { background: #fee2e2; color: #991b1b; }
+        .warning { background: #fef3c7; color: #92400e; }
+        .info { background: #dbeafe; color: #1e40af; }
+        
+        .button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            margin: 5px;
+        }
+        
+        .button:hover {
+            background: #2563eb;
+        }
+        
+        #root {
+            min-height: 200px;
+            border: 2px dashed #d1d5db;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            background: #f9fafb;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #e5e7eb;
+            border-top: 4px solid #3b82f6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧪 React Loading Test</h1>
+            <p>Testing React app loading in mini browsers and iPhone Safari</p>
+        </div>
+        
+        <div class="content">
+            <div class="test-section">
+                <h3>Browser Information</h3>
+                <div id="browser-info"></div>
+            </div>
+            
+            <div class="test-section">
+                <h3>Loading Status</h3>
+                <div id="loading-status"></div>
+            </div>
+            
+            <div class="test-section">
+                <h3>React App Container</h3>
+                <div id="root">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <p>Waiting for React app to load...</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="test-section">
+                <h3>Actions</h3>
+                <button class="button" onclick="loadReactApp()">Load React App</button>
+                <button class="button" onclick="clearRoot()">Clear Root</button>
+                <button class="button" onclick="location.reload()">Refresh Page</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let loadingStatus = document.getElementById('loading-status');
+        let browserInfo = document.getElementById('browser-info');
+        
+        function addStatus(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `status ${type}`;
+            div.textContent = message;
+            loadingStatus.appendChild(div);
+        }
+        
+        function clearStatus() {
+            loadingStatus.innerHTML = '';
+        }
+        
+        function updateBrowserInfo() {
+            const ua = navigator.userAgent || '';
+            const isMiniBrowser = /FBAN|FBAV|FBIOS|Instagram|Line|Twitter|LinkedIn|WhatsApp|Telegram|wv\)/i.test(ua);
+            const isIOS = /iPad|iPhone|iPod/.test(ua);
+            const isSafari = /Safari/i.test(ua) && !/Chrome|CriOS|EdgA|Firefox|FxiOS|OPR|Vivaldi/i.test(ua);
+            
+            browserInfo.innerHTML = `
+                <div class="status ${isMiniBrowser ? 'warning' : 'success'}">
+                    Browser: ${isMiniBrowser ? 'Mini Browser' : 'Regular Browser'}
+                </div>
+                <div class="status ${isIOS ? 'info' : 'success'}">
+                    Device: ${isIOS ? 'iOS' : 'Other'}
+                </div>
+                <div class="status ${isSafari ? 'info' : 'success'}">
+                    Engine: ${isSafari ? 'Safari' : 'Other'}
+                </div>
+                <div class="status info">
+                    Screen: ${screen.width}x${screen.height} (${window.innerWidth}x${window.innerHeight})
+                </div>
+            `;
+        }
+        
+        function loadReactApp() {
+            clearStatus();
+            addStatus('Starting React app loading...', 'info');
+            
+            // Check if we're in a mini browser and fix hash
+            const ua = navigator.userAgent || '';
+            const isMiniBrowser = /FBAN|FBAV|FBIOS|Instagram|Line|Twitter|LinkedIn|WhatsApp|Telegram|wv\)/i.test(ua);
+            
+            if (isMiniBrowser) {
+                addStatus('Mini browser detected - fixing hash routing...', 'warning');
+                if (!location.hash || location.hash === '#') {
+                    location.hash = '#/';
+                    addStatus(`Hash set to: ${location.hash}`, 'success');
+                }
+            }
+            
+            // Load the main React script
+            addStatus('Loading main React script...', 'info');
+            
+            const script = document.createElement('script');
+            script.src = 'https://king-ezekiel-academy-c0tw56mkt-king-ezekiel-academys-projects.vercel.app/static/js/main.a37cd3c4.js';
+            script.onload = function() {
+                addStatus('✅ Main script loaded successfully', 'success');
+                
+                // Wait a bit for React to initialize
+                setTimeout(() => {
+                    checkReactApp();
+                }, 2000);
+            };
+            script.onerror = function() {
+                addStatus('❌ Failed to load main script', 'error');
+            };
+            
+            document.head.appendChild(script);
+        }
+        
+        function checkReactApp() {
+            const root = document.getElementById('root');
+            const rootContent = root.innerHTML;
+            
+            if (rootContent.includes('King Ezekiel Academy') || rootContent.includes('Welcome')) {
+                addStatus('✅ React app loaded and rendered successfully!', 'success');
+            } else if (rootContent.trim() === '') {
+                addStatus('❌ React app failed to render - root is empty', 'error');
+            } else {
+                addStatus('⚠️ React app partially loaded - content: ' + rootContent.substring(0, 100) + '...', 'warning');
+            }
+            
+            // Check for React in global scope
+            if (typeof React !== 'undefined') {
+                addStatus('✅ React is available globally', 'success');
+            } else {
+                addStatus('❌ React not found in global scope', 'error');
+            }
+            
+            if (typeof ReactDOM !== 'undefined') {
+                addStatus('✅ ReactDOM is available globally', 'success');
+            } else {
+                addStatus('❌ ReactDOM not found in global scope', 'error');
+            }
+        }
+        
+        function clearRoot() {
+            document.getElementById('root').innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Waiting for React app to load...</p>
+                </div>
+            `;
+            clearStatus();
+        }
+        
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            updateBrowserInfo();
+            addStatus('Page loaded - ready to test React app loading', 'info');
+        });
+    </script>
+</body>
+</html>
