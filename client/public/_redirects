@@ -1,4 +1,0 @@
-/static/*    /static/*   200
-/course/*    /index.html   200
-/course/*/*    /index.html   200
-/*    /index.html   200
