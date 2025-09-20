@@ -58,9 +58,15 @@ function App() {
   useEffect(() => {
     const initializeApp = async () => {
       try {
-        // 1. Get browser info
+        // 1. CRITICAL: Fix hash for mini browsers FIRST
         const browserInfo = getBrowserInfo();
         console.log('🔍 Browser Info:', browserInfo);
+        
+        // Fix hash routing for mini browsers - MUST happen before React mounts
+        if (browserInfo.isInApp && (!location.hash || location.hash === '#')) {
+          location.hash = '#/';
+          console.log('🔧 Fixed hash for mini browser:', location.hash);
+        }
         
         // 2. Apply essential polyfills
         addEssentialPolyfills();
@@ -68,9 +74,14 @@ function App() {
         // 3. Apply browser-specific fixes
         applyBrowserFixes();
         
-        // 4. Register service worker (always)
+        // 4. Register service worker (non-blocking for mini browsers)
         if (safeFeatureCheck.hasServiceWorker()) {
-          await registerServiceWorker();
+          if (browserInfo.isInApp) {
+            // For mini browsers, register service worker asynchronously to avoid blocking
+            setTimeout(() => registerServiceWorker(), 100);
+          } else {
+            await registerServiceWorker();
+          }
         }
         
         // 5. Initialize non-critical features only if supported
@@ -104,8 +115,18 @@ function App() {
         
       } catch (error) {
         console.error('❌ App initialization failed:', error);
-        setAppError('Failed to initialize application. Please refresh the page.');
-        setIsLoading(false);
+        
+        // Mini browser specific error handling
+        const browserInfo = getBrowserInfo();
+        if (browserInfo.isInApp) {
+          console.log('🔧 Mini browser detected - using simplified error handling');
+          // For mini browsers, try to continue with minimal functionality
+          setIsLoading(false);
+          // Don't set appError for mini browsers - let them try to load
+        } else {
+          setAppError('Failed to initialize application. Please refresh the page.');
+          setIsLoading(false);
+        }
       }
     };
 
@@ -161,13 +182,20 @@ function App() {
   const browserInfo = getBrowserInfo();
   const RouterComponent = HashRouter;
   
+  // CRITICAL: Ensure hash is set for HashRouter
+  if (typeof window !== 'undefined' && (!location.hash || location.hash === '#')) {
+    location.hash = '#/';
+    console.log('🔧 Ensured hash is set for HashRouter:', location.hash);
+  }
+  
   console.log('🔍 Router Selection:', {
     useHashRouter: true,
     isInApp: browserInfo.isInApp,
     isIOS: browserInfo.isIOS,
     simplifiedMode: shouldUseSimplifiedMode(),
     routerType: 'HashRouter (Optimized for Mini Browsers)',
-    reason: 'HashRouter provides maximum compatibility with Instagram/Facebook mini browsers'
+    reason: 'HashRouter provides maximum compatibility with Instagram/Facebook mini browsers',
+    currentHash: location.hash
   });
 
   return (
@@ -183,6 +211,7 @@ function App() {
                 <main>
                   <Routes>
                     <Route path="/" element={<Home />} />
+                    <Route path="" element={<Home />} />
                     <Route path="/courses" element={<Courses />} />
                     <Route path="/blog" element={<Blog />} />
                     <Route path="/blog/:slug" element={<BlogPost />} />

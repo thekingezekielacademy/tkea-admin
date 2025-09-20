@@ -33,8 +33,8 @@ export const getBrowserInfo = (): SimpleBrowserInfo => {
   
   return {
     isMobile: /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua),
-    isInApp: /FBAN|FBAV|FBIOS|Instagram|Line|Twitter|LinkedIn|WhatsApp|Telegram/i.test(ua),
-    isSafari: /Safari/i.test(ua) && !/Chrome/i.test(ua),
+    isInApp: /FBAN|FBAV|FBIOS|Instagram|Line|Twitter|LinkedIn|WhatsApp|Telegram|wv\)/i.test(ua),
+    isSafari: /Safari/i.test(ua) && !/Chrome|CriOS|EdgA|Firefox|FxiOS|OPR|Vivaldi/i.test(ua),
     isIOS: /iPad|iPhone|iPod/.test(ua),
     isAndroid: /Android/i.test(ua),
     userAgent: ua
@@ -128,6 +128,12 @@ export const applyBrowserFixes = (): void => {
     // Disable complex features that might not work
     console.log('🔧 In-app browser detected - using simplified mode');
     
+    // CRITICAL: Fix hash routing for mini browsers
+    if (!location.hash || location.hash === '#') {
+      location.hash = '#/';
+      console.log('🔧 Fixed hash for mini browser:', location.hash);
+    }
+    
     // Add cache-busting for in-app browsers
     const scripts = document.querySelectorAll('script[src]');
     scripts.forEach((script: any) => {
@@ -137,6 +143,21 @@ export const applyBrowserFixes = (): void => {
         script.src = url.toString();
       }
     });
+    
+    // Disable problematic features for mini browsers
+    if (typeof window !== 'undefined') {
+      // Disable service worker in mini browsers if it causes issues
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(registrations => {
+          registrations.forEach(registration => {
+            if (registration.scope.includes('localhost') || registration.scope.includes('vercel')) {
+              registration.unregister();
+              console.log('🔧 Unregistered service worker for mini browser compatibility');
+            }
+          });
+        });
+      }
+    }
   }
 };
 

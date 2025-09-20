@@ -53,6 +53,24 @@
     <!-- Apple Touch Icon -->
     <link rel="apple-touch-icon" href="./favicon.svg" />
     
+    <!-- CRITICAL: Mini Browser Hash Fix - Must be before React loads -->
+    <script>
+      (function() {
+        // Detect mini browsers and fix hash immediately
+        var ua = navigator.userAgent || '';
+        var isMiniBrowser = /FBAN|FBAV|FBIOS|Instagram|Line|Twitter|LinkedIn|WhatsApp|Telegram|wv\)/i.test(ua);
+        
+        if (isMiniBrowser) {
+          console.log('🔧 Mini browser detected - fixing hash immediately');
+          // Fix hash before React loads
+          if (!location.hash || location.hash === '#') {
+            location.hash = '#/';
+            console.log('🔧 Fixed hash for mini browser:', location.hash);
+          }
+        }
+      })();
+    </script>
+    
     <!-- Google Analytics -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-8DXQN4Q7LD"></script>
     <script>
