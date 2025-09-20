@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { detectMiniBrowser, shouldDisablePWA } from '../utils/miniBrowserDetection';
+import { getBrowserInfo } from '../utils/simpleBrowserDetection';
 
 interface PWAInstallLinkProps {
   className?: string;
@@ -25,10 +25,10 @@ const PWAInstallLink: React.FC<PWAInstallLinkProps> = ({
   const [installUrl, setInstallUrl] = useState('');
 
   useEffect(() => {
-    const browserInfo = detectMiniBrowser();
+    const browserInfo = getBrowserInfo();
     
     // Skip PWA features for mini browsers
-    if (shouldDisablePWA()) {
+    if (browserInfo.isInApp) {
       return;
     }
 
@@ -112,7 +112,8 @@ const PWAInstallLink: React.FC<PWAInstallLinkProps> = ({
   };
 
   // Don't show install link for mini browsers
-  if (shouldDisablePWA()) {
+  const browserInfo = getBrowserInfo();
+  if (browserInfo.isInApp) {
     return null;
   }
 

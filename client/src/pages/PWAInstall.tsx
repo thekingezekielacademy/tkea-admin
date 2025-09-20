@@ -4,33 +4,30 @@
  */
 
 import React, { useEffect, useState } from 'react';
-import { detectMiniBrowser, shouldDisablePWA } from '../utils/miniBrowserDetection';
+import { getBrowserInfo } from '../utils/simpleBrowserDetection';
 
 const PWAInstall: React.FC = () => {
   const [browserInfo, setBrowserInfo] = useState<any>(null);
   const [platform, setPlatform] = useState<string>('');
 
   useEffect(() => {
-    const info = detectMiniBrowser();
+    const info = getBrowserInfo();
     setBrowserInfo(info);
 
     // Detect platform
-    const userAgent = navigator.userAgent;
-    if (userAgent.includes('iPhone') || userAgent.includes('iPad')) {
+    if (info.isIOS) {
       setPlatform('ios');
-    } else if (userAgent.includes('Android')) {
+    } else if (info.isAndroid) {
       setPlatform('android');
-    } else if (userAgent.includes('Windows')) {
-      setPlatform('windows');
-    } else if (userAgent.includes('Mac')) {
-      setPlatform('mac');
+    } else if (info.isInApp) {
+      setPlatform('mini-browser');
     } else {
-      setPlatform('other');
+      setPlatform('standard');
     }
   }, []);
 
   // Don't show install instructions for mini browsers
-  if (shouldDisablePWA()) {
+  if (browserInfo?.isInApp) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-6 text-center">

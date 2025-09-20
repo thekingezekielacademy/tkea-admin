@@ -3,33 +3,30 @@
  * Helper functions for generating PWA install links and handling installation
  */
 
-import { detectMiniBrowser, shouldDisablePWA } from './miniBrowserDetection';
+import { getBrowserInfo } from './simpleBrowserDetection';
 
 /**
  * Generate a PWA install link based on the current browser and platform
  */
 export function generatePWAInstallLink(): string {
-  const browserInfo = detectMiniBrowser();
+  const browserInfo = getBrowserInfo();
   const currentUrl = window.location.origin;
   
   // Don't generate install links for mini browsers
-  if (shouldDisablePWA()) {
+  if (browserInfo.isInApp) {
     return '';
   }
 
   // Check platform and generate appropriate link
-  if (browserInfo.userAgent.includes('iPhone') || browserInfo.userAgent.includes('iPad')) {
+  if (browserInfo.isIOS) {
     // iOS Safari - redirect to install instructions
     return `${currentUrl}/#/install?platform=ios`;
-  } else if (browserInfo.userAgent.includes('Android')) {
+  } else if (browserInfo.isAndroid) {
     // Android Chrome - try to trigger install prompt
     return `${currentUrl}/#/install?platform=android`;
-  } else if (browserInfo.userAgent.includes('Windows') || browserInfo.userAgent.includes('Mac')) {
+  } else {
     // Desktop Chrome/Edge - try to trigger install prompt
     return `${currentUrl}/#/install?platform=desktop`;
-  } else {
-    // Fallback
-    return `${currentUrl}/#/install`;
   }
 }
 
@@ -45,8 +42,10 @@ export function generateShareableInstallLink(): string {
  * Check if the current browser supports PWA installation
  */
 export function canInstallPWA(): boolean {
+  const browserInfo = getBrowserInfo();
+  
   // Don't allow PWA installation in mini browsers
-  if (shouldDisablePWA()) {
+  if (browserInfo.isInApp) {
     return false;
   }
 
@@ -56,8 +55,7 @@ export function canInstallPWA(): boolean {
   }
 
   // Check for iOS Safari (can be added to home screen)
-  const browserInfo = detectMiniBrowser();
-  if (browserInfo.userAgent.includes('iPhone') || browserInfo.userAgent.includes('iPad')) {
+  if (browserInfo.isIOS) {
     return true;
   }
 
@@ -68,11 +66,11 @@ export function canInstallPWA(): boolean {
  * Get the appropriate install button text based on platform
  */
 export function getInstallButtonText(): string {
-  const browserInfo = detectMiniBrowser();
+  const browserInfo = getBrowserInfo();
   
-  if (browserInfo.userAgent.includes('iPhone') || browserInfo.userAgent.includes('iPad')) {
+  if (browserInfo.isIOS) {
     return 'Add to Home Screen';
-  } else if (browserInfo.userAgent.includes('Android')) {
+  } else if (browserInfo.isAndroid) {
     return 'Install App';
   } else {
     return 'Install App';
@@ -134,9 +132,9 @@ export function getInstallInstructions(): {
   steps: string[];
   icon: string;
 } {
-  const browserInfo = detectMiniBrowser();
+  const browserInfo = getBrowserInfo();
   
-  if (browserInfo.userAgent.includes('iPhone') || browserInfo.userAgent.includes('iPad')) {
+  if (browserInfo.isIOS) {
     return {
       platform: 'iOS',
       icon: '📱',
@@ -147,7 +145,7 @@ export function getInstallInstructions(): {
         'Tap "Add" to confirm'
       ]
     };
-  } else if (browserInfo.userAgent.includes('Android')) {
+  } else if (browserInfo.isAndroid) {
     return {
       platform: 'Android',
       icon: '🤖',

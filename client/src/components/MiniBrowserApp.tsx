@@ -5,7 +5,7 @@
 
 import React from 'react';
 import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { detectMiniBrowser } from '../utils/miniBrowserDetection';
+import { getBrowserInfo } from '../utils/simpleBrowserDetection';
 
 // Import only essential components
 import Dashboard from '../pages/Dashboard';
@@ -50,7 +50,7 @@ class MiniBrowserErrorBoundary extends React.Component<
 
   render() {
     if (this.state.hasError) {
-      const info = detectMiniBrowser();
+      const info = getBrowserInfo();
       return (
         <div style={{
           padding: '20px',
@@ -64,7 +64,7 @@ class MiniBrowserErrorBoundary extends React.Component<
           alignItems: 'center'
         }}>
           <h1 style={{ color: '#dc3545', marginBottom: '20px' }}>
-            {info.isInstagram ? '📸' : info.isFacebook ? '📘' : '📱'} App Error
+            {info.isInApp ? '📱' : '🌐'} App Error
           </h1>
           <p style={{ color: '#6c757d', marginBottom: '20px' }}>
             Something went wrong. Please try refreshing the page.
@@ -110,12 +110,12 @@ class MiniBrowserErrorBoundary extends React.Component<
  * Uses HashRouter and simplified routing
  */
 const MiniBrowserApp: React.FC = () => {
-  const info = detectMiniBrowser();
+  const info = getBrowserInfo();
   
   // Log browser info for debugging
-  console.log(`${info.isInstagram ? '📸' : info.isFacebook ? '📘' : '📱'} Mini Browser App starting...`);
+  console.log(`${info.isInApp ? '📱' : '🌐'} Mini Browser App starting...`);
   console.log('User Agent:', info.userAgent);
-  console.log('Needs Legacy Mode:', info.needsLegacyMode);
+  console.log('Is In-App Browser:', info.isInApp);
 
   return (
     <MiniBrowserErrorBoundary>

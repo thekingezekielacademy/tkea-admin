@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { detectMiniBrowser, shouldDisablePWA } from '../utils/miniBrowserDetection';
+import { getBrowserInfo } from '../utils/simpleBrowserDetection';
 
 interface SimplePWAInstallProps {
   text?: string;
@@ -15,10 +15,10 @@ const SimplePWAInstall: React.FC<SimplePWAInstallProps> = ({
   text = "Install App",
   className = ""
 }) => {
-  const browserInfo = detectMiniBrowser();
+  const browserInfo = getBrowserInfo();
 
   // Don't show for mini browsers
-  if (shouldDisablePWA()) {
+  if (browserInfo.isInApp) {
     return null;
   }
 
