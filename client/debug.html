@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔧 Debug - King Ezekiel Academy</title>
+    <style>
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+            margin: 20px; 
+            line-height: 1.6; 
+            background: #f8fafc;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .status { 
+            font-weight: bold; 
+            margin: 10px 0; 
+            padding: 10px;
+            border-radius: 6px;
+        }
+        .success { background: #d1fae5; color: #065f46; }
+        .error { background: #fee2e2; color: #991b1b; }
+        .warning { background: #fef3c7; color: #92400e; }
+        .info { background: #dbeafe; color: #1e40af; }
+        #root { 
+            border: 2px solid #e5e7eb; 
+            padding: 20px; 
+            margin: 20px 0; 
+            min-height: 200px; 
+            background: #f9fafb;
+            border-radius: 8px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+        }
+        .button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .button:hover {
+            background: #2563eb;
+        }
+        .code {
+            background: #1f2937;
+            color: #f9fafb;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Debug Test - King Ezekiel Academy</h1>
+        <p>This page tests if the React app can mount properly in mini browsers and iPhone Safari.</p>
+        
+        <div class="test-section">
+            <h3>Browser Information</h3>
+            <div id="browser-info"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>Loading Status</h3>
+            <div id="js-status">JavaScript: Loading...</div>
+            <div id="react-status">React: Loading...</div>
+            <div id="mount-status">Mount: Loading...</div>
+            <div id="console-errors">Console Errors: None detected</div>
+        </div>
+        
+        <div class="test-section">
+            <h3>React App Container</h3>
+            <div id="root">
+                <div class="status warning">React app should mount here...</div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h3>Actions</h3>
+            <button class="button" onclick="loadReactApp()">Load React App</button>
+            <button class="button" onclick="clearRoot()">Clear Root</button>
+            <button class="button" onclick="location.reload()">Refresh Page</button>
+        </div>
+        
+        <div class="test-section">
+            <h3>Debug Information</h3>
+            <div id="debug-details"></div>
+        </div>
+    </div>
+
+    <script>
+        let errors = [];
+        let testResults = {};
+        
+        // Error tracking
+        const originalError = console.error;
+        console.error = function(...args) {
+            errors.push(args.join(' '));
+            originalError.apply(console, args);
+        };
+        
+        // Browser detection
+        function detectBrowser() {
+            const ua = navigator.userAgent || '';
+            const isInstagram = /Instagram/i.test(ua);
+            const isFacebook = /FBAN|FBAV|FBIOS/i.test(ua);
+            const isTikTok = /TikTok/i.test(ua);
+            const isTwitter = /Twitter/i.test(ua);
+            const isSnapchat = /Snapchat/i.test(ua);
+            const isMiniBrowser = isInstagram || isFacebook || isTikTok || isTwitter || isSnapchat || /wv\)/i.test(ua);
+            const isSafari = /Safari/i.test(ua) && !/Chrome|CriOS|EdgA|Firefox|FxiOS|OPR|Vivaldi/i.test(ua);
+            const isIOS = /iPad|iPhone|iPod/.test(ua);
+            const isAndroid = /Android/i.test(ua);
+            
+            return {
+                userAgent: ua,
+                isMiniBrowser,
+                isInstagram,
+                isFacebook,
+                isTikTok,
+                isTwitter,
+                isSnapchat,
+                isSafari,
+                isIOS,
+                isAndroid,
+                screenSize: `${screen.width}x${screen.height}`,
+                viewportSize: `${window.innerWidth}x${window.innerHeight}`
+            };
+        }
+        
+        function updateBrowserInfo() {
+            const browser = detectBrowser();
+            const infoDiv = document.getElementById('browser-info');
+            
+            let browserType = 'Regular Browser';
+            if (browser.isInstagram) browserType = 'Instagram In-App Browser';
+            else if (browser.isFacebook) browserType = 'Facebook In-App Browser';
+            else if (browser.isTikTok) browserType = 'TikTok In-App Browser';
+            else if (browser.isTwitter) browserType = 'Twitter In-App Browser';
+            else if (browser.isSnapchat) browserType = 'Snapchat In-App Browser';
+            else if (browser.isMiniBrowser) browserType = 'Other Mini Browser';
+            else if (browser.isSafari) browserType = 'Safari';
+            
+            let deviceType = 'Desktop';
+            if (browser.isIOS) deviceType = 'iOS Device';
+            else if (browser.isAndroid) deviceType = 'Android Device';
+            
+            infoDiv.innerHTML = `
+                <div class="status ${browser.isMiniBrowser ? 'warning' : 'success'}">
+                    Browser: ${browserType}
+                </div>
+                <div class="status ${browser.isIOS ? 'info' : 'success'}">
+                    Device: ${deviceType}
+                </div>
+                <div class="status info">
+                    Screen: ${browser.screenSize} (${browser.viewportSize} viewport)
+                </div>
+                <div class="code">User Agent: ${browser.userAgent}</div>
+            `;
+        }
+        
+        function updateStatus(id, message, type = 'info') {
+            const element = document.getElementById(id);
+            element.innerHTML = message;
+            element.className = `status ${type}`;
+        }
+        
+        function loadReactApp() {
+            updateStatus('js-status', 'JavaScript: ✅ Loaded', 'success');
+            
+            // Check if we're in a mini browser and fix hash
+            const browser = detectBrowser();
+            if (browser.isMiniBrowser) {
+                updateStatus('js-status', 'JavaScript: ✅ Loaded (Mini Browser Detected)', 'warning');
+                if (!location.hash || location.hash === '#') {
+                    location.hash = '#/';
+                    console.log('🔧 Fixed hash for mini browser:', location.hash);
+                }
+            }
+            
+            // Test React availability
+            if (typeof React !== 'undefined') {
+                updateStatus('react-status', 'React: ✅ Available', 'success');
+                testResults.react = 'success';
+            } else {
+                updateStatus('react-status', 'React: ❌ Not Available', 'error');
+                testResults.react = 'error';
+            }
+            
+            if (typeof ReactDOM !== 'undefined') {
+                updateStatus('react-status', 'React: ✅ Available (ReactDOM too)', 'success');
+                testResults.reactdom = 'success';
+            } else {
+                updateStatus('react-status', 'React: ❌ ReactDOM Not Available', 'error');
+                testResults.reactdom = 'error';
+            }
+            
+            // Load the main React script
+            const script = document.createElement('script');
+            script.src = 'https://king-ezekiel-academy-d0nm9ynor-king-ezekiel-academys-projects.vercel.app/static/js/main.a37cd3c4.js';
+            script.onload = function() {
+                updateStatus('js-status', 'JavaScript: ✅ Main Script Loaded', 'success');
+                testResults.scriptLoaded = 'success';
+                
+                // Wait for React to initialize
+                setTimeout(() => {
+                    checkReactMount();
+                }, 2000);
+            };
+            script.onerror = function() {
+                updateStatus('js-status', 'JavaScript: ❌ Failed to Load Main Script', 'error');
+                testResults.scriptLoaded = 'error';
+            };
+            
+            document.head.appendChild(script);
+        }
+        
+        function checkReactMount() {
+            const rootElement = document.getElementById('root');
+            const rootContent = rootElement.innerHTML;
+            
+            if (rootContent.includes('King Ezekiel Academy') || rootContent.includes('Welcome') || rootContent.includes('Courses')) {
+                updateStatus('mount-status', 'Mount: ✅ React App Mounted Successfully!', 'success');
+                testResults.mount = 'success';
+            } else if (rootContent.trim() === '' || rootContent.includes('React app should mount here')) {
+                updateStatus('mount-status', 'Mount: ❌ React App Failed to Mount - Root is Empty', 'error');
+                testResults.mount = 'error';
+            } else {
+                updateStatus('mount-status', 'Mount: ⚠️ React App Partially Loaded', 'warning');
+                testResults.mount = 'warning';
+            }
+            
+            // Check console errors
+            if (errors.length > 0) {
+                updateStatus('console-errors', `Console Errors: ❌ ${errors.length} errors detected`, 'error');
+                testResults.consoleErrors = 'error';
+            } else {
+                updateStatus('console-errors', 'Console Errors: ✅ None detected', 'success');
+                testResults.consoleErrors = 'success';
+            }
+            
+            // Update debug details
+            updateDebugDetails();
+        }
+        
+        function updateDebugDetails() {
+            const detailsDiv = document.getElementById('debug-details');
+            const browser = detectBrowser();
+            
+            detailsDiv.innerHTML = `
+                <div class="code">
+                    <strong>Test Results:</strong><br>
+                    ${JSON.stringify(testResults, null, 2)}<br><br>
+                    <strong>Browser Info:</strong><br>
+                    ${JSON.stringify(browser, null, 2)}<br><br>
+                    <strong>Console Errors:</strong><br>
+                    ${errors.length > 0 ? errors.join('<br>') : 'None'}
+                </div>
+            `;
+        }
+        
+        function clearRoot() {
+            document.getElementById('root').innerHTML = '<div class="status warning">React app should mount here...</div>';
+            errors = [];
+            testResults = {};
+            updateStatus('js-status', 'JavaScript: Loading...', 'info');
+            updateStatus('react-status', 'React: Loading...', 'info');
+            updateStatus('mount-status', 'Mount: Loading...', 'info');
+            updateStatus('console-errors', 'Console Errors: None detected', 'info');
+            document.getElementById('debug-details').innerHTML = '';
+        }
+        
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            updateBrowserInfo();
+            updateStatus('js-status', 'JavaScript: ✅ Page Loaded', 'success');
+        });
+    </script>
+</body>
+</html>
