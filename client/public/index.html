@@ -71,100 +71,7 @@
       })();
     </script>
     
-    <!-- Google Analytics -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-8DXQN4Q7LD"></script>
-    <script>
-        function gtag(){dataLayer.push(arguments)}
-        window.dataLayer = window.dataLayer || [];
-        gtag('js', new Date());
-        gtag('config', 'G-8DXQN4Q7LD');
-    </script>
-    
-    <!-- Browser Detection and Script Loading -->
-    <script>
-        (function() {
-            // Detect mini browsers
-            var ua = navigator.userAgent || '';
-            var isInstagram = /Instagram/i.test(ua);
-            var isFacebook = /FBAN|FBAV|FBIOS/i.test(ua);
-            var isTikTok = /TikTok/i.test(ua);
-            var isTwitter = /Twitter/i.test(ua);
-            var isSnapchat = /Snapchat/i.test(ua);
-            var isMiniBrowser = isInstagram || isFacebook || isTikTok || isTwitter || isSnapchat || /wv\)/i.test(ua);
-            
-            // Check for old Safari
-            var safariMatch = ua.match(/Version\/(\d+).+Safari/i);
-            var safariMajor = safariMatch ? parseInt(safariMatch[1], 10) : null;
-            var isOldSafari = !!safariMajor && safariMajor <= 12;
-            
-            var needsMiniMode = isMiniBrowser || isOldSafari;
-            
-            console.log('🔍 Browser Detection:', {
-                isMiniBrowser: isMiniBrowser,
-                isInstagram: isInstagram,
-                isFacebook: isFacebook,
-                isOldSafari: isOldSafari,
-                needsMiniMode: needsMiniMode,
-                userAgent: ua
-            });
-            
-            // Store detection results globally
-            window.__KEA_BROWSER_INFO__ = {
-                isMiniBrowser: isMiniBrowser,
-                isInstagram: isInstagram,
-                isFacebook: isFacebook,
-                isTikTok: isTikTok,
-                isTwitter: isTwitter,
-                isSnapchat: isSnapchat,
-                isOldSafari: isOldSafari,
-                needsMiniMode: needsMiniMode,
-                userAgent: ua
-            };
-            
-            // Force hash routing for mini browsers
-            if (isMiniBrowser && (!location.hash || location.hash === '#')) {
-                location.hash = '/';
-            }
-        })();
-    </script>
-    
-    <!-- Facebook Pixel -->
-    <script>
-        !function(){
-            var e=navigator.userAgent||"",n=/FBAN|FBAV|FBIOS|Instagram/i.test(e);
-            if(!window.fbq){
-                var t=function(){
-                    try{
-                        (window.fbq.q=window.fbq.q||[]).push(arguments)
-                    }catch(e){}
-                };
-                window.fbq=t,window._fbq=t,window.fbq.loaded=!1,window.fbq.version="2.0"
-            }
-            if(n)console.log("Skipping Meta Pixel script in in-app browser");
-            else{
-                var o,i,a,f,c,r;
-                o=window,i=document,a="script",
-                o.fbq&&o.fbq.loaded||(
-                    (f=o.fbq)||(f=o.fbq=function(){
-                        f.callMethod?f.callMethod.apply(f,arguments):f.queue.push(arguments)
-                    }),
-                    o._fbq||(o._fbq=f),
-                    f.push=f,
-                    f.loaded=!0,
-                    f.version="2.0",
-                    f.queue=[],
-                    (c=i.createElement(a)).async=!0,
-                    c.src="https://connect.facebook.net/en_US/fbevents.js",
-                    (r=i.getElementsByTagName(a)[0]).parentNode.insertBefore(c,r)
-                );
-                try{
-                    fbq("init","1991898708291767"),
-                    fbq("track","PageView")
-                }catch(a){}
-            }
-        }()
-    </script>
-    <noscript><img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=1991898708291767&ev=PageView&noscript=1" /></noscript>
+    <!-- NO INTERFERING SCRIPTS - Let React load cleanly -->
     
     <!-- NO INSTAGRAM COMPATIBILITY SCRIPT - Let React app load directly -->
     
@@ -205,6 +112,18 @@
     
     <!-- Manifest -->
     <link rel="manifest" href="./manifest.json" />
+    
+    <!-- DISABLE SERVICE WORKER - It's interfering with React loading -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                for(let registration of registrations) {
+                    registration.unregister();
+                    console.log('🔧 Unregistered interfering service worker');
+                }
+            });
+        }
+    </script>
     
     <!-- React App Scripts will be injected automatically by the build process -->
     
