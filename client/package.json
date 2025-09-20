@@ -37,8 +37,8 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "start": "craco start",
-    "build": "DISABLE_ESLINT_PLUGIN=true craco build",
+    "start": "react-scripts start",
+    "build": "DISABLE_ESLINT_PLUGIN=true react-scripts build",
     "build:es5": "npm run build:es5:clean && npm run build:es5:webpack && npm run build:es5:copy",
     "build:es5:clean": "rm -rf build-es5 && mkdir -p build-es5/static/js build-es5/static/css build-es5/static/media",
     "build:es5:webpack": "webpack --config webpack.config.es5.js --mode production",
