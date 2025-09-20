@@ -217,8 +217,15 @@
                 console.log('✅ Main app script loaded');
                 updateStatus('Main app script loaded! Checking for React...', 'success');
                 
-                // Wait a bit for React to initialize
-                setTimeout(() => {
+                // Wait longer for React to initialize and check multiple times
+                let attempts = 0;
+                const maxAttempts = 10;
+                const checkInterval = 500; // Check every 500ms
+                
+                const checkForReact = () => {
+                    attempts++;
+                    console.log(`Checking for React availability (attempt ${attempts}/${maxAttempts})...`);
+                    
                     if (typeof React !== 'undefined' && typeof ReactDOM !== 'undefined') {
                         console.log('✅ React and ReactDOM available from main app');
                         updateStatus('React available from main app! Testing mount...', 'success');
@@ -228,7 +235,8 @@
                             root.render(React.createElement('div', null,
                                 React.createElement('h2', null, '✅ Main App React Mounted!'),
                                 React.createElement('p', null, 'This is using the main app\'s React bundle'),
-                                React.createElement('p', null, `Time: ${new Date().toLocaleTimeString()}`)
+                                React.createElement('p', null, `Time: ${new Date().toLocaleTimeString()}`),
+                                React.createElement('p', null, `Attempts: ${attempts}`)
                             ));
                             updateStatus('✅ Main app React mounted successfully!', 'success');
                             console.log('✅ Main app React mounted successfully!');
@@ -236,11 +244,17 @@
                             updateStatus('❌ Main app React mount failed: ' + e.message, 'error');
                             console.error('❌ Main app React mount failed:', e);
                         }
+                    } else if (attempts < maxAttempts) {
+                        console.log(`React not yet available, retrying in ${checkInterval}ms...`);
+                        updateStatus(`Waiting for React... (${attempts}/${maxAttempts})`, 'warning');
+                        setTimeout(checkForReact, checkInterval);
                     } else {
-                        updateStatus('❌ React not available from main app', 'error');
-                        console.error('❌ React not available from main app');
+                        updateStatus('❌ React not available from main app after ' + maxAttempts + ' attempts', 'error');
+                        console.error('❌ React not available from main app after ' + maxAttempts + ' attempts');
                     }
-                }, 1000);
+                };
+                
+                checkForReact();
             };
             script.onerror = function() {
                 updateStatus('❌ Main app script failed to load', 'error');
