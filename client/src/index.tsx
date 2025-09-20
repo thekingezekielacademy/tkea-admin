@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import App from './App';
+import SimpleApp from './SimpleApp';
 import './index.css';
 
 // CRITICAL: Expose React globally for mini browser compatibility
@@ -14,7 +14,7 @@ if (rootElement) {
   const root = ReactDOM.createRoot(rootElement);
   root.render(
     <React.StrictMode>
-      <App />
+      <SimpleApp />
     </React.StrictMode>
   );
   console.log('✅ React app mounted successfully');
