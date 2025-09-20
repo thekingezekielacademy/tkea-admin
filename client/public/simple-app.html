@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple React App Test</title>
+    <style>
+        body { 
+            margin: 0; 
+            padding: 0; 
+            font-family: Arial, sans-serif; 
+        }
+        #root { 
+            min-height: 100vh; 
+        }
+    </style>
+</head>
+<body>
+    <div id="root">
+        <div style="padding: 20px; text-align: center; background: #f0f0f0;">
+            <h2>Loading Simple React App...</h2>
+            <p>If this doesn't change, React failed to load.</p>
+        </div>
+    </div>
+
+    <!-- Load the simple React app -->
+    <script>
+        console.log('🔧 Loading simple React app...');
+        
+        // Create a simple React app directly in the HTML
+        const { createElement: h, createRoot } = React;
+        
+        function SimpleApp() {
+            return h('div', {
+                style: {
+                    padding: '20px',
+                    textAlign: 'center',
+                    fontFamily: 'Arial, sans-serif',
+                    background: 'linear-gradient(45deg, #ff6b6b, #4ecdc4)',
+                    color: 'white',
+                    minHeight: '100vh',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center',
+                    alignItems: 'center'
+                }
+            }, [
+                h('h1', { style: { fontSize: '48px', marginBottom: '20px' } }, '🎉 SIMPLE APP WORKS!'),
+                h('p', { style: { fontSize: '24px', marginBottom: '20px' } }, 'This is a minimal React app with no dependencies'),
+                h('p', { style: { fontSize: '18px', marginBottom: '20px' } }, `Time: ${new Date().toLocaleTimeString()}`),
+                h('p', { style: { fontSize: '16px' } }, 'If you can see this, React is working in mini browsers!')
+            ]);
+        }
+        
+        // Load React from CDN first
+        const script = document.createElement('script');
+        script.src = 'https://unpkg.com/react@18/umd/react.production.min.js';
+        script.onload = function() {
+            console.log('✅ React loaded, loading ReactDOM...');
+            
+            const reactDOMScript = document.createElement('script');
+            reactDOMScript.src = 'https://unpkg.com/react-dom@18/umd/react-dom.production.min.js';
+            reactDOMScript.onload = function() {
+                console.log('✅ ReactDOM loaded, mounting app...');
+                
+                try {
+                    const root = ReactDOM.createRoot(document.getElementById('root'));
+                    root.render(React.createElement(SimpleApp));
+                    console.log('✅ Simple React app mounted successfully!');
+                } catch (e) {
+                    console.error('❌ Failed to mount simple app:', e);
+                    document.getElementById('root').innerHTML = `
+                        <div style="padding: 20px; text-align: center; background: #ff6b6b; color: white;">
+                            <h2>❌ React Mount Failed</h2>
+                            <p>Error: ${e.message}</p>
+                        </div>
+                    `;
+                }
+            };
+            reactDOMScript.onerror = function() {
+                console.error('❌ ReactDOM failed to load');
+            };
+            document.head.appendChild(reactDOMScript);
+        };
+        script.onerror = function() {
+            console.error('❌ React failed to load');
+        };
+        document.head.appendChild(script);
+    </script>
+</body>
+</html>
