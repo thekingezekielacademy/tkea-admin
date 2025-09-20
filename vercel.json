@@ -3,12 +3,6 @@
   "buildCommand": "cd client && npm run build",
   "outputDirectory": "client/build",
   "installCommand": "cd client && npm install",
-  "rewrites": [
-    {
-      "source": "/((?!static|favicon|manifest|img|api|sw\\.js|robots\\.txt|sitemap\\.xml|debug\\.html|debug-mini-browser\\.html|test-react-loading\\.html|test\\.html|ultra-simple\\.html|no-js\\.html|mini-browser-diagnosis\\.html|mini-browser-fixes\\.html|index-test\\.html|debug-test\\.html|deep-diagnostic\\.html|minimal-react-test\\.html|bundle-test\\.html|vanilla-test\\.html|react-test\\.html).*)",
-      "destination": "/index.html"
-    }
-  ],
   "headers": [
     {
       "source": "/index.html",
