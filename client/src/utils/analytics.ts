@@ -25,6 +25,15 @@ class Analytics {
   public async initialize() {
     if (!this.config.enabled || !this.config.measurementId) return;
 
+    // Check if we're in a mini browser
+    const ua = navigator.userAgent || '';
+    const isMiniBrowser = /FBAN|FBAV|FBIOS|Instagram|Line|Twitter|LinkedIn|WhatsApp|Telegram|wv\)/i.test(ua);
+    
+    if (isMiniBrowser) {
+      console.log('📱 Mini browser detected - skipping analytics initialization');
+      return;
+    }
+
     // Check browser compatibility
     const compatibilityConfig = getSEOCompatibilityConfig();
     if (!compatibilityConfig.enableAnalytics) {

@@ -13,8 +13,14 @@ const FacebookPixelProvider: React.FC = () => {
 
   // Track page views on route changes using standard fbq
   useEffect(() => {
+    // Only track if not in mini browser and fbq is available
     if (typeof window !== 'undefined' && (window as any).fbq) {
-      (window as any).fbq('track', 'PageView');
+      const ua = navigator.userAgent || '';
+      const isMiniBrowser = /FBAN|FBAV|FBIOS|Instagram|Line|Twitter|LinkedIn|WhatsApp|Telegram|wv\)/i.test(ua);
+      
+      if (!isMiniBrowser) {
+        (window as any).fbq('track', 'PageView');
+      }
     }
   }, [location.pathname]);
 

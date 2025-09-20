@@ -71,9 +71,45 @@
       })();
     </script>
     
-    <!-- NO INTERFERING SCRIPTS - Let React load cleanly -->
-    
-    <!-- NO INSTAGRAM COMPATIBILITY SCRIPT - Let React app load directly -->
+    <!-- CONDITIONAL ANALYTICS - Only load for desktop browsers, not mini browsers -->
+    <script>
+      (function() {
+        // Detect mini browsers
+        var ua = navigator.userAgent || '';
+        var isMiniBrowser = /FBAN|FBAV|FBIOS|Instagram|Line|Twitter|LinkedIn|WhatsApp|Telegram|wv\)/i.test(ua);
+        
+        if (!isMiniBrowser) {
+          console.log('🖥️ Desktop browser detected - loading analytics');
+          
+          // Load Google Analytics only for desktop browsers
+          var gaScript = document.createElement('script');
+          gaScript.async = true;
+          gaScript.src = 'https://www.googletagmanager.com/gtag/js?id=G-8DXQN4Q7LD';
+          document.head.appendChild(gaScript);
+          
+          // Initialize Google Analytics
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          window.gtag = gtag;
+          gtag('js', new Date());
+          gtag('config', 'G-8DXQN4Q7LD');
+          
+          // Load Facebook Pixel only for desktop browsers
+          !function(f,b,e,v,n,t,s)
+          {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+          n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+          if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+          n.queue=[];t=b.createElement(e);t.async=!0;
+          t.src=v;s=b.getElementsByTagName(e)[0];
+          s.parentNode.insertBefore(t,s)}(window, document,'script',
+          'https://connect.facebook.net/en_US/fbevents.js');
+          fbq('init', '1991898708291767');
+          fbq('track', 'PageView');
+        } else {
+          console.log('📱 Mini browser detected - skipping analytics for better performance');
+        }
+      })();
+    </script>
     
     <!-- Structured Data for Organization -->
     <script type="application/ld+json">
