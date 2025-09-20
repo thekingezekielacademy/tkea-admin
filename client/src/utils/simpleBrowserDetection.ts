@@ -1,0 +1,154 @@
+/**
+ * Simplified Browser Detection
+ * 
+ * Single, reliable browser detection system that works consistently
+ * across iOS Safari and in-app browsers without over-engineering
+ */
+
+export interface SimpleBrowserInfo {
+  isMobile: boolean;
+  isInApp: boolean;
+  isSafari: boolean;
+  isIOS: boolean;
+  isAndroid: boolean;
+  userAgent: string;
+}
+
+/**
+ * Get comprehensive browser information with single detection
+ */
+export const getBrowserInfo = (): SimpleBrowserInfo => {
+  if (typeof navigator === 'undefined') {
+    return {
+      isMobile: false,
+      isInApp: false,
+      isSafari: false,
+      isIOS: false,
+      isAndroid: false,
+      userAgent: ''
+    };
+  }
+
+  const ua = navigator.userAgent;
+  
+  return {
+    isMobile: /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua),
+    isInApp: /FBAN|FBAV|FBIOS|Instagram|Line|Twitter|LinkedIn|WhatsApp|Telegram/i.test(ua),
+    isSafari: /Safari/i.test(ua) && !/Chrome/i.test(ua),
+    isIOS: /iPad|iPhone|iPod/.test(ua),
+    isAndroid: /Android/i.test(ua),
+    userAgent: ua
+  };
+};
+
+/**
+ * Check if we should use simplified features for compatibility
+ */
+export const shouldUseSimplifiedMode = (): boolean => {
+  const browserInfo = getBrowserInfo();
+  
+  // Use simplified mode for:
+  // 1. In-app browsers (Instagram, Facebook, etc.)
+  // 2. Old iOS Safari (version < 14)
+  // 3. Android WebView
+  
+  if (browserInfo.isInApp) return true;
+  
+  if (browserInfo.isIOS) {
+    const versionMatch = browserInfo.userAgent.match(/OS (\d+)_/);
+    const version = versionMatch ? parseInt(versionMatch[1], 10) : 0;
+    if (version > 0 && version < 14) return true;
+  }
+  
+  return false;
+};
+
+/**
+ * Get viewport meta tag content based on browser
+ */
+export const getViewportContent = (): string => {
+  const browserInfo = getBrowserInfo();
+  
+  if (browserInfo.isInApp) {
+    // For in-app browsers, use basic viewport
+    return 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
+  }
+  
+  if (browserInfo.isIOS) {
+    // For iOS Safari, use standard viewport
+    return 'width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes';
+  }
+  
+  // For other browsers, use full viewport
+  return 'width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes';
+};
+
+/**
+ * Check if browser supports modern features
+ */
+export const supportsModernFeatures = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  
+  try {
+    return !!(
+      window.fetch &&
+      window.Promise &&
+      window.localStorage &&
+      window.sessionStorage &&
+      'serviceWorker' in navigator
+    );
+  } catch {
+    return false;
+  }
+};
+
+/**
+ * Apply essential browser fixes
+ */
+export const applyBrowserFixes = (): void => {
+  const browserInfo = getBrowserInfo();
+  
+  // Fix iOS Safari viewport issues
+  if (browserInfo.isIOS) {
+    const viewport = document.querySelector('meta[name="viewport"]');
+    if (viewport) {
+      viewport.setAttribute('content', getViewportContent());
+    }
+    
+    // Fix touch events
+    document.addEventListener('touchstart', () => {}, { passive: true });
+    document.addEventListener('touchmove', () => {}, { passive: true });
+    
+    // Fix scroll issues
+    (document.body.style as any).webkitOverflowScrolling = 'touch';
+  }
+  
+  // Fix in-app browser issues
+  if (browserInfo.isInApp) {
+    // Disable complex features that might not work
+    console.log('🔧 In-app browser detected - using simplified mode');
+    
+    // Add cache-busting for in-app browsers
+    const scripts = document.querySelectorAll('script[src]');
+    scripts.forEach((script: any) => {
+      if (script.src && !script.src.includes('v=')) {
+        const url = new URL(script.src);
+        url.searchParams.set('v', Date.now().toString());
+        script.src = url.toString();
+      }
+    });
+  }
+};
+
+// Global browser info for easy access
+if (typeof window !== 'undefined') {
+  (window as any).browserInfo = getBrowserInfo();
+}
+
+export default {
+  getBrowserInfo,
+  shouldUseSimplifiedMode,
+  getViewportContent,
+  supportsModernFeatures,
+  applyBrowserFixes
+};

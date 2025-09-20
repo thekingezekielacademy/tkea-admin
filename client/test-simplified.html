@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simplified App Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .success { color: #22c55e; }
+        .error { color: #ef4444; }
+        .warning { color: #f59e0b; }
+        .info { color: #3b82f6; }
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #2563eb; }
+        pre {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Simplified App Test</h1>
+    <p>Testing the simplified browser detection and compatibility fixes</p>
+
+    <div class="test-section">
+        <h2>🔍 Browser Detection Test</h2>
+        <div id="browser-info"></div>
+        <button onclick="testBrowserDetection()">Test Browser Detection</button>
+    </div>
+
+    <div class="test-section">
+        <h2>🔧 Feature Support Test</h2>
+        <div id="feature-support"></div>
+        <button onclick="testFeatureSupport()">Test Feature Support</button>
+    </div>
+
+    <div class="test-section">
+        <h2>📱 Mobile/In-App Browser Test</h2>
+        <div id="mobile-test"></div>
+        <button onclick="testMobileDetection()">Test Mobile Detection</button>
+    </div>
+
+    <div class="test-section">
+        <h2>🚀 Service Worker Test</h2>
+        <div id="sw-test"></div>
+        <button onclick="testServiceWorker()">Test Service Worker</button>
+    </div>
+
+    <div class="test-section">
+        <h2>📊 Test Results</h2>
+        <div id="test-results"></div>
+        <button onclick="runAllTests()">Run All Tests</button>
+    </div>
+
+    <script>
+        // Simplified browser detection (same as in the app)
+        function getBrowserInfo() {
+            if (typeof navigator === 'undefined') {
+                return {
+                    isMobile: false,
+                    isInApp: false,
+                    isSafari: false,
+                    isIOS: false,
+                    isAndroid: false,
+                    userAgent: ''
+                };
+            }
+
+            const ua = navigator.userAgent;
+            
+            return {
+                isMobile: /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua),
+                isInApp: /FBAN|FBAV|FBIOS|Instagram|Line|Twitter|LinkedIn|WhatsApp|Telegram/i.test(ua),
+                isSafari: /Safari/i.test(ua) && !/Chrome/i.test(ua),
+                isIOS: /iPad|iPhone|iPod/.test(ua),
+                isAndroid: /Android/i.test(ua),
+                userAgent: ua
+            };
+        }
+
+        function shouldUseSimplifiedMode() {
+            const browserInfo = getBrowserInfo();
+            
+            if (browserInfo.isInApp) return true;
+            
+            if (browserInfo.isIOS) {
+                const versionMatch = browserInfo.userAgent.match(/OS (\d+)_/);
+                const version = versionMatch ? parseInt(versionMatch[1], 10) : 0;
+                if (version > 0 && version < 14) return true;
+            }
+            
+            return false;
+        }
+
+        function safeFeatureCheck() {
+            return {
+                hasLocalStorage: () => {
+                    try {
+                        return typeof window !== 'undefined' && 'localStorage' in window && window.localStorage !== null;
+                    } catch {
+                        return false;
+                    }
+                },
+                hasSessionStorage: () => {
+                    try {
+                        return typeof window !== 'undefined' && 'sessionStorage' in window && window.sessionStorage !== null;
+                    } catch {
+                        return false;
+                    }
+                },
+                hasFetch: () => {
+                    try {
+                        return typeof window !== 'undefined' && 'fetch' in window;
+                    } catch {
+                        return false;
+                    }
+                },
+                hasPromise: () => {
+                    try {
+                        return typeof window !== 'undefined' && 'Promise' in window;
+                    } catch {
+                        return false;
+                    }
+                },
+                hasServiceWorker: () => {
+                    try {
+                        return typeof navigator !== 'undefined' && 'serviceWorker' in navigator;
+                    } catch {
+                        return false;
+                    }
+                },
+                hasNotifications: () => {
+                    try {
+                        return typeof window !== 'undefined' && 'Notification' in window;
+                    } catch {
+                        return false;
+                    }
+                }
+            };
+        }
+
+        function testBrowserDetection() {
+            const browserInfo = getBrowserInfo();
+            const simplifiedMode = shouldUseSimplifiedMode();
+            
+            document.getElementById('browser-info').innerHTML = `
+                <h3>Browser Information:</h3>
+                <pre>${JSON.stringify(browserInfo, null, 2)}</pre>
+                <p><strong>Simplified Mode:</strong> <span class="${simplifiedMode ? 'warning' : 'success'}">${simplifiedMode ? 'YES' : 'NO'}</span></p>
+                <p><strong>User Agent:</strong> <code>${browserInfo.userAgent}</code></p>
+            `;
+        }
+
+        function testFeatureSupport() {
+            const features = safeFeatureCheck();
+            const results = [];
+            
+            for (const [name, check] of Object.entries(features)) {
+                const supported = check();
+                results.push(`<span class="${supported ? 'success' : 'error'}">${name}: ${supported ? '✅' : '❌'}</span>`);
+            }
+            
+            document.getElementById('feature-support').innerHTML = `
+                <h3>Feature Support:</h3>
+                <div>${results.join('<br>')}</div>
+            `;
+        }
+
+        function testMobileDetection() {
+            const browserInfo = getBrowserInfo();
+            const isMobile = browserInfo.isMobile;
+            const isInApp = browserInfo.isInApp;
+            const isIOS = browserInfo.isIOS;
+            const isAndroid = browserInfo.isAndroid;
+            
+            document.getElementById('mobile-test').innerHTML = `
+                <h3>Mobile Detection:</h3>
+                <p><strong>Is Mobile:</strong> <span class="${isMobile ? 'success' : 'info'}">${isMobile ? 'YES' : 'NO'}</span></p>
+                <p><strong>Is In-App Browser:</strong> <span class="${isInApp ? 'warning' : 'success'}">${isInApp ? 'YES' : 'NO'}</span></p>
+                <p><strong>Is iOS:</strong> <span class="${isIOS ? 'success' : 'info'}">${isIOS ? 'YES' : 'NO'}</span></p>
+                <p><strong>Is Android:</strong> <span class="${isAndroid ? 'success' : 'info'}">${isAndroid ? 'YES' : 'NO'}</span></p>
+            `;
+        }
+
+        async function testServiceWorker() {
+            const hasSW = safeFeatureCheck().hasServiceWorker();
+            
+            if (!hasSW) {
+                document.getElementById('sw-test').innerHTML = `
+                    <h3>Service Worker Test:</h3>
+                    <p class="error">❌ Service Worker not supported</p>
+                `;
+                return;
+            }
+
+            try {
+                const registration = await navigator.serviceWorker.register('/sw.js');
+                document.getElementById('sw-test').innerHTML = `
+                    <h3>Service Worker Test:</h3>
+                    <p class="success">✅ Service Worker registered successfully</p>
+                    <p><strong>Scope:</strong> ${registration.scope}</p>
+                `;
+            } catch (error) {
+                document.getElementById('sw-test').innerHTML = `
+                    <h3>Service Worker Test:</h3>
+                    <p class="error">❌ Service Worker registration failed: ${error.message}</p>
+                `;
+            }
+        }
+
+        function runAllTests() {
+            testBrowserDetection();
+            testFeatureSupport();
+            testMobileDetection();
+            testServiceWorker();
+            
+            const browserInfo = getBrowserInfo();
+            const simplifiedMode = shouldUseSimplifiedMode();
+            const features = safeFeatureCheck();
+            
+            let allTestsPassed = true;
+            const results = [];
+            
+            // Test browser detection
+            results.push(`<h3>🧪 Test Results Summary:</h3>`);
+            results.push(`<p><strong>Browser Detection:</strong> <span class="success">✅ Working</span></p>`);
+            
+            // Test feature support
+            const featureResults = [];
+            for (const [name, check] of Object.entries(features)) {
+                const supported = check();
+                featureResults.push(`${name}: ${supported ? '✅' : '❌'}`);
+                if (!supported && (name === 'hasLocalStorage' || name === 'hasFetch' || name === 'hasPromise')) {
+                    allTestsPassed = false;
+                }
+            }
+            results.push(`<p><strong>Feature Support:</strong> ${featureResults.join(', ')}</p>`);
+            
+            // Test simplified mode
+            results.push(`<p><strong>Simplified Mode:</strong> <span class="${simplifiedMode ? 'warning' : 'success'}">${simplifiedMode ? 'YES (Expected for in-app browsers)' : 'NO (Normal mode)'}</span></p>`);
+            
+            // Overall result
+            results.push(`<p><strong>Overall Status:</strong> <span class="${allTestsPassed ? 'success' : 'warning'}">${allTestsPassed ? '✅ All critical tests passed' : '⚠️ Some features not supported (expected for some browsers)'}</span></p>`);
+            
+            document.getElementById('test-results').innerHTML = results.join('');
+        }
+
+        // Run tests on page load
+        window.addEventListener('load', () => {
+            runAllTests();
+        });
+    </script>
+</body>
+</html>

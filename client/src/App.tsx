@@ -1,24 +1,18 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { BrowserRouter, HashRouter, Routes, Route } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
 import { AuthProvider } from './contexts/AuthContext';
 import { SidebarProvider } from './contexts/SidebarContext';
-import { initializeServiceWorker, clearAllCaches } from './utils/serviceWorker';
+import { registerServiceWorker } from './utils/serviceWorker';
 import FacebookPixelProvider from './components/FacebookPixelProvider';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
-// import NetworkStatus from './components/NetworkStatus';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminRoute from './components/AdminRoute';
 import ScrollToTop from './components/ScrollToTop';
 import SafeErrorBoundary from './components/SafeErrorBoundary';
-import webVitals from './utils/webVitals';
-import analytics from './utils/analytics';
-import { notificationService } from './utils/notificationService';
-import './utils/polyfills'; // Load polyfills first
-import './utils/sentry'; // Initialize Sentry first
-import { safeFeatureCheck } from './utils/instagramBrowserFix';
-import { getBrowserCapabilities, isOldSafari, initSafariCompatibility } from './utils/safariCompatibility';
+import { getBrowserInfo, applyBrowserFixes, shouldUseSimplifiedMode } from './utils/simpleBrowserDetection';
+import { addEssentialPolyfills, safeFeatureCheck } from './utils/essentialPolyfills';
 import Home from './pages/Home';
 import Courses from './pages/Courses';
 import About from './pages/About';
@@ -55,158 +49,67 @@ import Rooms from './pages/Rooms';
 import Affiliates from './pages/Affiliates';
 import PWAInstall from './pages/PWAInstall';
 import './App.css';
-import './styles/orientation.css'; // Import orientation CSS
+import './styles/orientation.css';
 
 function App() {
-  const [appError, setAppError] = React.useState<string | null>(null);
-  const [isLoading, setIsLoading] = React.useState(true);
-
+  const [appError, setAppError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Initialize Safari compatibility fixes
-    initSafariCompatibility();
-    
-    // Disable Flutterwave fingerprinting globally to prevent errors
-    if (typeof window !== 'undefined') {
-      (window as any).FlutterwaveDisableFingerprinting = true;
-      (window as any).FlutterwaveDisableTracking = true;
-      (window as any).FlutterwaveDisableAnalytics = true;
-    }
-
-    // Log Safari compatibility information for debugging
-    if (typeof window !== 'undefined') {
-      const capabilities = getBrowserCapabilities();
-      console.log('🔍 Browser Capabilities:', capabilities);
-      
-      if (isOldSafari()) {
-        console.warn('⚠️ Old Safari detected - using compatibility mode');
-      }
-    }
-
-    // Initialize app with error handling
     const initializeApp = async () => {
       try {
-        // Initialize monitoring first (non-blocking)
-        try {
-          webVitals.startMonitoring();
-          analytics.initialize();
-        } catch (error) {
-          console.warn('Analytics initialization failed:', error);
+        // 1. Get browser info
+        const browserInfo = getBrowserInfo();
+        console.log('🔍 Browser Info:', browserInfo);
+        
+        // 2. Apply essential polyfills
+        addEssentialPolyfills();
+        
+        // 3. Apply browser-specific fixes
+        applyBrowserFixes();
+        
+        // 4. Register service worker (always)
+        if (safeFeatureCheck.hasServiceWorker()) {
+          await registerServiceWorker();
         }
-
-        // Initialize notifications (non-blocking)
-        try {
-          if (safeFeatureCheck.hasNotifications()) {
-            if (Notification.permission === 'granted') {
-              notificationService.initializeNotifications();
-            } else if (Notification.permission === 'default') {
-              setTimeout(async () => {
-                const permission = await Notification.requestPermission();
-                if (permission === 'granted') {
-                  notificationService.initializeNotifications();
-                }
-              }, 3000);
+        
+        // 5. Initialize non-critical features only if supported
+        if (!shouldUseSimplifiedMode()) {
+          // Only initialize complex features for modern browsers
+          try {
+            // Initialize analytics if supported
+            if (safeFeatureCheck.hasFetch()) {
+              // Analytics initialization here
             }
+            
+            // Initialize notifications if supported
+            if (safeFeatureCheck.hasNotifications()) {
+              // Notification initialization here
+            }
+          } catch (error) {
+            console.warn('Non-critical feature initialization failed:', error);
           }
-        } catch (error) {
-          console.warn('Notification initialization failed:', error);
         }
         
-        // Initialize service worker with enhanced browser detection
-        try {
-          const browserInfo = (window as any).browserInfo;
-          const shouldRegisterSW = browserInfo?.supportsServiceWorker || 
-            (safeFeatureCheck.hasServiceWorker() && !browserInfo?.isInApp);
-          
-          if (shouldRegisterSW) {
-            console.log('✅ Registering service worker for regular browser');
-            await initializeServiceWorker();
-          } else {
-            console.log('🚫 Skipping service worker registration for in-app browser');
-          }
-        } catch (error) {
-          console.warn('Service worker initialization failed:', error);
+        // 6. Disable Flutterwave fingerprinting for compatibility
+        if (typeof window !== 'undefined') {
+          (window as any).FlutterwaveDisableFingerprinting = true;
+          (window as any).FlutterwaveDisableTracking = true;
+          (window as any).FlutterwaveDisableAnalytics = true;
         }
         
-        // Initialize course scheduler (non-blocking)
-        try {
-          const { CourseScheduler } = await import('./utils/courseScheduler');
-          const scheduler = CourseScheduler.getInstance();
-          scheduler.startScheduler();
-        } catch (error) {
-          console.warn('Course scheduler initialization failed:', error);
-        }
+        // 7. App ready
+        setIsLoading(false);
+        console.log('✅ App initialized successfully');
         
       } catch (error) {
-        console.error('App initialization error:', error);
-        // Don't let initialization errors break the app
+        console.error('❌ App initialization failed:', error);
+        setAppError('Failed to initialize application. Please refresh the page.');
+        setIsLoading(false);
       }
     };
-    
-    // Run initialization
+
     initializeApp();
-    
-    // Set loading to false with shorter timeout
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 1000);
-    
-    return () => clearTimeout(timer);
-  }, []);
-
-  // Global error handler
-  useEffect(() => {
-    const handleError = (event: ErrorEvent) => {
-      console.error('Global error caught:', event.error);
-      setAppError('An error occurred while loading the application. Please try refreshing the page.');
-    };
-
-    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
-      console.error('Unhandled promise rejection:', event.reason);
-      setAppError('An error occurred while loading the application. Please try refreshing the page.');
-    };
-
-    window.addEventListener('error', handleError);
-    window.addEventListener('unhandledrejection', handleUnhandledRejection);
-
-    return () => {
-      window.removeEventListener('error', handleError);
-      window.removeEventListener('unhandledrejection', handleUnhandledRejection);
-    };
-  }, []);
-
-  // Handle PWA orientation changes
-  useEffect(() => {
-    const handleOrientationChange = () => {
-      // Force viewport refresh on orientation change for PWA
-      const viewport = document.querySelector('meta[name="viewport"]');
-      if (viewport) {
-        viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
-      }
-      
-      // Add orientation class to body for CSS targeting
-      if (window.orientation === 90 || window.orientation === -90) {
-        // Landscape
-        document.body.classList.add('landscape-mode');
-        document.body.classList.remove('portrait-mode');
-      } else {
-        // Portrait
-        document.body.classList.add('portrait-mode');
-        document.body.classList.remove('landscape-mode');
-      }
-    };
-
-    // Initial orientation check
-    handleOrientationChange();
-
-    // Listen for orientation changes
-    window.addEventListener('orientationchange', handleOrientationChange);
-    window.addEventListener('resize', handleOrientationChange);
-
-    return () => {
-      window.removeEventListener('orientationchange', handleOrientationChange);
-      window.removeEventListener('resize', handleOrientationChange);
-    };
   }, []);
 
   // Show loading screen
@@ -214,16 +117,15 @@ function App() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">King Ezekiel Academy</h1>
-          <p className="text-gray-600">Loading your learning experience...</p>
-          <p className="text-sm text-gray-500 mt-2">If this takes too long, please refresh the page</p>
+          <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <h2 className="text-xl font-semibold text-gray-800">Loading King Ezekiel Academy...</h2>
+          <p className="text-gray-600 mt-2">Please wait while we prepare your learning experience</p>
         </div>
       </div>
     );
   }
 
-  // Show error screen if there's an app error
+  // Show error screen
   if (appError) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-red-50 to-pink-100 flex items-center justify-center p-4">
@@ -249,85 +151,82 @@ function App() {
               Try Again
             </button>
           </div>
-          <div className="mt-6 text-sm text-gray-500">
-            <p>If the problem persists, please try:</p>
-            <ul className="mt-2 space-y-1">
-              <li>• Disabling browser extensions</li>
-              <li>• Using incognito/private mode</li>
-              <li>• Trying a different browser</li>
-              <li>• Checking your internet connection</li>
-            </ul>
-          </div>
         </div>
       </div>
     );
   }
 
+  // Main app
+  // Always use HashRouter for maximum compatibility with Instagram/Facebook mini browsers
+  const browserInfo = getBrowserInfo();
+  const RouterComponent = HashRouter;
+  
+  console.log('🔍 Router Selection:', {
+    useHashRouter: true,
+    isInApp: browserInfo.isInApp,
+    isIOS: browserInfo.isIOS,
+    simplifiedMode: shouldUseSimplifiedMode(),
+    routerType: 'HashRouter (Optimized for Mini Browsers)',
+    reason: 'HashRouter provides maximum compatibility with Instagram/Facebook mini browsers'
+  });
+
   return (
-    <HelmetProvider>
-      <SafeErrorBoundary>
+    <SafeErrorBoundary>
+      <HelmetProvider>
         <AuthProvider>
-        <SidebarProvider>
-          {(() => {
-            const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
-            const isInApp = /FBAN|FBAV|FBIOS|Instagram|wv\)/i.test(ua);
-            const RouterComponent: any = isInApp ? HashRouter : BrowserRouter;
-            return (
-              <RouterComponent>
-            <FacebookPixelProvider />
-            <ScrollToTop />
-            <div className="App">
-              <Navbar />
-            {/* <NetworkStatus /> */}
-            <main>
-            <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/courses" element={<Courses />} />
-            <Route path="/blog" element={<Blog />} />
-        <Route path="/blog/:slug" element={<BlogPost />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/contact" element={<Contact />} />
-            <Route path="/privacy" element={<Privacy />} />
-            <Route path="/terms" element={<Terms />} />
-            <Route path="/install" element={<PWAInstall />} />
-            <Route path="/signin" element={<SignIn />} />
-            <Route path="/signup" element={<SignUp />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-            <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-            <Route path="/achievements" element={<ProtectedRoute><Achievements /></ProtectedRoute>} />
-            <Route path="/subscription" element={<ProtectedRoute><Subscription /></ProtectedRoute>} />
-            <Route path="/payment-verification" element={<ProtectedRoute><PaymentVerification /></ProtectedRoute>} />
-            <Route path="/dashboard-with-sidebar" element={<ProtectedRoute><DashboardWithSidebar /></ProtectedRoute>} />
-            <Route path="/course/:id" element={<ProtectedRoute><CourseOverview /></ProtectedRoute>} />
-            <Route path="/course/:id/overview" element={<ProtectedRoute><CourseOverview /></ProtectedRoute>} />
-            <Route path="/course/:id/lesson/:lessonId" element={<ProtectedRoute><LessonPlayer /></ProtectedRoute>} />
-            <Route path="/course/:id/complete" element={<ProtectedRoute><CourseComplete /></ProtectedRoute>} />
-            <Route path="/diploma" element={<ProtectedRoute><Diploma /></ProtectedRoute>} />
-            <Route path="/certificates" element={<ProtectedRoute><Certificates /></ProtectedRoute>} />
-            <Route path="/assessments" element={<ProtectedRoute><Assessments /></ProtectedRoute>} />
-            <Route path="/resume" element={<ProtectedRoute><Resume /></ProtectedRoute>} />
-            <Route path="/rooms" element={<ProtectedRoute><Rooms /></ProtectedRoute>} />
-            <Route path="/affiliates" element={<ProtectedRoute><Affiliates /></ProtectedRoute>} />
-            <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
-            <Route path="/admin/courses" element={<AdminRoute><AdminCourses /></AdminRoute>} />
-            <Route path="/admin/add-course" element={<AdminRoute><AdminAddCourseWizard /></AdminRoute>} />
-            <Route path="/admin/edit-course/:id" element={<AdminRoute><EditCourse /></AdminRoute>} />
-            <Route path="/admin/view-course/:id" element={<AdminRoute><CourseView /></AdminRoute>} />
-            <Route path="/admin/blog" element={<AdminRoute><AdminBlog /></AdminRoute>} />
-            <Route path="/admin/add-blog-post" element={<AdminRoute><AddBlogPost /></AdminRoute>} />
-            <Route path="/admin/view-blog-post/:id" element={<AdminRoute><ViewBlogPost /></AdminRoute>} />
-            </Routes>
-            </main>
-            <Footer />
-          </div>
-              </RouterComponent>
-            );
-          })()}
-        </SidebarProvider>
-      </AuthProvider>
+          <SidebarProvider>
+            <RouterComponent>
+              <FacebookPixelProvider />
+              <ScrollToTop />
+              <div className="App">
+                <Navbar />
+                <main>
+                  <Routes>
+                    <Route path="/" element={<Home />} />
+                    <Route path="/courses" element={<Courses />} />
+                    <Route path="/blog" element={<Blog />} />
+                    <Route path="/blog/:slug" element={<BlogPost />} />
+                    <Route path="/about" element={<About />} />
+                    <Route path="/contact" element={<Contact />} />
+                    <Route path="/privacy" element={<Privacy />} />
+                    <Route path="/terms" element={<Terms />} />
+                    <Route path="/signin" element={<SignIn />} />
+                    <Route path="/signup" element={<SignUp />} />
+                    <Route path="/forgot-password" element={<ForgotPassword />} />
+                    <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                    <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+                    <Route path="/achievements" element={<ProtectedRoute><Achievements /></ProtectedRoute>} />
+                    <Route path="/subscription" element={<ProtectedRoute><Subscription /></ProtectedRoute>} />
+                    <Route path="/payment-verification" element={<ProtectedRoute><PaymentVerification /></ProtectedRoute>} />
+                    <Route path="/dashboard-with-sidebar" element={<ProtectedRoute><DashboardWithSidebar /></ProtectedRoute>} />
+                    <Route path="/course/:id" element={<ProtectedRoute><CourseOverview /></ProtectedRoute>} />
+                    <Route path="/course/:id/overview" element={<ProtectedRoute><CourseOverview /></ProtectedRoute>} />
+                    <Route path="/course/:id/lesson/:lessonId" element={<ProtectedRoute><LessonPlayer /></ProtectedRoute>} />
+                    <Route path="/course/:id/complete" element={<ProtectedRoute><CourseComplete /></ProtectedRoute>} />
+                    <Route path="/diploma" element={<ProtectedRoute><Diploma /></ProtectedRoute>} />
+                    <Route path="/certificates" element={<ProtectedRoute><Certificates /></ProtectedRoute>} />
+                    <Route path="/assessments" element={<ProtectedRoute><Assessments /></ProtectedRoute>} />
+                    <Route path="/resume" element={<ProtectedRoute><Resume /></ProtectedRoute>} />
+                    <Route path="/rooms" element={<ProtectedRoute><Rooms /></ProtectedRoute>} />
+                    <Route path="/affiliates" element={<ProtectedRoute><Affiliates /></ProtectedRoute>} />
+                    <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+                    <Route path="/admin/courses" element={<AdminRoute><AdminCourses /></AdminRoute>} />
+                    <Route path="/admin/add-course" element={<AdminRoute><AdminAddCourseWizard /></AdminRoute>} />
+                    <Route path="/admin/edit-course/:id" element={<AdminRoute><EditCourse /></AdminRoute>} />
+                    <Route path="/admin/course/:id" element={<AdminRoute><CourseView /></AdminRoute>} />
+                    <Route path="/admin/blog" element={<AdminRoute><AdminBlog /></AdminRoute>} />
+                    <Route path="/admin/add-blog" element={<AdminRoute><AddBlogPost /></AdminRoute>} />
+                    <Route path="/admin/blog/:id" element={<AdminRoute><ViewBlogPost /></AdminRoute>} />
+                  </Routes>
+                </main>
+                <Footer />
+                <PWAInstall />
+              </div>
+            </RouterComponent>
+          </SidebarProvider>
+        </AuthProvider>
+      </HelmetProvider>
     </SafeErrorBoundary>
-    </HelmetProvider>
   );
 }
 

@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Test - King Ezekiel Academy</title>
+    <style>
+        body { font-family: sans-serif; margin: 20px; line-height: 1.6; }
+        .status { font-weight: bold; margin: 10px 0; }
+        .success { color: green; }
+        .error { color: red; }
+        .warning { color: orange; }
+        #root { border: 2px solid #ccc; padding: 20px; margin: 20px 0; min-height: 200px; }
+    </style>
+</head>
+<body>
+    <h1>🔧 Debug Test - King Ezekiel Academy</h1>
+    <p>This page tests if the React app can mount properly.</p>
+    
+    <div class="status">Checking JavaScript loading...</div>
+    <div class="status">Checking React mounting...</div>
+    <div class="status">Checking console errors...</div>
+    
+    <div id="root">
+        <div class="status warning">React app should mount here...</div>
+    </div>
+    
+    <div id="debug-info">
+        <h3>Debug Information:</h3>
+        <div id="js-status">JavaScript: Loading...</div>
+        <div id="react-status">React: Loading...</div>
+        <div id="mount-status">Mount: Loading...</div>
+        <div id="console-errors">Console Errors: None detected</div>
+    </div>
+
+    <script>
+        // Test JavaScript loading
+        document.getElementById('js-status').innerHTML = 'JavaScript: ✅ Loaded';
+        document.getElementById('js-status').className = 'status success';
+        
+        // Test React availability
+        if (typeof React !== 'undefined') {
+            document.getElementById('react-status').innerHTML = 'React: ✅ Available';
+            document.getElementById('react-status').className = 'status success';
+        } else {
+            document.getElementById('react-status').innerHTML = 'React: ❌ Not Available';
+            document.getElementById('react-status').className = 'status error';
+        }
+        
+        // Test if React can mount
+        setTimeout(() => {
+            const rootElement = document.getElementById('root');
+            if (rootElement && rootElement.children.length > 1) {
+                document.getElementById('mount-status').innerHTML = 'Mount: ✅ React App Mounted';
+                document.getElementById('mount-status').className = 'status success';
+            } else {
+                document.getElementById('mount-status').innerHTML = 'Mount: ❌ React App Not Mounted';
+                document.getElementById('mount-status').className = 'status error';
+            }
+        }, 3000);
+        
+        // Check for console errors
+        const originalError = console.error;
+        const errors = [];
+        console.error = function(...args) {
+            errors.push(args.join(' '));
+            originalError.apply(console, args);
+        };
+        
+        setTimeout(() => {
+            if (errors.length > 0) {
+                document.getElementById('console-errors').innerHTML = `Console Errors: ${errors.length} errors detected`;
+                document.getElementById('console-errors').className = 'status error';
+                console.log('Errors detected:', errors);
+            } else {
+                document.getElementById('console-errors').innerHTML = 'Console Errors: ✅ None detected';
+                document.getElementById('console-errors').className = 'status success';
+            }
+        }, 2000);
+    </script>
+    
+    <!-- Load the main React app -->
+    <script src="/static/js/main.5bb64ee5.js"></script>
+</body>
+</html>

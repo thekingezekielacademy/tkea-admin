@@ -1,47 +1,25 @@
 /**
- * Service Worker Registration and Management
+ * Simplified Service Worker Registration
  * 
- * This file handles:
- * - Service worker registration
- * - Update detection and notification
- * - Cache management
- * - Performance monitoring
+ * Always register service worker - let browser handle compatibility
+ * This approach works better across all browsers including in-app browsers
  */
 
-// Service worker registration with enhanced browser detection
 export const registerServiceWorker = async (): Promise<void> => {
-  // Use global browser info if available, fallback to direct detection
-  const browserInfo = (window as any).browserInfo;
-  const isInApp = browserInfo?.isInApp || /FBAN|FBAV|FBIOS|Instagram|Line|Twitter|LinkedIn|WhatsApp|Telegram/i.test(navigator.userAgent);
-  
+  // Check if service worker is supported
   if (!('serviceWorker' in navigator)) {
     console.log('Service Worker not supported in this browser');
     return;
   }
 
-  // Skip service worker registration in in-app browsers
-  if (isInApp) {
-    console.log('🚫 In-app browser detected - skipping service worker registration');
-    return;
-  }
-
   try {
-    // Only register if sw.js exists
-    const swExists = await fetch('/sw.js', { method: 'HEAD' }).then(r => r.ok).catch(() => false);
-    if (!swExists) {
-      console.log('Service Worker file not found, skipping registration');
-      return;
-    }
-    
-    // Don't clear caches aggressively - this can cause issues
-    // Only clear if there's a version mismatch
-    
+    // Always register service worker - don't skip for in-app browsers
     const registration = await navigator.serviceWorker.register('/sw.js', {
       scope: '/',
-      updateViaCache: 'none' // Always check for updates
+      updateViaCache: 'none'
     });
     
-    console.log('Service Worker registered successfully:', registration);
+    console.log('✅ Service Worker registered successfully');
     
     // Handle service worker updates
     registration.addEventListener('updatefound', () => {
@@ -50,21 +28,19 @@ export const registerServiceWorker = async (): Promise<void> => {
       if (newWorker) {
         newWorker.addEventListener('statechange', () => {
           if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-            // New service worker is available - show notification but don't auto-reload
             showUpdateNotification();
           }
         });
       }
     });
     
-    // Handle service worker activation - be less aggressive
+    // Handle service worker activation
     navigator.serviceWorker.addEventListener('controllerchange', () => {
       console.log('Service Worker activated');
-      // Don't auto-reload - let user decide
     });
     
   } catch (error) {
-    console.error('Service Worker registration failed:', error);
+    console.log('⚠️ Service Worker registration failed:', error);
     // Don't throw - let app continue without service worker
   }
 };

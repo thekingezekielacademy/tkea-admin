@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FaDownload, FaMobile, FaCheck, FaTimes } from 'react-icons/fa';
+import { getBrowserInfo } from '../utils/simpleBrowserDetection';
 
 interface PWAInstallProps {
   className?: string;
@@ -13,9 +14,8 @@ const PWAInstall: React.FC<PWAInstallProps> = ({ className = '' }) => {
   const [isInAppBrowser, setIsInAppBrowser] = useState(false);
 
   useEffect(() => {
-    // Check browser compatibility first
-    const browserInfo = (window as any).browserInfo;
-    const isInApp = browserInfo?.isInApp || /FBAN|FBAV|FBIOS|Instagram|Line|Twitter|LinkedIn|WhatsApp|Telegram/i.test(navigator.userAgent);
+    // Use simplified browser detection
+    const { isInApp } = getBrowserInfo();
     setIsInAppBrowser(isInApp);
     
     // Don't show PWA install in in-app browsers
