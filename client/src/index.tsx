@@ -5,8 +5,8 @@ import './index.css';
 
 // CRITICAL: Fix hash for mini browsers BEFORE React loads
 (function() {
-  const ua = navigator.userAgent || '';
-  const isMiniBrowser = /FBAN|FBAV|FBIOS|Instagram|Line|Twitter|LinkedIn|WhatsApp|Telegram|wv\)/i.test(ua);
+  var ua = navigator.userAgent || '';
+  var isMiniBrowser = /FBAN|FBAV|FBIOS|Instagram|Line|Twitter|LinkedIn|WhatsApp|Telegram|wv\)/i.test(ua);
   
   if (isMiniBrowser && (!location.hash || location.hash === '#')) {
     location.hash = '#/';
@@ -14,10 +14,10 @@ import './index.css';
   }
 })();
 
-// SIMPLE: Always use React 17 render for maximum compatibility
-const rootElement = document.getElementById('root');
+// ULTRA-SIMPLE: Use React 17 render with createElement for maximum compatibility
+var rootElement = document.getElementById('root');
 if (rootElement) {
-  render(<AppBootstrap />, rootElement);
+  render(React.createElement(AppBootstrap), rootElement);
   console.log('✅ AppBootstrap mounted successfully');
 } else {
   console.error('❌ Root element not found');
