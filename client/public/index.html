@@ -69,9 +69,9 @@
         if (isMiniBrowser) {
           console.log('🔧 Mini browser detected - fixing hash immediately');
           // Fix hash before React loads
-          if (!location.hash || location.hash === '#') {
-            location.hash = '#/';
-            console.log('🔧 Fixed hash for mini browser:', location.hash);
+          if (!window.location.hash || window.location.hash === '#') {
+            window.location.hash = '#/';
+            console.log('🔧 Fixed hash for mini browser:', window.location.hash);
           }
         }
         
