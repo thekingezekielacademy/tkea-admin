@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useHistory } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { FaPlus, FaEdit, FaTrash, FaEye, FaArrowLeft } from 'react-icons/fa';
 
@@ -26,7 +26,7 @@ interface BlogPost {
 
 const AdminBlog: React.FC = () => {
   const { user } = useAuth();
-  const navigate = useNavigate();
+  const history = useHistory();
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -189,7 +189,7 @@ const AdminBlog: React.FC = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <button
-                onClick={() => navigate('/admin')}
+                onClick={() => history.push('/admin')}
                 className="p-2 text-gray-600 hover:text-gray-900 transition-colors"
                 title="Back to Admin"
               >
@@ -201,7 +201,7 @@ const AdminBlog: React.FC = () => {
               </div>
             </div>
             <button
-              onClick={() => navigate('/admin/blog/new')}
+              onClick={() => history.push('/admin/blog/new')}
               className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
             >
               <FaPlus className="w-4 h-4 mr-2" />
@@ -236,7 +236,7 @@ const AdminBlog: React.FC = () => {
             <h3 className="text-lg font-medium text-gray-900 mb-2">No blog posts yet</h3>
             <p className="text-gray-500 mb-6">Get started by creating your first blog post.</p>
             <button
-              onClick={() => navigate('/admin/blog/new')}
+              onClick={() => history.push('/admin/blog/new')}
               className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
             >
               <FaPlus className="w-4 h-4 mr-2" />
@@ -301,14 +301,14 @@ const AdminBlog: React.FC = () => {
                   
                   <div className="flex items-center space-x-2">
                     <button
-                      onClick={() => navigate(`/admin/blog/${post.id}/edit`)}
+                      onClick={() => history.push(`/admin/blog/${post.id}/edit`)}
                       className="flex-1 inline-flex items-center justify-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
                     >
                       <FaEdit className="w-4 h-4 mr-2" />
                       Edit
                     </button>
                     <button
-                      onClick={() => navigate(`/admin/blog/${post.id}/view`)}
+                      onClick={() => history.push(`/admin/blog/${post.id}/view`)}
                       className="flex-1 inline-flex items-center justify-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
                     >
                       <FaEye className="w-4 h-4 mr-2" />

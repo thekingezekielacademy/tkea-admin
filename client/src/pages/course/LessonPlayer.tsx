@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useHistory, useParams } from 'react-router-dom';
 import ProgressRing from '../../components/ProgressRing';
 import AdvancedVideoPlayer from '../../components/AdvancedVideoPlayer';
 import { supabase } from '../../lib/supabase';
@@ -10,8 +10,8 @@ import { notificationService } from '../../utils/notificationService';
 import LessonPlayerInstagramGuard from '../../components/LessonPlayerInstagramGuard';
 
 const LessonPlayer: React.FC = () => {
-  const navigate = useNavigate();
-  const { id, lessonId } = useParams();
+  const history = useHistory();
+  const { id, lessonId } = useParams<{ id: string; lessonId: string }>();
   const { user } = useAuth();
 
   const [course, setCourse] = useState<any>(null);
@@ -347,7 +347,7 @@ const LessonPlayer: React.FC = () => {
           // Redirect if NO access (trial expired AND no subscription)
           if (!hasAccess) {
             console.log('🚫 ACCESS DENIED - Trial expired and no subscription - redirecting to profile');
-            navigate('/profile', { replace: true });
+            history.push('/profile', { replace: true });
             return;
           } else {
             console.log('✅ ACCESS GRANTED - Trial active or subscription active');
@@ -357,7 +357,7 @@ const LessonPlayer: React.FC = () => {
           // If no trial data, check if user has subscription (prioritize database)
           if (!hasDatabaseSubscription && !isSubActive) {
             console.log('🚫 No trial data and no subscription - redirecting to profile');
-            navigate('/profile', { replace: true });
+            history.push('/profile', { replace: true });
             return;
           } else {
             console.log('✅ ACCESS GRANTED - Database subscription or secure storage subscription active');
@@ -369,7 +369,7 @@ const LessonPlayer: React.FC = () => {
     };
     
     checkAccess();
-  }, [user?.id, navigate]);
+  }, [user?.id, history]);
 
   // Fetch course and lesson data on mount
   useEffect(() => {
@@ -551,7 +551,7 @@ const LessonPlayer: React.FC = () => {
   const nextLesson = () => {
     if (course?.course_videos && currentLessonIndex < course.course_videos.length - 1) {
       const nextVideo = course.course_videos[currentLessonIndex + 1];
-      navigate(`/course/${id}/lesson/${nextVideo.id}`);
+      history.push(`/course/${id}/lesson/${nextVideo.id}`);
     }
   };
 
@@ -608,18 +608,18 @@ const LessonPlayer: React.FC = () => {
 
       // Show completion message and redirect to courses page
       alert('🎉 Congratulations! You have completed this course!');
-      navigate('/courses');
+      history.push('/courses');
     } catch (error) {
       console.error('Error completing course:', error);
       // Still redirect even if saving fails
-      navigate('/courses');
+      history.push('/courses');
     }
   };
 
   const prevLesson = () => {
     if (course?.course_videos && currentLessonIndex > 0) {
       const prevVideo = course.course_videos[currentLessonIndex - 1];
-      navigate(`/course/${id}/lesson/${prevVideo.id}`);
+      history.push(`/course/${id}/lesson/${prevVideo.id}`);
     }
   };
 
@@ -684,7 +684,7 @@ const LessonPlayer: React.FC = () => {
                   Try Again
                 </button>
                 <button 
-                  onClick={() => navigate('/courses')}
+                  onClick={() => history.push('/courses')}
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                 >
                   Back to Courses
@@ -706,7 +706,7 @@ const LessonPlayer: React.FC = () => {
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
               <p className="text-yellow-700 font-medium mb-3">Lesson not found</p>
               <button 
-                onClick={() => navigate('/courses')}
+                onClick={() => history.push('/courses')}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
               >
                 Back to Courses
@@ -724,7 +724,7 @@ const LessonPlayer: React.FC = () => {
       {/* Back to Courses Button */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         <button
-          onClick={() => navigate('/courses')}
+          onClick={() => history.push('/courses')}
           className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl hover:from-blue-600 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -752,7 +752,7 @@ const LessonPlayer: React.FC = () => {
                         ? 'bg-green-50 border-green-200 text-green-700' 
                         : 'hover:bg-gray-50'
                   }`}
-                  onClick={() => navigate(`/course/${id}/lesson/${video.id}`)}
+                  onClick={() => history.push(`/course/${id}/lesson/${video.id}`)}
                 >
                   <span>{video.name || `Lesson ${index + 1}`}</span>
                   {isCompleted && (
@@ -875,7 +875,7 @@ const LessonPlayer: React.FC = () => {
                             ? 'bg-green-50 border-green-200 text-green-700' 
                             : 'hover:bg-gray-50'
                       }`}
-                      onClick={() => navigate(`/course/${id}/lesson/${video.id}`)}
+                      onClick={() => history.push(`/course/${id}/lesson/${video.id}`)}
                     >
                       <span>{video.name || `Lesson ${index + 1}`}</span>
                       {isCompleted && (
@@ -922,7 +922,7 @@ const LessonPlayer: React.FC = () => {
                   <div 
                     key={course.id}
                     className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded"
-                    onClick={() => navigate(`/course/${course.id}`)}
+                    onClick={() => history.push(`/course/${course.id}`)}
                   >
                     <img 
                       src={course.cover_photo_url || '/default-course-image.jpg'} 

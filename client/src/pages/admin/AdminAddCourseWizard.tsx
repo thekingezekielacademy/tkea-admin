@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useHistory } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { notificationService } from '../../utils/notificationService';
@@ -21,7 +21,7 @@ interface CourseData {
 }
 
 const AdminAddCourseWizard: React.FC = () => {
-  const navigate = useNavigate();
+  const history = useHistory();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -330,7 +330,7 @@ const AdminAddCourseWizard: React.FC = () => {
       }
 
       setShowSchedulePopup(false);
-      navigate('/admin/courses');
+      history.push('/admin/courses');
     } catch (e: any) {
       setError(e?.message || 'Failed to schedule course');
     } finally {
@@ -451,7 +451,7 @@ const AdminAddCourseWizard: React.FC = () => {
       await notifyUsersAboutNewCourse(courseData.title, courseData.category);
       
       // Navigate to courses list
-      navigate('/admin/courses');
+      history.push('/admin/courses');
     } catch (err: any) {
       console.error('Create course error:', err);
       setError(err.message || 'Failed to create course');
@@ -790,7 +790,7 @@ const AdminAddCourseWizard: React.FC = () => {
         {/* Header */}
         <div className="text-center mb-8">
           <button
-            onClick={() => navigate('/admin')}
+            onClick={() => history.push('/admin')}
             className="inline-flex items-center px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors duration-200 mb-4"
           >
             ← Back to Admin

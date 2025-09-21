@@ -1,12 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useHistory, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { flutterwaveService } from '../services/flutterwaveService';
 import { supabase } from '../lib/supabase';
 
 const PaymentVerification: React.FC = () => {
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const history = useHistory();
+  const location = useLocation();
+  
+  // Parse search params manually for React Router v5
+  const searchParams = new URLSearchParams(location.search);
   const { user } = useAuth();
   const [status, setStatus] = useState<'loading' | 'verifying' | 'success' | 'error'>('loading');
   const [message, setMessage] = useState('Loading...');
@@ -36,7 +39,7 @@ const PaymentVerification: React.FC = () => {
             localStorage.setItem('payment_successful', 'true');
             
             setTimeout(() => {
-              navigate('/subscription');
+              history.push('/subscription');
             }, 2000);
             return;
           }
@@ -173,7 +176,7 @@ const PaymentVerification: React.FC = () => {
 
         // Redirect to subscription page after 3 seconds to show updated status
         setTimeout(() => {
-          navigate('/subscription');
+          history.push('/subscription');
         }, 3000);
 
       } catch (err) {
@@ -199,7 +202,7 @@ const PaymentVerification: React.FC = () => {
             localStorage.setItem('payment_successful', 'true');
             
             setTimeout(() => {
-              navigate('/subscription');
+              history.push('/subscription');
             }, 3000);
             return;
           }
@@ -227,7 +230,7 @@ const PaymentVerification: React.FC = () => {
         }
       }, 2000);
     }
-  }, [searchParams, user, navigate]);
+  }, [location.search, user, history]);
 
   const getStatusIcon = () => {
     switch (status) {
@@ -322,13 +325,13 @@ const PaymentVerification: React.FC = () => {
               Check Again
             </button>
             <button
-              onClick={() => navigate('/subscription')}
+              onClick={() => history.push('/subscription')}
               className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
             >
               Go to Subscription
             </button>
             <button
-              onClick={() => navigate('/dashboard')}
+              onClick={() => history.push('/dashboard')}
               className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
             >
               Go to Dashboard

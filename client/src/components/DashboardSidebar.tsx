@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useHistory } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useSidebar } from '../contexts/SidebarContext';
 import './DashboardSidebar.css';
@@ -33,7 +33,7 @@ interface SidebarItem {
 const DashboardSidebar: React.FC = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
-  const navigate = useNavigate();
+  const history = useHistory();
   const location = useLocation();
   const { signOut } = useAuth();
   const { isExpanded, setIsExpanded, isMobile } = useSidebar();
@@ -121,7 +121,7 @@ const DashboardSidebar: React.FC = () => {
   ];
 
   const handleItemClick = (item: SidebarItem) => {
-    navigate(item.path);
+    history.push(item.path);
     if (window.innerWidth < 768) {
       setIsMobileOpen(false);
     }
@@ -135,7 +135,7 @@ const DashboardSidebar: React.FC = () => {
   const handleLogout = async () => {
     try {
       await signOut();
-      navigate('/');
+      history.push('/');
     } catch (error) {
       console.error('Logout error:', error);
     }

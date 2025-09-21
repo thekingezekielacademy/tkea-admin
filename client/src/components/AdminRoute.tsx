@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useHistory } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { secureLog } from '../utils/secureLogger';
 
@@ -9,7 +9,7 @@ interface AdminRouteProps {
 
 const AdminRoute: React.FC<AdminRouteProps> = ({ children }) => {
   const { user, loading, isAdmin } = useAuth();
-  const navigate = useNavigate();
+  const history = useHistory();
   const [loadingTimeout, setLoadingTimeout] = useState(false);
 
   useEffect(() => {
@@ -32,17 +32,14 @@ const AdminRoute: React.FC<AdminRouteProps> = ({ children }) => {
         }
         
         // If no fallback available, redirect to dashboard
-        navigate('/dashboard', { 
-          replace: true,
-          state: { redirectedFrom: window.location.pathname, reason: 'loading_timeout' }
-        });
+        history.replace('/dashboard');
       }
     }, 15000); // 15 second timeout
 
     // If not loading and user is not authenticated, redirect to signin
     if (!loading && !user) {
       clearTimeout(timeout);
-      navigate('/signin');
+      history.push('/signin');
       return;
     }
 
@@ -50,10 +47,7 @@ const AdminRoute: React.FC<AdminRouteProps> = ({ children }) => {
     if (!loading && user && !isAdmin) {
       clearTimeout(timeout);
       secureLog('🔒 Non-admin user attempted to access admin route, silently redirecting to dashboard');
-      navigate('/dashboard', { 
-        replace: true,
-        state: { redirectedFrom: window.location.pathname }
-      });
+      history.replace('/dashboard');
       return;
     }
 
@@ -63,7 +57,7 @@ const AdminRoute: React.FC<AdminRouteProps> = ({ children }) => {
     }
 
     return () => clearTimeout(timeout);
-  }, [user, loading, isAdmin, navigate]);
+  }, [user, loading, isAdmin, history]);
 
   // Show loading state while checking authentication
   if (loading) {

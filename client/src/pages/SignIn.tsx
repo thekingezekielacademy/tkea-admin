@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useHistory } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { secureLog, secureError } from '../utils/secureLogger';
 
@@ -12,7 +12,7 @@ const SignIn: React.FC = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { signIn, user, loading: authLoading } = useAuth();
-  const navigate = useNavigate();
+  const history = useHistory();
 
   // Redirect to dashboard if user is already signed in
   useEffect(() => {
@@ -21,10 +21,10 @@ const SignIn: React.FC = () => {
       secureLog('User authenticated, redirecting to dashboard');
       // Small delay to ensure profile is fully loaded
       setTimeout(() => {
-        navigate('/dashboard');
+        history.push('/dashboard');
       }, 1000);
     }
-  }, [user, authLoading, navigate]);
+  }, [user, authLoading, history]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -86,7 +86,7 @@ const SignIn: React.FC = () => {
         <p className="mt-2 text-center text-sm text-gray-600">
           Don't have an account?{' '}
           <button
-            onClick={() => navigate('/signup')}
+            onClick={() => history.push('/signup')}
             className="font-medium text-indigo-600 hover:text-indigo-500 transition-colors duration-200"
           >
             Sign up here
@@ -201,7 +201,7 @@ const SignIn: React.FC = () => {
               <div className="text-sm">
                 <button
                   type="button"
-                  onClick={() => navigate('/forgot-password')}
+                  onClick={() => history.push('/forgot-password')}
                   className="font-medium text-indigo-600 hover:text-indigo-500 transition-colors duration-200"
                 >
                   Forgot your password?

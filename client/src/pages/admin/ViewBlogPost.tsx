@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useHistory } from 'react-router-dom';
 import { FaArrowLeft, FaEdit, FaEye, FaTrash, FaCalendar, FaUser, FaClock, FaTags, FaFolder } from 'react-icons/fa';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
@@ -22,7 +22,7 @@ interface BlogPost {
 const ViewBlogPost: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
-  const navigate = useNavigate();
+  const history = useHistory();
   const [blogPost, setBlogPost] = useState<BlogPost | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -102,7 +102,7 @@ const ViewBlogPost: React.FC = () => {
       }
 
       alert('Blog post deleted successfully!');
-      navigate('/admin/blog');
+      history.push('/admin/blog');
     } catch (error) {
       console.error('Error deleting blog post:', error);
       alert('Failed to delete blog post');
@@ -143,7 +143,7 @@ const ViewBlogPost: React.FC = () => {
             <h1 className="text-2xl font-bold text-gray-900">Error</h1>
             <p className="mt-2 text-gray-600">{error || 'Blog post not found'}</p>
             <button
-              onClick={() => navigate('/admin/blog')}
+              onClick={() => history.push('/admin/blog')}
               className="mt-4 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
               Back to Blog Management
@@ -162,7 +162,7 @@ const ViewBlogPost: React.FC = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <button
-                onClick={() => navigate('/admin/blog')}
+                onClick={() => history.push('/admin/blog')}
                 className="p-2 text-gray-600 hover:text-gray-900 transition-colors"
                 title="Back to Blog Management"
               >
@@ -175,7 +175,7 @@ const ViewBlogPost: React.FC = () => {
             </div>
             <div className="flex items-center space-x-3">
               <button
-                onClick={() => navigate(`/admin/blog/${blogPost.id}/edit`)}
+                onClick={() => history.push(`/admin/blog/${blogPost.id}/edit`)}
                 className="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors"
               >
                 <FaEdit className="w-4 h-4 mr-2" />

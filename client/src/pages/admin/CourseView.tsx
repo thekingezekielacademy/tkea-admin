@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useHistory, useParams } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import AdvancedVideoPlayer from '../../components/AdvancedVideoPlayer';
 
@@ -23,7 +23,7 @@ interface Course {
 }
 
 const CourseView: React.FC = () => {
-  const navigate = useNavigate();
+  const history = useHistory();
   const { courseId } = useParams<{ courseId: string }>();
   
   console.log('CourseView render:', { courseId });
@@ -149,7 +149,7 @@ const CourseView: React.FC = () => {
             <h1 className="text-2xl font-bold text-gray-900 mb-4">Course Not Found</h1>
             <p className="text-gray-600 mb-6">{error || 'The requested course could not be found.'}</p>
             <button
-              onClick={() => navigate('/admin/courses')}
+              onClick={() => history.push('/admin/courses')}
               className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
             >
               Back to Courses
@@ -169,7 +169,7 @@ const CourseView: React.FC = () => {
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4">
                 <button
-                  onClick={() => navigate('/admin/courses')}
+                  onClick={() => history.push('/admin/courses')}
                   className="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
                 >
                   <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -184,7 +184,7 @@ const CourseView: React.FC = () => {
               </div>
               <div className="flex space-x-3">
                 <button
-                  onClick={() => navigate(`/admin/edit-course/${courseId}`)}
+                  onClick={() => history.push(`/admin/edit-course/${courseId}`)}
                   className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                 >
                   Edit Course

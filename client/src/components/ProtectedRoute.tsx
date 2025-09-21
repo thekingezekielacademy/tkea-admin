@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useHistory } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
 interface ProtectedRouteProps {
@@ -8,13 +8,13 @@ interface ProtectedRouteProps {
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const { user, loading } = useAuth();
-  const navigate = useNavigate();
+  const history = useHistory();
 
   useEffect(() => {
     if (!loading && !user) {
-      navigate('/signin');
+      history.push('/signin');
     }
-  }, [user, loading, navigate]);
+  }, [user, loading, history]);
 
   // Show loading state while checking authentication
   if (loading) {

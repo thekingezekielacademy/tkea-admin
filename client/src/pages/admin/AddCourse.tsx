@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useHistory } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
@@ -15,7 +15,7 @@ type VideoItem = {
 const YT_PLAYLIST_RE = /[?&]list=([a-zA-Z0-9_-]+)/;
 
 const AddCourse: React.FC = () => {
-  const navigate = useNavigate();
+  const history = useHistory();
   const { user } = useAuth();
 
   const [step, setStep] = useState<1 | 2 | 3>(1);
@@ -183,7 +183,7 @@ const AddCourse: React.FC = () => {
       }));
       const { error: lErr } = await supabase.from('course_videos').insert(payload);
       if (lErr) throw lErr;
-      navigate('/admin/courses');
+      history.push('/admin/courses');
     } catch (e: any) {
       setSaveError(e?.message || 'Failed to save course');
     } finally {
@@ -247,7 +247,7 @@ const AddCourse: React.FC = () => {
       }
 
       setShowSchedulePopup(false);
-      navigate('/admin/courses');
+      history.push('/admin/courses');
     } catch (e: any) {
       setSaveError(e?.message || 'Failed to schedule course');
     } finally {
@@ -291,7 +291,7 @@ const AddCourse: React.FC = () => {
               />
               {fetchError && <div className="text-sm text-red-600">{fetchError}</div>}
               <div className="flex justify-between gap-3">
-                <button onClick={() => navigate(-1)} className="px-4 py-2 border rounded hover:bg-gray-50">BACK</button>
+                <button onClick={() => history.goBack()} className="px-4 py-2 border rounded hover:bg-gray-50">BACK</button>
                 <button
                   onClick={onImportPlaylist}
                   disabled={loading || !isPlaylistValid}

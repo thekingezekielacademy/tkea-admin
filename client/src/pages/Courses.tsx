@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { FaSearch, FaClock, FaUser, FaBook, FaTag, FaLock, FaUnlock, FaGraduationCap } from 'react-icons/fa';
-import { useNavigate } from 'react-router-dom';
+import { useHistory } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useSidebar } from '../contexts/SidebarContext';
 import { supabase } from '../lib/supabase';
@@ -49,7 +49,7 @@ const Courses: React.FC = () => {
   const [hasTrialAccess, setHasTrialAccess] = useState(false);
   const [databaseSubscriptionStatus, setDatabaseSubscriptionStatus] = useState<boolean>(false);
   const COURSES_PER_PAGE = 10;
-  const navigate = useNavigate();
+  const history = useHistory();
   const { user } = useAuth();
   const { isExpanded, isMobile } = useSidebar();
   const { trackCourseView, trackSearch, trackLead } = useFacebookPixel();
@@ -724,33 +724,33 @@ const Courses: React.FC = () => {
   const goToAccess = () => {
     if (user && (databaseSubscriptionStatus || hasTrialAccess)) {
       // User has active subscription or trial access - go to dashboard
-      navigate('/dashboard');
+      history.push('/dashboard');
     } else if (user) {
       // User is signed in but no active subscription or trial - go to subscription page to upgrade
-      navigate('/subscription');
+      history.push('/subscription');
     } else {
       // User is not signed in - go to sign in page
-      navigate('/signin');
+      history.push('/signin');
     }
   };
 
   const handleEnroll = (courseId: string) => {
     if (user && (databaseSubscriptionStatus || hasTrialAccess)) {
       // User is signed in and has active subscription OR trial access - go to course overview
-      navigate(`/course/${courseId}/overview`);
+      history.push(`/course/${courseId}/overview`);
     } else if (user) {
       // User is signed in but no active subscription or trial - go to subscription page to upgrade
-      navigate('/subscription');
+      history.push('/subscription');
     } else {
       // User is not signed in - go to signup page to start free
-      navigate('/signup');
+      history.push('/signup');
     }
   };
 
   const handleNotifyMe = async (courseId: string) => {
     if (!user) {
       // User is not signed in - go to signup page
-      navigate('/signup');
+      history.push('/signup');
       return;
     }
 
@@ -871,7 +871,7 @@ const Courses: React.FC = () => {
                   </div>
                   <div className="text-center sm:text-right">
                     <button 
-                      onClick={() => navigate('/subscription')}
+                      onClick={() => history.push('/subscription')}
                       className="bg-white text-blue-600 px-3 sm:px-4 md:px-6 py-2 sm:py-3 rounded-full font-semibold hover:bg-blue-50 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 text-xs sm:text-sm md:text-base"
                     >
                       Upgrade Now
@@ -898,7 +898,7 @@ const Courses: React.FC = () => {
                   </div>
                   <div className="text-center sm:text-right">
                     <button 
-                      onClick={() => navigate('/subscription')}
+                      onClick={() => history.push('/subscription')}
                       className="bg-white text-orange-600 px-3 sm:px-4 md:px-6 py-2 sm:py-3 rounded-full font-semibold hover:bg-orange-50 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 text-xs sm:text-sm md:text-base"
                     >
                       Subscribe Now
@@ -928,7 +928,7 @@ const Courses: React.FC = () => {
                 </div>
                 <div className="text-center sm:text-right">
                   <button 
-                    onClick={() => navigate('/signup')}
+                    onClick={() => history.push('/signup')}
                     className="bg-white text-purple-600 px-3 sm:px-4 md:px-6 py-2 sm:py-3 rounded-full font-semibold hover:bg-purple-50 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 text-xs sm:text-sm md:text-base"
                   >
                     Start Free!
@@ -1069,7 +1069,7 @@ const Courses: React.FC = () => {
               </button>
               {error.includes('Authentication') && (
                 <button 
-                  onClick={() => navigate('/signin')}
+                  onClick={() => history.push('/signin')}
                   className="px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base"
                 >
                   Sign In

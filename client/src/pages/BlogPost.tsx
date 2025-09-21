@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useHistory } from 'react-router-dom';
 import { FaCalendar, FaUser, FaEye, FaArrowLeft, FaClock, FaTags, FaFolder, FaCopy, FaCheck, FaTwitter, FaFacebook, FaLinkedin, FaWhatsapp } from 'react-icons/fa';
 import { supabase } from '../lib/supabase';
 import DOMPurify from 'dompurify';
@@ -30,7 +30,7 @@ interface BlogPostData {
 
 const BlogPost: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
-  const navigate = useNavigate();
+  const history = useHistory();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [blogPost, setBlogPost] = useState<BlogPostData | null>(null);
@@ -251,7 +251,7 @@ const BlogPost: React.FC = () => {
             <h1 className="text-2xl font-bold text-gray-900">Blog Post Not Found</h1>
             <p className="mt-2 text-gray-600">{error || 'The blog post you are looking for does not exist.'}</p>
             <button
-              onClick={() => navigate('/blog')}
+              onClick={() => history.push('/blog')}
               className="mt-4 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
               Back to Blog
@@ -269,7 +269,7 @@ const BlogPost: React.FC = () => {
         {/* Back Button */}
         <div className="mb-6">
           <button
-            onClick={() => navigate('/blog')}
+            onClick={() => history.push('/blog')}
             className="inline-flex items-center text-gray-600 hover:text-gray-900 transition-colors"
           >
             <FaArrowLeft className="w-4 h-4 mr-2" />

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useHistory } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { secureLog, secureError } from '../utils/secureLogger';
 
@@ -16,7 +16,7 @@ const SignUp: React.FC = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { signUp } = useAuth();
-  const navigate = useNavigate();
+  const history = useHistory();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
@@ -83,12 +83,12 @@ const SignUp: React.FC = () => {
         
         // Check if email confirmation is required
         if (user.email_confirmed_at) {
-          navigate('/dashboard');
+          history.push('/dashboard');
         } else {
           // Show success message instead of error
           setError('✅ Account created successfully! Please check your email and confirm your account before signing in.');
           // Redirect to signin page after 5 seconds
-          setTimeout(() => navigate('/signin'), 5000);
+          setTimeout(() => history.push('/signin'), 5000);
         }
       } else {
         setError('Account created but no user returned');
@@ -122,7 +122,7 @@ const SignUp: React.FC = () => {
         <p className="mt-2 text-center text-sm text-gray-600">
           Already have an account?{' '}
           <button
-            onClick={() => navigate('/signin')}
+            onClick={() => history.push('/signin')}
             className="font-medium text-indigo-600 hover:text-indigo-500 transition-colors duration-200"
           >
             Sign in here

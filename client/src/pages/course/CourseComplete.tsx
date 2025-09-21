@@ -1,9 +1,9 @@
 import React from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useHistory, useParams } from 'react-router-dom';
 
 const CourseComplete: React.FC = () => {
-  const navigate = useNavigate();
-  const { id } = useParams();
+  const history = useHistory();
+  const { id } = useParams<{ id: string }>();
 
   return (
     <div className="min-h-screen bg-gray-50 pt-16">
@@ -16,7 +16,7 @@ const CourseComplete: React.FC = () => {
           <button className="border px-5 py-2 rounded-lg hover:bg-gray-50">Share Achievement</button>
         </div>
         <div className="mt-10">
-          <button onClick={() => navigate('/courses')} className="text-primary-700 hover:underline">Explore Recommended Courses</button>
+          <button onClick={() => history.push('/courses')} className="text-primary-700 hover:underline">Explore Recommended Courses</button>
         </div>
       </div>
     </div>

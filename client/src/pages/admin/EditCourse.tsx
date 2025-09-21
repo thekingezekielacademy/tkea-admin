@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useHistory, useParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
 
@@ -21,7 +21,7 @@ interface CourseData {
 
 const EditCourse: React.FC = () => {
   const { user } = useAuth();
-  const navigate = useNavigate();
+  const history = useHistory();
   const { id: courseId } = useParams<{ id: string }>();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -441,7 +441,7 @@ const EditCourse: React.FC = () => {
 
       setSuccess('Course updated successfully!');
       setTimeout(() => {
-        navigate('/admin/courses');
+        history.push('/admin/courses');
       }, 1500);
 
     } catch (err) {
@@ -486,7 +486,7 @@ const EditCourse: React.FC = () => {
               <p className="mt-2 text-gray-600">Update your course information and content</p>
             </div>
             <button
-              onClick={() => navigate('/admin/courses')}
+              onClick={() => history.push('/admin/courses')}
               className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
             >
               ← Back to Courses
@@ -745,7 +745,7 @@ const EditCourse: React.FC = () => {
         {/* Action Buttons */}
         <div className="flex justify-end space-x-4">
           <button
-            onClick={() => navigate('/admin/courses')}
+            onClick={() => history.push('/admin/courses')}
             className="px-6 py-3 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
           >
             Cancel

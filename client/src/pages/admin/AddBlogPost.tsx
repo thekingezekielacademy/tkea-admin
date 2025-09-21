@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useHistory, useParams } from 'react-router-dom';
 import { FaArrowLeft, FaSave, FaEye } from 'react-icons/fa';
 import TagsInput from '../../components/TagsInput';
 import { supabase } from '../../lib/supabase';
@@ -21,7 +21,7 @@ interface BlogPostData {
 
 const AddBlogPost: React.FC = () => {
   const { user } = useAuth();
-  const navigate = useNavigate();
+  const history = useHistory();
   const { id } = useParams<{ id: string }>();
   const isEditing = !!id;
   
@@ -357,7 +357,7 @@ const AddBlogPost: React.FC = () => {
       }
       
       alert(isEditing ? 'Blog post updated successfully!' : 'Blog post saved successfully!');
-      navigate('/admin/blog');
+      history.push('/admin/blog');
     } catch (error) {
       console.error('Error saving blog post:', error);
       alert('Failed to save blog post. Please try again.');
@@ -434,7 +434,7 @@ const AddBlogPost: React.FC = () => {
       }
       
       alert(isEditing ? 'Blog post updated and published successfully!' : 'Blog post published successfully!');
-      navigate('/admin/blog');
+      history.push('/admin/blog');
     } catch (error) {
       console.error('Error publishing blog post:', error);
       alert('Failed to publish blog post. Please try again.');
@@ -477,7 +477,7 @@ const AddBlogPost: React.FC = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <button
-                onClick={() => navigate('/admin/blog')}
+                onClick={() => history.push('/admin/blog')}
                 className="p-2 text-gray-600 hover:text-gray-900 transition-colors"
                 title="Back to Blog Management"
               >
@@ -768,7 +768,7 @@ const AddBlogPost: React.FC = () => {
                 
                 <div className="flex items-center space-x-3">
                   <button
-                    onClick={() => navigate('/admin/blog')}
+                    onClick={() => history.push('/admin/blog')}
                     className="px-6 py-3 border border-gray-300 text-gray-700 bg-white rounded-lg hover:bg-gray-50 transition-colors"
                   >
                     Cancel

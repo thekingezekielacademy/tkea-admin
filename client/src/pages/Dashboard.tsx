@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useHistory, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useSidebar } from '../contexts/SidebarContext';
 import { supabase } from '../lib/supabase';
@@ -65,7 +65,7 @@ interface UserStats {
 }
 
 const Dashboard: React.FC = () => {
-  const navigate = useNavigate();
+  const history = useHistory();
   const location = useLocation();
   const { user, isAdmin } = useAuth();
   const { isExpanded, isMobile } = useSidebar();
@@ -1134,15 +1134,15 @@ const Dashboard: React.FC = () => {
                     You are signed in as an administrator. You can now access admin features and manage courses.
                   </p>
                   {/* Debug info for admins - shows if someone was redirected */}
-                  {location.state?.redirectedFrom && (
+                  {(location.state as any)?.redirectedFrom && (
                     <p className="text-xs text-purple-600 mt-2 italic">
-                      🔍 Debug: User was redirected from {location.state.redirectedFrom}
+                      🔍 Debug: User was redirected from {(location.state as any).redirectedFrom}
                     </p>
                   )}
                 </div>
               </div>
               <button 
-                onClick={() => navigate('/admin')}
+                onClick={() => history.push('/admin')}
                 className="w-full sm:w-auto bg-purple-600 text-white py-2.5 sm:py-3 px-4 sm:px-6 rounded-lg font-medium hover:bg-purple-700 transition-colors flex items-center justify-center sm:justify-start space-x-2 text-sm sm:text-base"
               >
                 <span>Go to Admin Panel</span>
@@ -1156,7 +1156,7 @@ const Dashboard: React.FC = () => {
         {trialStatus.isActive && !subActive && (
           <TrialBanner
             trialStatus={trialStatus}
-            onSubscribe={() => navigate('/subscription')}
+            onSubscribe={() => history.push('/subscription')}
           />
         )}
 
@@ -1264,9 +1264,9 @@ const Dashboard: React.FC = () => {
                       <button 
                         onClick={() => {
                           if (trialStatus.isExpired && !subActive) {
-                            navigate('/subscription');
+                            history.push('/subscription');
                           } else {
-                            navigate(`/course/${currentCourse.id}`);
+                            history.push(`/course/${currentCourse.id}`);
                           }
                         }}
                         className={`w-full py-3 px-4 rounded-lg font-medium transition-all duration-200 flex items-center justify-center space-x-2 ${
@@ -1347,9 +1347,9 @@ const Dashboard: React.FC = () => {
                                 <button 
                                   onClick={() => {
                                     if (trialStatus.isExpired && !subActive) {
-                                      navigate('/subscription');
+                                      history.push('/subscription');
                                     } else {
-                                      navigate(`/course/${recentCourseId}`);
+                                      history.push(`/course/${recentCourseId}`);
                                     }
                                   }}
                                   className={`px-6 py-2 rounded-lg font-medium transition-all duration-200 ${
@@ -1361,7 +1361,7 @@ const Dashboard: React.FC = () => {
                                   {trialStatus.isExpired && !subActive ? 'Upgrade to Access' : 'Continue Learning'}
                                 </button>
                                 <button 
-                                  onClick={() => navigate('/courses')}
+                                  onClick={() => history.push('/courses')}
                                   className="bg-gradient-to-r from-green-600 to-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:from-green-700 hover:to-blue-700 transition-all duration-200"
                                 >
                                   Browse All Courses
@@ -1391,7 +1391,7 @@ const Dashboard: React.FC = () => {
                             </div>
                           </div>
                           <button 
-                            onClick={() => navigate('/courses')}
+                            onClick={() => history.push('/courses')}
                             className="bg-gradient-to-r from-green-600 to-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:from-green-700 hover:to-blue-700 transition-all duration-200"
                           >
                             Browse All Courses
@@ -1409,9 +1409,9 @@ const Dashboard: React.FC = () => {
                           <button 
                             onClick={() => {
                               if (trialStatus.isExpired && !subActive) {
-                                navigate('/subscription');
+                                history.push('/subscription');
                               } else {
-                                navigate('/courses');
+                                history.push('/courses');
                               }
                             }}
                             className={`px-6 py-2 rounded-lg font-medium transition-all duration-200 ${
@@ -1467,9 +1467,9 @@ const Dashboard: React.FC = () => {
                             <button 
                               onClick={() => {
                                 if (trialStatus.isExpired && !subActive) {
-                                  navigate('/subscription');
+                                  history.push('/subscription');
                                 } else {
-                                  navigate(`/course/${course.id}`);
+                                  history.push(`/course/${course.id}`);
                                 }
                               }} 
                               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
@@ -1498,9 +1498,9 @@ const Dashboard: React.FC = () => {
                   <button 
                     onClick={() => {
                       if (trialStatus.isExpired && !subActive) {
-                        navigate('/subscription');
+                        history.push('/subscription');
                       } else {
-                        navigate('/courses');
+                        history.push('/courses');
                       }
                     }}
                     className={`px-6 py-2 rounded-lg font-medium transition-colors ${
@@ -1566,9 +1566,9 @@ const Dashboard: React.FC = () => {
                     <button 
                       onClick={() => {
                         if (trialStatus.isExpired && !subActive) {
-                          navigate('/subscription');
+                          history.push('/subscription');
                         } else {
-                          navigate('/courses');
+                          history.push('/courses');
                         }
                       }}
                       className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
@@ -1718,7 +1718,7 @@ const Dashboard: React.FC = () => {
             )}
               
               <button 
-                onClick={() => navigate('/subscription')}
+                onClick={() => history.push('/subscription')}
                 className="w-full bg-primary-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-primary-700 transition-colors flex items-center justify-center space-x-2"
               >
                 <span>
@@ -1742,9 +1742,9 @@ const Dashboard: React.FC = () => {
                     <button 
                       onClick={() => {
                         if (trialStatus.isExpired && !subActive) {
-                          navigate('/subscription');
+                          history.push('/subscription');
                         } else {
-                          navigate(`/course/${currentCourse.id}/overview`);
+                          history.push(`/course/${currentCourse.id}/overview`);
                         }
                       }}
                       className={`w-full py-2 px-4 rounded-lg font-medium transition-colors ${
@@ -1764,9 +1764,9 @@ const Dashboard: React.FC = () => {
                     <button 
                       onClick={() => {
                         if (trialStatus.isExpired && !subActive) {
-                          navigate('/subscription');
+                          history.push('/subscription');
                         } else {
-                          navigate('/courses');
+                          history.push('/courses');
                         }
                       }}
                       className={`w-full py-2 px-4 rounded-lg font-medium transition-colors ${
@@ -1818,7 +1818,7 @@ const Dashboard: React.FC = () => {
                 {/* Manage Profile Button */}
                 <div className="pt-4">
                   <button 
-                    onClick={() => navigate('/subscription')}
+                    onClick={() => history.push('/subscription')}
                     className="w-full bg-gradient-to-r from-primary-600 to-primary-700 text-white py-3 px-4 rounded-lg font-medium hover:from-primary-700 hover:to-primary-800 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 flex items-center justify-center space-x-2"
                   >
                     <FaUser className="text-sm" />

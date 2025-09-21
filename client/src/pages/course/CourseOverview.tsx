@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useHistory, useParams } from 'react-router-dom';
 import ProgressRing from '../../components/ProgressRing';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
@@ -7,8 +7,8 @@ import { TrialStatus, TrialManager } from '../../utils/trialManager';
 import secureStorage from '../../utils/secureStorage';
 
 const CourseOverview: React.FC = () => {
-  const navigate = useNavigate();
-  const { id } = useParams();
+  const history = useHistory();
+  const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
   
   // Debug logging for refresh issues
@@ -158,7 +158,7 @@ const CourseOverview: React.FC = () => {
           // Redirect if NO access (trial expired AND no subscription)
           if (!hasAccess) {
             console.log('🚫 ACCESS DENIED - Trial expired and no subscription - redirecting to profile');
-            navigate('/profile', { replace: true });
+            history.push('/profile', { replace: true });
             return;
           } else {
             console.log('✅ ACCESS GRANTED - Trial active or subscription active');
@@ -168,7 +168,7 @@ const CourseOverview: React.FC = () => {
           // If no trial data, check if user has subscription (prioritize database)
           if (!hasDatabaseSubscription && !isSubActive) {
             console.log('🚫 No trial data and no subscription - redirecting to profile');
-            navigate('/profile', { replace: true });
+            history.push('/profile', { replace: true });
             return;
           } else {
             console.log('✅ ACCESS GRANTED - Database subscription or secure storage subscription active');
@@ -180,7 +180,7 @@ const CourseOverview: React.FC = () => {
     };
     
     checkAccess();
-  }, [user?.id, navigate]);
+  }, [user?.id, history]);
 
   // Fetch course data on mount
   useEffect(() => {
@@ -302,7 +302,7 @@ const CourseOverview: React.FC = () => {
   const startCourse = () => {
     if (!user) {
       // Redirect non-authenticated users to sign in
-      navigate('/signin', { 
+      history.push('/signin', { 
         state: { 
           redirectTo: `/course/${id}/lesson/${course?.course_videos?.[0]?.id || '1'}`,
           message: 'Please sign in to access this course'
@@ -312,9 +312,9 @@ const CourseOverview: React.FC = () => {
     }
     
     if (course?.course_videos && course.course_videos.length > 0) {
-      navigate(`/course/${id}/lesson/${course.course_videos[0].id}`);
+      history.push(`/course/${id}/lesson/${course.course_videos[0].id}`);
     } else {
-      navigate(`/course/${id}/lesson/1`);
+      history.push(`/course/${id}/lesson/1`);
     }
   };
 
@@ -356,7 +356,7 @@ const CourseOverview: React.FC = () => {
                 Try Again
               </button>
               <button 
-                onClick={() => navigate('/courses')}
+                onClick={() => history.push('/courses')}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
               >
                 Back to Courses
@@ -376,7 +376,7 @@ const CourseOverview: React.FC = () => {
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
             <p className="text-yellow-700 font-medium mb-3">Course not found</p>
             <button 
-              onClick={() => navigate('/courses')}
+              onClick={() => history.push('/courses')}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
               Back to Courses
@@ -392,7 +392,7 @@ const CourseOverview: React.FC = () => {
       {/* Back to Courses Button */}
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         <button
-          onClick={() => navigate('/courses')}
+          onClick={() => history.push('/courses')}
           className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl hover:from-blue-600 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -420,7 +420,7 @@ const CourseOverview: React.FC = () => {
               </div>
               <div className="text-right">
                 <button 
-                  onClick={() => navigate('/signin')}
+                  onClick={() => history.push('/signin')}
                   className="bg-white text-purple-600 px-6 py-3 rounded-full font-semibold hover:bg-purple-50 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
                 >
                   Sign In to Start
