@@ -5,13 +5,13 @@ interface ContactFormData {
   message: string;
 }
 
+import { API_BASE } from '../config/api';
+
 interface ContactResponse {
   success: boolean;
   message: string;
   errors?: any[];
 }
-
-import { API_BASE } from '../config/api';
 
 const API_BASE_URL = API_BASE;
 

@@ -129,9 +129,9 @@ export const applyBrowserFixes = (): void => {
     console.log('🔧 In-app browser detected - using simplified mode');
     
     // CRITICAL: Fix hash routing for mini browsers
-    if (!location.hash || location.hash === '#') {
-      location.hash = '#/';
-      console.log('🔧 Fixed hash for mini browser:', location.hash);
+    if (!window.location.hash || window.location.hash === '#') {
+      window.location.hash = '#/';
+      console.log('🔧 Fixed hash for mini browser:', window.location.hash);
     }
     
     // Add cache-busting for in-app browsers

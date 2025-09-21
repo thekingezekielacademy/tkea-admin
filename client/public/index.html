@@ -163,12 +163,15 @@
     
     <!-- DISABLE SERVICE WORKER - It's interfering with React loading -->
     <script>
+        // CRITICAL: ES5-compatible service worker unregistration
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.getRegistrations().then(function(registrations) {
-                for(let registration of registrations) {
-                    registration.unregister();
-                    console.log('🔧 Unregistered interfering service worker');
+                for (var i = 0; i < registrations.length; i++) {
+                    registrations[i].unregister();
                 }
+                console.log('🔧 Unregistered interfering service worker');
+            }).catch(function(error) {
+                console.log('⚠️ Service worker unregistration failed:', error);
             });
         }
     </script>

@@ -47,7 +47,7 @@ import Assessments from './pages/Assessments';
 import Resume from './pages/Resume';
 import Rooms from './pages/Rooms';
 import Affiliates from './pages/Affiliates';
-import PWAInstall from './pages/PWAInstall';
+// import PWAInstall from './pages/PWAInstall'; // REMOVED: PWA install causes issues in mini browsers
 import './App.css';
 import './styles/orientation.css';
 
@@ -68,10 +68,10 @@ function App() {
         // 3. Apply browser-specific fixes (simple)
         applyBrowserFixes();
         
-        // 4. Register service worker (simple - already handles mini browsers)
-        if (safeFeatureCheck.hasServiceWorker()) {
-          await registerServiceWorker();
-        }
+        // 4. DISABLED: Service worker causes issues in mini browsers
+        // if (safeFeatureCheck.hasServiceWorker()) {
+        //   await registerServiceWorker();
+        // }
         
         // 5. Disable Flutterwave fingerprinting for compatibility
         if (typeof window !== 'undefined') {
@@ -196,7 +196,7 @@ function App() {
                   </Routes>
                 </main>
                 <Footer />
-                <PWAInstall />
+                {/* <PWAInstall /> REMOVED: PWA install causes issues in mini browsers */}
               </div>
             </RouterComponent>
           </SidebarProvider>

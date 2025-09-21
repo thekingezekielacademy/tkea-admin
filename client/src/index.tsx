@@ -8,9 +8,9 @@ import './index.css';
   var ua = navigator.userAgent || '';
   var isMiniBrowser = /FBAN|FBAV|FBIOS|Instagram|Line|Twitter|LinkedIn|WhatsApp|Telegram|wv\)/i.test(ua);
   
-  if (isMiniBrowser && (!location.hash || location.hash === '#')) {
-    location.hash = '#/';
-    console.log('🔧 Fixed hash for mini browser:', location.hash);
+  if (isMiniBrowser && (!window.location.hash || window.location.hash === '#')) {
+    window.location.hash = '#/';
+    console.log('🔧 Fixed hash for mini browser:', window.location.hash);
   }
 })();
 
