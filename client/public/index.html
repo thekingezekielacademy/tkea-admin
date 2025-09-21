@@ -68,6 +68,12 @@
             console.log('🔧 Fixed hash for mini browser:', location.hash);
           }
         }
+        
+        // Store browser info globally for easy access
+        window.__KEA_BROWSER_INFO__ = {
+          isMiniBrowser: isMiniBrowser,
+          userAgent: ua
+        };
       })();
     </script>
     

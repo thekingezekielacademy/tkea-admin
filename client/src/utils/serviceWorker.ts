@@ -12,8 +12,27 @@ export const registerServiceWorker = async (): Promise<void> => {
     return;
   }
 
+  // CRITICAL: Check if this is a mini browser
+  const isMiniBrowser = (): boolean => {
+    const ua = navigator.userAgent || '';
+    return /FBAN|FBAV|FBIOS|Instagram|Line|Twitter|LinkedIn|WhatsApp|Telegram|wv\)/i.test(ua);
+  };
+
+  if (isMiniBrowser()) {
+    console.log('📱 Mini browser detected - disabling service worker');
+    // Unregister any existing service workers in mini browsers
+    try {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(registrations.map(registration => registration.unregister()));
+      console.log('✅ Service workers unregistered for mini browser');
+    } catch (error) {
+      console.log('⚠️ Failed to unregister service workers:', error);
+    }
+    return;
+  }
+
   try {
-    // Always register service worker - don't skip for in-app browsers
+    // Register service worker only for regular browsers
     const registration = await navigator.serviceWorker.register('/sw.js', {
       scope: '/',
       updateViaCache: 'none'

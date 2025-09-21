@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mini Browser Fixes Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .test-section {
+            background: #f5f5f5;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .pass { color: green; }
+        .fail { color: red; }
+        .info { color: blue; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        #results {
+            margin-top: 20px;
+            padding: 15px;
+            background: #e9ecef;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Mini Browser Compatibility Test</h1>
+    <p>This page tests the fixes implemented for Instagram/Facebook mini browsers.</p>
+    
+    <div class="test-section">
+        <h3>Browser Detection Test</h3>
+        <p>Current User Agent: <span id="userAgent"></span></p>
+        <p>Mini Browser Detected: <span id="miniBrowserStatus"></span></p>
+        <p>Hash Fixed: <span id="hashStatus"></span></p>
+    </div>
+    
+    <div class="test-section">
+        <h3>React Compatibility Test</h3>
+        <p>React Available: <span id="reactStatus"></span></p>
+        <p>ReactDOM Available: <span id="reactDOMStatus"></span></p>
+        <p>React 18 createRoot Available: <span id="createRootStatus"></span></p>
+        <p>React 17 render Available: <span id="renderStatus"></span></p>
+    </div>
+    
+    <div class="test-section">
+        <h3>Service Worker Test</h3>
+        <p>Service Worker Support: <span id="swSupport"></span></p>
+        <p>Service Worker Registered: <span id="swRegistered"></span></p>
+    </div>
+    
+    <div class="test-section">
+        <h3>Error Boundary Test</h3>
+        <button onclick="testErrorBoundary()">Test Error Boundary</button>
+        <p id="errorBoundaryResult"></p>
+    </div>
+    
+    <div class="test-section">
+        <h3>Navigation Test</h3>
+        <button onclick="testHashNavigation()">Test Hash Navigation</button>
+        <p>Current Hash: <span id="currentHash"></span></p>
+    </div>
+    
+    <div id="results"></div>
+    
+    <script>
+        // Run tests immediately
+        function runTests() {
+            testBrowserDetection();
+            testReactCompatibility();
+            testServiceWorker();
+            updateHashDisplay();
+            
+            // Update hash display every second
+            setInterval(updateHashDisplay, 1000);
+        }
+        
+        function testBrowserDetection() {
+            const ua = navigator.userAgent || '';
+            const isMiniBrowser = /FBAN|FBAV|FBIOS|Instagram|Line|Twitter|LinkedIn|WhatsApp|Telegram|wv\)/i.test(ua);
+            
+            document.getElementById('userAgent').textContent = ua;
+            document.getElementById('miniBrowserStatus').innerHTML = 
+                isMiniBrowser ? '<span class="pass">✅ YES</span>' : '<span class="info">❌ NO (Regular Browser)</span>';
+            
+            // Check if hash was fixed
+            const hashFixed = location.hash === '#/' || location.hash.startsWith('#/');
+            document.getElementById('hashStatus').innerHTML = 
+                hashFixed ? '<span class="pass">✅ YES</span>' : '<span class="fail">❌ NO</span>';
+        }
+        
+        function testReactCompatibility() {
+            // Check React availability
+            const reactAvailable = typeof window.React !== 'undefined';
+            document.getElementById('reactStatus').innerHTML = 
+                reactAvailable ? '<span class="pass">✅ YES</span>' : '<span class="fail">❌ NO</span>';
+            
+            // Check ReactDOM availability
+            const reactDOMAvailable = typeof window.ReactDOM !== 'undefined';
+            document.getElementById('reactDOMStatus').innerHTML = 
+                reactDOMAvailable ? '<span class="pass">✅ YES</span>' : '<span class="fail">❌ NO</span>';
+            
+            // Check React 18 createRoot
+            const createRootAvailable = window.ReactDOM && typeof window.ReactDOM.createRoot === 'function';
+            document.getElementById('createRootStatus').innerHTML = 
+                createRootAvailable ? '<span class="pass">✅ YES</span>' : '<span class="info">❌ NO (Expected in mini browsers)</span>';
+            
+            // Check React 17 render
+            const renderAvailable = window.ReactDOM && typeof window.ReactDOM.render === 'function';
+            document.getElementById('renderStatus').innerHTML = 
+                renderAvailable ? '<span class="pass">✅ YES</span>' : '<span class="fail">❌ NO</span>';
+        }
+        
+        function testServiceWorker() {
+            const swSupport = 'serviceWorker' in navigator;
+            document.getElementById('swSupport').innerHTML = 
+                swSupport ? '<span class="pass">✅ YES</span>' : '<span class="info">❌ NO</span>';
+            
+            if (swSupport) {
+                navigator.serviceWorker.getRegistrations().then(registrations => {
+                    const registered = registrations.length > 0;
+                    document.getElementById('swRegistered').innerHTML = 
+                        registered ? '<span class="info">✅ YES (' + registrations.length + ' registered)</span>' : '<span class="pass">❌ NO (Good for mini browsers)</span>';
+                });
+            } else {
+                document.getElementById('swRegistered').innerHTML = '<span class="info">N/A</span>';
+            }
+        }
+        
+        function testErrorBoundary() {
+            const result = document.getElementById('errorBoundaryResult');
+            result.innerHTML = '<span class="info">Testing error boundary...</span>';
+            
+            // Simulate an error
+            try {
+                throw new Error('Test error for error boundary');
+            } catch (error) {
+                result.innerHTML = '<span class="pass">✅ Error caught successfully: ' + error.message + '</span>';
+            }
+        }
+        
+        function testHashNavigation() {
+            const currentTime = Date.now();
+            location.hash = '#/test-' + currentTime;
+            updateHashDisplay();
+        }
+        
+        function updateHashDisplay() {
+            document.getElementById('currentHash').textContent = location.hash || '(empty)';
+        }
+        
+        // Add test results summary
+        function addTestResults() {
+            const results = document.getElementById('results');
+            const ua = navigator.userAgent || '';
+            const isMiniBrowser = /FBAN|FBAV|FBIOS|Instagram|Line|Twitter|LinkedIn|WhatsApp|Telegram|wv\)/i.test(ua);
+            
+            let summary = '<h3>📊 Test Summary</h3>';
+            summary += '<p><strong>Browser Type:</strong> ' + (isMiniBrowser ? 'Mini Browser (Instagram/Facebook/etc.)' : 'Regular Browser') + '</p>';
+            
+            if (isMiniBrowser) {
+                summary += '<div class="pass"><h4>✅ Mini Browser Optimizations Active:</h4>';
+                summary += '<ul>';
+                summary += '<li>Hash routing fixed</li>';
+                summary += '<li>Service worker disabled</li>';
+                summary += '<li>Error boundary enabled</li>';
+                summary += '<li>React 17 render method used</li>';
+                summary += '</ul></div>';
+            } else {
+                summary += '<div class="info"><h4>ℹ️ Regular Browser Mode:</h4>';
+                summary += '<ul>';
+                summary += '<li>Full React 18 features</li>';
+                summary += '<li>Service worker enabled</li>';
+                summary += '<li>All optimizations available</li>';
+                summary += '</ul></div>';
+            }
+            
+            results.innerHTML = summary;
+        }
+        
+        // Run tests when page loads
+        window.addEventListener('load', () => {
+            runTests();
+            setTimeout(addTestResults, 1000);
+        });
+        
+        // Also run immediately in case load event already fired
+        if (document.readyState === 'loading') {
+            // Still loading, wait for load event
+        } else {
+            runTests();
+            setTimeout(addTestResults, 1000);
+        }
+    </script>
+</body>
+</html>

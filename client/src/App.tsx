@@ -10,7 +10,7 @@ import Footer from './components/Footer';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminRoute from './components/AdminRoute';
 import ScrollToTop from './components/ScrollToTop';
-import SafeErrorBoundary from './components/SafeErrorBoundary';
+import MiniBrowserErrorBoundary from './components/MiniBrowserErrorBoundary';
 import { getBrowserInfo, applyBrowserFixes, shouldUseSimplifiedMode } from './utils/simpleBrowserDetection';
 import { addEssentialPolyfills, safeFeatureCheck } from './utils/essentialPolyfills';
 import Home from './pages/Home';
@@ -58,75 +58,38 @@ function App() {
   useEffect(() => {
     const initializeApp = async () => {
       try {
-        // 1. CRITICAL: Fix hash for mini browsers FIRST
+        // 1. Get browser info
         const browserInfo = getBrowserInfo();
         console.log('🔍 Browser Info:', browserInfo);
         
-        // Fix hash routing for mini browsers - MUST happen before React mounts
-        if (browserInfo.isInApp && (!location.hash || location.hash === '#')) {
-          location.hash = '#/';
-          console.log('🔧 Fixed hash for mini browser:', location.hash);
-        }
-        
-        // 2. Apply essential polyfills
+        // 2. Apply essential polyfills (simple)
         addEssentialPolyfills();
         
-        // 3. Apply browser-specific fixes
+        // 3. Apply browser-specific fixes (simple)
         applyBrowserFixes();
         
-        // 4. Register service worker (non-blocking for mini browsers)
+        // 4. Register service worker (simple - already handles mini browsers)
         if (safeFeatureCheck.hasServiceWorker()) {
-          if (browserInfo.isInApp) {
-            // For mini browsers, register service worker asynchronously to avoid blocking
-            setTimeout(() => registerServiceWorker(), 100);
-          } else {
-            await registerServiceWorker();
-          }
+          await registerServiceWorker();
         }
         
-        // 5. Initialize non-critical features only if supported
-        if (!shouldUseSimplifiedMode()) {
-          // Only initialize complex features for modern browsers
-          try {
-            // Initialize analytics if supported
-            if (safeFeatureCheck.hasFetch()) {
-              // Analytics initialization here
-            }
-            
-            // Initialize notifications if supported
-            if (safeFeatureCheck.hasNotifications()) {
-              // Notification initialization here
-            }
-          } catch (error) {
-            console.warn('Non-critical feature initialization failed:', error);
-          }
-        }
-        
-        // 6. Disable Flutterwave fingerprinting for compatibility
+        // 5. Disable Flutterwave fingerprinting for compatibility
         if (typeof window !== 'undefined') {
           (window as any).FlutterwaveDisableFingerprinting = true;
           (window as any).FlutterwaveDisableTracking = true;
           (window as any).FlutterwaveDisableAnalytics = true;
         }
         
-        // 7. App ready
+        // 6. App ready
         setIsLoading(false);
         console.log('✅ App initialized successfully');
         
       } catch (error) {
         console.error('❌ App initialization failed:', error);
         
-        // Mini browser specific error handling
-        const browserInfo = getBrowserInfo();
-        if (browserInfo.isInApp) {
-          console.log('🔧 Mini browser detected - using simplified error handling');
-          // For mini browsers, try to continue with minimal functionality
-          setIsLoading(false);
-          // Don't set appError for mini browsers - let them try to load
-        } else {
-          setAppError('Failed to initialize application. Please refresh the page.');
-          setIsLoading(false);
-        }
+        // Simple error handling - always try to continue
+        setIsLoading(false);
+        // Don't set appError - let the error boundary handle it
       }
     };
 
@@ -177,29 +140,13 @@ function App() {
     );
   }
 
-  // Main app
-  // Always use HashRouter for maximum compatibility with Instagram/Facebook mini browsers
-  const browserInfo = getBrowserInfo();
+  // Main app - Always use HashRouter for maximum compatibility
   const RouterComponent = HashRouter;
   
-  // CRITICAL: Ensure hash is set for HashRouter
-  if (typeof window !== 'undefined' && (!location.hash || location.hash === '#')) {
-    location.hash = '#/';
-    console.log('🔧 Ensured hash is set for HashRouter:', location.hash);
-  }
-  
-  console.log('🔍 Router Selection:', {
-    useHashRouter: true,
-    isInApp: browserInfo.isInApp,
-    isIOS: browserInfo.isIOS,
-    simplifiedMode: shouldUseSimplifiedMode(),
-    routerType: 'HashRouter (Optimized for Mini Browsers)',
-    reason: 'HashRouter provides maximum compatibility with Instagram/Facebook mini browsers',
-    currentHash: location.hash
-  });
+  console.log('🔍 Using HashRouter for maximum mini browser compatibility');
 
   return (
-    <SafeErrorBoundary>
+    <MiniBrowserErrorBoundary>
       <HelmetProvider>
         <AuthProvider>
           <SidebarProvider>
@@ -255,7 +202,7 @@ function App() {
           </SidebarProvider>
         </AuthProvider>
       </HelmetProvider>
-    </SafeErrorBoundary>
+    </MiniBrowserErrorBoundary>
   );
 }
 
