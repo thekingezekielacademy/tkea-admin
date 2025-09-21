@@ -1,11 +1,11 @@
+import { API_BASE } from '../config/api';
+
 interface ContactFormData {
   name: string;
   email: string;
   subject: string;
   message: string;
 }
-
-import { API_BASE } from '../config/api';
 
 interface ContactResponse {
   success: boolean;
