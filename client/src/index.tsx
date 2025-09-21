@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import App from './App-simple';
+import App from './App';
 import './index.css';
 
 // CRITICAL: Fix hash for mini browsers BEFORE React loads
