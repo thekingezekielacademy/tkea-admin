@@ -1,11 +1,7 @@
 import React from 'react';
-import ReactDOM from 'react-dom/client';
+import { render } from 'react-dom';
 import AppBootstrap from './components/AppBootstrap';
 import './index.css';
-
-// CRITICAL: Expose React globally for mini browser compatibility
-(window as any).React = React;
-(window as any).ReactDOM = ReactDOM;
 
 // CRITICAL: Fix hash for mini browsers BEFORE React loads
 (function() {
@@ -18,11 +14,10 @@ import './index.css';
   }
 })();
 
-// SIMPLE: Use AppBootstrap for conditional rendering
+// SIMPLE: Always use React 17 render for maximum compatibility
 const rootElement = document.getElementById('root');
 if (rootElement) {
-  const root = ReactDOM.createRoot(rootElement);
-  root.render(<AppBootstrap />);
+  render(<AppBootstrap />, rootElement);
   console.log('✅ AppBootstrap mounted successfully');
 } else {
   console.error('❌ Root element not found');

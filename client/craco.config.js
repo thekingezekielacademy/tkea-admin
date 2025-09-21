@@ -14,14 +14,8 @@ module.exports = {
       // Expose React globally for mini browsers
       webpackConfig.output.globalObject = 'window';
       
-      // Add externals to expose React globally
-      if (env === 'production') {
-        webpackConfig.externals = {
-          ...webpackConfig.externals,
-          'react': 'React',
-          'react-dom': 'ReactDOM'
-        };
-      }
+      // Don't externalize React - include it in bundle for mini browser compatibility
+      // Mini browsers need React included in the bundle
 
       return webpackConfig;
     },
