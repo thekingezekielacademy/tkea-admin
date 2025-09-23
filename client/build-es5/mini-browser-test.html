@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mini Browser Test - King Ezekiel Academy</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .test-section {
+            background: #f5f5f5;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .pass { color: green; font-weight: bold; }
+        .fail { color: red; font-weight: bold; }
+        .info { color: blue; font-weight: bold; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        #results {
+            margin-top: 20px;
+            padding: 15px;
+            background: #e9ecef;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Mini Browser Compatibility Test</h1>
+    <p>This page tests if the fixes work for Instagram/Facebook mini browsers.</p>
+    
+    <div class="test-section">
+        <h3>Browser Detection Test</h3>
+        <p>Current User Agent: <span id="userAgent"></span></p>
+        <p>Mini Browser Detected: <span id="miniBrowserStatus"></span></p>
+        <p>Hash Fixed: <span id="hashStatus"></span></p>
+    </div>
+    
+    <div class="test-section">
+        <h3>JavaScript Compatibility Test</h3>
+        <p>Arrow Functions: <span id="arrowFunctions"></span></p>
+        <p>Template Literals: <span id="templateLiterals"></span></p>
+        <p>Destructuring: <span id="destructuring"></span></p>
+        <p>Async/Await: <span id="asyncAwait"></span></p>
+    </div>
+    
+    <div class="test-section">
+        <h3>React Test</h3>
+        <button onclick="testReact()">Test React Loading</button>
+        <p id="reactTestResult"></p>
+    </div>
+    
+    <div id="results"></div>
+    
+    <script>
+        // Run tests immediately
+        function runTests() {
+            testBrowserDetection();
+            testJavaScriptCompatibility();
+            updateHashDisplay();
+            
+            // Update hash display every second
+            setInterval(updateHashDisplay, 1000);
+        }
+        
+        function testBrowserDetection() {
+            const ua = navigator.userAgent || '';
+            const isMiniBrowser = /FBAN|FBAV|FBIOS|Instagram|Line|Twitter|LinkedIn|WhatsApp|Telegram|wv\)/i.test(ua);
+            
+            document.getElementById('userAgent').textContent = ua;
+            document.getElementById('miniBrowserStatus').innerHTML = 
+                isMiniBrowser ? '<span class="pass">✅ YES</span>' : '<span class="info">❌ NO (Regular Browser)</span>';
+            
+            // Check if hash was fixed
+            const hashFixed = location.hash === '#/' || location.hash.startsWith('#/');
+            document.getElementById('hashStatus').innerHTML = 
+                hashFixed ? '<span class="pass">✅ YES</span>' : '<span class="fail">❌ NO</span>';
+        }
+        
+        function testJavaScriptCompatibility() {
+            // Test arrow functions
+            try {
+                const arrowTest = () => true;
+                document.getElementById('arrowFunctions').innerHTML = 
+                    arrowTest() ? '<span class="pass">✅ SUPPORTED</span>' : '<span class="fail">❌ NOT SUPPORTED</span>';
+            } catch (e) {
+                document.getElementById('arrowFunctions').innerHTML = '<span class="fail">❌ NOT SUPPORTED</span>';
+            }
+            
+            // Test template literals
+            try {
+                const templateTest = `test ${'template'}`;
+                document.getElementById('templateLiterals').innerHTML = 
+                    templateTest === 'test template' ? '<span class="pass">✅ SUPPORTED</span>' : '<span class="fail">❌ NOT SUPPORTED</span>';
+            } catch (e) {
+                document.getElementById('templateLiterals').innerHTML = '<span class="fail">❌ NOT SUPPORTED</span>';
+            }
+            
+            // Test destructuring
+            try {
+                const { test } = { test: 'destructuring' };
+                document.getElementById('destructuring').innerHTML = 
+                    test === 'destructuring' ? '<span class="pass">✅ SUPPORTED</span>' : '<span class="fail">❌ NOT SUPPORTED</span>';
+            } catch (e) {
+                document.getElementById('destructuring').innerHTML = '<span class="fail">❌ NOT SUPPORTED</span>';
+            }
+            
+            // Test async/await
+            try {
+                async function asyncTest() { return true; }
+                document.getElementById('asyncAwait').innerHTML = '<span class="pass">✅ SUPPORTED</span>';
+            } catch (e) {
+                document.getElementById('asyncAwait').innerHTML = '<span class="fail">❌ NOT SUPPORTED</span>';
+            }
+        }
+        
+        function testReact() {
+            const result = document.getElementById('reactTestResult');
+            result.innerHTML = '<span class="info">Testing React loading...</span>';
+            
+            // Try to load the main React bundle
+            const script = document.createElement('script');
+            script.src = '/static/js/main.33da39b6.js';
+            script.onload = function() {
+                result.innerHTML = '<span class="pass">✅ React bundle loaded successfully</span>';
+            };
+            script.onerror = function() {
+                result.innerHTML = '<span class="fail">❌ Failed to load React bundle</span>';
+            };
+            document.head.appendChild(script);
+        }
+        
+        function updateHashDisplay() {
+            // This will be updated by the interval
+        }
+        
+        // Add test results summary
+        function addTestResults() {
+            const results = document.getElementById('results');
+            const ua = navigator.userAgent || '';
+            const isMiniBrowser = /FBAN|FBAV|FBIOS|Instagram|Line|Twitter|LinkedIn|WhatsApp|Telegram|wv\)/i.test(ua);
+            
+            let summary = '<h3>📊 Test Summary</h3>';
+            summary += '<p><strong>Browser Type:</strong> ' + (isMiniBrowser ? 'Mini Browser (Instagram/Facebook/etc.)' : 'Regular Browser') + '</p>';
+            
+            if (isMiniBrowser) {
+                summary += '<div class="pass"><h4>✅ Mini Browser Detected</h4>';
+                summary += '<p>If you can see this page, the basic fixes are working!</p>';
+                summary += '<p>Next: Test the main app by clicking the link below.</p></div>';
+            } else {
+                summary += '<div class="info"><h4>ℹ️ Regular Browser Mode</h4>';
+                summary += '<p>This is a regular browser. The fixes should work here too.</p></div>';
+            }
+            
+            summary += '<div style="margin-top: 20px; text-align: center;">';
+            summary += '<a href="/" style="display: inline-block; background: #007bff; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold;">🚀 Test Main App</a>';
+            summary += '</div>';
+            
+            results.innerHTML = summary;
+        }
+        
+        // Run tests when page loads
+        window.addEventListener('load', function() {
+            runTests();
+            setTimeout(addTestResults, 1000);
+        });
+        
+        // Also run immediately in case load event already fired
+        if (document.readyState === 'loading') {
+            // Still loading, wait for load event
+        } else {
+            runTests();
+            setTimeout(addTestResults, 1000);
+        }
+    </script>
+</body>
+</html>

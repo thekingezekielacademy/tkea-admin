@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bundle React Test</title>
+    <style>
+        body { 
+            margin: 0; 
+            padding: 0; 
+            font-family: Arial, sans-serif; 
+        }
+        #root { 
+            min-height: 100vh; 
+        }
+    </style>
+</head>
+<body>
+    <div id="root">
+        <div style="padding: 20px; text-align: center; background: #f0f0f0;">
+            <h2>Loading Bundle React App...</h2>
+            <p>If this doesn't change, React bundle failed to load.</p>
+        </div>
+    </div>
+
+    <script>
+        console.log('🔧 Loading bundle React app...');
+        
+        // Load the main React bundle
+        const script = document.createElement('script');
+        script.src = '/static/js/main.c7ec5a73.js';
+        script.onload = function() {
+            console.log('✅ Main bundle loaded');
+            
+            // Wait a bit for React to initialize
+            setTimeout(() => {
+                console.log('🔍 Checking for React availability...');
+                console.log('React available:', typeof React !== 'undefined');
+                console.log('ReactDOM available:', typeof ReactDOM !== 'undefined');
+                
+                if (typeof React !== 'undefined' && typeof ReactDOM !== 'undefined') {
+                    console.log('✅ React and ReactDOM available from bundle');
+                    
+                    try {
+                        // Create a simple React component
+                        const SimpleComponent = React.createElement('div', {
+                            style: {
+                                padding: '20px',
+                                textAlign: 'center',
+                                fontFamily: 'Arial, sans-serif',
+                                background: 'linear-gradient(45deg, #28a745, #17a2b8)',
+                                color: 'white',
+                                minHeight: '100vh',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                justifyContent: 'center',
+                                alignItems: 'center'
+                            }
+                        }, [
+                            React.createElement('h1', { 
+                                key: 'title',
+                                style: { fontSize: '48px', marginBottom: '20px' } 
+                            }, '🎉 BUNDLE REACT WORKS!'),
+                            React.createElement('p', { 
+                                key: 'desc',
+                                style: { fontSize: '24px', marginBottom: '20px' } 
+                            }, 'This uses your main React bundle'),
+                            React.createElement('p', { 
+                                key: 'time',
+                                style: { fontSize: '18px', marginBottom: '20px' } 
+                            }, `Time: ${new Date().toLocaleTimeString()}`),
+                            React.createElement('p', { 
+                                key: 'info',
+                                style: { fontSize: '16px' } 
+                            }, 'If you can see this, your React bundle works in mini browsers!')
+                        ]);
+                        
+                        const root = ReactDOM.createRoot(document.getElementById('root'));
+                        root.render(SimpleComponent);
+                        console.log('✅ Bundle React app mounted successfully!');
+                        
+                    } catch (e) {
+                        console.error('❌ Failed to mount bundle React app:', e);
+                        document.getElementById('root').innerHTML = `
+                            <div style="padding: 20px; text-align: center; background: #dc3545; color: white;">
+                                <h2>❌ Bundle React Mount Failed</h2>
+                                <p>Error: ${e.message}</p>
+                            </div>
+                        `;
+                    }
+                } else {
+                    console.error('❌ React not available from bundle');
+                    document.getElementById('root').innerHTML = `
+                        <div style="padding: 20px; text-align: center; background: #ffc107; color: #000;">
+                            <h2>⚠️ React Not Available</h2>
+                            <p>React or ReactDOM not found in bundle</p>
+                        </div>
+                    `;
+                }
+            }, 2000); // Wait 2 seconds for React to initialize
+        };
+        script.onerror = function() {
+            console.error('❌ Main bundle failed to load');
+            document.getElementById('root').innerHTML = `
+                <div style="padding: 20px; text-align: center; background: #dc3545; color: white;">
+                    <h2>❌ Bundle Load Failed</h2>
+                    <p>Could not load main React bundle</p>
+                </div>
+            `;
+        };
+        document.head.appendChild(script);
+    </script>
+</body>
+</html>

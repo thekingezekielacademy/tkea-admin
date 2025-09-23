@@ -56,75 +56,50 @@
     <!-- Apple Touch Icon -->
     <link rel="apple-touch-icon" href="./favicon.svg" />
     
-    <!-- CRITICAL: Mini Browser Hash Fix - Must be before React loads -->
-    <!-- CRITICAL: Load polyfills FIRST for mini browser compatibility -->
-    <script src="./polyfills.js"></script>
-    
+    <!-- ULTRA-SIMPLE: No polyfills, no complex detection - just basic fixes -->
     <script>
       (function() {
-        // Detect mini browsers and iOS browsers, fix hash immediately
+        // ULTRA-SIMPLE: Only fix hash for mini browsers and iOS
         var ua = navigator.userAgent || '';
         var isMiniBrowser = /FBAN|FBAV|FBIOS|Instagram|Line|Twitter|LinkedIn|WhatsApp|Telegram|wv\)/i.test(ua);
-        var isIOSSafari = /iPad|iPhone|iPod/.test(ua) && /Safari/.test(ua) && !/CriOS|FxiOS|OPiOS|mercury/.test(ua);
-        var isIOSChrome = /CriOS/.test(ua);
+        var isIOS = /iPad|iPhone|iPod/.test(ua);
         
-        if (isMiniBrowser || isIOSSafari || isIOSChrome) {
-          console.log('🔧 iOS/Mini browser detected - fixing hash immediately');
-          // Fix hash before React loads
+        // CRITICAL: Fix hash immediately for all problematic browsers
+        if (isMiniBrowser || isIOS) {
           if (!window.location.hash || window.location.hash === '#') {
             window.location.hash = '#/';
-            console.log('🔧 Fixed hash for iOS/Mini browser:', window.location.hash);
           }
         }
         
-        // Store browser info globally for easy access
-        window.__KEA_BROWSER_INFO__ = {
+        // ULTRA-SIMPLE: Store minimal browser info
+        window.__KEA_SIMPLE_BROWSER__ = {
           isMiniBrowser: isMiniBrowser,
-          isIOSSafari: isIOSSafari,
-          isIOSChrome: isIOSChrome,
-          userAgent: ua
+          isIOS: isIOS,
+          needsSimpleMode: isMiniBrowser || isIOS
         };
       })();
     </script>
     
-    <!-- CONDITIONAL ANALYTICS - Only load for desktop browsers, not mini browsers -->
+    <!-- ULTRA-SIMPLE: Skip ALL analytics for mini browsers and iOS -->
     <script>
       (function() {
-        // Detect mini browsers and iOS browsers
+        // ULTRA-SIMPLE: Only load analytics for desktop browsers
         var ua = navigator.userAgent || '';
         var isMiniBrowser = /FBAN|FBAV|FBIOS|Instagram|Line|Twitter|LinkedIn|WhatsApp|Telegram|wv\)/i.test(ua);
-        var isIOSSafari = /iPad|iPhone|iPod/.test(ua) && /Safari/.test(ua) && !/CriOS|FxiOS|OPiOS|mercury/.test(ua);
-        var isIOSChrome = /CriOS/.test(ua);
+        var isIOS = /iPad|iPhone|iPod/.test(ua);
         
-        if (!isMiniBrowser && !isIOSSafari && !isIOSChrome) {
-          console.log('🖥️ Desktop browser detected - loading analytics');
-          
-          // Load Google Analytics only for desktop browsers
+        if (!isMiniBrowser && !isIOS) {
+          // Only load analytics for desktop browsers
           var gaScript = document.createElement('script');
           gaScript.async = true;
           gaScript.src = 'https://www.googletagmanager.com/gtag/js?id=G-8DXQN4Q7LD';
           document.head.appendChild(gaScript);
           
-          // Initialize Google Analytics
           window.dataLayer = window.dataLayer || [];
           function gtag(){dataLayer.push(arguments);}
           window.gtag = gtag;
           gtag('js', new Date());
           gtag('config', 'G-8DXQN4Q7LD');
-          
-          // Load Facebook Pixel only for desktop browsers
-          !function(f,b,e,v,n,t,s)
-          {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-          n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-          if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-          n.queue=[];t=b.createElement(e);t.async=!0;
-          t.src=v;s=b.getElementsByTagName(e)[0];
-          s.parentNode.insertBefore(t,s)}(window, document,'script',
-          'https://connect.facebook.net/en_US/fbevents.js');
-          fbq('init', '1991898708291767');
-          fbq('track', 'PageView');
-        } else {
-          console.log('📱 iOS/Mini browser detected - skipping analytics for better performance');
         }
       })();
     </script>
@@ -167,45 +142,21 @@
     <!-- Manifest -->
     <link rel="manifest" href="./manifest.json" />
     
-    <!-- DISABLE SERVICE WORKER - It's interfering with React loading -->
+    <!-- ULTRA-SIMPLE: Disable ALL service workers for compatibility -->
     <script>
-        // CRITICAL: ES5-compatible service worker unregistration
+        // ULTRA-SIMPLE: Disable service workers completely
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.getRegistrations().then(function(registrations) {
                 for (var i = 0; i < registrations.length; i++) {
                     registrations[i].unregister();
                 }
-                console.log('🔧 Unregistered interfering service worker');
-            }).catch(function(error) {
-                console.log('⚠️ Service worker unregistration failed:', error);
             });
         }
     </script>
     
     <!-- React App Scripts will be injected automatically by the build process -->
     
-    <!-- CRITICAL: Expose React globally for mini browser compatibility -->
-    <script>
-        // Wait for the main bundle to load and expose React globally
-        window.addEventListener('load', function() {
-            // Check if React is available in the bundle
-            if (typeof window.React === 'undefined' && typeof window.ReactDOM === 'undefined') {
-                console.log('🔧 Exposing React globally for mini browser compatibility...');
-                
-                // Try to access React from the bundle's module system
-                try {
-                    // This will be available after the main bundle loads
-                    if (typeof require !== 'undefined') {
-                        window.React = require('react');
-                        window.ReactDOM = require('react-dom');
-                        console.log('✅ React exposed globally via require');
-                    }
-                } catch (e) {
-                    console.log('⚠️ Could not expose React via require:', e);
-                }
-            }
-        });
-    </script>
+    <!-- ULTRA-SIMPLE: No complex React exposure needed -->
 </head>
 <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>

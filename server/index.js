@@ -25,8 +25,25 @@ dotenv.config({ path: path.join(__dirname, '../.env') });
 
 const app = express();
 
-// Security middleware
-app.use(helmet());
+// Security middleware with relaxed CSP for analytics
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "https://www.googletagmanager.com", "https://connect.facebook.net"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com", "data:"],
+      imgSrc: ["'self'", "data:", "https:"],
+      connectSrc: ["'self'", "https://www.google-analytics.com", "https://analytics.google.com"],
+      frameSrc: ["'self'"],
+      objectSrc: ["'none'"],
+      baseUri: ["'self'"],
+      formAction: ["'self'"],
+      frameAncestors: ["'self'"],
+      upgradeInsecureRequests: []
+    }
+  }
+}));
 app.use(cors());
 
 // Browser detection middleware
@@ -89,6 +106,18 @@ app.get('/sw.js', (req, res) => {
 
 // Serve static files from React build
 if (process.env.NODE_ENV === 'production') {
+  // Middleware to set correct MIME types for static files
+  app.use((req, res, next) => {
+    if (req.url.endsWith('.css')) {
+      res.setHeader('Content-Type', 'text/css');
+    } else if (req.url.endsWith('.js')) {
+      res.setHeader('Content-Type', 'application/javascript');
+    } else if (req.url.endsWith('.json')) {
+      res.setHeader('Content-Type', 'application/json');
+    }
+    next();
+  });
+  
   // Serve static assets from both builds
   app.use(express.static(path.join(__dirname, '../client/build')));
   app.use('/build-es5', express.static(path.join(__dirname, '../client/build-es5')));
@@ -99,7 +128,7 @@ if (process.env.NODE_ENV === 'production') {
     const browserInfo = req.browserInfo || {};
     
     // Check if this browser requires ES5 fallback
-    if (browserInfo.isMiniBrowser) {
+    if (browserInfo.requiresES5Fallback) {
       console.log('📱 Serving ES5 build for mini browser:', userAgent);
       console.log('Browser Info:', {
         isInstagram: browserInfo.isInstagram,

@@ -5,8 +5,7 @@ const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 module.exports = {
   mode: 'production',
   entry: {
-    main: './src/index.tsx',
-    mini: './src/index-mini.tsx'
+    main: './src/index.tsx'
   },
   output: {
     path: path.resolve(__dirname, 'build-es5'),

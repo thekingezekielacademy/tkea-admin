@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>King Ezekiel Academy - Ultra Minimal Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #1e3a8a;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background: #f9f9f9;
+        }
+        .success { color: green; font-weight: bold; }
+        .error { color: red; font-weight: bold; }
+        .info { color: blue; font-weight: bold; }
+        button {
+            background: #1e3a8a;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #1e40af;
+        }
+        #results {
+            margin-top: 20px;
+            padding: 15px;
+            background: #e5f3ff;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 King Ezekiel Academy - Ultra Minimal Test</h1>
+        
+        <div class="test-section">
+            <h3>Browser Detection</h3>
+            <p>User Agent: <span id="userAgent"></span></p>
+            <p>Mini Browser: <span id="miniBrowser"></span></p>
+            <p>Hash: <span id="currentHash"></span></p>
+        </div>
+        
+        <div class="test-section">
+            <h3>JavaScript Compatibility</h3>
+            <p>Basic JS: <span id="basicJS"></span></p>
+            <p>Functions: <span id="functions"></span></p>
+            <p>Objects: <span id="objects"></span></p>
+            <p>Arrays: <span id="arrays"></span></p>
+        </div>
+        
+        <div class="test-section">
+            <h3>DOM Manipulation</h3>
+            <button onclick="testDOM()">Test DOM</button>
+            <p id="domResult"></p>
+        </div>
+        
+        <div class="test-section">
+            <h3>Navigation Test</h3>
+            <button onclick="testNavigation()">Test Navigation</button>
+            <p id="navResult"></p>
+        </div>
+        
+        <div id="results"></div>
+    </div>
+
+    <script>
+        // ULTRA SIMPLE - NO COMPLEX FEATURES
+        console.log('🚀 Ultra minimal test page loaded');
+        
+        // Test basic functionality
+        function runTests() {
+            console.log('🧪 Running ultra minimal tests...');
+            
+            // Browser detection
+            var ua = navigator.userAgent || '';
+            var isMiniBrowser = /FBAN|FBAV|FBIOS|Instagram|Line|Twitter|LinkedIn|WhatsApp|Telegram|wv\)/i.test(ua);
+            
+            document.getElementById('userAgent').textContent = ua;
+            document.getElementById('miniBrowser').innerHTML = isMiniBrowser ? 
+                '<span class="success">YES</span>' : '<span class="info">NO</span>';
+            document.getElementById('currentHash').textContent = window.location.hash || 'none';
+            
+            // Basic JavaScript tests
+            try {
+                var testObj = { test: 'value' };
+                var testArr = [1, 2, 3];
+                var testFunc = function() { return 'works'; };
+                
+                document.getElementById('basicJS').innerHTML = '<span class="success">✅ WORKS</span>';
+                document.getElementById('functions').innerHTML = testFunc() === 'works' ? 
+                    '<span class="success">✅ WORKS</span>' : '<span class="error">❌ FAILED</span>';
+                document.getElementById('objects').innerHTML = testObj.test === 'value' ? 
+                    '<span class="success">✅ WORKS</span>' : '<span class="error">❌ FAILED</span>';
+                document.getElementById('arrays').innerHTML = testArr.length === 3 ? 
+                    '<span class="success">✅ WORKS</span>' : '<span class="error">❌ FAILED</span>';
+                
+                console.log('✅ Basic JavaScript tests passed');
+            } catch (error) {
+                console.error('❌ Basic JavaScript tests failed:', error);
+                document.getElementById('basicJS').innerHTML = '<span class="error">❌ FAILED</span>';
+            }
+            
+            // Show results
+            var results = document.getElementById('results');
+            results.innerHTML = '<h3>📊 Test Results</h3>' +
+                '<p><strong>Status:</strong> ' + (isMiniBrowser ? 'Mini Browser Detected' : 'Regular Browser') + '</p>' +
+                '<p><strong>Basic JS:</strong> Working</p>' +
+                '<p><strong>DOM:</strong> Working</p>' +
+                '<p><strong>Hash:</strong> ' + (window.location.hash || 'none') + '</p>';
+        }
+        
+        function testDOM() {
+            var result = document.getElementById('domResult');
+            try {
+                var testDiv = document.createElement('div');
+                testDiv.textContent = 'DOM manipulation works!';
+                testDiv.style.color = 'green';
+                result.appendChild(testDiv);
+                console.log('✅ DOM manipulation test passed');
+            } catch (error) {
+                result.innerHTML = '<span class="error">❌ DOM test failed: ' + error.message + '</span>';
+                console.error('❌ DOM test failed:', error);
+            }
+        }
+        
+        function testNavigation() {
+            var result = document.getElementById('navResult');
+            try {
+                // Test hash navigation
+                window.location.hash = '#test';
+                result.innerHTML = '<span class="success">✅ Navigation test passed - hash set to #test</span>';
+                console.log('✅ Navigation test passed');
+            } catch (error) {
+                result.innerHTML = '<span class="error">❌ Navigation test failed: ' + error.message + '</span>';
+                console.error('❌ Navigation test failed:', error);
+            }
+        }
+        
+        // Run tests when page loads
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', runTests);
+        } else {
+            runTests();
+        }
+    </script>
+</body>
+</html>

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
     <meta name="theme-color" content="#1e3a8a">
     <meta name="description" content="King Ezekiel Academy - Modern Educational Platform | Digital Skills & Online Learning">
     
@@ -364,10 +364,14 @@
         // Browser detection
         var userAgent = navigator.userAgent || '';
         var isInApp = /FBAN|FBAV|FBIOS|Instagram|Line|Twitter|LinkedIn|WhatsApp|Telegram/i.test(userAgent);
+        var isIOSSafari = /iPad|iPhone|iPod/.test(userAgent) && /Safari/.test(userAgent) && !/CriOS|FxiOS|OPiOS|mercury/.test(userAgent);
+        var isIOSChrome = /CriOS/.test(userAgent);
         var isOldSafari = /Safari/i.test(userAgent) && !/Chrome/i.test(userAgent) && /Version\/([0-9]+)/.test(userAgent) && parseInt(userAgent.match(/Version\/([0-9]+)/)[1]) < 12;
         
         console.log('ES5 Fallback loaded for:', userAgent);
         console.log('In-app browser:', isInApp);
+        console.log('iOS Safari:', isIOSSafari);
+        console.log('iOS Chrome:', isIOSChrome);
         console.log('Old Safari:', isOldSafari);
         
         // Show fallback message for problematic browsers

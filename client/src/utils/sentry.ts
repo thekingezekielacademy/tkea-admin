@@ -1,32 +1,50 @@
-import * as Sentry from '@sentry/react';
+// ULTRA-SIMPLE: Disable Sentry for mini browser compatibility
+// Sentry can cause issues in mini browsers and iOS Safari
 
-// Initialize Sentry with safe defaults - only if DSN is provided
-const sentryDsn = process.env.REACT_APP_SENTRY_DSN;
-
-if (sentryDsn && sentryDsn !== 'your_sentry_dsn_here' && sentryDsn.length > 10) {
-  Sentry.init({
-    dsn: sentryDsn,
-    environment: process.env.NODE_ENV,
-    tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
-    beforeSend(event) {
-      // Filter out non-critical errors in production
-      if (process.env.NODE_ENV === 'production') {
-        // Don't send console errors or network errors
-        if (event.exception) {
-          const error = event.exception.values[0];
-          if (error.type === 'Error' && 
-              (error.value?.includes('console') || 
-               error.value?.includes('network') ||
-               error.value?.includes('404'))) {
-            return null;
-          }
-        }
+const SimpleSentry = {
+  init: () => {
+    // No-op for mini browsers
+    const needsSimpleMode = (window as any).__KEA_SIMPLE_BROWSER__?.needsSimpleMode || false;
+    if (needsSimpleMode) {
+      console.log('Sentry disabled for mini browser compatibility');
+      return;
+    }
+    
+    // Only initialize for desktop browsers
+    const sentryDsn = process.env.REACT_APP_SENTRY_DSN;
+    if (sentryDsn && sentryDsn !== 'your_sentry_dsn_here' && sentryDsn.length > 10) {
+      try {
+        // Dynamic import to avoid loading Sentry in mini browsers
+        import('@sentry/react').then((Sentry) => {
+          Sentry.init({
+            dsn: sentryDsn,
+            environment: process.env.NODE_ENV,
+            tracesSampleRate: 0.1,
+          });
+        });
+      } catch (error) {
+        console.log('Sentry initialization failed:', error);
       }
-      return event;
-    },
-  });
-} else {
-  console.log('Sentry not initialized - no valid DSN provided');
-}
+    }
+  },
+  
+  captureException: (error: any) => {
+    // No-op for mini browsers
+    const needsSimpleMode = (window as any).__KEA_SIMPLE_BROWSER__?.needsSimpleMode || false;
+    if (needsSimpleMode) {
+      console.error('Error (Sentry disabled):', error);
+      return;
+    }
+    
+    // Only capture for desktop browsers
+    try {
+      import('@sentry/react').then((Sentry) => {
+        Sentry.captureException(error);
+      });
+    } catch (e) {
+      console.error('Sentry capture failed:', e);
+    }
+  }
+};
 
-export default Sentry;
+export default SimpleSentry;

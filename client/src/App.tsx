@@ -10,8 +10,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import AdminRoute from './components/AdminRoute';
 import ScrollToTop from './components/ScrollToTop';
 import MiniBrowserErrorBoundary from './components/MiniBrowserErrorBoundary';
-import { getBrowserInfo, applyBrowserFixes } from './utils/simpleBrowserDetection';
-import { addEssentialPolyfills } from './utils/essentialPolyfills';
+// ULTRA-SIMPLE: Removed complex browser detection and polyfills
 import Home from './pages/Home';
 import Courses from './pages/Courses';
 import About from './pages/About';
@@ -49,54 +48,30 @@ function App() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const initializeApp = async () => {
-      try {
-        console.log('🚀 Initializing ultra-simple React 16 app...');
-        
-        // 1. Get browser info
-        const browserInfo = getBrowserInfo();
-        console.log('🔍 Browser Info:', browserInfo);
-        
-        // 2. Apply essential polyfills (simple)
-        addEssentialPolyfills();
-        
-        // 3. Apply browser-specific fixes (simple)
-        applyBrowserFixes();
-        
-        // 4. iOS-specific initialization
-        if (browserInfo.isIOSSafari || browserInfo.isIOSChrome) {
-          console.log('🍎 iOS browser detected - applying iOS-specific fixes');
-          
-          // Fix iOS Safari hash routing
-          if (!window.location.hash || window.location.hash === '#') {
-            window.location.hash = '#/';
-          }
-          
-          // Prevent iOS Safari from zooming on input focus
-          const viewport = document.querySelector('meta[name="viewport"]');
-          if (viewport) {
-            viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover');
-          }
-        }
-        
-        // 5. Disable Flutterwave fingerprinting for compatibility
+    // ULTRA-SIMPLE: Minimal initialization
+    try {
+      // Check if we need simple mode
+      const needsSimpleMode = (window as any).__KEA_SIMPLE_BROWSER__?.needsSimpleMode || false;
+      
+      if (needsSimpleMode) {
+        // Disable complex features for mini browsers and iOS
         if (typeof window !== 'undefined') {
           (window as any).FlutterwaveDisableFingerprinting = true;
           (window as any).FlutterwaveDisableTracking = true;
           (window as any).FlutterwaveDisableAnalytics = true;
+          (window as any).__SENTRY_DISABLED__ = true;
         }
-        
-        // 6. App ready
-        setIsLoading(false);
-        console.log('✅ Ultra-simple React 16 app initialized successfully');
-        
-      } catch (error) {
-        console.error('❌ App initialization failed:', error);
-          setIsLoading(false);
       }
-    };
-
-    initializeApp();
+      
+      // Simple loading delay to ensure DOM is ready
+      setTimeout(() => {
+        setIsLoading(false);
+      }, 100);
+      
+    } catch (error) {
+      console.error('App initialization error:', error);
+      setIsLoading(false);
+    }
   }, []);
 
   // Loading screen
