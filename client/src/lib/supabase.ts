@@ -16,32 +16,51 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     autoRefreshToken: true,
     detectSessionInUrl: true,
     flowType: 'pkce',
-    // PWA-specific storage configuration
+    // iOS Safari and PWA-specific storage configuration
     storage: {
       getItem: (key: string) => {
         try {
-          // Try localStorage first, fallback to sessionStorage
-          const value = localStorage.getItem(key) || sessionStorage.getItem(key);
+          // iOS Safari storage priority: sessionStorage first (more reliable), then localStorage
+          const value = sessionStorage.getItem(key) || localStorage.getItem(key);
           return value;
         } catch (error) {
-          console.log('Storage access error, using sessionStorage:', error);
-          return sessionStorage.getItem(key);
+          console.log('Storage access error, trying alternative storage:', error);
+          // Fallback to memory storage for iOS Safari
+          try {
+            return (window as any).__tempStorage?.[key] || null;
+          } catch {
+            return null;
+          }
         }
       },
       setItem: (key: string, value: string) => {
         try {
-          // Store in both localStorage and sessionStorage for PWA reliability
+          // iOS Safari: Store in sessionStorage first (more reliable)
+          sessionStorage.setItem(key, value);
           localStorage.setItem(key, value);
-          sessionStorage.setItem(key, value);
+          
+          // Also store in memory as fallback for iOS Safari
+          if (!(window as any).__tempStorage) {
+            (window as any).__tempStorage = {};
+          }
+          (window as any).__tempStorage[key] = value;
         } catch (error) {
-          console.log('Storage write error, using sessionStorage only:', error);
-          sessionStorage.setItem(key, value);
+          console.log('Storage write error, using memory storage:', error);
+          // Fallback to memory storage
+          if (!(window as any).__tempStorage) {
+            (window as any).__tempStorage = {};
+          }
+          (window as any).__tempStorage[key] = value;
         }
       },
       removeItem: (key: string) => {
         try {
-          localStorage.removeItem(key);
           sessionStorage.removeItem(key);
+          localStorage.removeItem(key);
+          // Also remove from memory storage
+          if ((window as any).__tempStorage) {
+            delete (window as any).__tempStorage[key];
+          }
         } catch (error) {
           console.log('Storage remove error:', error);
         }

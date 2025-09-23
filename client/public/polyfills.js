@@ -306,5 +306,45 @@
     };
   }
   
+  // iOS Safari specific fixes
+  if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
+    console.log('🔧 Adding iOS Safari specific fixes...');
+    
+    // Fix iOS Safari touch events
+    document.addEventListener('touchstart', function() {}, { passive: true });
+    document.addEventListener('touchmove', function() {}, { passive: true });
+    document.addEventListener('touchend', function() {}, { passive: true });
+    
+    // Fix iOS Safari scroll issues
+    document.body.style.webkitOverflowScrolling = 'touch';
+    
+    // Fix iOS Safari viewport issues
+    var viewport = document.querySelector('meta[name="viewport"]');
+    if (viewport) {
+      viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover');
+    }
+    
+    // Fix iOS Safari hash routing
+    if (!window.location.hash || window.location.hash === '#') {
+      window.location.hash = '#/';
+    }
+    
+    // Fix iOS Safari memory issues
+    window.addEventListener('pagehide', function() {
+      // Clear any temporary storage on page unload
+      if (window.__tempStorage) {
+        window.__tempStorage = {};
+      }
+    });
+    
+    // Fix iOS Safari input zoom
+    var inputs = document.querySelectorAll('input, textarea, select');
+    inputs.forEach(function(input) {
+      input.style.fontSize = '16px';
+    });
+    
+    console.log('✅ iOS Safari fixes applied');
+  }
+  
   console.log('✅ Comprehensive polyfills loaded successfully');
 })();

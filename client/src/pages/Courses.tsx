@@ -1090,7 +1090,7 @@ const Courses: React.FC = () => {
               </div>
             </div>
             
-            <div className="col-span-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4 gap-3 sm:gap-6 lg:gap-8">
+            <div className="col-span-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
           {filteredCourses.map(course => (
             <div key={course.id} className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 w-full">
               <div className="relative">
@@ -1154,15 +1154,15 @@ const Courses: React.FC = () => {
                   </div>
                 </div>
                 
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                  <div className="flex items-center space-x-2">
-                    <span className="text-sm sm:text-lg font-semibold text-primary-600">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-center">
+                    <span className="text-xs sm:text-sm font-semibold text-primary-600 text-center px-2 py-1 bg-primary-50 rounded-full">
                       {user && (databaseSubscriptionStatus || hasTrialAccess) ? 'Full Access' : 'Membership Access'}
                     </span>
                   </div>
                   <button 
                     onClick={() => course.is_scheduled ? handleNotifyMe(course.id) : handleEnroll(course.id)} 
-                    className={`w-full sm:w-auto px-4 sm:px-6 py-2.5 sm:py-2 rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2 text-sm sm:text-base ${
+                    className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2 text-xs sm:text-sm font-medium ${
                       course.is_scheduled 
                         ? 'bg-blue-600 text-white hover:bg-blue-700' 
                         : 'bg-primary-600 text-white hover:bg-primary-700'
@@ -1171,22 +1171,22 @@ const Courses: React.FC = () => {
                     {course.is_scheduled ? (
                       <>
                         <span>🔔</span>
-                        <span>Notify Me</span>
+                        <span className="truncate">Notify Me</span>
                       </>
                     ) : user && (databaseSubscriptionStatus || hasTrialAccess) ? (
                       <>
-                        <FaUnlock className="h-3 w-3 sm:h-4 sm:w-4" />
-                        <span>Start Learning</span>
+                        <FaUnlock className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                        <span className="truncate">Start Learning</span>
                       </>
                     ) : user ? (
                       <>
-                        <FaLock className="h-3 w-3 sm:h-4 sm:w-4" />
-                        <span>Upgrade to Access</span>
+                        <FaLock className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                        <span className="truncate">Upgrade to Access</span>
                       </>
                     ) : (
                       <>
-                        <FaLock className="h-3 w-3 sm:h-4 sm:w-4" />
-                        <span>Start Free!</span>
+                        <FaLock className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                        <span className="truncate">Start Free!</span>
                       </>
                     )}
                   </button>

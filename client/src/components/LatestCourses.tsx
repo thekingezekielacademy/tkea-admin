@@ -269,7 +269,7 @@ const LatestCourses: React.FC = () => {
                 const scheduledDate = course.scheduled_for ? new Date(course.scheduled_for).toLocaleDateString() : '';
                 
                 return (
-                  <div key={course.id} className="w-full sm:w-1/2 lg:w-1/3 flex-shrink-0 px-2 sm:px-3">
+                  <div key={course.id} className="w-full md:w-1/2 lg:w-1/3 xl:w-1/4 flex-shrink-0 px-2 sm:px-3">
                     <div 
                       className={`bg-white rounded-xl shadow-lg overflow-hidden transition-all duration-300 h-full ${
                         isScheduled ? 'cursor-default opacity-75' : 'hover:shadow-xl cursor-pointer'

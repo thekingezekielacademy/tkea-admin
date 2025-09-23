@@ -30,11 +30,15 @@ class MiniBrowserErrorBoundary extends React.Component<Props, State> {
     // Log the error
     console.error('❌ MiniBrowserErrorBoundary caught an error:', error, errorInfo);
     
-    // Check if this is a mini browser
+    // Check if this is a mini browser or iOS browser
     const isMiniBrowser = /FBAN|FBAV|FBIOS|Instagram|Line|Twitter|LinkedIn|WhatsApp|Telegram|wv\)/i.test(navigator.userAgent);
+    const isIOSSafari = /iPad|iPhone|iPod/.test(navigator.userAgent) && /Safari/.test(navigator.userAgent) && !/CriOS|FxiOS|OPiOS|mercury/.test(navigator.userAgent);
+    const isIOSChrome = /CriOS/.test(navigator.userAgent);
     
     if (isMiniBrowser) {
       console.log('📱 Error occurred in mini browser - showing fallback UI');
+    } else if (isIOSSafari || isIOSChrome) {
+      console.log('🍎 Error occurred in iOS browser - showing fallback UI');
     }
   }
 

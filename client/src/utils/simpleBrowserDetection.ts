@@ -11,6 +11,8 @@ export interface SimpleBrowserInfo {
   isSafari: boolean;
   isIOS: boolean;
   isAndroid: boolean;
+  isIOSSafari: boolean;
+  isIOSChrome: boolean;
   userAgent: string;
 }
 
@@ -25,6 +27,8 @@ export const getBrowserInfo = (): SimpleBrowserInfo => {
       isSafari: false,
       isIOS: false,
       isAndroid: false,
+      isIOSSafari: false,
+      isIOSChrome: false,
       userAgent: ''
     };
   }
@@ -37,6 +41,8 @@ export const getBrowserInfo = (): SimpleBrowserInfo => {
     isSafari: /Safari/i.test(ua) && !/Chrome|CriOS|EdgA|Firefox|FxiOS|OPR|Vivaldi/i.test(ua),
     isIOS: /iPad|iPhone|iPod/.test(ua),
     isAndroid: /Android/i.test(ua),
+    isIOSSafari: /iPad|iPhone|iPod/.test(ua) && /Safari/.test(ua) && !/CriOS|FxiOS|OPiOS|mercury/.test(ua),
+    isIOSChrome: /CriOS/.test(ua),
     userAgent: ua
   };
 };
@@ -53,6 +59,9 @@ export const shouldUseSimplifiedMode = (): boolean => {
   // 3. Android WebView
   
   if (browserInfo.isInApp) return true;
+  
+  // Use simplified mode for iOS Safari and iOS Chrome
+  if (browserInfo.isIOSSafari || browserInfo.isIOSChrome) return true;
   
   if (browserInfo.isIOS) {
     const versionMatch = browserInfo.userAgent.match(/OS (\d+)_/);
@@ -74,9 +83,14 @@ export const getViewportContent = (): string => {
     return 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
   }
   
+  if (browserInfo.isIOSSafari || browserInfo.isIOSChrome) {
+    // For iOS Safari and iOS Chrome, use optimized viewport
+    return 'width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover';
+  }
+  
   if (browserInfo.isIOS) {
-    // For iOS Safari, use standard viewport
-    return 'width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes';
+    // For other iOS browsers, use standard viewport
+    return 'width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover';
   }
   
   // For other browsers, use full viewport
@@ -108,19 +122,37 @@ export const supportsModernFeatures = (): boolean => {
 export const applyBrowserFixes = (): void => {
   const browserInfo = getBrowserInfo();
   
-  // Fix iOS Safari viewport issues
-  if (browserInfo.isIOS) {
+  // Fix iOS Safari and iOS Chrome viewport issues
+  if (browserInfo.isIOSSafari || browserInfo.isIOSChrome || browserInfo.isIOS) {
     const viewport = document.querySelector('meta[name="viewport"]');
     if (viewport) {
       viewport.setAttribute('content', getViewportContent());
     }
     
-    // Fix touch events
+    // Fix touch events for iOS
     document.addEventListener('touchstart', () => {}, { passive: true });
     document.addEventListener('touchmove', () => {}, { passive: true });
     
     // Fix scroll issues
     (document.body.style as any).webkitOverflowScrolling = 'touch';
+    
+    // iOS Safari specific fixes
+    if (browserInfo.isIOSSafari) {
+      // Prevent iOS Safari from hiding the address bar
+      window.addEventListener('load', () => {
+        setTimeout(() => {
+          window.scrollTo(0, 1);
+        }, 0);
+      });
+      
+      // Fix iOS Safari memory issues
+      window.addEventListener('pagehide', () => {
+        // Clear any temporary storage on page unload
+        if ((window as any).__tempStorage) {
+          (window as any).__tempStorage = {};
+        }
+      });
+    }
   }
   
   // Fix in-app browser issues

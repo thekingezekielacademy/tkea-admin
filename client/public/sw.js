@@ -76,16 +76,18 @@ self.addEventListener('fetch', (event) => {
     return;
   }
   
-  // Detect if this is an in-app browser request
+  // Detect if this is an in-app browser or iOS Safari request
   const userAgent = request.headers.get('user-agent') || '';
   const isInAppBrowser = /Instagram|FBAN|FBAV|FBIOS|Line|Twitter|LinkedIn|WhatsApp|Telegram/i.test(userAgent);
   const isSafari = /Safari/i.test(userAgent) && !/Chrome/i.test(userAgent);
+  const isIOSSafari = /iPad|iPhone|iPod/.test(userAgent) && /Safari/.test(userAgent) && !/CriOS|FxiOS|OPiOS|mercury/.test(userAgent);
+  const isIOSChrome = /CriOS/.test(userAgent);
   
-  // For in-app browsers and Safari, use existing cache-busting logic
-  if (isInAppBrowser || isSafari) {
-    console.log('Service Worker: In-App/Safari browser - using cache-busting for:', url.pathname);
+  // For in-app browsers, iOS Safari, and iOS Chrome, use cache-busting logic
+  if (isInAppBrowser || isSafari || isIOSSafari || isIOSChrome) {
+    console.log('Service Worker: iOS/In-App browser - using cache-busting for:', url.pathname);
     
-    if ((isSafari || isInAppBrowser) && request.url.includes('.js') && request.url.includes('static')) {
+    if ((isSafari || isInAppBrowser || isIOSSafari || isIOSChrome) && request.url.includes('.js') && request.url.includes('static')) {
       const urlWithCacheBust = new URL(request.url);
       urlWithCacheBust.searchParams.set('v', Date.now().toString());
       if (isInAppBrowser) {
@@ -100,11 +102,11 @@ self.addEventListener('fetch', (event) => {
             'Pragma': 'no-cache'
           }
         }).catch(error => {
-          console.error('Service Worker: Safari/In-App JS fetch error:', error);
+          console.error('Service Worker: iOS/Safari/In-App JS fetch error:', error);
           return fetch(request);
         })
       );
-    } else if (isInAppBrowser) {
+    } else if (isInAppBrowser || isIOSSafari || isIOSChrome) {
       const urlWithCacheBust = new URL(request.url);
       if (!urlWithCacheBust.searchParams.has('v')) {
         urlWithCacheBust.searchParams.set('v', Date.now().toString());
@@ -119,7 +121,7 @@ self.addEventListener('fetch', (event) => {
             'Pragma': 'no-cache'
           }
         }).catch(error => {
-          console.error('Service Worker: In-App browser fetch error:', error);
+          console.error('Service Worker: iOS/In-App browser fetch error:', error);
           return fetch(request);
         })
       );

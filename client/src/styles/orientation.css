@@ -65,6 +65,55 @@ html {
   }
 }
 
+/* iOS Safari specific fixes */
+@supports (-webkit-touch-callout: none) {
+  /* iOS Safari specific styles */
+  body {
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  
+  /* Allow text selection in content areas */
+  .blog-content, .course-content, .lesson-content {
+    -webkit-user-select: text;
+    user-select: text;
+  }
+  
+  /* Fix iOS Safari input zoom */
+  input, textarea, select {
+    font-size: 16px !important;
+    -webkit-appearance: none;
+    border-radius: 0;
+  }
+  
+  /* Fix iOS Safari button styles */
+  button {
+    -webkit-appearance: none;
+    border-radius: 0;
+  }
+  
+  /* Fix iOS Safari scroll bounce */
+  body, html {
+    overscroll-behavior: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Fix iOS Safari viewport height issues */
+  .App {
+    min-height: 100vh;
+    min-height: -webkit-fill-available;
+  }
+  
+  /* Fix iOS Safari video player issues */
+  video {
+    -webkit-playsinline: true;
+    playsinline: true;
+  }
+}
+
 /* PWA specific orientation handling */
 @media screen and (display-mode: standalone) {
   /* Better handling for PWA in landscape */

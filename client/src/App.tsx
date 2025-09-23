@@ -37,6 +37,9 @@ import Certificates from './pages/Certificates';
 import Assessments from './pages/Assessments';
 import Resume from './pages/Resume';
 import Rooms from './pages/Rooms';
+import Diploma from './pages/Diploma';
+import Subscription from './pages/Subscription';
+import Achievements from './pages/Achievements';
 import Affiliates from './pages/Affiliates';
 import './App.css';
 import './styles/orientation.css';
@@ -60,14 +63,30 @@ function App() {
         // 3. Apply browser-specific fixes (simple)
         applyBrowserFixes();
         
-        // 4. Disable Flutterwave fingerprinting for compatibility
+        // 4. iOS-specific initialization
+        if (browserInfo.isIOSSafari || browserInfo.isIOSChrome) {
+          console.log('🍎 iOS browser detected - applying iOS-specific fixes');
+          
+          // Fix iOS Safari hash routing
+          if (!window.location.hash || window.location.hash === '#') {
+            window.location.hash = '#/';
+          }
+          
+          // Prevent iOS Safari from zooming on input focus
+          const viewport = document.querySelector('meta[name="viewport"]');
+          if (viewport) {
+            viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover');
+          }
+        }
+        
+        // 5. Disable Flutterwave fingerprinting for compatibility
         if (typeof window !== 'undefined') {
           (window as any).FlutterwaveDisableFingerprinting = true;
           (window as any).FlutterwaveDisableTracking = true;
           (window as any).FlutterwaveDisableAnalytics = true;
         }
         
-        // 5. App ready
+        // 6. App ready
         setIsLoading(false);
         console.log('✅ Ultra-simple React 16 app initialized successfully');
         
@@ -176,6 +195,21 @@ function App() {
                     <Route exact path="/settings">
                       <ProtectedRoute>
                         <Profile />
+                      </ProtectedRoute>
+                    </Route>
+                    <Route exact path="/achievements">
+                      <ProtectedRoute>
+                        <Achievements />
+                      </ProtectedRoute>
+                    </Route>
+                    <Route exact path="/diploma">
+                      <ProtectedRoute>
+                        <Diploma />
+                      </ProtectedRoute>
+                    </Route>
+                    <Route exact path="/subscription">
+                      <ProtectedRoute>
+                        <Subscription />
                       </ProtectedRoute>
                     </Route>
 

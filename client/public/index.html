@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
     <meta name="theme-color" content="#1e3a8a">
     <meta name="flutterwave-disable-fingerprinting" content="true">
     
@@ -62,22 +62,26 @@
     
     <script>
       (function() {
-        // Detect mini browsers and fix hash immediately
+        // Detect mini browsers and iOS browsers, fix hash immediately
         var ua = navigator.userAgent || '';
         var isMiniBrowser = /FBAN|FBAV|FBIOS|Instagram|Line|Twitter|LinkedIn|WhatsApp|Telegram|wv\)/i.test(ua);
+        var isIOSSafari = /iPad|iPhone|iPod/.test(ua) && /Safari/.test(ua) && !/CriOS|FxiOS|OPiOS|mercury/.test(ua);
+        var isIOSChrome = /CriOS/.test(ua);
         
-        if (isMiniBrowser) {
-          console.log('🔧 Mini browser detected - fixing hash immediately');
+        if (isMiniBrowser || isIOSSafari || isIOSChrome) {
+          console.log('🔧 iOS/Mini browser detected - fixing hash immediately');
           // Fix hash before React loads
           if (!window.location.hash || window.location.hash === '#') {
             window.location.hash = '#/';
-            console.log('🔧 Fixed hash for mini browser:', window.location.hash);
+            console.log('🔧 Fixed hash for iOS/Mini browser:', window.location.hash);
           }
         }
         
         // Store browser info globally for easy access
         window.__KEA_BROWSER_INFO__ = {
           isMiniBrowser: isMiniBrowser,
+          isIOSSafari: isIOSSafari,
+          isIOSChrome: isIOSChrome,
           userAgent: ua
         };
       })();
@@ -86,11 +90,13 @@
     <!-- CONDITIONAL ANALYTICS - Only load for desktop browsers, not mini browsers -->
     <script>
       (function() {
-        // Detect mini browsers
+        // Detect mini browsers and iOS browsers
         var ua = navigator.userAgent || '';
         var isMiniBrowser = /FBAN|FBAV|FBIOS|Instagram|Line|Twitter|LinkedIn|WhatsApp|Telegram|wv\)/i.test(ua);
+        var isIOSSafari = /iPad|iPhone|iPod/.test(ua) && /Safari/.test(ua) && !/CriOS|FxiOS|OPiOS|mercury/.test(ua);
+        var isIOSChrome = /CriOS/.test(ua);
         
-        if (!isMiniBrowser) {
+        if (!isMiniBrowser && !isIOSSafari && !isIOSChrome) {
           console.log('🖥️ Desktop browser detected - loading analytics');
           
           // Load Google Analytics only for desktop browsers
@@ -118,7 +124,7 @@
           fbq('init', '1991898708291767');
           fbq('track', 'PageView');
         } else {
-          console.log('📱 Mini browser detected - skipping analytics for better performance');
+          console.log('📱 iOS/Mini browser detected - skipping analytics for better performance');
         }
       })();
     </script>
