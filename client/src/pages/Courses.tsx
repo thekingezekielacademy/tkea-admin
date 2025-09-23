@@ -703,6 +703,25 @@ const Courses: React.FC = () => {
     }
   };
 
+  const getCategoryDisplayName = (category: string) => {
+    const categoryMap: { [key: string]: string } = {
+      'business-entrepreneurship': 'Business & Entrepreneurship',
+      'branding-public-relations': 'Branding & Public Relations',
+      'content-communication': 'Content & Communication',
+      'digital-advertising': 'Digital Advertising',
+      'email-seo-strategies': 'Email & SEO Strategies',
+      'ui-ux-design': 'UI/UX Design',
+      'visual-communication': 'Visual Communication',
+      'video-editing-creation': 'Video Editing & Creation',
+      'data-science-analytics': 'Data Science & Analytics',
+      'artificial-intelligence-cloud': 'AI & Cloud Computing',
+      'project-workflow-management': 'Project & Workflow Management',
+      'information-security': 'Information Security'
+    };
+    
+    return categoryMap[category] || category?.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'General';
+  };
+
   const getLevelBadge = (level: string) => {
     const levelConfig = {
       beginner: { label: 'Lv 1 – Beginner', color: 'bg-green-100 text-green-800' },
@@ -1116,7 +1135,7 @@ const Courses: React.FC = () => {
               <div className="p-3 sm:p-6">
                 <div className="flex items-center space-x-2 mb-2 sm:mb-3">
                   {getCategoryIcon(course.category)}
-                  <span className="text-xs sm:text-sm text-gray-500 capitalize">{course.category?.replace('-', ' ') || 'General'}</span>
+                  <span className="text-xs sm:text-sm text-gray-500">{getCategoryDisplayName(course.category)}</span>
                 </div>
                 
                 <h3 className="text-base sm:text-xl font-semibold text-gray-900 mb-2 leading-tight">{course.title}</h3>
