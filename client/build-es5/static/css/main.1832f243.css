@@ -4193,10 +4193,6 @@ code {
     min-height: 400px;
   }
 
-  .sm\:w-1\/2 {
-    width: 50%;
-  }
-
   .sm\:w-10 {
     width: 2.5rem;
   }
@@ -4575,6 +4571,10 @@ code {
     min-height: 500px;
   }
 
+  .md\:w-1\/2 {
+    width: 50%;
+  }
+
   .md\:w-16 {
     width: 4rem;
   }
@@ -4839,8 +4839,12 @@ code {
 
 @media (min-width: 1280px) {
 
-  .xl\:grid-cols-3 {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+  .xl\:w-1\/4 {
+    width: 25%;
+  }
+
+  .xl\:grid-cols-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
   .xl\:py-32 {
@@ -4851,13 +4855,6 @@ code {
   .xl\:text-5xl {
     font-size: 3rem;
     line-height: 1;
-  }
-}
-
-@media (min-width: 1536px) {
-
-  .\32xl\:grid-cols-4 {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
 

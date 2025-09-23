@@ -3,7 +3,7 @@ import { HashRouter, Route, Switch } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
 import { AuthProvider } from './contexts/AuthContext';
 import { SidebarProvider } from './contexts/SidebarContext';
-import FacebookPixelProvider from './components/FacebookPixelProvider';
+// STRIPPED: Removed FacebookPixelProvider
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -48,30 +48,8 @@ function App() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // ULTRA-SIMPLE: Minimal initialization
-    try {
-      // Check if we need simple mode
-      const needsSimpleMode = (window as any).__KEA_SIMPLE_BROWSER__?.needsSimpleMode || false;
-      
-      if (needsSimpleMode) {
-        // Disable complex features for mini browsers and iOS
-        if (typeof window !== 'undefined') {
-          (window as any).FlutterwaveDisableFingerprinting = true;
-          (window as any).FlutterwaveDisableTracking = true;
-          (window as any).FlutterwaveDisableAnalytics = true;
-          (window as any).__SENTRY_DISABLED__ = true;
-        }
-      }
-      
-      // Simple loading delay to ensure DOM is ready
-      setTimeout(() => {
-        setIsLoading(false);
-      }, 100);
-      
-    } catch (error) {
-      console.error('App initialization error:', error);
-      setIsLoading(false);
-    }
+    // LASER FIX: Simple initialization
+    setIsLoading(false);
   }, []);
 
   // Loading screen
@@ -124,8 +102,8 @@ function App() {
     );
   }
 
-  // Main app - Ultra-simple React 16 with HashRouter
-  console.log('🔍 Using ultra-simple React 16 with HashRouter for maximum mini browser compatibility');
+  // Main app - LASER FIXED React 16 with HashRouter
+  console.log('✅ App loaded successfully');
 
   return (
     <MiniBrowserErrorBoundary>
@@ -133,7 +111,6 @@ function App() {
         <AuthProvider>
           <SidebarProvider>
             <HashRouter>
-              <FacebookPixelProvider />
               <ScrollToTop />
               <div className="App">
                 <Navbar />
