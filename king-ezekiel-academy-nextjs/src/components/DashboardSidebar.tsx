@@ -139,8 +139,7 @@ const DashboardSidebar: React.FC = () => {
         style={{ 
           width: isCollapsed ? '4rem' : '16rem',
           overflowY: 'auto',
-          transition: 'width 0.3s ease-in-out',
-          display: isMobile && !isExpanded ? 'none' : 'block'
+          transition: 'width 0.3s ease-in-out'
         }}
       >
         {/* Header */}
