@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { FaChevronLeft, FaChevronRight, FaClock, FaBook, FaGraduationCap, FaArrowRight } from 'react-icons/fa';
 import { createClient } from '@/lib/supabase/client';
+import { shuffleCoursesDefault } from '@/utils/courseShuffle';
 
 interface Course {
   id: string;
@@ -75,7 +76,9 @@ const LatestCourses: React.FC = () => {
             lessons: course.course_videos?.length || 0
           }));
           
-          setCourses(transformedCourses);
+          // Shuffle courses to randomize display order
+          const shuffledCourses = shuffleCoursesDefault(transformedCourses);
+          setCourses(shuffledCourses);
         }
       } catch (err) {
         console.error('Error fetching latest courses:', err);

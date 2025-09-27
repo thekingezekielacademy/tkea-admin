@@ -309,6 +309,9 @@ const CourseOverview: React.FC = () => {
     if (course?.course_videos && course.course_videos.length > 0) {
       const firstVideo = course.course_videos[0];
       router.push(`/course/${courseId}/lesson/${firstVideo.id}`);
+    } else {
+      // If no videos, redirect to course page
+      router.push(`/course/${courseId}`);
     }
   };
 

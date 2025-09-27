@@ -8,6 +8,7 @@ import { useSidebar } from '@/contexts/SidebarContext';
 import SEOHead from '@/components/SEO/SEOHead';
 import { generateOrganizationStructuredData } from '@/components/SEO/StructuredData';
 import SidebarLayout from '@/components/SidebarLayout';
+import { shuffleCoursesDefault } from '@/utils/courseShuffle';
 
 interface Course {
   id: string;

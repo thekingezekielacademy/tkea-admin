@@ -7,6 +7,7 @@ import { useSidebar } from '@/contexts/SidebarContext';
 import { createClient } from '@/lib/supabase/client';
 import secureStorage from '@/utils/secureStorage';
 import TrialManager from '@/utils/trialManager';
+import { shuffleCoursesDefault } from '@/utils/courseShuffle';
 import DashboardSidebar from '@/components/DashboardSidebar';
 import SEOHead from '@/components/SEO/SEOHead';
 import { generateCourseStructuredData } from '@/components/SEO/StructuredData';
@@ -314,10 +315,13 @@ const Courses: React.FC = () => {
           lessons: course.course_videos?.length || 0
         }));
 
+        // Shuffle courses to randomize display order (only for first page)
+        const coursesToSet = page === 0 ? shuffleCoursesDefault(transformedCourses) : transformedCourses;
+
         if (append) {
-          setCourses(prev => [...prev, ...transformedCourses]);
+          setCourses(prev => [...prev, ...coursesToSet]);
         } else {
-          setCourses(transformedCourses);
+          setCourses(coursesToSet);
         }
 
         if (data.length < COURSES_PER_PAGE) {
