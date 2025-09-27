@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "buildCommand": "cd king-ezekiel-academy-nextjs && npm run build",
-  "outputDirectory": "king-ezekiel-academy-nextjs/.next",
-  "installCommand": "cd king-ezekiel-academy-nextjs && npm install",
+  "buildCommand": "npm run build",
+  "outputDirectory": ".next",
+  "installCommand": "npm install",
   "framework": "nextjs",
   "headers": [
     {
