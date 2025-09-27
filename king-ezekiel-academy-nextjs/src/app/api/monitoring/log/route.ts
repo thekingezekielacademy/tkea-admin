@@ -50,10 +50,18 @@ export async function POST(request: NextRequest) {
 async function sendToExternalService(data: MonitoringData): Promise<void> {
   // Example implementation for sending to external services
   
-  // Sentry
+  // Sentry - Commented out to avoid build warnings when package is not installed
+  // Uncomment and install @sentry/nextjs if you want to use Sentry
+  /*
   if (process.env.SENTRY_DSN) {
     try {
-      const Sentry = require('@sentry/nextjs');
+      const Sentry = await import('@sentry/nextjs').catch(() => null);
+      
+      if (!Sentry) {
+        console.warn('Sentry not available - package not installed');
+        return;
+      }
+      
       if (data.type === 'error') {
         Sentry.captureException(new Error(data.data.message), {
           extra: data.data
@@ -69,6 +77,7 @@ async function sendToExternalService(data: MonitoringData): Promise<void> {
       console.error('Failed to send to Sentry:', error);
     }
   }
+  */
 
   // LogRocket
   if (process.env.LOGROCKET_APP_ID) {
