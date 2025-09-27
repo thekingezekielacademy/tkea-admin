@@ -143,7 +143,7 @@ const DashboardSidebar: React.FC = () => {
         }}
       >
         {/* Header */}
-        <div className={`flex items-center border-b border-gray-200 ${isCollapsed ? 'justify-center p-2' : 'justify-between p-4'}`}>
+        <div className={`flex items-center border-b border-gray-200 ${isCollapsed ? 'justify-start p-2' : 'justify-between p-4'}`}>
           {!isCollapsed && (
             <div className="flex items-center space-x-2">
               <FaGraduationCap className="w-6 h-6 text-primary-600" />
@@ -169,7 +169,7 @@ const DashboardSidebar: React.FC = () => {
                 <button
                   onClick={() => handleItemClick(item)}
                   className={`
-                    w-full flex items-center ${isCollapsed ? 'px-2 py-3 justify-center' : 'px-3 py-3'} rounded-lg transition-all duration-200 text-left cursor-pointer sidebar-item
+                    w-full flex items-center ${isCollapsed ? 'px-2 py-3 justify-start' : 'px-3 py-3'} rounded-lg transition-all duration-200 text-left cursor-pointer sidebar-item
                     ${isActive(item.path) 
                       ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-600 active' 
                       : 'text-gray-700 hover:bg-gray-50 hover:transform hover:translate-x-1'
@@ -210,7 +210,7 @@ const DashboardSidebar: React.FC = () => {
           <button
             onClick={handleLogout}
             className={`
-              w-full flex items-center ${isCollapsed ? 'px-2 py-3 justify-center' : 'px-3 py-3'} rounded-lg transition-all duration-200 text-left text-red-600 hover:bg-red-50 hover:transform hover:translate-x-1
+              w-full flex items-center ${isCollapsed ? 'px-2 py-3 justify-start' : 'px-3 py-3'} rounded-lg transition-all duration-200 text-left text-red-600 hover:bg-red-50 hover:transform hover:translate-x-1
             `}
             title={isCollapsed ? 'Logout' : undefined}
           >
