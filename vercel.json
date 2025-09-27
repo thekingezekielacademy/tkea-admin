@@ -5,7 +5,7 @@
   "installCommand": "cd king-ezekiel-academy-nextjs && npm install",
   "framework": "nextjs",
   "functions": {
-    "king-ezekiel-academy-nextjs/src/app/api/**/*.ts": {
+    "src/app/api/**/*.ts": {
       "maxDuration": 30
     }
   },
