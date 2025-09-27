@@ -1,31 +1,29 @@
 {
   "name": "king-ezekiel-academy",
   "version": "1.0.0",
-  "description": "King Ezekiel Academy - React + Node.js + Supabase Application",
+  "description": "King Ezekiel Academy - Next.js + Node.js + Supabase Application",
   "main": "server/index.js",
   "scripts": {
     "start": "node server/index.js",
     "server": "nodemon server/index.js",
-    "client": "cd client && npm start",
+    "client": "cd king-ezekiel-academy-nextjs && npm run dev",
     "dev": "concurrently \"npm run server\" \"npm run client\"",
-    "build": "cd client && npm run build",
-    "build:es5": "cd client && npm run build:es5",
-    "build:all": "cd client && npm run build && cd client && npm run build:es5",
-    "install-client": "cd client && npm install",
+    "build": "cd king-ezekiel-academy-nextjs && npm run build",
+    "install-client": "cd king-ezekiel-academy-nextjs && npm install",
     "install-server": "npm install",
     "install-all": "npm run install-server && npm run install-client",
     "pre-deploy": "./scripts/pre-deploy.sh",
     "deploy": "./scripts/deploy.sh",
-    "build-check": "npm run build:all && echo '✅ Build check passed!'",
+    "build-check": "npm run build && echo '✅ Build check passed!'",
     "test-deployment": "./scripts/test-deployment.sh",
     "health-check": "./scripts/health-check.sh",
     "rollback": "./scripts/rollback.sh",
-    "safe-deploy": "npm run test-deployment && npm run build:all && git add . && git commit -m 'Safe deployment with ES5 fallback' && git push origin main && npx vercel --prod && npm run health-check"
+    "safe-deploy": "npm run test-deployment && npm run build && git add . && git commit -m 'Safe deployment' && git push origin main && npx vercel --prod && npm run health-check"
   },
   "keywords": [
     "education",
     "academy",
-    "react",
+    "nextjs",
     "nodejs",
     "supabase"
   ],
