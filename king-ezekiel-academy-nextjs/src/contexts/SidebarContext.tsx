@@ -33,10 +33,12 @@ export const SidebarProvider: React.FC<SidebarProviderProps> = ({ children }) =>
       const mobile = window.innerWidth < 768;
       setIsMobile(mobile);
       
-      // On mobile, start collapsed but allow expansion
-      if (mobile && !isInitialized) {
+      // On mobile, always start collapsed by default
+      if (mobile) {
         setIsExpanded(false);
-        setIsInitialized(true);
+        if (!isInitialized) {
+          setIsInitialized(true);
+        }
       } else if (!mobile && !isInitialized) {
         // On desktop, start expanded if not initialized
         setIsExpanded(true);

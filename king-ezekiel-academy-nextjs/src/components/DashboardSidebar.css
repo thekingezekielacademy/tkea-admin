@@ -58,18 +58,51 @@
   .dashboard-sidebar-always-visible {
     display: block !important;
     transform: translateX(-100%);
-    width: 16rem !important;
+    z-index: 99999 !important; /* Much higher than navbar z-50 */
+    position: fixed !important;
+    top: 4rem !important; /* Start below navbar (64px) */
+    left: 0 !important;
+    height: calc(100vh - 4rem) !important; /* Full height minus navbar */
   }
   
   .dashboard-sidebar-always-visible.mobile-open {
     display: block !important;
     transform: translateX(0);
-    width: 16rem !important;
+    z-index: 99999 !important; /* Much higher than navbar z-50 */
+    position: fixed !important;
+    top: 4rem !important; /* Start below navbar (64px) */
+    left: 0 !important;
+    height: calc(100vh - 4rem) !important; /* Full height minus navbar */
   }
   
   .dashboard-sidebar-always-visible.mobile-hidden {
     display: block !important;
     transform: translateX(-100%);
+    position: fixed !important;
+    top: 4rem !important; /* Start below navbar (64px) */
+    left: 0 !important;
+    height: calc(100vh - 4rem) !important; /* Full height minus navbar */
+    z-index: 99999 !important; /* Much higher than navbar z-50 */
+  }
+  
+  /* Mobile collapsed state - respect JavaScript width */
+  .dashboard-sidebar-always-visible.collapsed {
+    width: 4rem !important; /* 64px when collapsed */
+  }
+  
+  /* Mobile expanded state */
+  .dashboard-sidebar-always-visible.expanded {
+    width: 16rem !important; /* 256px when expanded */
+  }
+  
+  /* Mobile-specific padding adjustments */
+  .dashboard-sidebar-always-visible .sidebar-item {
+    padding-left: 0.5rem !important;
+    padding-right: 0.5rem !important;
+  }
+  
+  .dashboard-sidebar-always-visible .sidebar-item .ml-2 {
+    margin-left: 0.25rem !important;
   }
 }
 

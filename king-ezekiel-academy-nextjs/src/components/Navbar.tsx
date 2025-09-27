@@ -75,7 +75,7 @@ const Navbar: React.FC = () => {
   // Calculate dynamic margin and width based on sidebar state (desktop only)
   const getSidebarMargin = () => {
     if (!hasSidebar) return 'w-full'; // No sidebar, full width
-    if (isMobile) return 'ml-16 w-[calc(100%-4rem)]'; // Mobile: 64px margin, width fills remaining space
+    if (isMobile) return 'ml-0 w-full'; // Mobile: no margin, let sidebar overlay
     return isExpanded ? 'ml-64 w-[calc(100%-16rem)]' : 'ml-16 w-[calc(100%-4rem)]'; // Desktop: dynamic width
   };
 
@@ -91,23 +91,6 @@ const Navbar: React.FC = () => {
               <span className="md:hidden text-xl font-bold text-secondary-900">TKEA</span>
             </Link>
             
-            {/* User Name and Icon (when signed in) */}
-            {user && (
-              <Link 
-                href="/profile"
-                onClick={scrollToTop}
-                className="flex items-center space-x-2 px-3 py-1 bg-primary-50 rounded-lg border border-primary-200 hover:bg-primary-100 hover:border-primary-300 transition-all duration-200 cursor-pointer group"
-                title="Click to view profile"
-              >
-                <FaUser className="h-4 w-4 text-primary-600 group-hover:text-primary-700" />
-                <span className="text-sm font-medium text-primary-700 group-hover:text-primary-800">
-                  {user?.name || user?.email || 'Student'}
-                </span>
-                <svg className="h-3 w-3 text-primary-500 group-hover:text-primary-600 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </Link>
-            )}
           </div>
 
           {/* Desktop Navigation */}

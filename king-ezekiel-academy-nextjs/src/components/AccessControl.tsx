@@ -42,6 +42,7 @@ const AccessControl: React.FC<AccessControlProps> = ({ children, requireAccess =
 
         // First, check if this is a free course - if so, grant access immediately
         if (courseId) {
+          const supabase = createClient();
           const { data: courseData, error: courseError } = await supabase
             .from('courses')
             .select('access_type')
@@ -57,6 +58,7 @@ const AccessControl: React.FC<AccessControlProps> = ({ children, requireAccess =
         }
 
         // Check database subscription status
+        const supabase = createClient();
         const { data: subscriptionData, error: subscriptionError } = await supabase
           .from('user_subscriptions')
           .select('*')
