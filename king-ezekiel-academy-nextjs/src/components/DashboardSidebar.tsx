@@ -143,7 +143,7 @@ const DashboardSidebar: React.FC = () => {
         }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200">
+        <div className={`flex items-center border-b border-gray-200 ${isCollapsed ? 'justify-center p-2' : 'justify-between p-4'}`}>
           {!isCollapsed && (
             <div className="flex items-center space-x-2">
               <FaGraduationCap className="w-6 h-6 text-primary-600" />
@@ -163,13 +163,13 @@ const DashboardSidebar: React.FC = () => {
 
         {/* Navigation Items */}
         <nav className="flex-1 overflow-y-auto py-4" style={{ maxHeight: 'calc(100vh - 160px)' }}>
-          <ul className="space-y-1 px-2">
+          <ul className={`space-y-1 ${isCollapsed ? 'px-1' : 'px-2'}`}>
             {sidebarItems.map((item) => (
               <li key={item.id}>
                 <button
                   onClick={() => handleItemClick(item)}
                   className={`
-                    w-full flex items-center px-3 py-3 rounded-lg transition-all duration-200 text-left cursor-pointer sidebar-item
+                    w-full flex items-center ${isCollapsed ? 'px-2 py-3 justify-center' : 'px-3 py-3'} rounded-lg transition-all duration-200 text-left cursor-pointer sidebar-item
                     ${isActive(item.path) 
                       ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-600 active' 
                       : 'text-gray-700 hover:bg-gray-50 hover:transform hover:translate-x-1'
@@ -206,12 +206,11 @@ const DashboardSidebar: React.FC = () => {
         </nav>
 
         {/* Footer - Logout */}
-        <div className="border-t border-gray-200 p-4">
+        <div className={`border-t border-gray-200 ${isCollapsed ? 'p-2' : 'p-4'}`}>
           <button
             onClick={handleLogout}
             className={`
-              w-full flex items-center px-3 py-3 rounded-lg transition-all duration-200 text-left text-red-600 hover:bg-red-50 hover:transform hover:translate-x-1
-              ${isCollapsed ? 'justify-center' : ''}
+              w-full flex items-center ${isCollapsed ? 'px-2 py-3 justify-center' : 'px-3 py-3'} rounded-lg transition-all duration-200 text-left text-red-600 hover:bg-red-50 hover:transform hover:translate-x-1
             `}
             title={isCollapsed ? 'Logout' : undefined}
           >
