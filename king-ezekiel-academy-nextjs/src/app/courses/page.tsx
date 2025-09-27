@@ -4,7 +4,7 @@ import { FaSearch, FaClock, FaUser, FaBook, FaTag, FaLock, FaUnlock, FaGraduatio
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContextOptimized';
 import { useSidebar } from '@/contexts/SidebarContext';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/lib/supabase/client';
 import secureStorage from '@/utils/secureStorage';
 import TrialManager from '@/utils/trialManager';
 import DashboardSidebar from '@/components/DashboardSidebar';
@@ -75,13 +75,8 @@ const Courses: React.FC = () => {
   const checkDatabaseSubscription = async () => {
     if (!user?.id) return;
     
-    // Wait for auth to be fully loaded
-    if (!supabase.auth.getUser()) {
-      console.log('Auth not ready, skipping subscription check');
-      return;
-    }
-    
     try {
+      const supabase = createClient();
       const { data, error } = await supabase
         .from('user_subscriptions')
         .select('*')
@@ -192,6 +187,7 @@ const Courses: React.FC = () => {
       
       // Try database query as well (for when table exists)
       try {
+        const supabase = createClient();
         const trialAccess = await TrialManager.hasTrialAccess(user.id);
         // Only set trial access if user is NOT subscribed
         if (!isSubscribed) {
@@ -239,6 +235,7 @@ const Courses: React.FC = () => {
       
       // For non-authenticated users, we can still fetch courses for viewing
       // Only require authentication for actual course access
+      const supabase = createClient();
       if (!user) {
         console.log('👤 Guest user fetching courses - allowing read-only access');
       } else {

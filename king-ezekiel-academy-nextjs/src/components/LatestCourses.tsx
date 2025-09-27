@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { FaChevronLeft, FaChevronRight, FaClock, FaBook, FaGraduationCap, FaArrowRight } from 'react-icons/fa';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/lib/supabase/client';
 
 interface Course {
   id: string;
@@ -44,6 +44,7 @@ const LatestCourses: React.FC = () => {
     const fetchLatestCourses = async () => {
       try {
         setLoading(true);
+        const supabase = createClient();
         const { data, error } = await supabase
           .from('courses')
           .select(`

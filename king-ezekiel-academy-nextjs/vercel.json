@@ -8,16 +8,6 @@
       "maxDuration": 30
     }
   },
-  "env": {
-    "NEXT_PUBLIC_SUPABASE_URL": "@next_public_supabase_url",
-    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "@next_public_supabase_anon_key",
-    "SUPABASE_SERVICE_ROLE_KEY": "@supabase_service_role_key",
-    "NEXT_PUBLIC_FLUTTERWAVE_PUBLIC_KEY": "@next_public_flutterwave_public_key",
-    "FLUTTERWAVE_SECRET_KEY": "@flutterwave_secret_key",
-    "FLUTTERWAVE_HASH": "@flutterwave_hash",
-    "NEXTAUTH_SECRET": "@nextauth_secret",
-    "NEXTAUTH_URL": "@nextauth_url"
-  },
   "headers": [
     {
       "source": "/api/(.*)",
