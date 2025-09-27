@@ -2,7 +2,7 @@
 import React, { useEffect, useState, useCallback, useRef, createContext, useContext, ReactNode } from 'react';
 import { secureLog } from '../utils/secureLogger';
 import { User, Session, AuthError, PostgrestError } from '@supabase/supabase-js';
-import { supabase } from '../lib/supabase';
+import { createClient } from '../lib/supabase/client';
 import TrialManager from '../utils/trialManager';
 
 interface UserProfile {
@@ -68,6 +68,7 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setLoading(true);
     
     try {
+      const supabase = createClient();
       const { data: sessionData } = await supabase.auth.getSession();
       
       if (!sessionData?.session) {
@@ -150,6 +151,7 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       try {
         // First try to get the current session
+        const supabase = createClient();
         const { data: { session }, error } = await supabase.auth.getSession();
         
         secureLog('Checking existing session on page refresh:', { 
@@ -183,6 +185,7 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     checkSession();
 
     // Listen for auth state changes
+    const supabase = createClient();
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         secureLog('Auth state change:', { event, hasSession: !!session, hasUser: !!session?.user });
@@ -228,6 +231,7 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, [onSignOut, debouncedFetchProfile]);
 
   const signUp = async (email: string, password: string, name: string) => {
+    const supabase = createClient();
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -275,6 +279,7 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // console.log('signIn called with email:', email);
       
       // Test Supabase connection first
+      const supabase = createClient();
       const { data: testData, error: testError } = await supabase.auth.getSession();
       if (testError) {
         console.error('❌ Supabase connection test failed before signin:', testError.message);
@@ -318,6 +323,7 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const signOut = async () => {
+    const supabase = createClient();
     await supabase.auth.signOut();
     setUser(null);
     setSession(null);
@@ -349,6 +355,7 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const updateProfile = async (updates: Partial<UserProfile>) => {
     if (!user) return { error: null };
 
+    const supabase = createClient();
     const { error } = await supabase
       .from('profiles')
       .update(updates)
@@ -362,6 +369,7 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const resetPassword = async (email: string) => {
+    const supabase = createClient();
     const { error } = await supabase.auth.resetPasswordForEmail(email);
     return { error };
   };

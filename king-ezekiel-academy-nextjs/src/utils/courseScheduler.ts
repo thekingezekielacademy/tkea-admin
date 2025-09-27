@@ -7,7 +7,7 @@
  * - Manages course availability transitions
  */
 
-import { supabase } from '../lib/supabase';
+import { createClient } from '../lib/supabase/client';
 import { NotificationService } from './notificationService';
 
 export class CourseScheduler {

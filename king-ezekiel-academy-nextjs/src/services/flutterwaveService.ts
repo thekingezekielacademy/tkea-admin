@@ -1,5 +1,5 @@
 // Flutterwave Service - Secure Subscription Management
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/lib/supabase/client';
 
 // API Configuration
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:5000';

@@ -5,7 +5,7 @@
  * through secure backend endpoints.
  */
 
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/lib/supabase/client';
 
 export interface SubscriptionData {
   id: string;

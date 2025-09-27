@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { FaFire, FaStar, FaCrown, FaArrowRight, FaPlay, FaBook, FaTrophy, FaUsers, FaChartLine, FaCheckCircle, FaUser } from 'react-icons/fa';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSidebar } from '@/contexts/SidebarContext';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/lib/supabase/client';
 import TrialBanner from '@/components/TrialBanner';
 import NotificationPermission from '@/components/NotificationPermission';
 import ErrorBoundary from '@/components/ErrorBoundary';
@@ -301,6 +301,7 @@ export default function Dashboard() {
       setIsLoading(true);
       
       // Refresh session to handle JWT expiration
+      const supabase = createClient();
       const { error: sessionError } = await supabase.auth.refreshSession();
       if (sessionError) {
         secureError('Session refresh error:', sessionError);
@@ -405,6 +406,7 @@ export default function Dashboard() {
       setIsLoadingCourses(true);
       
       // CRITICAL SECURITY: Ensure session user matches the current context
+      const supabase = createClient();
       const { data: sessionData } = await supabase.auth.getSession();
       if (!sessionData?.session?.user?.id || sessionData.session.user.id !== user.id) {
         secureError('Course access blocked - user session mismatch!', 
