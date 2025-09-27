@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import ProgressRing from '@/components/ProgressRing';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/contexts/AuthContextOptimized';
 import { TrialStatus } from '@/utils/trialManager';
 import TrialManager from '@/utils/trialManager';
@@ -45,6 +45,7 @@ const CourseOverview: React.FC = () => {
     if (!user?.id) return false;
     
     try {
+      const supabase = createClient();
       const { data: subscriptionData, error: subError } = await supabase
         .from('user_subscriptions')
         .select('*')
@@ -115,6 +116,7 @@ const CourseOverview: React.FC = () => {
     if (!user?.id || !courseId) return;
     
     try {
+      const supabase = createClient();
       const { data, error } = await supabase
         .from('user_progress')
         .select('progress_percentage')
@@ -150,6 +152,7 @@ const CourseOverview: React.FC = () => {
         console.log('👤 Guest user viewing course - allowing read-only access');
       } else {
         // First, refresh the session to ensure we have a valid token
+        const supabase = createClient();
         const { data: sessionData, error: sessionError } = await supabase.auth.refreshSession();
         
         if (sessionError) {
@@ -161,6 +164,7 @@ const CourseOverview: React.FC = () => {
         }
       }
       
+      const supabase = createClient();
       const { data, error: fetchError } = await supabase
         .from('courses')
         .select(`

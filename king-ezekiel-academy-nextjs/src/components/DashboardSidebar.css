@@ -56,7 +56,9 @@
   }
   
   .dashboard-sidebar-always-visible {
-    display: none !important;
+    display: block !important;
+    transform: translateX(-100%);
+    width: 16rem !important;
   }
   
   .dashboard-sidebar-always-visible.mobile-open {
@@ -66,7 +68,8 @@
   }
   
   .dashboard-sidebar-always-visible.mobile-hidden {
-    display: none !important;
+    display: block !important;
+    transform: translateX(-100%);
   }
 }
 
