@@ -4,11 +4,6 @@
   "outputDirectory": "king-ezekiel-academy-nextjs/.next",
   "installCommand": "cd king-ezekiel-academy-nextjs && npm install",
   "framework": "nextjs",
-  "functions": {
-    "king-ezekiel-academy-nextjs/src/app/api/**/*.ts": {
-      "maxDuration": 30
-    }
-  },
   "headers": [
     {
       "source": "/api/(.*)",
