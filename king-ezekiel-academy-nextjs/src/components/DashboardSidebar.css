@@ -56,16 +56,17 @@
   }
   
   .dashboard-sidebar-always-visible {
-    transform: translateX(-100%);
-    width: 16rem !important;
+    display: none !important;
   }
   
   .dashboard-sidebar-always-visible.mobile-open {
+    display: block !important;
     transform: translateX(0);
+    width: 16rem !important;
   }
   
   .dashboard-sidebar-always-visible.mobile-hidden {
-    transform: translateX(-100%);
+    display: none !important;
   }
 }
 
