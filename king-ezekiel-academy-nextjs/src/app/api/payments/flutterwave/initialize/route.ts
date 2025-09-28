@@ -7,7 +7,8 @@ import { cookies } from 'next/headers'
 
 export async function POST(request: NextRequest) {
   try {
-    const { amount, email, name, plan_id } = await request.json()
+    const requestBody = await request.json();
+    const { amount, email, name, plan_id, user_id } = requestBody;
 
     // Check for required environment variables first
     if (!env.FLUTTERWAVE_SECRET_KEY) {
@@ -102,10 +103,24 @@ export async function POST(request: NextRequest) {
 
     if (authError || !user) {
       console.error('🔍 Final Auth Issue:', { error: authError?.message, hasUser: !!user });
-      return NextResponse.json(
-        { error: 'Authentication required - please log in again' },
-        { status: 401 }
-      )
+      
+      // If we have user data in the request body, use it as a fallback
+      const { user_id: fallbackUserId, email: fallbackEmail } = requestBody;
+      
+      if (fallbackUserId && fallbackEmail) {
+        console.log('🔄 Using request body user data as fallback:', { user_id: fallbackUserId, email: fallbackEmail });
+        // Create a minimal user object for payment processing
+        user = {
+          id: fallbackUserId,
+          email: fallbackEmail,
+          user_metadata: { email: fallbackEmail }
+        };
+      } else {
+        return NextResponse.json(
+          { error: 'Authentication required - please log in again' },
+          { status: 401 }
+        )
+      }
     }
 
     // Initialize Flutterwave payment

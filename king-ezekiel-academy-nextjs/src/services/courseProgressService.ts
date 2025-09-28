@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/client';
+import { supabase } from '@/lib/supabase';
 
 export interface CourseProgressData {
   course_id: string;

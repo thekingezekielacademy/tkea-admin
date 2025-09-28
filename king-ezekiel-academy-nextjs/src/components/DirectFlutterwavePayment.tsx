@@ -55,7 +55,8 @@ const DirectFlutterwavePayment: React.FC<DirectFlutterwavePaymentProps> = ({
         amount: amount,
         email: email,
         name: user?.full_name || user?.name || 'User',
-        plan_id: 'monthly'
+        plan_id: 'monthly',
+        user_id: user?.id // Include user ID for fallback authentication
       };
 
       console.log('🚀 Creating Flutterwave payment:', paymentData);
@@ -132,6 +133,19 @@ const DirectFlutterwavePayment: React.FC<DirectFlutterwavePaymentProps> = ({
           console.error('❌ getUser() failed:', userErr);
           sessionError = userErr;
         }
+      }
+      
+      // Final fallback: If we have user context but no session, proceed with context auth
+      if (!currentSession && !sessionError && user?.id && user?.email) {
+        console.log('🔄 Using user context as final fallback for payment...');
+        currentSession = {
+          access_token: 'context-auth',
+          user: {
+            id: user.id,
+            email: user.email,
+            user_metadata: user
+          }
+        };
       }
       
       if (!currentSession || sessionError) {

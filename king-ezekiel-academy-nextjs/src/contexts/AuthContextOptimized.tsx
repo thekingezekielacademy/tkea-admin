@@ -68,7 +68,7 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setLoading(true);
     
     try {
-      const supabase = createClient();
+      const { supabase } = await import('@/lib/supabase');
       const { data: sessionData } = await supabase.auth.getSession();
       
       if (!sessionData?.session) {
@@ -279,7 +279,7 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // console.log('signIn called with email:', email);
       
       // Test Supabase connection first
-      const supabase = createClient();
+      const { supabase } = await import('@/lib/supabase');
       const { data: testData, error: testError } = await supabase.auth.getSession();
       if (testError) {
         console.error('❌ Supabase connection test failed before signin:', testError.message);
@@ -323,7 +323,7 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const signOut = async () => {
-    const supabase = createClient();
+    const { supabase } = await import('@/lib/supabase');
     await supabase.auth.signOut();
     setUser(null);
     setSession(null);
@@ -355,7 +355,7 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const updateProfile = async (updates: Partial<UserProfile>) => {
     if (!user) return { error: null };
 
-    const supabase = createClient();
+    const { supabase } = await import('@/lib/supabase');
     const { error } = await supabase
       .from('profiles')
       .update(updates)
