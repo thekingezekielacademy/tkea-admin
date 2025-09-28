@@ -42,19 +42,60 @@ const InlineFlutterwavePayment: React.FC<InlineFlutterwavePaymentProps> = ({
         ? process.env.NEXTAUTH_URL || ''
         : '';
 
-      // Get fresh session for authentication
+      // Get fresh session for authentication with retry logic
       const { supabase } = await import('@/lib/supabase');
-      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      let currentSession = null;
+      let sessionError = null;
       
-      if (sessionError || !sessionData?.session) {
-        throw new Error('Session expired. Please log in again.');
+      // First attempt: Get current session
+      const { data: sessionData, error: initialSessionError } = await supabase.auth.getSession();
+      
+      if (sessionData?.session) {
+        currentSession = sessionData.session;
+      } else {
+        // Second attempt: Try to refresh the session
+        try {
+          const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+          if (refreshData?.session) {
+            currentSession = refreshData.session;
+          } else {
+            sessionError = refreshError || new Error('Failed to refresh session');
+          }
+        } catch (refreshErr) {
+          sessionError = refreshErr;
+        }
+      }
+      
+      // If we still don't have a session, check if user is logged in via context
+      if (!currentSession && !sessionError && user?.id) {
+        try {
+          const { data: { user: currentUser }, error: userError } = await supabase.auth.getUser();
+          if (currentUser && !userError) {
+            // Create a minimal session-like object for the API call
+            currentSession = {
+              access_token: 'context-auth',
+              user: currentUser
+            };
+          } else {
+            sessionError = userError || new Error('No valid user found');
+          }
+        } catch (userErr) {
+          sessionError = userErr;
+        }
+      }
+      
+      if (!currentSession || sessionError) {
+        throw new Error('Authentication failed. Please refresh the page and try again.');
       }
 
       const response = await fetch(`${baseUrl}/api/payments/flutterwave/initialize`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${sessionData.session.access_token}`,
+          ...(currentSession.access_token && currentSession.access_token !== 'context-auth' 
+            ? { 'Authorization': `Bearer ${currentSession.access_token}` }
+            : {}
+          ),
         },
         body: JSON.stringify({
           email: user?.email || email,

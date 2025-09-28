@@ -70,28 +70,82 @@ const DirectFlutterwavePayment: React.FC<DirectFlutterwavePaymentProps> = ({
         throw new Error('Please log in to continue with payment');
       }
 
-      // Try to get fresh session for debugging
+      // Try to get fresh session with retry logic
       const { supabase } = await import('@/lib/supabase');
-      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      let currentSession = null;
+      let sessionError = null;
       
-      console.log('🔍 Session Debug Details:', {
+      // First attempt: Get current session
+      const { data: sessionData, error: initialSessionError } = await supabase.auth.getSession();
+      
+      console.log('🔍 Initial Session Check:', {
         hasSessionData: !!sessionData,
         hasSession: !!sessionData?.session,
-        sessionError: sessionError?.message,
-        userId: sessionData?.session?.user?.id,
-        tokenLength: sessionData?.session?.access_token?.length,
-        tokenStart: sessionData?.session?.access_token?.substring(0, 20) + '...'
+        sessionError: initialSessionError?.message,
+        userId: sessionData?.session?.user?.id
       });
       
-      if (sessionError || !sessionData?.session) {
-        console.error('❌ No valid session found:', sessionError);
-        throw new Error('Session expired. Please log in again.');
+      if (sessionData?.session) {
+        currentSession = sessionData.session;
+      } else {
+        // Second attempt: Try to refresh the session
+        console.log('🔄 Attempting session refresh...');
+        try {
+          const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+          
+          console.log('🔍 Session Refresh Result:', {
+            hasRefreshData: !!refreshData,
+            hasSession: !!refreshData?.session,
+            refreshError: refreshError?.message,
+            userId: refreshData?.session?.user?.id
+          });
+          
+          if (refreshData?.session) {
+            currentSession = refreshData.session;
+            console.log('✅ Session refreshed successfully');
+          } else {
+            sessionError = refreshError || new Error('Failed to refresh session');
+          }
+        } catch (refreshErr) {
+          console.error('❌ Session refresh failed:', refreshErr);
+          sessionError = refreshErr;
+        }
+      }
+      
+      // If we still don't have a session, check if user is logged in via context
+      if (!currentSession && !sessionError && user?.id) {
+        console.log('🔄 No session found but user context exists, trying alternative auth...');
+        // Try to get user without session (for cases where session is valid but not immediately accessible)
+        try {
+          const { data: { user: currentUser }, error: userError } = await supabase.auth.getUser();
+          if (currentUser && !userError) {
+            console.log('✅ Found valid user via getUser()');
+            // Create a minimal session-like object for the API call
+            currentSession = {
+              access_token: 'context-auth',
+              user: currentUser
+            };
+          } else {
+            sessionError = userError || new Error('No valid user found');
+          }
+        } catch (userErr) {
+          console.error('❌ getUser() failed:', userErr);
+          sessionError = userErr;
+        }
+      }
+      
+      if (!currentSession || sessionError) {
+        console.error('❌ No valid session found after all attempts:', sessionError);
+        throw new Error('Authentication failed. Please refresh the page and try again.');
       }
 
-      // Add both Authorization header AND rely on cookies
-      const currentSession = sessionData.session;
-      headers['Authorization'] = `Bearer ${currentSession.access_token}`;
-      console.log('🔍 Added both Authorization header and will rely on cookies');
+      // Add Authorization header if we have a valid token
+      if (currentSession.access_token && currentSession.access_token !== 'context-auth') {
+        headers['Authorization'] = `Bearer ${currentSession.access_token}`;
+        console.log('🔍 Added Authorization header');
+      } else {
+        console.log('🔍 Relying on cookie-based authentication');
+      }
 
       console.log('🚀 Attempting payment initialization...', {
         url: '/api/payments/flutterwave/initialize',
