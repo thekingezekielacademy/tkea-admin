@@ -1,5 +1,5 @@
-import React from 'react';
-import Head from 'next/head';
+'use client';
+import React, { useEffect } from 'react';
 
 export interface SEOHeadProps {
   title: string;
@@ -48,52 +48,97 @@ const SEOHead: React.FC<SEOHeadProps> = ({
     noFollow ? 'nofollow' : 'follow'
   ].join(',');
 
-  return (
-    <Head>
-      {/* Basic Meta Tags */}
-      <title>{fullTitle}</title>
-      <meta name="description" content={description} />
-      {keywords && <meta name="keywords" content={keywords} />}
-      <meta name="robots" content={robotsContent} />
-      <link rel="canonical" href={fullCanonical} />
+  useEffect(() => {
+    // Update document title
+    document.title = fullTitle;
 
-      {/* Open Graph Meta Tags */}
-      <meta property="og:title" content={fullTitle} />
-      <meta property="og:description" content={description} />
-      <meta property="og:type" content={ogType} />
-      <meta property="og:url" content={fullCanonical} />
-      <meta property="og:image" content={`${siteUrl}${ogImage}`} />
-      <meta property="og:site_name" content={siteName} />
-      <meta property="og:locale" content="en_US" />
+    // Function to update or create meta tag
+    const updateMetaTag = (selector: string, content: string, attribute: string = 'content') => {
+      let element = document.querySelector(selector) as HTMLMetaElement;
+      if (!element) {
+        element = document.createElement('meta');
+        const parts = selector.replace(/\[|]/g, '').split('=');
+        element.setAttribute(parts[0], parts[1].replace(/"/g, ''));
+        document.head.appendChild(element);
+      }
+      element.setAttribute(attribute, content);
+    };
 
-      {/* Twitter Card Meta Tags */}
-      <meta name="twitter:card" content={twitterCard} />
-      <meta name="twitter:title" content={fullTitle} />
-      <meta name="twitter:description" content={description} />
-      <meta name="twitter:image" content={`${siteUrl}${ogImage}`} />
-      <meta name="twitter:site" content="@kingezekielacademy" />
+    // Function to update or create link tag
+    const updateLinkTag = (selector: string, href: string) => {
+      let element = document.querySelector(selector) as HTMLLinkElement;
+      if (!element) {
+        element = document.createElement('link');
+        const parts = selector.replace(/\[|]/g, '').split('=');
+        element.setAttribute(parts[0], parts[1].replace(/"/g, ''));
+        document.head.appendChild(element);
+      }
+      element.setAttribute('href', href);
+    };
 
-      {/* Additional Meta Tags */}
-      <meta name="author" content="King Ezekiel" />
-      <meta name="theme-color" content="#1f2937" />
-      
-      {/* Facebook Domain Verification */}
-      <meta name="facebook-domain-verification" content="c3qxn9yu9frspb8s9tceoh01uap0tr" />
-      
-      {/* Structured Data (JSON-LD) */}
-      {structuredData && (
-        <script type="application/ld+json">
-          {JSON.stringify(structuredData)}
-        </script>
-      )}
+    // Basic Meta Tags
+    updateMetaTag('meta[name="description"]', description);
+    if (keywords) {
+      updateMetaTag('meta[name="keywords"]', keywords);
+    }
+    updateMetaTag('meta[name="robots"]', robotsContent);
+    updateLinkTag('link[rel="canonical"]', fullCanonical);
 
-      {/* Preconnect to external domains for performance */}
-      <link rel="preconnect" href="https://fonts.googleapis.com" />
-      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-      <link rel="preconnect" href="https://www.googletagmanager.com" />
-      <link rel="preconnect" href="https://www.google-analytics.com" />
-    </Head>
-  );
+    // Open Graph Meta Tags
+    updateMetaTag('meta[property="og:title"]', fullTitle);
+    updateMetaTag('meta[property="og:description"]', description);
+    updateMetaTag('meta[property="og:type"]', ogType);
+    updateMetaTag('meta[property="og:url"]', fullCanonical);
+    updateMetaTag('meta[property="og:image"]', `${siteUrl}${ogImage}`);
+    updateMetaTag('meta[property="og:site_name"]', siteName);
+    updateMetaTag('meta[property="og:locale"]', 'en_US');
+
+    // Twitter Card Meta Tags
+    updateMetaTag('meta[name="twitter:card"]', twitterCard);
+    updateMetaTag('meta[name="twitter:title"]', fullTitle);
+    updateMetaTag('meta[name="twitter:description"]', description);
+    updateMetaTag('meta[name="twitter:image"]', `${siteUrl}${ogImage}`);
+    updateMetaTag('meta[name="twitter:site"]', '@kingezekielacademy');
+
+    // Additional Meta Tags
+    updateMetaTag('meta[name="author"]', 'King Ezekiel');
+    updateMetaTag('meta[name="theme-color"]', '#1f2937');
+    updateMetaTag('meta[name="facebook-domain-verification"]', 'c3qxn9yu9frspb8s9tceoh01uap0tr');
+
+    // Structured Data (JSON-LD)
+    if (structuredData) {
+      let scriptElement = document.querySelector('script[type="application/ld+json"]') as HTMLScriptElement;
+      if (!scriptElement) {
+        scriptElement = document.createElement('script');
+        scriptElement.type = 'application/ld+json';
+        document.head.appendChild(scriptElement);
+      }
+      scriptElement.textContent = JSON.stringify(structuredData);
+    }
+
+    // Preconnect links (only add if not already present)
+    const preconnectUrls = [
+      'https://fonts.googleapis.com',
+      'https://fonts.gstatic.com',
+      'https://www.googletagmanager.com',
+      'https://www.google-analytics.com'
+    ];
+
+    preconnectUrls.forEach(url => {
+      if (!document.querySelector(`link[rel="preconnect"][href="${url}"]`)) {
+        const link = document.createElement('link');
+        link.rel = 'preconnect';
+        link.href = url;
+        if (url === 'https://fonts.gstatic.com') {
+          link.crossOrigin = 'anonymous';
+        }
+        document.head.appendChild(link);
+      }
+    });
+
+  }, [fullTitle, description, keywords, robotsContent, fullCanonical, ogType, siteUrl, ogImage, siteName, twitterCard, structuredData]);
+
+  return null;
 };
 
 export default SEOHead;
