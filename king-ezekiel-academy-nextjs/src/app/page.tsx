@@ -17,7 +17,7 @@ const Home: React.FC = () => {
         description="Transform your career with comprehensive digital marketing courses. Learn from industry experts and join 10,000+ successful students. Start your 7-day FREE trial today!"
         keywords="digital marketing courses, online education, business growth, entrepreneurship, Nigeria, Africa, free trial, subscription"
         canonical="/"
-        ogImage="/img/og-home.jpg"
+        ogImage="/img/link previewer.png"
         ogType="website"
         structuredData={generateOrganizationStructuredData()}
       />
