@@ -1,11 +1,11 @@
 {
   "version": 2,
-  "buildCommand": "cd king-ezekiel-academy-nextjs && npm install && npm run build",
+  "buildCommand": "npm run build",
   "outputDirectory": "king-ezekiel-academy-nextjs/.next",
-  "installCommand": "cd king-ezekiel-academy-nextjs && npm install",
+  "installCommand": "npm run install-all",
   "framework": "nextjs",
   "functions": {
-    "src/app/api/**/*.ts": {
+    "king-ezekiel-academy-nextjs/src/app/api/**/*.ts": {
       "maxDuration": 30
     }
   },
