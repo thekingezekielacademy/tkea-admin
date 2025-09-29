@@ -166,10 +166,13 @@ const CoursesOptimized: React.FC = () => {
           lessons: course.course_videos?.length || 0
         }));
 
+        // Shuffle courses to randomize display order (only for first page)
+        const coursesToSet = page === 0 ? shuffleCoursesDefault(transformedCourses) : transformedCourses;
+
         if (append) {
-          setCourses(prev => [...prev, ...transformedCourses]);
+          setCourses(prev => [...prev, ...coursesToSet]);
         } else {
-          setCourses(transformedCourses);
+          setCourses(coursesToSet);
         }
 
         // Check if there are more courses
