@@ -7,13 +7,14 @@ import { createClient } from '@/lib/supabase/client'
 
 interface Lesson {
   id: string
-  title: string
-  description: string
-  video_url: string
-  video_type: 'youtube' | 'hls' | 'mp4'
-  duration: number
+  name: string // course_videos uses 'name' instead of 'title'
+  duration: string // course_videos uses string duration
+  link: string // course_videos uses 'link' instead of 'video_url'
   order_index: number
-  is_preview: boolean
+  // Add video_type and other fields as needed
+  video_type?: 'youtube' | 'hls' | 'mp4'
+  description?: string
+  is_preview?: boolean
 }
 
 interface Course {
@@ -23,7 +24,7 @@ interface Course {
   instructor: string
   thumbnail_url: string
   price: number
-  is_free: boolean
+  access_type: 'free' | 'membership'
 }
 
 interface LessonPlayerProps {
@@ -92,7 +93,7 @@ export default function LessonPlayer({
         .from('user_subscriptions')
         .select('*')
         .eq('user_id', user.id)
-        .eq('is_active', true)
+        .eq('status', 'active')
         .single()
 
       if (subscriptionData) {
@@ -124,9 +125,9 @@ export default function LessonPlayer({
       if (courseError) throw courseError
       setCourse(courseData)
 
-      // Load lessons
+      // Load lessons (using course_videos table to match course overview)
       const { data: lessonsData, error: lessonsError } = await supabase
-        .from('lessons')
+        .from('course_videos')
         .select('*')
         .eq('course_id', courseId)
         .order('order_index', { ascending: true })
@@ -153,38 +154,40 @@ export default function LessonPlayer({
 
     setProgress(progressData.played)
 
-    // Save progress to database
+    // Save progress to database (matches actual schema)
     try {
-      await supabase
-        .from('user_lesson_progress')
-        .upsert({
-          user_id: user.id,
-          lesson_id: lesson.id,
-          progress_percentage: Math.round(progressData.played * 100),
-          time_watched: Math.round(progressData.playedSeconds),
-          last_watched_at: new Date().toISOString(),
-        })
-    } catch (error) {
-      console.error('Progress tracking error:', error)
-    }
-  }, [user, lesson, supabase])
-
-  // Handle lesson completion
-  const handleLessonComplete = useCallback(async () => {
-    if (!user || !lesson) return
-
-    try {
-      // Mark lesson as completed
       await supabase
         .from('user_lesson_progress')
         .upsert({
           user_id: user.id,
           course_id: courseId,
           lesson_id: lesson.id,
+          status: progressData.played >= 0.9 ? 'completed' : 'started', // Use status field
+          progress_percentage: Math.round(progressData.played * 100),
+          started_at: new Date().toISOString(),
+          completed_at: progressData.played >= 0.9 ? new Date().toISOString() : null,
+        })
+    } catch (error) {
+      console.error('Progress tracking error:', error)
+    }
+  }, [user, lesson, courseId, supabase])
+
+  // Handle lesson completion
+  const handleLessonComplete = useCallback(async () => {
+    if (!user || !lesson) return
+
+    try {
+      // Mark lesson as completed (matches actual schema)
+      await supabase
+        .from('user_lesson_progress')
+        .upsert({
+          user_id: user.id,
+          course_id: courseId,
+          lesson_id: lesson.id,
+          status: 'completed',
           progress_percentage: 100,
-          is_completed: true,
-          completed_at: new Date().toISOString(),
-          last_watched_at: new Date().toISOString()
+          started_at: new Date().toISOString(),
+          completed_at: new Date().toISOString()
         })
 
       // Use the course progress service to update course progress and stats
@@ -259,8 +262,8 @@ export default function LessonPlayer({
       {/* Video Player */}
       <div className="relative bg-black rounded-lg overflow-hidden mb-6">
         <AdvancedVideoPlayer
-          src={lesson.video_url}
-          type={lesson.video_type}
+          src={lesson.link}
+          type={lesson.video_type || 'youtube'}
           onProgress={trackProgress}
           onEnded={handleLessonComplete}
           className="w-full"
@@ -272,10 +275,10 @@ export default function LessonPlayer({
       {/* Lesson Info */}
       <div className="bg-white rounded-lg shadow-md p-6 mb-6">
         <h1 className="text-2xl font-bold text-gray-900 mb-2">
-          {lesson.title}
+          {lesson.name}
         </h1>
         <p className="text-gray-600 mb-4">
-          {lesson.description}
+          {lesson.description || 'No description available'}
         </p>
         
         {/* Progress Bar */}

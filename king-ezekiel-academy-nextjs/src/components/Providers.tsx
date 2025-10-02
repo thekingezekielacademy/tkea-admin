@@ -69,12 +69,12 @@ export default function Providers({ children }: ProvidersProps) {
               <main suppressHydrationWarning className="relative" style={{ position: 'relative', zIndex: '1' }}>
                 {children}
               </main>
-                    <Footer />
-                    {/* <PerformanceMonitor /> Disabled for performance */}
-                  </div>
-                </SidebarProvider>
-              </AuthProvider>
-            </HelmetProvider>
-          </MiniBrowserErrorBoundary>
-        );
-      }
+              <Footer />
+              {/* <PerformanceMonitor /> Disabled for performance */}
+            </div>
+          </SidebarProvider>
+        </AuthProvider>
+      </HelmetProvider>
+    </MiniBrowserErrorBoundary>
+  );
+}

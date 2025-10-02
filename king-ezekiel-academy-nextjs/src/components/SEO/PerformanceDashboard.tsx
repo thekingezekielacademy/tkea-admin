@@ -94,12 +94,17 @@ const PerformanceDashboard: React.FC = () => {
 
   // Update performance metrics
   const updatePerformanceMetrics = () => {
-    // Simulate real-time metrics update
+    // Simulate real-time metrics update with deterministic values
+    const now = Date.now();
+    const randomFactor1 = (now % 100) / 100; // 0-1 based on time
+    const randomFactor2 = ((now + 1000) % 100) / 100; // Different seed
+    const randomFactor3 = ((now + 2000) % 100) / 100; // Another seed
+    
     setMetrics(prev => ({
       ...prev,
-      pageLoadTime: Math.max(0.5, Math.min(5, prev.pageLoadTime + (Math.random() - 0.5) * 0.5)),
-      firstContentfulPaint: Math.max(0.5, Math.min(3, prev.firstContentfulPaint + (Math.random() - 0.5) * 0.3)),
-      largestContentfulPaint: Math.max(1, Math.min(5, prev.largestContentfulPaint + (Math.random() - 0.5) * 0.5))
+      pageLoadTime: Math.max(0.5, Math.min(5, prev.pageLoadTime + (randomFactor1 - 0.5) * 0.5)),
+      firstContentfulPaint: Math.max(0.5, Math.min(3, prev.firstContentfulPaint + (randomFactor2 - 0.5) * 0.3)),
+      largestContentfulPaint: Math.max(1, Math.min(5, prev.largestContentfulPaint + (randomFactor3 - 0.5) * 0.5))
     }));
   };
 

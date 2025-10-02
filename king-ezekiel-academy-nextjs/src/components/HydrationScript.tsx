@@ -6,7 +6,7 @@ export default function HydrationScript() {
       dangerouslySetInnerHTML={{
       __html: `
         (function() {
-          // OPTIMIZED CLEANING: Prevent extension attributes with minimal performance impact
+          // AGGRESSIVE CLEANING: Prevent extension attributes with maximum effectiveness
           const extensionAttributes = [
             'bis_skin_checked',
             'data-bis_skin_checked', 
@@ -15,12 +15,9 @@ export default function HydrationScript() {
           ];
           
           function removeExtensionAttributes() {
-            // Use a single query selector for better performance
-            const selector = extensionAttributes.map(attr => '[' + attr + ']').join(',');
-            const elements = document.querySelectorAll(selector);
-            
-            // Batch DOM operations
-            elements.forEach(element => {
+            // Clean all elements more aggressively
+            const allElements = document.querySelectorAll('*');
+            allElements.forEach(element => {
               extensionAttributes.forEach(attr => {
                 if (element.hasAttribute(attr)) {
                   element.removeAttribute(attr);
@@ -36,16 +33,17 @@ export default function HydrationScript() {
             document.addEventListener('DOMContentLoaded', removeExtensionAttributes, { once: true });
           }
           
-          // Minimal scheduled cleaning - reduced from 6 timeouts to 2
+          // More frequent cleaning to catch extension attributes
           setTimeout(removeExtensionAttributes, 0);
+          setTimeout(removeExtensionAttributes, 50);
           setTimeout(removeExtensionAttributes, 100);
+          setTimeout(removeExtensionAttributes, 200);
+          setTimeout(removeExtensionAttributes, 500);
           
-          // Efficient observer with debouncing
-          let observerTimeout;
+          // Aggressive observer with immediate cleaning
           if (typeof MutationObserver !== 'undefined') {
             const observer = new MutationObserver(() => {
-              clearTimeout(observerTimeout);
-              observerTimeout = setTimeout(removeExtensionAttributes, 50);
+              removeExtensionAttributes();
             });
             
             try {
@@ -58,6 +56,9 @@ export default function HydrationScript() {
               // Silently fail if observer setup fails
             }
           }
+          
+          // Additional cleanup on window load
+          window.addEventListener('load', removeExtensionAttributes);
         })();
         `,
       }}

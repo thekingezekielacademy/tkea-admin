@@ -92,6 +92,7 @@ const Profile: React.FC = () => {
       try {
         // Delete account logic here
         await signOut();
+        // Navigation is handled by the onSignOut callback in AuthContext
       } catch (err) {
         setError('Failed to delete account');
         setSaving(false);

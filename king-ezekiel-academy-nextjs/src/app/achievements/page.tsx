@@ -344,7 +344,11 @@ const Achievements = React.memo(() => {
 
       const lastActivity = profile.last_activity_date;
       if (lastActivity) {
-        const daysSinceActivity = Math.floor((Date.now() - new Date(lastActivity).getTime()) / (1000 * 60 * 60 * 24));
+        // Use a consistent date calculation to prevent hydration mismatches
+        const now = new Date();
+        const lastActivityDate = new Date(lastActivity);
+        const daysSinceActivity = Math.floor((now.getTime() - lastActivityDate.getTime()) / (1000 * 60 * 60 * 24));
+        
         if (daysSinceActivity <= 1) {
           achievements.push({
             id: 'daily-learner',
@@ -354,7 +358,7 @@ const Achievements = React.memo(() => {
             category: 'special',
             xpReward: 50,
             earned: true,
-            earnedDate: new Date().toISOString().split('T')[0]
+            earnedDate: now.toISOString().split('T')[0]
           });
         } else {
           achievements.push({

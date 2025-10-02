@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { FaFire, FaStar, FaCrown, FaArrowRight, FaPlay, FaBook, FaTrophy, FaUsers, FaChartLine, FaCheckCircle, FaUser } from 'react-icons/fa';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/AuthContextOptimized';
 import { useSidebar } from '@/contexts/SidebarContext';
 import { createClient } from '@/lib/supabase/client';
 import TrialBanner from '@/components/TrialBanner';
@@ -16,7 +16,6 @@ import secureStorage from '@/utils/secureStorage';
 import { secureLog, secureError } from '@/utils/secureLogger';
 import { notificationService } from '@/utils/notificationService';
 import { CourseProgressService } from '@/services/courseProgressService';
-import ProgressTestPanel from '@/components/ProgressTestPanel';
 
 // Types matching the original CRA implementation
 interface Course {
@@ -155,11 +154,13 @@ export default function Dashboard() {
       secureLog('🔍 Checking subscription status for user:', user.id);
       
       // Try to fetch from database first
+      const supabase = createClient();
       const { data: subData, error: subError } = await supabase
         .from('user_subscriptions')
         .select('*')
         .eq('user_id', user.id)
         .eq('status', 'active')
+        .eq('is_active', true)
         .order('created_at', { ascending: false })
         .limit(1);
       
@@ -1118,10 +1119,6 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              {/* Progress Test Panel - Only show for development/testing */}
-              {process.env.NODE_ENV === 'development' && (
-                <ProgressTestPanel className="mt-6" />
-              )}
             </div>
 
             {/* Sidebar - 1/3 width */}

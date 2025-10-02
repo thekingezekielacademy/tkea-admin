@@ -1,5 +1,6 @@
 'use client'
 import React, { useEffect, useState } from 'react';
+import { HydrationSafeValue } from '@/components/HydrationSafeValue';
 // import { performanceMonitor } from '@/lib/supabase-optimized';
 
 interface PerformanceStats {
@@ -21,14 +22,16 @@ const PerformanceMonitor: React.FC = () => {
   useEffect(() => {
     const updateStats = () => {
       // Mock performance data since performanceMonitor was removed
-      const averageQueryTime = Math.random() * 100; // Random value between 0-100ms
+      // Use deterministic values to prevent hydration mismatches
+      const now = Date.now();
+      const averageQueryTime = (now % 100); // Deterministic value based on time
       const cacheHitRate = 0.85; // 85% cache hit rate
-      const totalQueries = Math.floor(Math.random() * 50) + 10; // Random between 10-60 queries
+      const totalQueries = Math.floor((now % 50)) + 10; // Deterministic between 10-60 queries
       const slowQueries: string[] = [];
 
-      // Occasionally add a slow query for demo purposes
-      if (Math.random() > 0.8) {
-        slowQueries.push(`Demo Query: ${(Math.random() * 2000 + 1000).toFixed(0)}ms`);
+      // Occasionally add a slow query for demo purposes (deterministic)
+      if ((now % 5) === 0) {
+        slowQueries.push(`Demo Query: ${((now % 1000) + 1000).toFixed(0)}ms`);
       }
 
       setStats({

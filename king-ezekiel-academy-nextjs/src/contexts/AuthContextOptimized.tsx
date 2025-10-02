@@ -48,12 +48,14 @@ interface AuthProviderProps {
 }
 
 const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+  // Initialize with consistent server/client state to prevent hydration mismatches
   const [user, setUser] = useState<UserProfile | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [authLoading, setAuthLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [onSignOut, setOnSignOut] = useState<(() => void) | null>(null);
+  const [isHydrated, setIsHydrated] = useState(false);
   const fetchProfileTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isFetchingRef = useRef(false);
   const hasInitializedRef = useRef(false);
@@ -68,7 +70,7 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setLoading(true);
     
     try {
-      const { supabase } = await import('@/lib/supabase');
+      const supabase = createClient();
       const { data: sessionData } = await supabase.auth.getSession();
       
       if (!sessionData?.session) {
@@ -139,6 +141,9 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, [fetchProfile]);
 
   useEffect(() => {
+    // Mark as hydrated after first render to prevent hydration mismatches
+    setIsHydrated(true);
+    
     // Don't set an aggressive timeout that interferes with authentication
     // The session check will handle clearing loading states appropriately
     let timeout: any = null;
@@ -187,7 +192,7 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // Listen for auth state changes
     const supabase = createClient();
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      async (event: string, session: Session | null) => {
         secureLog('Auth state change:', { event, hasSession: !!session, hasUser: !!session?.user });
         
         if (event === 'SIGNED_IN' && session?.user && !isFetchingRef.current && !user) {
@@ -257,6 +262,8 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       if (profileError) {
         console.error('Error creating profile:', profileError);
+        // Return error to user if profile creation fails
+        return { user: data.user, session: data.session, error: profileError };
       } else {
         // console.log('Profile created successfully');
         
@@ -279,7 +286,7 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // console.log('signIn called with email:', email);
       
       // Test Supabase connection first
-      const { supabase } = await import('@/lib/supabase');
+      const supabase = createClient();
       const { data: testData, error: testError } = await supabase.auth.getSession();
       if (testError) {
         console.error('❌ Supabase connection test failed before signin:', testError.message);
@@ -308,6 +315,9 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         
         // Ensure session is set immediately
         setSession(data.session);
+        
+        // Wait for profile to be fetched before returning success
+        await new Promise(resolve => setTimeout(resolve, 500));
       }
       
       return { user: data.user, session: data.session, error };
@@ -323,39 +333,76 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const signOut = async () => {
-    const { supabase } = await import('@/lib/supabase');
-    await supabase.auth.signOut();
-    setUser(null);
-    setSession(null);
-    setIsAdmin(false);
-    
-    // SECURITY: Clear all user data from all storage mechanisms
     try {
-      const secureStorage = await import('../utils/secureStorage');
-      secureStorage.default.clearAllUserData();
+      const supabase = createClient();
+      await supabase.auth.signOut();
       
-      // Clear remaining auth-related cache entries
-      const additionalClearKeys = ['user_trial_status', 'user_subscription_data'];
-      additionalClearKeys.forEach(key => {
-        localStorage.removeItem(key);
-        sessionStorage.removeItem(key);
-      });
+      // Clear state immediately
+      setUser(null);
+      setSession(null);
+      setIsAdmin(false);
       
-      secureLog('🧹 Cleared all user session data for security');
+      // SECURITY: Clear all user data from all storage mechanisms
+      try {
+        const secureStorage = await import('../utils/secureStorage');
+        secureStorage.default.clearAllUserData();
+        
+        // Clear additional auth-related cache entries
+        const additionalClearKeys = [
+          'user_trial_status', 
+          'user_subscription_data',
+          'previous_level',
+          'last_accessed_',
+          'last_streak_notification',
+          'user_engagement_score',
+          'notification_permission_granted',
+          'notification_permission_denied'
+        ];
+        additionalClearKeys.forEach(key => {
+          localStorage.removeItem(key);
+          sessionStorage.removeItem(key);
+        });
+        
+        // Clear any keys that start with specific patterns
+        const keysToRemove = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && (key.startsWith('last_accessed_') || key.startsWith('user_'))) {
+            keysToRemove.push(key);
+          }
+        }
+        keysToRemove.forEach(key => {
+          localStorage.removeItem(key);
+          sessionStorage.removeItem(key);
+        });
+        
+        secureLog('🧹 Cleared all user session data for security');
+      } catch (error) {
+        console.error('Error clearing storage on logout:', error);
+      }
+      
+      // Call the onSignOut callback if it exists
+      if (onSignOut) {
+        onSignOut();
+      }
     } catch (error) {
-      console.error('Error clearing storage on logout:', error);
-    }
-    
-    // Call the onSignOut callback if it exists
-    if (onSignOut) {
-      onSignOut();
+      console.error('Error during sign out:', error);
+      // Even if sign out fails, clear local state
+      setUser(null);
+      setSession(null);
+      setIsAdmin(false);
+      
+      // Call the onSignOut callback even on error
+      if (onSignOut) {
+        onSignOut();
+      }
     }
   };
 
   const updateProfile = async (updates: Partial<UserProfile>) => {
     if (!user) return { error: null };
 
-    const { supabase } = await import('@/lib/supabase');
+    const supabase = createClient();
     const { error } = await supabase
       .from('profiles')
       .update(updates)
@@ -375,11 +422,11 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const value = {
-    user,
-    session,
-    loading,
-    authLoading,
-    isAdmin,
+    user: isHydrated ? user : null, // Prevent hydration mismatch by returning null until hydrated
+    session: isHydrated ? session : null,
+    loading: isHydrated ? loading : true, // Show loading state during hydration
+    authLoading: isHydrated ? authLoading : true,
+    isAdmin: isHydrated ? isAdmin : false,
     signUp,
     signIn,
     signOut,

@@ -98,4 +98,11 @@ class TrialManager {
   }
 }
 
+// Export both the class and individual functions for maximum compatibility
 export default TrialManager;
+
+// Also export individual functions to avoid class import issues
+export const getTrialStatusStatic = TrialManager.getTrialStatusStatic.bind(TrialManager);
+export const createTrial = TrialManager.createTrial.bind(TrialManager);
+export const hasTrialAccess = TrialManager.hasTrialAccess.bind(TrialManager);
+export const calculateDaysRemaining = TrialManager.calculateDaysRemaining.bind(TrialManager);

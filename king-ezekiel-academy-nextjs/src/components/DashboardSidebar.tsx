@@ -32,16 +32,13 @@ interface SidebarItem {
 }
 
 const DashboardSidebar: React.FC = () => {
-  const [isCollapsed, setIsCollapsed] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
   const { signOut } = useAuth();
   const { isExpanded, setIsExpanded, isMobile, toggleSidebar } = useSidebar();
 
-  // Sync local state with context
-  useEffect(() => {
-    setIsCollapsed(!isExpanded);
-  }, [isExpanded]);
+  // Use context state directly instead of local state
+  const isCollapsed = !isExpanded;
 
   const sidebarItems: SidebarItem[] = [
     {
@@ -121,9 +118,15 @@ const DashboardSidebar: React.FC = () => {
   const handleLogout = async () => {
     try {
       await signOut();
-      router.push('/');
+      // Navigation is handled by the onSignOut callback in AuthContext
+      // Fallback navigation in case callback fails
+      setTimeout(() => {
+        router.push('/');
+      }, 100);
     } catch (error) {
       console.error('Logout error:', error);
+      // Fallback navigation on error
+      router.push('/');
     }
   };
 

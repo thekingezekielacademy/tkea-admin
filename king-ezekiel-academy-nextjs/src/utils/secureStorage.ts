@@ -78,9 +78,46 @@ class SecureStorage {
     if (!this.isAvailable()) return;
     try {
       this.clearSubscriptionData();
-      localStorage.removeItem('user_profile');
-      localStorage.removeItem('user_trial_status');
-      localStorage.removeItem('supabase-auth.token');
+      
+      // Clear known user data keys
+      const userDataKeys = [
+        'user_profile',
+        'user_trial_status',
+        'supabase-auth.token',
+        'supabase-auth-token',
+        'previous_level',
+        'last_streak_notification',
+        'user_engagement_score',
+        'notification_permission_granted',
+        'notification_permission_denied'
+      ];
+      
+      userDataKeys.forEach(key => {
+        localStorage.removeItem(key);
+        sessionStorage.removeItem(key);
+      });
+      
+      // Clear dynamic keys that start with specific patterns
+      const keysToRemove = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && (
+          key.startsWith('last_accessed_') || 
+          key.startsWith('user_') ||
+          key.startsWith('subscription_') ||
+          key.startsWith('trial_') ||
+          key.includes('auth') ||
+          key.includes('session')
+        )) {
+          keysToRemove.push(key);
+        }
+      }
+      keysToRemove.forEach(key => {
+        localStorage.removeItem(key);
+        sessionStorage.removeItem(key);
+      });
+      
+      // Clear all session storage as it's typically user-specific
       sessionStorage.clear();
     } catch (error) {
       console.error('Error clearing all user data:', error);

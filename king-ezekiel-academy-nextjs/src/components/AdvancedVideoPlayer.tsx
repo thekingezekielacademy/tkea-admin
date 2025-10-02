@@ -17,6 +17,7 @@ interface AdvancedVideoPlayerProps {
   onPlay?: () => void;
   onPause?: () => void;
   onEnded?: () => void;
+  onProgress?: (progressData: { played: number; playedSeconds: number }) => void;
 }
 
 const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
@@ -27,6 +28,7 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
   onPlay,
   onPause,
   onEnded,
+  onProgress,
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -249,6 +251,13 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
           const duration = playerRef.current.getDuration();
           setCurrentTime(currentTime);
           setDuration(duration);
+          
+          // Call progress callback if provided
+          if (onProgress && duration > 0) {
+            const played = currentTime / duration;
+            const playedSeconds = currentTime;
+            onProgress({ played, playedSeconds });
+          }
         }
       }, 1000);
       
@@ -269,7 +278,7 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
         }
       };
     }
-  }, [src, type, autoplay, onPlay, onPause, onEnded]);
+  }, [src, type, autoplay, onPlay, onPause, onEnded, onProgress]);
 
   // Reset timer when video changes
   useEffect(() => {
@@ -748,8 +757,20 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
             }
             
             .controls-overlay {
-              z-index: 50 !important;
-              position: relative !important;
+              z-index: 70 !important;
+              position: absolute !important;
+              bottom: 0 !important;
+              left: 0 !important;
+              right: 0 !important;
+              top: auto !important;
+              transform: none !important;
+            }
+            
+            /* Force controls to bottom even if parent has relative positioning */
+            .video-container .controls-overlay {
+              position: absolute !important;
+              bottom: 0 !important;
+              top: auto !important;
             }
               
               .controls-overlay button {
@@ -796,19 +817,20 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
             </div>
           )}
 
-          {/* Mobile fullscreen button */}
+          {/* Fullscreen button - Both mobile and desktop */}
           <button 
             onClick={toggleFullscreen}
-            className="absolute top-4 right-4 z-50 md:hidden bg-black bg-opacity-70 text-white p-2 rounded-lg hover:bg-opacity-90 transition-all duration-200"
+            className="absolute top-16 right-4 z-[100] bg-black bg-opacity-30 text-white p-3 rounded-lg hover:bg-opacity-50 transition-all duration-200 shadow-lg border border-white border-opacity-50 backdrop-blur-sm"
             title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
+            style={{ zIndex: 100 }}
           >
             {isFullscreen ? (
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M3 4a1 1 0 011-1h4a1 1 0 010 2H6.414l2.293 2.293a1 1 0 11-1.414 1.414L5 6.414V8a1 1 0 01-2 0V4zm9 1a1 1 0 010-2h4a1 1 0 011 1v4a1 1 0 00-2 0V6.414l-2.293 2.293a1 1 0 11-1.414-1.414L13.586 5H12z" clipRule="evenodd" />
+              <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/>
               </svg>
             ) : (
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M3 4a1 1 0 011-1h4a1 1 0 010 2H6.414l2.293 2.293a1 1 0 11-1.414 1.414L5 6.414V8a1 1 0 01-2 0V4zm9 1a1 1 0 010-2h4a1 1 0 011 1v4a1 1 0 00-2 0V6.414l-2.293 2.293a1 1 0 11-1.414-1.414L13.586 5H12z" clipRule="evenodd" />
+              <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
               </svg>
             )}
           </button>
@@ -996,8 +1018,8 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
             </div>
           </div>
           
-          {/* Custom controls overlay - Highest z-index */}
-          <div className={`absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black via-black to-transparent px-3 pb-0 pt-2 z-50 transition-opacity duration-300 controls-overlay ${
+          {/* Custom controls overlay - Above YouTube branding blocker */}
+          <div className={`absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black via-black to-transparent px-3 pb-2 pt-2 z-70 transition-opacity duration-300 controls-overlay ${
             isLoading ? 'opacity-100' : (isPlaying ? (window.innerWidth <= 768 ? 'opacity-100' : (isHovered ? 'opacity-100' : 'opacity-0')) : 'opacity-100')
           }`}>
             {/* Progress bar */}
@@ -1155,25 +1177,6 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
               </div>
               
               <div className="flex items-center space-x-2">
-                {/* Desktop Fullscreen Button */}
-                <button 
-                  onClick={toggleFullscreen} 
-                  className="hidden md:block hover:text-blue-400 transition-colors p-1 group"
-                  title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
-                >
-                  {isFullscreen ? (
-                    // Exit fullscreen icon (compress)
-                    <svg className="w-4 h-4 md:w-5 md:h-5" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M3 4a1 1 0 011-1h4a1 1 0 010 2H6.414l2.293 2.293a1 1 0 11-1.414 1.414L5 6.414V8a1 1 0 01-2 0V4zm9 1a1 1 0 010-2h4a1 1 0 011 1v4a1 1 0 00-2 0V6.414l-2.293 2.293a1 1 0 11-1.414-1.414L13.586 5H12z" clipRule="evenodd" />
-                    </svg>
-                  ) : (
-                    // Enter fullscreen icon (expand)
-                    <svg className="w-4 h-4 md:w-5 md:h-5" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M3 4a1 1 0 011-1h4a1 1 0 010 2H6.414l2.293 2.293a1 1 0 11-1.414 1.414L5 6.414V8a1 1 0 01-2 0V4zm9 1a1 1 0 010-2h4a1 1 0 011 1v4a1 1 0 00-2 0V6.414l-2.293 2.293a1 1 0 11-1.414-1.414L13.586 5H12z" clipRule="evenodd" />
-                    </svg>
-                  )}
-                </button>
-
                 {/* Time Display */}
                 <div className="text-xs md:text-sm text-gray-300 font-mono">
                   {Math.floor(currentTime / 60)}:{(Math.floor(currentTime % 60)).toString().padStart(2, '0')} / {Math.floor(duration / 60)}:{(Math.floor(duration % 60)).toString().padStart(2, '0')}

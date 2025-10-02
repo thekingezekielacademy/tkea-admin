@@ -43,7 +43,8 @@ const InlineFlutterwavePayment: React.FC<InlineFlutterwavePaymentProps> = ({
         : '';
 
       // Get fresh session for authentication with retry logic
-      const { supabase } = await import('@/lib/supabase');
+      const { createClient } = await import('@/lib/supabase/client');
+      const supabase = createClient();
       let currentSession = null;
       let sessionError = null;
       

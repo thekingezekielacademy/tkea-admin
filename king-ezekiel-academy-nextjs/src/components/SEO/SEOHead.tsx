@@ -1,5 +1,6 @@
 'use client';
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import { HydrationSafeValue } from '@/components/HydrationSafeValue';
 
 export interface SEOHeadProps {
   title: string;
@@ -30,13 +31,14 @@ const SEOHead: React.FC<SEOHeadProps> = ({
   description,
   keywords,
   canonical,
-  ogImage = '/img/link previewer.png',
+  ogImage = '/img/link-previewer-optimized.jpg',
   ogType = 'website',
   twitterCard = 'summary_large_image',
   structuredData,
   noIndex = false,
   noFollow = false
 }) => {
+  const [isHydrated, setIsHydrated] = useState(false);
   const siteName = 'King Ezekiel Academy';
   const siteUrl = 'https://thekingezekielacademy.com';
   const fullTitle = `${title} | ${siteName}`;
@@ -49,6 +51,8 @@ const SEOHead: React.FC<SEOHeadProps> = ({
   ].join(',');
 
   useEffect(() => {
+    // Mark as hydrated to prevent hydration mismatches
+    setIsHydrated(true);
     // Update document title
     document.title = fullTitle;
 
@@ -137,6 +141,11 @@ const SEOHead: React.FC<SEOHeadProps> = ({
     });
 
   }, [fullTitle, description, keywords, robotsContent, fullCanonical, ogType, siteUrl, ogImage, siteName, twitterCard, structuredData]);
+
+  // Only render after hydration to prevent mismatches
+  if (!isHydrated) {
+    return null;
+  }
 
   return null;
 };

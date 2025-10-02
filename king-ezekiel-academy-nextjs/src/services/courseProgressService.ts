@@ -40,10 +40,10 @@ export class CourseProgressService {
 
       console.log('📊 View not available, falling back to manual calculation');
 
-      // Fallback: Get all lesson progress for the user (without joins to avoid FK issues)
+      // Fallback: Get all lesson progress for the user (matches actual schema)
       const { data: lessonProgress, error: lessonError } = await supabase
         .from('user_lesson_progress')
-        .select('lesson_id, course_id, is_completed, completed_at, last_watched_at')
+        .select('lesson_id, course_id, status, completed_at, started_at')
         .eq('user_id', userId)
         .order('completed_at', { ascending: false });
 
@@ -87,13 +87,13 @@ export class CourseProgressService {
             total_lessons: 0,
             completed_lessons: 0,
             progress_percentage: 0,
-            last_accessed: progress.last_watched_at || new Date().toISOString(),
+            last_accessed: progress.started_at || new Date().toISOString(),
           });
         }
 
         const courseData = courseProgressMap.get(courseId)!;
         
-        if (progress.is_completed) {
+        if (progress.status === 'completed') {
           courseData.completed_lessons++;
           if (!courseData.last_lesson_completed || 
               (progress.completed_at && progress.completed_at > courseData.last_lesson_completed)) {
@@ -271,12 +271,12 @@ export class CourseProgressService {
    */
   static async updateUserStats(userId: string): Promise<boolean> {
     try {
-      // Calculate total completed lessons for XP
+      // Calculate total completed lessons for XP (matches actual schema)
       const { data: completedLessons, error: lessonsError } = await supabase
         .from('user_lesson_progress')
         .select('completed_at', { count: 'exact' })
         .eq('user_id', userId)
-        .eq('is_completed', true);
+        .eq('status', 'completed');
 
       if (lessonsError) {
         console.error('Error counting completed lessons:', lessonsError);

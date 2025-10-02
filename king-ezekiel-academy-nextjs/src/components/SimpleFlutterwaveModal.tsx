@@ -66,7 +66,8 @@ const SimpleFlutterwaveModal: React.FC<SimpleFlutterwaveModalProps> = ({
         : '';
 
       // Get fresh session for authentication with retry logic
-      const { supabase } = await import('@/lib/supabase');
+      const { createClient } = await import('@/lib/supabase/client');
+      const supabase = createClient();
       let currentSession = null;
       let sessionError = null;
       
@@ -132,7 +133,7 @@ const SimpleFlutterwaveModal: React.FC<SimpleFlutterwaveModalProps> = ({
 
       const result = await response.json();
       
-      if (result.success && result.data?.link) {
+      if (result.payment_url || (result.success && result.data?.link)) {
         // Store transaction reference
         if (result.data.tx_ref) {
           localStorage.setItem('pending_payment_tx_ref', result.data.tx_ref);
@@ -140,7 +141,7 @@ const SimpleFlutterwaveModal: React.FC<SimpleFlutterwaveModalProps> = ({
         
         // Redirect to Flutterwave payment page
         // Flutterwave hosted links should be accessed via GET, not POST
-        window.location.href = result.data.link;
+        window.location.href = result.payment_url || result.data?.link;
         
         return;
       } else {

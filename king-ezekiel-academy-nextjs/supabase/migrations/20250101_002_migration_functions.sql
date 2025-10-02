@@ -172,14 +172,14 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 CREATE OR REPLACE FUNCTION check_course_access(user_uuid UUID, course_uuid TEXT)
 RETURNS BOOLEAN AS $$
 DECLARE
-  course_free BOOLEAN;
+  course_access_type TEXT;
   has_trial BOOLEAN;
   has_subscription BOOLEAN;
 BEGIN
   -- Check if course is free
-  SELECT is_free INTO course_free FROM courses WHERE id = course_uuid;
+  SELECT access_type INTO course_access_type FROM courses WHERE id = course_uuid;
   
-  IF course_free THEN
+  IF course_access_type = 'free' THEN
     RETURN TRUE;
   END IF;
   

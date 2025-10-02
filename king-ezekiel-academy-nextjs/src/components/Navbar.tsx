@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { FaGraduationCap, FaBars, FaTimes, FaUser, FaSignOutAlt } from 'react-icons/fa';
 import { useAuth } from '@/contexts/AuthContextOptimized';
 import { useSidebar } from '@/contexts/SidebarContext';
+import { HydrationSafeValue } from '@/components/HydrationSafeValue';
 
 const Navbar: React.FC = () => {
   const { user, signOut, setOnSignOut, loading } = useAuth();
@@ -81,10 +82,10 @@ const Navbar: React.FC = () => {
 
   return (
     <nav className={`bg-white shadow-lg fixed top-0 z-50 transition-all duration-300 ease-in-out ${getSidebarMargin()}`} suppressHydrationWarning>
-      <div className={`${hasSidebar ? 'w-full' : 'max-w-7xl mx-auto'} px-4 sm:px-6 lg:px-8`}>
-        <div className="flex justify-between h-16">
+      <div className={`${hasSidebar ? 'w-full' : 'max-w-7xl mx-auto'} px-4 sm:px-6 lg:px-8`} suppressHydrationWarning>
+        <div className="flex justify-between h-16" suppressHydrationWarning>
           {/* Logo and User Info (Left Side) */}
-          <div className="flex items-center space-x-8">
+          <div className="flex items-center space-x-8" suppressHydrationWarning>
             <Link href="/" onClick={scrollToTop} className="flex items-center space-x-2">
               <FaGraduationCap className="h-8 w-8 text-primary-500" />
               <span className="hidden md:block text-xl font-bold text-secondary-900">King Ezekiel Academy</span>
@@ -94,7 +95,7 @@ const Navbar: React.FC = () => {
           </div>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-8">
+          <div className="hidden md:flex items-center space-x-8" suppressHydrationWarning>
             {navItems.map((item) => (
               <Link
                 key={item.name}
@@ -113,60 +114,71 @@ const Navbar: React.FC = () => {
                 {isNavigating ? 'Loading...' : item.name}
               </Link>
             ))}
-            {/* Dashboard (only when signed in) */}
-            {user && (
-              <Link
-                href="/dashboard"
-                onClick={scrollToTop}
-                className={`text-sm font-medium transition-colors duration-200 ${
-                  isActive('/dashboard')
-                    ? 'text-primary-500 border-b-2 border-primary-500'
-                    : 'text-secondary-700 hover:text-primary-500'
-                }`}
-              >
-                Dashboard
-              </Link>
-            )}
-          </div>
-
-          {/* Desktop Auth Buttons */}
-          <div className="hidden md:flex items-center space-x-4">
-            {user ? (
-              <div className="flex items-center space-x-4">
-                {/* User Info Display - Clickable to Dashboard */}
-                <Link 
+            {/* Dashboard (only when signed in) - wrapped in HydrationSafeValue */}
+            <HydrationSafeValue fallback={null}>
+              {user && (
+                <Link
                   href="/dashboard"
                   onClick={scrollToTop}
-                  className="flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium text-primary-700 bg-primary-50 hover:bg-primary-100 transition-colors duration-200"
-                >
-                  <FaUser className="text-primary-500" />
-                  <span className="font-medium">{user?.name || user?.email || 'Student'}</span>
-                </Link>
-                {/* Sign Out Button */}
-                <button
-                  onClick={handleSignOut}
-                  className="flex items-center space-x-2 px-4 py-2 rounded-md text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 transition-colors duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
-                >
-                  <FaSignOutAlt />
-                  <span>Sign Out</span>
-                </button>
-              </div>
-            ) : (
-              authItems.map((item) => (
-                <Link
-                  key={item.name}
-                  href={item.path}
-                  onClick={scrollToTop}
-                  className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
-                    item.name === 'Sign Up'
-                      ? 'bg-primary-900 text-white hover:bg-primary-800 shadow-md hover:shadow-lg transform hover:scale-105 font-semibold'
+                  className={`text-sm font-medium transition-colors duration-200 ${
+                    isActive('/dashboard')
+                      ? 'text-primary-500 border-b-2 border-primary-500'
                       : 'text-secondary-700 hover:text-primary-500'
                   }`}
                 >
-                  {item.name}
+                  Dashboard
                 </Link>
-              ))
-            )}
+              )}
+            </HydrationSafeValue>
+          </div>
+
+          {/* Desktop Auth Buttons - wrapped in HydrationSafeValue */}
+          <div className="hidden md:flex items-center space-x-4" suppressHydrationWarning>
+            <HydrationSafeValue fallback={
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium text-gray-400 bg-gray-100">
+                  <FaUser className="text-gray-400" />
+                  <span className="font-medium">Loading...</span>
+                </div>
+              </div>
+            }>
+              {user ? (
+                <div className="flex items-center space-x-4">
+                  {/* User Info Display - Clickable to Dashboard */}
+                  <Link 
+                    href="/dashboard"
+                    onClick={scrollToTop}
+                    className="flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium text-primary-700 bg-primary-50 hover:bg-primary-100 transition-colors duration-200"
+                  >
+                    <FaUser className="text-primary-500" />
+                    <span className="font-medium">{user?.name || user?.email || 'Student'}</span>
+                  </Link>
+                  {/* Sign Out Button */}
+                  <button
+                    onClick={handleSignOut}
+                    className="flex items-center space-x-2 px-4 py-2 rounded-md text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 transition-colors duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                  >
+                    <FaSignOutAlt />
+                    <span>Sign Out</span>
+                  </button>
+                </div>
+              ) : (
+                authItems.map((item) => (
+                  <Link
+                    key={item.name}
+                    href={item.path}
+                    onClick={scrollToTop}
+                    className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+                      item.name === 'Sign Up'
+                        ? 'bg-primary-900 text-white hover:bg-primary-800 shadow-md hover:shadow-lg transform hover:scale-105 font-semibold'
+                        : 'text-secondary-700 hover:text-primary-500'
+                    }`}
+                  >
+                    {item.name}
+                  </Link>
+                ))
+              )}
+            </HydrationSafeValue>
           </div>
 
           {/* Mobile menu button */}

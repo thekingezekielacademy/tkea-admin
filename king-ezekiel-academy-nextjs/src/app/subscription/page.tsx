@@ -2,9 +2,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContextOptimized';
 import { useSidebar } from '@/contexts/SidebarContext';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/lib/supabase/client';
 import DashboardSidebar from '@/components/DashboardSidebar';
-import DirectFlutterwavePayment from '@/components/DirectFlutterwavePayment';
+import FixedFlutterwavePayment from '@/components/FixedFlutterwavePayment';
 import secureStorage from '@/utils/secureStorage';
 import flutterwaveService from '@/services/flutterwaveService';
 import DOMPurify from 'dompurify';
@@ -98,6 +98,7 @@ const Subscription: React.FC = () => {
       }
       
       // Fetch from Supabase with optimized query
+      const supabase = createClient();
       const { data: supabaseData, error: supabaseError } = await supabase
         .from('user_subscriptions')
         .select('*')
@@ -118,15 +119,15 @@ const Subscription: React.FC = () => {
         let endDate = new Date(startDate.getTime() + 30 * 24 * 60 * 60 * 1000);
         let nextBillingDate = new Date(endDate.getTime());
         
-        if (subscriptionData.next_payment_date) {
-          nextBillingDate = new Date(subscriptionData.next_payment_date);
+        if (subscriptionData.next_billing_date) {
+          nextBillingDate = new Date(subscriptionData.next_billing_date);
         }
         
         const subscription = {
           id: subscriptionData.id,
           status: subscriptionData.status,
           plan_name: subscriptionData.plan_name,
-          amount: subscriptionData.amount === 250000 ? 2500 : subscriptionData.amount,
+          amount: subscriptionData.amount >= 1000 ? Math.round(subscriptionData.amount / 100) : subscriptionData.amount,
           currency: subscriptionData.currency || 'NGN',
           billing_cycle: 'monthly' as const,
           start_date: subscriptionData.created_at,
@@ -437,7 +438,9 @@ const Subscription: React.FC = () => {
         });
         
         if (!response.ok) {
-          throw new Error('Failed to create subscription via Flutterwave');
+          const errorText = await response.text();
+          console.error('❌ Flutterwave API error:', errorText);
+          throw new Error(`Failed to create subscription via Flutterwave: ${response.status} ${response.statusText}`);
         }
         
         const result = await response.json();
@@ -452,9 +455,13 @@ const Subscription: React.FC = () => {
         
         setSubscription(flutterwaveSubscription);
         
-        // Store the restored subscription in localStorage to persist after refresh
-        localStorage.setItem('subscription_restored', 'true');
-        localStorage.setItem('subscription_restored_data', JSON.stringify(flutterwaveSubscription));
+        // Store the restored subscription securely
+        try {
+          secureStorage.setItem('subscription_restored', 'true');
+          secureStorage.setItem('subscription_restored_data', JSON.stringify(flutterwaveSubscription));
+        } catch (storageError) {
+          console.warn('Could not store subscription data securely:', storageError);
+        }
         
         // Show success message with billing cycle info
         const daysLeft = Math.ceil((endDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
@@ -462,7 +469,8 @@ const Subscription: React.FC = () => {
         
       } catch (error) {
         console.error('❌ Error creating Flutterwave subscription:', error);
-        alert('Failed to create subscription via Flutterwave. Please try again.');
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+        setError(`Failed to create subscription via Flutterwave: ${errorMessage}`);
         return;
       }
     } else {
@@ -470,9 +478,13 @@ const Subscription: React.FC = () => {
       console.log('⚠️ No Flutterwave customer code found, using local simulation');
       setSubscription(restoredSubscription);
       
-      // Store the restored subscription in localStorage to persist after refresh
-      localStorage.setItem('subscription_restored', 'true');
-      localStorage.setItem('subscription_restored_data', JSON.stringify(restoredSubscription));
+      // Store the restored subscription securely
+      try {
+        secureStorage.setItem('subscription_restored', 'true');
+        secureStorage.setItem('subscription_restored_data', JSON.stringify(restoredSubscription));
+      } catch (storageError) {
+        console.warn('Could not store subscription data securely:', storageError);
+      }
       
       // Show success message with billing cycle info
       const daysLeft = Math.ceil((endDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
@@ -747,6 +759,7 @@ const Subscription: React.FC = () => {
         setSubscription(prev => prev ? { ...prev, status: 'canceled' } : null);
         setSuccess(result.message);
         
+        const supabase = createClient();
         const { error: dbError } = await supabase
           .from('user_subscriptions')
           .update({ status: 'canceled' })
@@ -1141,15 +1154,14 @@ const Subscription: React.FC = () => {
       )}
 
       {/* Direct Payment Modal */}
-      <DirectFlutterwavePayment
+      <FixedFlutterwavePayment
         isOpen={showDirectPayment}
         onClose={() => setShowDirectPayment(false)}
-        onSuccess={(paymentData) => {
+        onSuccess={() => {
           setShowDirectPayment(false);
           setSuccess('Payment initiated successfully! Please complete the payment in the new window.');
           fetchSubscriptionStatus();
         }}
-        user={user}
         planName="Monthly Membership"
         amount={2500}
       />

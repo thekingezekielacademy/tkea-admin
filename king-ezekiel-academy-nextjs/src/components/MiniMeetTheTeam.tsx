@@ -155,6 +155,28 @@ const MiniMeetTheTeam: React.FC = () => {
         { value: "∞", label: "Administrative Excellence" }
       ],
       statsColor: "text-indigo-600"
+    },
+    {
+      id: 7,
+      name: "Jessica Okechi Munachimso",
+      title: "Social Media Manager & Strategist",
+      badge: "Social Media Expert",
+      badgeColor: "bg-emerald-600",
+      subtitle: "Social Media Manager & Strategist",
+      subtitleColor: "text-emerald-600",
+      image: "/img/jessica.jpeg?v=1.0.2",
+      alt: "Jessica Okechi Munachimso - Social Media Manager & Strategist",
+      description: [
+        "Jessica Okechi Munachimso is a certified Social Media Manager & Strategist and recent Psychology graduate who has dedicated her career to helping brands across fashion, beauty, tech, and religious organizations build meaningful online connections and achieve sustainable growth.",
+        "With her unique blend of psychological insights and digital marketing expertise, Jessica creates compelling social media strategies that resonate with target audiences and drive authentic engagement. She specializes in video content creation, bringing brand stories to life through visually captivating narratives that leave lasting impressions.",
+        "Jessica's approach to social media goes beyond traditional posting—she focuses on creating memorable experiences that foster genuine connections between brands and their communities. Her passion for growth, creativity, and authentic engagement, guided by her faith, makes her a valuable asset in helping businesses build meaningful digital presence."
+      ],
+      stats: [
+        { value: "2+", label: "Years Experience" },
+        { value: "7+", label: "Brands Helped" },
+        { value: "100%", label: "Creative Excellence" }
+      ],
+      statsColor: "text-emerald-600"
     }
   ];
 

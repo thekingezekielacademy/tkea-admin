@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContextOptimized';
 import { secureLog, secureError } from '@/utils/secureLogger';
+import { HydrationSafeValue } from '@/components/HydrationSafeValue';
 
 const SignIn: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -52,7 +53,7 @@ const SignIn: React.FC = () => {
       
       if (error) {
         secureError('Sign in error:', error);
-        setError(error.message);
+        setError(error.message || 'Sign in failed. Please check your credentials.');
         setLoading(false);
       } else {
         secureLog('Sign in successful, waiting for profile fetch...');
@@ -94,36 +95,63 @@ const SignIn: React.FC = () => {
           </button>
         </p>
         
-        {/* Show loading state when auth is loading */}
-        {authLoading && (
-          <div className="mt-4 text-center">
-            <div className="inline-flex items-center px-4 py-2 bg-blue-50 text-blue-700 rounded-lg">
-              <svg className="animate-spin -ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
-              </svg>
-              Checking authentication...
+        {/* Show loading state when auth is loading - wrapped in HydrationSafeValue */}
+        <HydrationSafeValue 
+          fallback={
+            <div className="mt-4 text-center">
+              <div className="inline-flex items-center px-4 py-2 bg-blue-50 text-blue-700 rounded-lg">
+                <svg className="animate-spin -ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                </svg>
+                Checking authentication...
+              </div>
             </div>
-          </div>
-        )}
+          }
+        >
+          {authLoading && (
+            <div className="mt-4 text-center">
+              <div className="inline-flex items-center px-4 py-2 bg-blue-50 text-blue-700 rounded-lg">
+                <svg className="animate-spin -ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                </svg>
+                Checking authentication...
+              </div>
+            </div>
+          )}
+        </HydrationSafeValue>
         
-        {/* Show message when user is already signed in */}
-        {user && !authLoading && (
-          <div className="mt-4 text-center">
-            <div className="inline-flex items-center px-4 py-2 bg-green-50 text-green-700 rounded-lg">
-              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-              Already signed in! Redirecting to dashboard...
+        {/* Show message when user is already signed in - wrapped in HydrationSafeValue */}
+        <HydrationSafeValue fallback={null}>
+          {user && !authLoading && (
+            <div className="mt-4 text-center">
+              <div className="inline-flex items-center px-4 py-2 bg-green-50 text-green-700 rounded-lg">
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                Already signed in! Redirecting to dashboard...
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </HydrationSafeValue>
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-6 shadow-xl rounded-2xl border border-gray-100">
-          {/* Hide form if user is already signed in */}
-          {!user ? (
+          {/* Hide form if user is already signed in - wrapped in HydrationSafeValue */}
+          <HydrationSafeValue fallback={
+            <form className="space-y-6" onSubmit={handleSubmit}>
+              <div className="bg-gray-50 border border-gray-200 text-gray-600 px-4 py-3 rounded-lg flex items-center">
+                <svg className="animate-spin -ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                </svg>
+                Loading...
+              </div>
+            </form>
+          }>
+            {!user ? (
             <form className="space-y-6" onSubmit={handleSubmit}>
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg flex items-center">
@@ -234,19 +262,20 @@ const SignIn: React.FC = () => {
                 )}
               </button>
             </div>
-          </form>
-        ) : (
-          // Show loading state when user is signed in and waiting for redirect
-          <div className="text-center py-8">
-            <div className="inline-flex items-center px-6 py-3 bg-green-50 text-green-700 rounded-lg">
-              <svg className="animate-spin -ml-1 mr-3 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              Redirecting to Dashboard...
-            </div>
-          </div>
-        )}
+            </form>
+            ) : (
+              // Show loading state when user is signed in and waiting for redirect
+              <div className="text-center py-8">
+                <div className="inline-flex items-center px-6 py-3 bg-green-50 text-green-700 rounded-lg">
+                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Redirecting to Dashboard...
+                </div>
+              </div>
+            )}
+          </HydrationSafeValue>
         </div>
       </div>
     </div>

@@ -1,0 +1,42 @@
+[
+  {
+    "email": "john.doe@example.com",
+    "name": "John Doe"
+  },
+  {
+    "email": "jane.smith@example.com",
+    "name": "Jane Smith"
+  },
+  {
+    "email": "bob.wilson@example.com",
+    "name": "Bob Wilson"
+  },
+  {
+    "email": "alice.brown@example.com",
+    "name": "Alice Brown"
+  },
+  {
+    "email": "charlie.davis@example.com",
+    "name": "Charlie Davis"
+  },
+  {
+    "email": "diana.garcia@example.com",
+    "name": "Diana Garcia"
+  },
+  {
+    "email": "eve.martinez@example.com",
+    "name": "Eve Martinez"
+  },
+  {
+    "email": "frank.anderson@example.com",
+    "name": "Frank Anderson"
+  },
+  {
+    "email": "grace.taylor@example.com",
+    "name": "Grace Taylor"
+  },
+  {
+    "email": "henry.thomas@example.com",
+    "name": "Henry Thomas"
+  }
+]

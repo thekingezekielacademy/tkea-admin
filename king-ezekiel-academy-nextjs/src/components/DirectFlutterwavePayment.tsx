@@ -19,6 +19,7 @@ const DirectFlutterwavePayment: React.FC<DirectFlutterwavePaymentProps> = ({
   planName,
   amount
 }) => {
+  console.log('❌ DIRECT FlutterwavePayment component loaded - this should NOT be loaded');
   const { session } = useAuth();
   const [email, setEmail] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -72,7 +73,8 @@ const DirectFlutterwavePayment: React.FC<DirectFlutterwavePaymentProps> = ({
       }
 
       // Try to get fresh session with retry logic
-      const { supabase } = await import('@/lib/supabase');
+      const { createClient } = await import('@/lib/supabase/client');
+      const supabase = createClient();
       let currentSession = null;
       let sessionError = null;
       

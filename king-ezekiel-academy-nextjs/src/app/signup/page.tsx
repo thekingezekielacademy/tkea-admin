@@ -80,6 +80,29 @@ const SignUp: React.FC = () => {
       } else if (user) {
         secureLog(`Signup successful, user created: ${user?.id || 'None'}`);
         
+        // Subscribe user to newsletter (non-blocking)
+        try {
+          const newsletterResponse = await fetch('/api/subscribe', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              email: formData.email,
+              name: formData.name
+            }),
+          });
+          
+          if (newsletterResponse.ok) {
+            secureLog('Newsletter subscription successful');
+          } else {
+            secureLog('Newsletter subscription failed (non-critical)');
+          }
+        } catch (newsletterError) {
+          secureLog('Newsletter subscription error (non-critical):', newsletterError);
+          // Don't fail the signup if newsletter subscription fails
+        }
+        
         // Check if email confirmation is required
         if (user.email_confirmed_at) {
           router.push('/dashboard');

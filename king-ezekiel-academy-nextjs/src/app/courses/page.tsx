@@ -83,6 +83,7 @@ const Courses: React.FC = () => {
         .select('*')
         .eq('user_id', user.id)
         .eq('status', 'active')
+        .eq('is_active', true)
         .order('created_at', { ascending: false })
         .limit(1);
       
@@ -304,13 +305,13 @@ const Courses: React.FC = () => {
       }
 
       if (data) {
-        const transformedCourses = data.map(course => ({
+        const transformedCourses = data.map((course: any) => ({
           ...course,
           category: course.category || 'general',
           duration: calculateTotalDuration(course.course_videos || []),
           instructor: course.instructor || 'King Ezekiel Academy',
           rating: course.rating || 4.8,
-          students: course.enrolled_students || 0,
+          students: course.students || course.enrolled_students || 0,
           cover_photo: course.cover_photo_url || 'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=400&h=250&fit=crop',
           lessons: course.course_videos?.length || 0
         }));
@@ -508,14 +509,20 @@ const Courses: React.FC = () => {
   };
 
   // Handle course enrollment
-  const handleEnroll = (courseId: string, accessType?: 'free' | 'membership') => {
-    // Check if this is a free course and user is signed in - always allow access
-    if (accessType === 'free' && user) {
-      // Free courses are accessible to all signed-in users
-      router.push(`/course/${courseId}/overview`);
+  const handleEnroll = (courseId: string, isFree?: boolean) => {
+    // Check if this is a free course - accessible to ALL users (signed-in or not)
+    if (isFree === true) {
+      if (user) {
+        // User is signed in - go directly to course overview
+        router.push(`/course/${courseId}/overview`);
+      } else {
+        // User is not signed in - go to signup page first, then to course
+        router.push(`/signup?redirect=/course/${courseId}/overview`);
+      }
       return;
     }
     
+    // For paid courses, check subscription/trial status
     if (user && (databaseSubscriptionStatus || hasTrialAccess)) {
       // User is signed in and has active subscription OR trial access - go to course overview
       router.push(`/course/${courseId}/overview`);
@@ -530,7 +537,7 @@ const Courses: React.FC = () => {
 
   // Helper function to get access status text
   const getAccessStatusText = (course: Course) => {
-    if (course.access_type === 'free' && user) {
+    if (course.access_type === 'free') {
       return 'Free Access';
     }
     if (user && databaseSubscriptionStatus) {
@@ -539,7 +546,7 @@ const Courses: React.FC = () => {
     if (user && hasTrialAccess) {
       return 'Trial Access';
     }
-    return course.access_type === 'free' ? 'Free Access' : 'Membership Access';
+    return 'Membership Access';
   };
 
   const handleNotifyMe = async (courseId: string) => {
@@ -1009,11 +1016,11 @@ const Courses: React.FC = () => {
                             </span>
                         </div>
                           <button 
-                            onClick={() => course.is_scheduled ? handleNotifyMe(course.id) : handleEnroll(course.id, course.access_type)} 
+                            onClick={() => course.is_scheduled ? handleNotifyMe(course.id) : handleEnroll(course.id, course.access_type === 'free')} 
                             className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2 text-xs sm:text-sm font-medium ${
                               course.is_scheduled 
                                 ? 'bg-blue-600 text-white hover:bg-blue-700' 
-                                : (user && course.access_type === 'free')
+                                : course.access_type === 'free'
                                   ? 'bg-primary-600 text-white hover:bg-primary-700'
                                   : user && (databaseSubscriptionStatus || hasTrialAccess)
                                     ? 'bg-primary-600 text-white hover:bg-primary-700'
@@ -1027,10 +1034,10 @@ const Courses: React.FC = () => {
                                 <span>🔔</span>
                                 <span className="truncate">Notify Me</span>
                               </>
-                            ) : (user && course.access_type === 'free') ? (
+                            ) : course.access_type === 'free' ? (
                               <>
                                 <FaUnlock className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
-                                <span className="truncate">Start Learning</span>
+                                <span className="truncate">{user ? 'Start Learning' : 'Start Free!'}</span>
                               </>
                             ) : user && (databaseSubscriptionStatus || hasTrialAccess) ? (
                               <>

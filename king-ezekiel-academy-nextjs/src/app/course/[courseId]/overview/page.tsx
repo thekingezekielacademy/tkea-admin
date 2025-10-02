@@ -117,18 +117,38 @@ const CourseOverview: React.FC = () => {
     
     try {
       const supabase = createClient();
-      const { data, error } = await supabase
-        .from('user_progress')
-        .select('progress_percentage')
+      
+      // Get progress from user_courses table (matches actual schema)
+      const { data: courseData, error: courseError } = await supabase
+        .from('user_courses')
+        .select('progress, completed_lessons, total_lessons, is_completed')
         .eq('user_id', user.id)
         .eq('course_id', courseId)
         .single();
       
-      if (error) {
-        console.log('No progress found for this course');
-        setUserProgress(0);
+      if (courseError) {
+        console.log('No course progress found, trying lesson progress...');
+        
+        // Fallback: Calculate progress from lesson progress
+        const { data: lessonProgress, error: lessonError } = await supabase
+          .from('user_lesson_progress')
+          .select('status, progress_percentage')
+          .eq('user_id', user.id)
+          .eq('course_id', courseId);
+        
+        if (lessonError) {
+          console.log('No lesson progress found either');
+          setUserProgress(0);
+        } else {
+          // Calculate progress from completed lessons (using status field)
+          const completedLessons = lessonProgress?.filter(p => p.status === 'completed').length || 0;
+          const totalLessons = lessonProgress?.length || 1;
+          const progress = Math.round((completedLessons / totalLessons) * 100);
+          setUserProgress(progress);
+        }
       } else {
-        setUserProgress(data.progress_percentage || 0);
+        // Use the progress field directly from user_courses
+        setUserProgress(courseData.progress || 0);
       }
     } catch (err) {
       console.error('Error fetching user progress:', err);
@@ -146,23 +166,6 @@ const CourseOverview: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      
-      // For non-authenticated users, we can still fetch course data for viewing
-      if (!user) {
-        console.log('👤 Guest user viewing course - allowing read-only access');
-      } else {
-        // First, refresh the session to ensure we have a valid token
-        const supabase = createClient();
-        const { data: sessionData, error: sessionError } = await supabase.auth.refreshSession();
-        
-        if (sessionError) {
-          console.log('⚠️ Session refresh failed, trying to get current session:', sessionError);
-          const { data: currentSession } = await supabase.auth.getSession();
-          if (!currentSession.session) {
-            console.log('⚠️ No valid session for authenticated user');
-          }
-        }
-      }
       
       const supabase = createClient();
       const { data, error: fetchError } = await supabase
@@ -196,7 +199,7 @@ const CourseOverview: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [courseId, user?.id]);
+  }, [courseId]);
 
   // Combined access checking logic matching CRA app - EXACT 3-test implementation  
   const checkAccess = useCallback(async () => {
@@ -262,21 +265,18 @@ const CourseOverview: React.FC = () => {
     // Small delay to ensure DOM is stable
     const timeoutId = setTimeout(() => {
       fetchCourseCallback();
-      if (user?.id) {
-        checkAccess();
-        fetchUserProgress();
-      }
     }, 50); // Brief delay to let hydration complete
     
     return () => {
       clearTimeout(timeoutId);
     };
-  }, [fetchCourseCallback, checkAccess, fetchUserProgress, user?.id]);
+  }, [fetchCourseCallback]);
 
-  // Simplified: Single trigger when user becomes available AND auth loading stops
+  // Separate effect for user-dependent operations to avoid race conditions
   useEffect(() => {
     if (user?.id && !authLoading && hasHydratedRef.current) {
       console.log('🔄 User fully loaded and available, triggering subscription checks');
+      
       setTimeout(() => {
         checkAccess();
         fetchUserProgress();
@@ -284,12 +284,47 @@ const CourseOverview: React.FC = () => {
     }
   }, [user?.id, authLoading, checkAccess, fetchUserProgress]);
 
+  // Enroll user in course
+  const enrollUserInCourse = useCallback(async () => {
+    if (!user?.id || !courseId) return;
+    
+    try {
+      const supabase = createClient();
+      const { error } = await supabase
+        .from('user_courses')
+        .upsert({
+          user_id: user.id,
+          course_id: courseId,
+          progress: 0,
+          completed_lessons: '[]', // JSONB array as per actual schema
+          total_lessons: 0,
+          is_completed: false,
+          is_active: true,
+          last_accessed: new Date().toISOString(),
+          enrolled_at: new Date().toISOString(),
+        }, {
+          onConflict: 'user_id,course_id'
+        });
+      
+      if (error) {
+        console.error('Error enrolling user in course:', error);
+      } else {
+        console.log('User enrolled in course successfully');
+      }
+    } catch (err) {
+      console.error('Error enrolling user in course:', err);
+    }
+  }, [user?.id, courseId]);
+
   // Handle course access
-  const handleCourseAccess = () => {
+  const handleCourseAccess = async () => {
     if (!user) {
       router.push('/signin');
       return;
     }
+
+    // Enroll user in course first
+    await enrollUserInCourse();
 
     // Check if this is a free course first - grant access immediately
     if (course && course.access_type === 'free') {
@@ -297,6 +332,9 @@ const CourseOverview: React.FC = () => {
       if (course?.course_videos && course.course_videos.length > 0) {
         const firstVideo = course.course_videos[0];
         router.push(`/course/${courseId}/lesson/${firstVideo.id}`);
+      } else {
+        // If no videos, show message
+        alert('This course has no lessons available yet.');
       }
       return;
     }
@@ -415,7 +453,7 @@ const CourseOverview: React.FC = () => {
                   <div className="text-sm text-gray-600">Duration</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-primary-600">{course.level}</div>
+                  <div className="text-2xl font-bold text-primary-600">{course.level || 'N/A'}</div>
                   <div className="text-sm text-gray-600">Level</div>
                 </div>
                 <div className="text-center">
@@ -480,7 +518,7 @@ const CourseOverview: React.FC = () => {
             <div className="bg-white rounded-xl shadow-sm border p-6">
               <h2 className="text-xl font-bold text-gray-900 mb-4">Course Lessons</h2>
               <div className="space-y-3">
-                {course.course_videos?.map((video: any, index: number) => (
+                {course.course_videos && course.course_videos.length > 0 ? course.course_videos.map((video: any, index: number) => (
                   <div key={video.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
                     <div className="flex items-center gap-4">
                       <div className="w-8 h-8 bg-primary-100 text-primary-600 rounded-full flex items-center justify-center text-sm font-semibold">
@@ -495,7 +533,11 @@ const CourseOverview: React.FC = () => {
                       Lesson {index + 1}
                     </div>
                   </div>
-                ))}
+                )) : (
+                  <div className="text-center py-8 text-gray-500">
+                    <p>No lessons available for this course yet.</p>
+                  </div>
+                )}
               </div>
             </div>
           </div>

@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter, usePathname, useParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContextOptimized';
 import { createClient } from '@/lib/supabase/client';
-import TrialManager from '@/utils/trialManager';
+import TrialManager, { getTrialStatusStatic } from '@/utils/trialManager';
 
 interface AccessControlProps {
   children: React.ReactNode;
@@ -57,61 +57,103 @@ const AccessControl: React.FC<AccessControlProps> = ({ children, requireAccess =
           }
         }
 
-        // Check database subscription status
+        // PRIORITY 1: Check database subscription status first (most reliable)
         const supabase = createClient();
         const { data: subscriptionData, error: subscriptionError } = await supabase
           .from('user_subscriptions')
           .select('*')
           .eq('user_id', user.id)
           .eq('status', 'active')
+          .eq('is_active', true)
           .order('created_at', { ascending: false })
           .limit(1);
 
         const hasDatabaseSubscription = !subscriptionError && subscriptionData && subscriptionData.length > 0;
+        console.log('📊 Database subscription status:', hasDatabaseSubscription);
 
-        // Check secure storage subscription
+        // PRIORITY 2: Check secure storage subscription
         const isSubActive = localStorage.getItem('subscription_active') === 'true';
+        console.log('📊 Secure storage subscription status:', isSubActive);
 
-        // Check trial status using the correct method
-        let updatedTrialStatus = await TrialManager.getTrialStatusStatic(user.id);
-        console.log('📅 Trial status check result:', updatedTrialStatus);
+        // If user has either type of subscription, grant access immediately
+        if (hasDatabaseSubscription || isSubActive) {
+          console.log('✅ ACCESS GRANTED - Active subscription found (DB or secure storage)');
+          setHasAccess(true);
+          setLoading(false);
+          return;
+        }
+
+        // PRIORITY 3: Only check trial status if no subscription found
+        console.log('📅 No subscription found, checking trial status...');
+        let updatedTrialStatus = null;
+        
+        try {
+          // Debug: Check what TrialManager actually is
+          console.log('🔍 TrialManager object:', TrialManager);
+          console.log('🔍 TrialManager.getTrialStatusStatic:', typeof TrialManager.getTrialStatusStatic);
+          
+          if (typeof TrialManager.getTrialStatusStatic === 'function') {
+            updatedTrialStatus = await TrialManager.getTrialStatusStatic(user.id);
+            console.log('📅 Trial status check result:', updatedTrialStatus);
+          } else if (typeof getTrialStatusStatic === 'function') {
+            console.log('⚠️ TrialManager.getTrialStatusStatic is not a function, trying individual export');
+            updatedTrialStatus = await getTrialStatusStatic(user.id);
+            console.log('📅 Trial status check result (individual export):', updatedTrialStatus);
+          } else {
+            console.log('⚠️ Both static methods failed, trying instance method');
+            // Fallback to instance method
+            const trialManager = new TrialManager();
+            updatedTrialStatus = await trialManager.getTrialStatus();
+            console.log('📅 Trial status check result (instance):', updatedTrialStatus);
+          }
+        } catch (trialError) {
+          console.log('⚠️ Trial status check failed:', trialError);
+          // Don't fail completely if trial check fails
+        }
 
         if (updatedTrialStatus) {
           setTrialStatus(updatedTrialStatus);
           console.log('📊 Trial status updated:', updatedTrialStatus);
 
-          // Check if access should be granted (prioritize database subscription)
-          const accessGranted = updatedTrialStatus.isActive || hasDatabaseSubscription || isSubActive;
-          console.log('🔐 Has access:', accessGranted, '(Trial active:', updatedTrialStatus.isActive, '| DB Sub:', hasDatabaseSubscription, '| Secure Sub:', isSubActive, ')');
+          // Check if trial is still active
+          const trialActive = updatedTrialStatus.isActive && updatedTrialStatus.daysRemaining > 0;
+          console.log('🔐 Trial access:', trialActive, '(Active:', updatedTrialStatus.isActive, '| Days remaining:', updatedTrialStatus.daysRemaining, ')');
 
-          setHasAccess(accessGranted);
+          setHasAccess(trialActive);
 
-          // Redirect if NO access (trial expired AND no subscription)
-          if (!accessGranted) {
+          // Redirect if NO access (trial expired)
+          if (!trialActive) {
             console.log('🚫 ACCESS DENIED - Trial expired and no subscription - redirecting to profile');
             router.push('/profile', { replace: true });
             return;
           } else {
-            console.log('✅ ACCESS GRANTED - Trial active or subscription active');
+            console.log('✅ ACCESS GRANTED - Trial active');
           }
         } else {
-          console.log('⚠️ No trial data found in localStorage');
-          // If no trial data, check if user has subscription (prioritize database)
-          const accessGranted = hasDatabaseSubscription || isSubActive;
-          setHasAccess(accessGranted);
-
-          if (!accessGranted) {
-            console.log('🚫 No trial data and no subscription - redirecting to profile');
-            router.push('/profile', { replace: true });
-            return;
-          } else {
-            console.log('✅ ACCESS GRANTED - Database subscription or secure storage subscription active');
-          }
+          console.log('⚠️ No trial data found and no subscription - redirecting to profile');
+          setHasAccess(false);
+          router.push('/profile', { replace: true });
+          return;
         }
       } catch (error) {
         console.error('❌ Error checking access:', error);
-        setHasAccess(false);
-        router.push('/profile', { replace: true });
+        
+        // If there's an error, check if user has subscription as fallback
+        try {
+          const isSubActive = localStorage.getItem('subscription_active') === 'true';
+          if (isSubActive) {
+            console.log('✅ FALLBACK: Granting access based on secure storage subscription');
+            setHasAccess(true);
+          } else {
+            console.log('🚫 FALLBACK: No subscription found, redirecting to profile');
+            setHasAccess(false);
+            router.push('/profile', { replace: true });
+          }
+        } catch (fallbackError) {
+          console.error('❌ Fallback check failed:', fallbackError);
+          setHasAccess(false);
+          router.push('/profile', { replace: true });
+        }
       } finally {
         setLoading(false);
       }
