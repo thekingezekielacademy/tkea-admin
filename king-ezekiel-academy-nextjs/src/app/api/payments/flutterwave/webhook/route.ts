@@ -68,12 +68,6 @@ export async function POST(request: NextRequest) {
         .from('user_subscriptions')
         .upsert(subscriptionData)
 
-      // Deactivate trial if exists
-      await adminClient
-        .from('user_trials')
-        .update({ is_active: false })
-        .eq('user_id', paymentData.meta?.user_id)
-
       console.log('Payment processed successfully:', paymentData.tx_ref)
     }
 

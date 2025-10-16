@@ -14,8 +14,8 @@ const Home: React.FC = () => {
     <>
       <SEOHead
         title="Digital Marketing Education Platform"
-        description="Transform your career with comprehensive digital marketing courses. Learn from industry experts and join 10,000+ successful students. Start your 7-day FREE trial today!"
-        keywords="digital marketing courses, online education, business growth, entrepreneurship, Nigeria, Africa, free trial, subscription"
+        description="Transform your career with comprehensive digital marketing courses. Learn from industry experts and join 10,000+ successful students. Access FREE courses forever or upgrade for premium content!"
+        keywords="digital marketing courses, online education, business growth, entrepreneurship, Nigeria, Africa, free courses, subscription"
         canonical="/"
         ogImage="/img/link previewer.png"
         ogType="website"
@@ -87,10 +87,10 @@ const Home: React.FC = () => {
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary-500 to-primary-700"></div>
             <div className="relative z-10">
               <h3 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4 sm:mb-6 text-primary-900">
-                Start your 7-day FREE trial today!
+                Start Learning for FREE Today!
               </h3>
               <p className="text-lg sm:text-xl text-primary-600 mb-6 sm:mb-8">
-                No commitment, cancel anytime. Join thousands of satisfied students.
+                Access free courses now, or subscribe for full access to all premium content.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center items-center">
                 <Link 

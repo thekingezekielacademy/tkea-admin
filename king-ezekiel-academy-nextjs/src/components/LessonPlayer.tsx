@@ -51,7 +51,6 @@ export default function LessonPlayer({
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [hasAccess, setHasAccess] = useState(false)
-  const [isTrialActive, setIsTrialActive] = useState(false)
   const [isSubscribed, setIsSubscribed] = useState(false)
 
   const supabase = createClient()
@@ -70,20 +69,6 @@ export default function LessonPlayer({
 
       if (courseData?.access_type === 'free') {
         // Free courses are accessible to all signed-in users
-        setHasAccess(true)
-        return
-      }
-
-      // Check trial status
-      const { data: trialData } = await supabase
-        .from('user_trials')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('is_active', true)
-        .single()
-
-      if (trialData) {
-        setIsTrialActive(true)
         setHasAccess(true)
         return
       }

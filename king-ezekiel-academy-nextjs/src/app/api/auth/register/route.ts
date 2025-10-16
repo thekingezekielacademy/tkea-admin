@@ -79,25 +79,6 @@ export async function POST(request: NextRequest) {
       // Don't fail registration if profile creation fails
     }
 
-    // Initialize 7-day free trial
-    try {
-      const { error: trialError } = await adminClient
-        .from('user_trials')
-        .insert({
-          user_id: data.user.id,
-          start_date: new Date().toISOString(),
-          end_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-          is_active: true,
-          created_at: new Date().toISOString(),
-        })
-
-      if (trialError) {
-        console.error('Trial initialization error:', trialError)
-      }
-    } catch (trialError) {
-      console.error('Trial initialization failed:', trialError)
-    }
-
     // If email confirmation is required, return success without session
     if (!data.session) {
       return NextResponse.json({

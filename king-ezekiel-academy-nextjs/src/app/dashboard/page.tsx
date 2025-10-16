@@ -6,12 +6,10 @@ import { FaFire, FaStar, FaCrown, FaArrowRight, FaPlay, FaBook, FaTrophy, FaUser
 import { useAuth } from '@/contexts/AuthContextOptimized';
 import { useSidebar } from '@/contexts/SidebarContext';
 import { createClient } from '@/lib/supabase/client';
-import TrialBanner from '@/components/TrialBanner';
 import NotificationPermission from '@/components/NotificationPermission';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import DashboardSkeleton from '@/components/DashboardSkeleton';
 import DashboardSidebar from '@/components/DashboardSidebar';
-import TrialManager from '@/utils/trialManager';
 import secureStorage from '@/utils/secureStorage';
 import { secureLog, secureError } from '@/utils/secureLogger';
 import { notificationService } from '@/utils/notificationService';
@@ -59,15 +57,6 @@ interface UserStats {
   class_ranking: string;
 }
 
-interface TrialStatus {
-  isActive: boolean;
-  startDate: string;
-  endDate: string;
-  daysRemaining: number;
-  totalDays: number;
-  isExpired: boolean;
-}
-
 export default function Dashboard() {
   const router = useRouter();
   const { user, isAdmin } = useAuth();
@@ -89,14 +78,6 @@ export default function Dashboard() {
     class_ranking: 'Top 35%'
   });
   
-  const [trialStatus, setTrialStatus] = useState<TrialStatus>({
-    isActive: false,
-    startDate: '',
-    endDate: '',
-    daysRemaining: 0,
-    totalDays: 0,
-    isExpired: true
-  });
   const [isLoading, setIsLoading] = useState(true);
   
   // Check subscription status - prioritize database over local storage
@@ -206,91 +187,6 @@ export default function Dashboard() {
       secureLog('Database not available, using secure storage fallback');
       const secureSubActive = secureStorage.isSubscriptionActive();
       setSubActive(secureSubActive);
-    }
-  }, [user?.id]);
-
-  // Fetch trial status
-  const fetchTrialStatus = useCallback(async () => {
-    if (!user?.id) return;
-    
-    try {
-      // First check localStorage for trial status
-      const localTrial = localStorage.getItem('user_trial_status');
-      
-      if (localTrial) {
-        try {
-          const parsedTrial = JSON.parse(localTrial);
-          // Use centralized calculation for consistency across devices
-          const daysRemaining = TrialManager.calculateDaysRemaining(parsedTrial.endDate);
-          
-          const updatedTrialStatus = {
-            ...parsedTrial,
-            daysRemaining,
-            isExpired: daysRemaining <= 0
-          };
-          
-          setTrialStatus(updatedTrialStatus);
-          secureLog('✅ Found trial status in localStorage:', updatedTrialStatus);
-          return;
-        } catch (parseError) {
-          secureLog('Failed to parse localStorage trial data');
-        }
-      }
-      
-      // If no localStorage trial, check if this is a new user and initialize trial
-      const userCreatedAt = user.created_at ? new Date(user.created_at) : new Date();
-      const daysSinceCreation = Math.ceil((Date.now() - userCreatedAt.getTime()) / (1000 * 60 * 60 * 24));
-      
-      // Clear any leftover subscription data from previous sessions for new users
-      if (daysSinceCreation <= 7) {
-        localStorage.removeItem('subscription_active');
-        localStorage.removeItem('subscription_id');
-        localStorage.removeItem('flutterwave_subscription_id');
-        localStorage.removeItem('flutterwave_customer_code');
-      }
-      
-      // If user is new (no created_at) or within 7 days, give them trial
-      if (!user.created_at || daysSinceCreation <= 7) {
-        const startDate = userCreatedAt;
-        const endDate = new Date(startDate);
-        endDate.setDate(startDate.getDate() + 6); // 6 days from start = 7 days total
-        endDate.setHours(23, 59, 59, 999); // End of day
-        
-        const now = new Date();
-        const todayStart = new Date(now);
-        todayStart.setHours(0, 0, 0, 0);
-        
-        const endDateStart = new Date(endDate);
-        endDateStart.setHours(0, 0, 0, 0);
-        
-        const timeDiff = endDateStart.getTime() - todayStart.getTime();
-        const daysRemaining = Math.max(0, Math.floor(timeDiff / (1000 * 60 * 60 * 24)));
-        
-        const newTrialStatus = {
-          isActive: daysRemaining > 0,
-          startDate: startDate.toISOString(),
-          endDate: endDate.toISOString(),
-          daysRemaining,
-          totalDays: 7,
-          isExpired: daysRemaining <= 0
-        };
-        
-        localStorage.setItem('user_trial_status', JSON.stringify(newTrialStatus));
-        setTrialStatus(newTrialStatus);
-        secureLog('✅ Initialized trial for new user:', newTrialStatus);
-      } else {
-        setTrialStatus({
-          isActive: false,
-          startDate: '',
-          endDate: '',
-          daysRemaining: 0,
-          totalDays: 0,
-          isExpired: true
-        });
-        secureLog('User is older than 7 days, no trial available');
-      }
-    } catch (error) {
-      secureError('Error fetching trial status:', error);
     }
   }, [user?.id]);
 
@@ -555,16 +451,8 @@ export default function Dashboard() {
         }
       }
 
-      // 4. Check for trial expiration
-      if (trialStatus.isActive && !subActive) {
-        const daysRemaining = trialStatus.daysRemaining;
-        if (daysRemaining <= 3 && daysRemaining > 0) {
-          await notificationService.sendTrialExpirationWarning(daysRemaining);
-        }
-      }
-
-      // 5. Check for premium upgrade opportunity
-      if (!subActive && !trialStatus.isActive) {
+      // Check for premium upgrade opportunity
+      if (!subActive) {
         const userEngagement = parseInt(localStorage.getItem('user_engagement_score') || '0');
         if (userEngagement > 10) {
           await notificationService.sendPremiumUpgradePrompt('unlimited courses and advanced features');
@@ -573,7 +461,7 @@ export default function Dashboard() {
     } catch (error) {
       secureError('Error checking notification triggers:', error);
     }
-  }, [currentCourse, userStats, trialStatus, subActive]);
+  }, [currentCourse, userStats, subActive]);
 
   const setupNotifications = useCallback(() => {
     if (userStats.xp > 0) {
@@ -594,7 +482,7 @@ export default function Dashboard() {
     };
 
     setupNotifications();
-  }, [user?.id, currentCourse, userStats, trialStatus, checkNotificationTriggers]);
+  }, [user?.id, currentCourse, userStats, checkNotificationTriggers]);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -616,7 +504,6 @@ export default function Dashboard() {
         fetchUserStats(),
         fetchCourseData(),
         fetchBadges(),
-        fetchTrialStatus(),
         fetchSubscriptionStatus()
       ]);
       setIsLoading(false);
@@ -799,13 +686,7 @@ export default function Dashboard() {
             </div>
           )}
 
-          {/* Trial Banner */}
-          {trialStatus.isActive && !subActive && (
-            <TrialBanner
-              trialStatus={trialStatus}
-              onSubscribe={handleSubscribe}
-            />
-          )}
+          {/* Trial system removed */}
 
           {/* XP System Info Banner */}
           <div className="mb-6 sm:mb-8 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl shadow-sm border border-blue-200 p-3 sm:p-4">
@@ -924,20 +805,20 @@ export default function Dashboard() {
                       <div className="mt-4">
                           <button
                           onClick={() => {
-                            if (trialStatus.isExpired && !subActive) {
+                            if (!subActive) {
                               router.push('/subscription');
                             } else {
                               router.push(`/course/${currentCourse.id}`);
                             }
                           }}
                           className={`w-full py-3 px-4 rounded-lg font-medium transition-all duration-200 flex items-center justify-center space-x-2 ${
-                            trialStatus.isExpired && !subActive
+                            !subActive
                               ? 'bg-gradient-to-r from-red-600 to-red-700 text-white hover:from-red-700 hover:to-red-800'
                               : 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700'
                           }`}
                         >
                           <span>
-                            {trialStatus.isExpired && !subActive ? '🔒 Upgrade to Access' : '🎬 Continue Learning'}
+                            {!subActive ? '🔒 Upgrade to Access' : '🎬 Continue Learning'}
                           </span>
                           <FaArrowRight className="text-sm" />
                           </button>
@@ -1020,19 +901,19 @@ export default function Dashboard() {
                           <div className="mt-3">
                             <button 
                               onClick={() => {
-                                if (trialStatus.isExpired && !subActive) {
+                                if (!subActive) {
                                   router.push('/subscription');
                                 } else {
                                   router.push('/courses');
                                 }
                               }} 
                               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                                trialStatus.isExpired && !subActive
+                                !subActive
                                   ? 'bg-red-600 text-white hover:bg-red-700'
                                   : 'bg-blue-600 text-white hover:bg-blue-700'
                               }`}
                             >
-                              {trialStatus.isExpired && !subActive ? 'Upgrade to Access' : 'Start Learning'}
+                              {!subActive ? 'Upgrade to Access' : 'Start Learning'}
                             </button>
                           </div>
                         </div>
@@ -1061,19 +942,19 @@ export default function Dashboard() {
                           <div className="mt-3">
                             <button 
                               onClick={() => {
-                                if (trialStatus.isExpired && !subActive) {
+                                if (!subActive) {
                                   router.push('/subscription');
                                 } else {
                                   router.push('/courses');
                                 }
                               }} 
                               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                                trialStatus.isExpired && !subActive
+                                !subActive
                                   ? 'bg-red-600 text-white hover:bg-red-700'
                                   : 'bg-blue-600 text-white hover:bg-blue-700'
                               }`}
                             >
-                              {trialStatus.isExpired && !subActive ? 'Upgrade to Access' : 'Start Learning'}
+                              {!subActive ? 'Upgrade to Access' : 'Start Learning'}
                             </button>
                           </div>
                         </div>
@@ -1145,19 +1026,11 @@ export default function Dashboard() {
                       </p>
                       <button 
                         onClick={() => {
-                          if (trialStatus.isExpired && !subActive) {
-                            router.push('/subscription');
-                          } else {
-                            router.push('/courses');
-                          }
+                          router.push('/courses');
                         }}
-                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                          trialStatus.isExpired && !subActive
-                            ? 'bg-gradient-to-r from-red-600 to-red-700 text-white hover:from-red-700 hover:to-red-800'
-                            : 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700'
-                        }`}
+                        className="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700"
                       >
-                        {trialStatus.isExpired && !subActive ? 'Upgrade to Access' : 'Explore Courses'}
+                        Explore Courses
                       </button>
                   </div>
                   </div>
@@ -1257,28 +1130,16 @@ export default function Dashboard() {
                         Manage Subscription
                       </button>
                     </>
-                  ) : trialStatus.isActive ? (
+                  ) : (
                     <>
-                      <div className="text-2xl font-bold text-orange-600 mb-2">Trial</div>
-                      <div className="text-lg font-semibold text-gray-900 mb-4">{trialStatus.daysRemaining} days left</div>
-                      <p className="text-sm text-gray-600 mb-4">Limited access during trial</p>
+                      <div className="text-2xl font-bold text-gray-600 mb-2">Free</div>
+                      <div className="text-lg font-semibold text-gray-900 mb-4">User</div>
+                      <p className="text-sm text-gray-600 mb-4">Access free courses</p>
                       <button
                         onClick={() => router.push('/subscription')}
                         className="w-full bg-orange-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-orange-700 transition-colors"
                       >
                         Upgrade Now
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <div className="text-2xl font-bold text-red-600 mb-2">Inactive</div>
-                      <div className="text-lg font-semibold text-gray-900 mb-4">No subscription</div>
-                      <p className="text-sm text-gray-600 mb-4">Limited access to courses</p>
-                      <button
-                        onClick={() => router.push('/subscription')}
-                        className="w-full bg-red-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-red-700 transition-colors"
-                      >
-                        Subscribe Now
                       </button>
                     </>
                   )}

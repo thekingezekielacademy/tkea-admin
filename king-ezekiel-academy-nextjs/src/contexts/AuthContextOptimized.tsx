@@ -3,7 +3,6 @@ import React, { useEffect, useState, useCallback, useRef, createContext, useCont
 import { secureLog } from '../utils/secureLogger';
 import { User, Session, AuthError, PostgrestError } from '@supabase/supabase-js';
 import { createClient } from '../lib/supabase/client';
-import TrialManager from '../utils/trialManager';
 
 interface UserProfile {
   id: string;
@@ -266,15 +265,6 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return { user: data.user, session: data.session, error: profileError };
       } else {
         // console.log('Profile created successfully');
-        
-        // Initialize 7-day free trial for new user
-        try {
-          await TrialManager.createTrial(data.user.id);
-          // console.log('✅ 7-day free trial initialized for new user');
-        } catch (trialError) {
-          console.error('Failed to initialize trial:', trialError);
-          // Don't fail signup if trial initialization fails
-        }
       }
     }
 
@@ -349,7 +339,6 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         
         // Clear additional auth-related cache entries
         const additionalClearKeys = [
-          'user_trial_status', 
           'user_subscription_data',
           'previous_level',
           'last_accessed_',

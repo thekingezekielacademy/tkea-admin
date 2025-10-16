@@ -4,8 +4,6 @@ import { useRouter, useParams } from 'next/navigation';
 import ProgressRing from '@/components/ProgressRing';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/contexts/AuthContextOptimized';
-import { TrialStatus } from '@/utils/trialManager';
-import TrialManager from '@/utils/trialManager';
 import secureStorage from '@/utils/secureStorage';
 
 const CourseOverview: React.FC = () => {
@@ -28,14 +26,6 @@ const CourseOverview: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [userProgress, setUserProgress] = useState<number>(0);
-  const [trialStatus, setTrialStatus] = useState<TrialStatus>({
-    isActive: false,
-    startDate: '',
-    endDate: '',
-    daysRemaining: 0,
-    totalDays: 0,
-    isExpired: true
-  });
   const [subActive, setSubActive] = useState<boolean>(false);
   const [databaseSubscriptionStatus, setDatabaseSubscriptionStatus] = useState<boolean>(false);
 
@@ -85,19 +75,6 @@ const CourseOverview: React.FC = () => {
     }
   }, [user?.id]);
 
-  // Check trial status
-  const checkTrialStatus = useCallback(async () => {
-    if (!user?.id) return;
-    
-    try {
-      const trialManager = new TrialManager();
-      const status = await trialManager.getTrialStatus();
-      setTrialStatus(status);
-      console.log('Trial status:', status);
-    } catch (err) {
-      console.error('Error checking trial status:', err);
-    }
-  }, [user?.id]);
 
   // Check local subscription status - FIXED to match CRA app logic
   const checkLocalSubscriptionStatus = useCallback(() => {
@@ -141,7 +118,7 @@ const CourseOverview: React.FC = () => {
           setUserProgress(0);
         } else {
           // Calculate progress from completed lessons (using status field)
-          const completedLessons = lessonProgress?.filter(p => p.status === 'completed').length || 0;
+          const completedLessons = lessonProgress?.filter((p: any) => p.status === 'completed').length || 0;
           const totalLessons = lessonProgress?.length || 1;
           const progress = Math.round((completedLessons / totalLessons) * 100);
           setUserProgress(progress);
@@ -226,29 +203,15 @@ const CourseOverview: React.FC = () => {
       setSubActive(isSubActive);
       console.log('📊 Secure storage subscription:', isSubActive);
       
-      // STEP 3: Check trial status 
-      const trialManager = new TrialManager();
-      const updatedTrialStatus = await trialManager.getTrialStatus();
-      console.log('📅 Trial status check result:', updatedTrialStatus);
+      // Check access based on subscription only
+      const hasAccess = hasDatabaseSubscription || isSubActive;
+      console.log('🔐 Has access:', hasAccess, '(DB Sub:', hasDatabaseSubscription, '| Secure Sub:', isSubActive, ')');
+      console.log('📊 State Updates - subActive:', isSubActive, 'databaseSubscriptionStatus:', hasDatabaseSubscription);
       
-      if (updatedTrialStatus) {
-        setTrialStatus(updatedTrialStatus);
-        
-        // EXACT 3-STATE LOGIC from CRA app
-        const hasAccess = updatedTrialStatus.isActive || hasDatabaseSubscription || isSubActive;
-        console.log('🔐 Has access:', hasAccess, '(Trial active:', updatedTrialStatus.isActive, '| DB Sub:', hasDatabaseSubscription, '| Secure Sub:', isSubActive, ')');
-        console.log('📊 State Updates - Updated trialStatus:', updatedTrialStatus, 'Updated subActive:', isSubActive, 'Updated databaseSubscriptionStatus:', hasDatabaseSubscription);
-        
-        if (!hasAccess) {
-          console.log('🚫 ACCESS DENIED - Trial expired and no subscription');
-        } else {
-          console.log('✅ ACCESS GRANTED - Trial active or subscription active');
-        }
+      if (!hasAccess) {
+        console.log('🚫 ACCESS DENIED - No subscription');
       } else {
-        // If no trial data, check subscription status
-        const hasAccess = hasDatabaseSubscription || isSubActive;
-        console.log('🔐 Access (no trial):', hasAccess, '(DB Sub:', hasDatabaseSubscription, '| Secure Sub:', isSubActive, ')');
-        console.log('📊 State Updates - No trial data found - Updated subActive:', isSubActive, 'Updated databaseSubscriptionStatus:', hasDatabaseSubscription);
+        console.log('✅ ACCESS GRANTED - Subscription active');
       }
     } catch (error) {
       console.error('❌ Error checking access:', error);
@@ -340,7 +303,7 @@ const CourseOverview: React.FC = () => {
     }
 
     // Check if user has access for non-free courses
-    const hasAccess = subActive || databaseSubscriptionStatus || trialStatus.isActive;
+    const hasAccess = subActive || databaseSubscriptionStatus;
     
     if (!hasAccess) {
       router.push('/subscription');
@@ -401,7 +364,7 @@ const CourseOverview: React.FC = () => {
     );
   }
 
-  const hasAccess = user && (course?.access_type === 'free' || subActive || databaseSubscriptionStatus || trialStatus.isActive);
+  const hasAccess = user && (course?.access_type === 'free' || subActive || databaseSubscriptionStatus);
   const totalDuration = course.course_videos?.reduce((total: number, video: any) => {
     const duration = video.duration;
     if (duration && duration.includes(':')) {
@@ -423,7 +386,7 @@ const CourseOverview: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50" suppressHydrationWarning>
+    <div className="min-h-screen bg-gray-50 pt-20" suppressHydrationWarning>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Course Header */}
         <div className="bg-white rounded-xl shadow-sm border p-8 mb-8" suppressHydrationWarning>
@@ -579,14 +542,6 @@ const CourseOverview: React.FC = () => {
                     <div className="flex items-center gap-2">
                       <div className="w-3 h-3 bg-green-500 rounded-full"></div>
                       <span className="text-sm text-gray-700">Active Subscription</span>
-                    </div>
-                  )}
-                  {trialStatus.isActive && (
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                      <span className="text-sm text-gray-700">
-                        Free Trial ({trialStatus.daysRemaining} days left)
-                      </span>
                     </div>
                   )}
                   {!hasAccess && (

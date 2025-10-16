@@ -17,14 +17,6 @@ export async function GET(request: NextRequest) {
 
     const adminClient = createAdminClient()
 
-    // Check trial status
-    const { data: trialData } = await adminClient
-      .from('user_trials')
-      .select('*')
-      .eq('user_id', user.id)
-      .eq('is_active', true)
-      .single()
-
     // Check subscription status
     const { data: subscriptionData } = await adminClient
       .from('user_subscriptions')
@@ -46,9 +38,8 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       user_id: user.id,
-      trial: trialData,
       subscription: subscriptionData,
-      has_access: !!(trialData || subscriptionData?.is_active),
+      has_access: !!(subscriptionData?.is_active),
     })
 
   } catch (error) {

@@ -82,12 +82,6 @@ export async function POST(request: NextRequest) {
       .from('user_subscriptions')
       .upsert(subscriptionData)
 
-    // Deactivate trial if exists
-    await adminClient
-      .from('user_trials')
-      .update({ is_active: false })
-      .eq('user_id', user.id)
-
     return NextResponse.json({
       success: true,
       subscription: subscriptionData,

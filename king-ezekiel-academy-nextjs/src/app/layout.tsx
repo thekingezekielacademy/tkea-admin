@@ -6,7 +6,7 @@ import './globals.css';
 export const metadata = {
   title: 'King Ezekiel Academy',
   description: 'Digital Marketing Education Platform',
-  keywords: 'digital marketing courses, online education, business growth, entrepreneurship, Nigeria, Africa, free trial, subscription',
+  keywords: 'digital marketing courses, online education, business growth, entrepreneurship, Nigeria, Africa, free courses, subscription',
   authors: [{ name: 'King Ezekiel' }],
   creator: 'King Ezekiel Academy',
   publisher: 'King Ezekiel Academy',
@@ -27,7 +27,7 @@ export const metadata = {
     url: 'https://thekingezekielacademy.com',
     siteName: 'King Ezekiel Academy',
     title: 'King Ezekiel Academy - Digital Marketing Education Platform',
-    description: 'Transform your career with comprehensive digital marketing courses. Learn from industry experts and join 10,000+ successful students. Start your 7-day FREE trial today!',
+    description: 'Transform your career with comprehensive digital marketing courses. Learn from industry experts and join 10,000+ successful students. Access FREE courses forever or upgrade for premium content!',
     images: [
       {
         url: 'https://thekingezekielacademy.com/img/link-previewer-optimized.jpg',
@@ -42,7 +42,7 @@ export const metadata = {
     site: '@kingezekielacademy',
     creator: '@kingezekielacademy',
     title: 'King Ezekiel Academy - Digital Marketing Education Platform',
-    description: 'Transform your career with comprehensive digital marketing courses. Learn from industry experts and join 10,000+ successful students. Start your 7-day FREE trial today!',
+    description: 'Transform your career with comprehensive digital marketing courses. Learn from industry experts and join 10,000+ successful students. Access FREE courses forever or upgrade for premium content!',
     images: ['https://thekingezekielacademy.com/img/link-previewer-optimized.jpg'],
   },
   appleWebApp: {
@@ -73,20 +73,40 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        {/* Facebook Pixel */}
+        {/* Facebook Pixel - Optimized async loading */}
         <script
           dangerouslySetInnerHTML={{
             __html: `
-              !function(f,b,e,v,n,t,s)
-              {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-              n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-              if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-              n.queue=[];t=b.createElement(e);t.async=!0;
-              t.src=v;s=b.getElementsByTagName(e)[0];
-              s.parentNode.insertBefore(t,s)}(window, document,'script',
-              'https://connect.facebook.net/en_US/fbevents.js');
-              fbq('init', '1991898708291767');
-              fbq('track', 'PageView');
+              (function() {
+                // Delay Facebook Pixel initialization to improve page load performance
+                if (typeof requestIdleCallback !== 'undefined') {
+                  requestIdleCallback(function() {
+                    !function(f,b,e,v,n,t,s)
+                    {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+                    n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+                    if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+                    n.queue=[];t=b.createElement(e);t.async=!0;
+                    t.src=v;s=b.getElementsByTagName(e)[0];
+                    s.parentNode.insertBefore(t,s)}(window, document,'script',
+                    'https://connect.facebook.net/en_US/fbevents.js');
+                    fbq('init', '1991898708291767');
+                    fbq('track', 'PageView');
+                  }, { timeout: 2000 });
+                } else {
+                  setTimeout(function() {
+                    !function(f,b,e,v,n,t,s)
+                    {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+                    n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+                    if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+                    n.queue=[];t=b.createElement(e);t.async=!0;
+                    t.src=v;s=b.getElementsByTagName(e)[0];
+                    s.parentNode.insertBefore(t,s)}(window, document,'script',
+                    'https://connect.facebook.net/en_US/fbevents.js');
+                    fbq('init', '1991898708291767');
+                    fbq('track', 'PageView');
+                  }, 2000);
+                }
+              })();
             `,
           }}
         />
@@ -98,58 +118,16 @@ export default function RootLayout({
         
         {/* Optimized font loading - only preconnect, no preload */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
         {/* Remove font preload to prevent unused resource warnings */}
         
         {/* Hydration script to clean extension attributes */}
         <HydrationScript />
       </head>
     <body suppressHydrationWarning={true}>
-      <div suppressHydrationWarning={true}>
-        <Providers>
-          {children}
-        </Providers>
-        {/* Script to clean extension attributes immediately */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              (function() {
-                // Clean extension attributes immediately to prevent hydration mismatches
-                const extensionAttributes = [
-                  'bis_skin_checked',
-                  'data-bis_skin_checked', 
-                  'data-bis_skin_checked_original',
-                  'data-bis_skin_checked_modified'
-                ];
-                
-                function cleanAttributes() {
-                  const elements = document.querySelectorAll('*');
-                  elements.forEach(element => {
-                    extensionAttributes.forEach(attr => {
-                      if (element.hasAttribute(attr)) {
-                        element.removeAttribute(attr);
-                      }
-                    });
-                  });
-                }
-                
-                // Clean immediately
-                cleanAttributes();
-                
-                // Clean on DOM ready
-                if (document.readyState === 'loading') {
-                  document.addEventListener('DOMContentLoaded', cleanAttributes, { once: true });
-                }
-                
-                // Clean periodically to catch dynamically added attributes
-                setTimeout(cleanAttributes, 0);
-                setTimeout(cleanAttributes, 100);
-                setTimeout(cleanAttributes, 500);
-              })();
-            `,
-          }}
-        />
-      </div>
+      <Providers>
+        {children}
+      </Providers>
     </body>
     </html>
   );

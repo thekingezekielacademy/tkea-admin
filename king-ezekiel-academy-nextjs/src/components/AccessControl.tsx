@@ -3,7 +3,6 @@ import React, { useEffect, useState } from 'react';
 import { useRouter, usePathname, useParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContextOptimized';
 import { createClient } from '@/lib/supabase/client';
-import TrialManager, { getTrialStatusStatic } from '@/utils/trialManager';
 
 interface AccessControlProps {
   children: React.ReactNode;
@@ -17,7 +16,6 @@ const AccessControl: React.FC<AccessControlProps> = ({ children, requireAccess =
   const params = useParams();
   const [hasAccess, setHasAccess] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [trialStatus, setTrialStatus] = useState<any>(null);
 
   useEffect(() => {
     const checkAccess = async () => {
@@ -83,58 +81,11 @@ const AccessControl: React.FC<AccessControlProps> = ({ children, requireAccess =
           return;
         }
 
-        // PRIORITY 3: Only check trial status if no subscription found
-        console.log('📅 No subscription found, checking trial status...');
-        let updatedTrialStatus = null;
-        
-        try {
-          // Debug: Check what TrialManager actually is
-          console.log('🔍 TrialManager object:', TrialManager);
-          console.log('🔍 TrialManager.getTrialStatusStatic:', typeof TrialManager.getTrialStatusStatic);
-          
-          if (typeof TrialManager.getTrialStatusStatic === 'function') {
-            updatedTrialStatus = await TrialManager.getTrialStatusStatic(user.id);
-            console.log('📅 Trial status check result:', updatedTrialStatus);
-          } else if (typeof getTrialStatusStatic === 'function') {
-            console.log('⚠️ TrialManager.getTrialStatusStatic is not a function, trying individual export');
-            updatedTrialStatus = await getTrialStatusStatic(user.id);
-            console.log('📅 Trial status check result (individual export):', updatedTrialStatus);
-          } else {
-            console.log('⚠️ Both static methods failed, trying instance method');
-            // Fallback to instance method
-            const trialManager = new TrialManager();
-            updatedTrialStatus = await trialManager.getTrialStatus();
-            console.log('📅 Trial status check result (instance):', updatedTrialStatus);
-          }
-        } catch (trialError) {
-          console.log('⚠️ Trial status check failed:', trialError);
-          // Don't fail completely if trial check fails
-        }
-
-        if (updatedTrialStatus) {
-          setTrialStatus(updatedTrialStatus);
-          console.log('📊 Trial status updated:', updatedTrialStatus);
-
-          // Check if trial is still active
-          const trialActive = updatedTrialStatus.isActive && updatedTrialStatus.daysRemaining > 0;
-          console.log('🔐 Trial access:', trialActive, '(Active:', updatedTrialStatus.isActive, '| Days remaining:', updatedTrialStatus.daysRemaining, ')');
-
-          setHasAccess(trialActive);
-
-          // Redirect if NO access (trial expired)
-          if (!trialActive) {
-            console.log('🚫 ACCESS DENIED - Trial expired and no subscription - redirecting to profile');
-            router.push('/profile', { replace: true });
-            return;
-          } else {
-            console.log('✅ ACCESS GRANTED - Trial active');
-          }
-        } else {
-          console.log('⚠️ No trial data found and no subscription - redirecting to profile');
-          setHasAccess(false);
-          router.push('/profile', { replace: true });
-          return;
-        }
+        // No subscription found - deny access and redirect
+        console.log('🚫 ACCESS DENIED - No subscription - redirecting to profile');
+        setHasAccess(false);
+        router.push('/profile', { replace: true });
+        return;
       } catch (error) {
         console.error('❌ Error checking access:', error);
         

@@ -6,7 +6,6 @@ import { useAuth } from '@/contexts/AuthContextOptimized';
 import { useSidebar } from '@/contexts/SidebarContext';
 import { createClient } from '@/lib/supabase/client';
 import secureStorage from '@/utils/secureStorage';
-import TrialManager from '@/utils/trialManager';
 import { shuffleCoursesDefault } from '@/utils/courseShuffle';
 import DashboardSidebar from '@/components/DashboardSidebar';
 import SEOHead from '@/components/SEO/SEOHead';
@@ -50,7 +49,6 @@ const Courses: React.FC = () => {
   const [hasMore, setHasMore] = useState(true);
   const [currentPage, setCurrentPage] = useState(0);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [hasTrialAccess, setHasTrialAccess] = useState(false);
   const [databaseSubscriptionStatus, setDatabaseSubscriptionStatus] = useState<boolean>(false);
   const COURSES_PER_PAGE = 10;
   const router = useRouter();
@@ -103,123 +101,10 @@ const Courses: React.FC = () => {
     }
   };
 
-  // Check if user has trial access with explicit subscription status
-  const checkTrialAccessWithStatus = async (isSubscribed: boolean) => {
-    if (!user?.id) return;
-    
-    // CRITICAL: Database subscription status takes priority over local storage
-    // If database shows active subscription, user should NOT have trial access
-    if (isSubscribed) {
-      console.log('✅ User has ACTIVE subscription from database, no trial access needed');
-      setHasTrialAccess(false);
-      
-      // Update local storage to match database status
-      secureStorage.setSubscriptionActive(true);
-      
-      // Clear any existing trial data from localStorage since user is subscribed
-      const existingTrial = localStorage.getItem('user_trial_status');
-      if (existingTrial) {
-        console.log('🗑️ Clearing localStorage trial data for subscribed user');
-        localStorage.removeItem('user_trial_status');
-      }
-      return;
-    }
-    
-    // Only check local storage if database doesn't show active subscription
-    const hasLocalSubscription = secureStorage.isSubscriptionActive();
-    if (hasLocalSubscription) {
-      console.log('✅ User has active subscription from local storage, no trial access needed');
-      setHasTrialAccess(false);
-      return;
-    }
-    
-    try {
-      // First check localStorage for trial status
-      const localTrial = localStorage.getItem('user_trial_status');
-      
-      if (localTrial) {
-        try {
-          const parsedTrial = JSON.parse(localTrial);
-          // Use centralized calculation for consistency across devices
-          const daysRemaining = TrialManager.calculateDaysRemaining(parsedTrial.endDate);
-          
-          const hasAccess = parsedTrial.isActive && daysRemaining > 0;
-          setHasTrialAccess(hasAccess);
-          console.log('🔍 Trial access check from localStorage:', { hasAccess, daysRemaining, parsedTrial });
-          return;
-        } catch (parseError) {
-          console.log('Failed to parse localStorage trial data');
-        }
-      }
-      
-      // If no localStorage trial, check if this is a new user and initialize trial
-      // For new users, assume they're within 7 days if no created_at or if created_at is recent
-      const userCreatedAt = user.created_at ? new Date(user.created_at) : new Date();
-      const daysSinceCreation = Math.ceil((Date.now() - userCreatedAt.getTime()) / (1000 * 60 * 60 * 24));
-      
-      // If user is new (no created_at) or within 7 days, give them trial
-      if (!user.created_at || daysSinceCreation <= 7) {
-        // This is a new user within 7 days, initialize trial
-        const startDate = userCreatedAt;
-        // Set end date to exactly 7 days from start (midnight to midnight)
-        const endDate = new Date(startDate);
-        endDate.setDate(startDate.getDate() + 6); // 6 days from start = 7 days total
-        endDate.setHours(23, 59, 59, 999); // End of day
-        
-        // Use centralized calculation for consistency across devices
-        const daysRemaining = TrialManager.calculateDaysRemaining(endDate.toISOString());
-        
-        const newTrialStatus = {
-          isActive: daysRemaining > 0, // Only active if days remaining > 0
-          startDate: startDate.toISOString(),
-          endDate: endDate.toISOString(),
-          daysRemaining,
-          isExpired: daysRemaining <= 0
-        };
-        
-        // Save to localStorage
-        localStorage.setItem('user_trial_status', JSON.stringify(newTrialStatus));
-        setHasTrialAccess(newTrialStatus.isActive && daysRemaining > 0);
-        console.log('✅ Initialized trial for new user in Courses:', { newTrialStatus, daysRemaining, hasAccess: newTrialStatus.isActive && daysRemaining > 0 });
-      } else {
-        // User is older than 7 days, no trial
-        setHasTrialAccess(false);
-        console.log('User is older than 7 days, no trial available');
-      }
-      
-      // Try database query as well (for when table exists)
-      try {
-        const supabase = createClient();
-        const trialAccess = await TrialManager.hasTrialAccess(user.id);
-        // Only set trial access if user is NOT subscribed
-        if (!isSubscribed) {
-          setHasTrialAccess(trialAccess);
-          console.log('Trial access check from database:', trialAccess);
-        }
-      } catch (dbError) {
-        console.log('Database table user_trials not available yet');
-      }
-    } catch (error) {
-      console.error('Error in checkTrialAccess:', error);
-      setHasTrialAccess(false);
-    }
-  };
-
-  // Check subscription status and trial access when user changes
+  // Check subscription status when user changes
   useEffect(() => {
     if (user) {
-      // console.log('🔍 User changed, checking subscription and trial access:', { userId: user.id, email: user.email });
-      // Check database subscription status first, then trial access
-      const checkSubscriptionAndTrial = async () => {
-        const isSubscribed = await checkDatabaseSubscription();
-        // Pass the subscription status directly to avoid race conditions
-        await checkTrialAccessWithStatus(isSubscribed || false);
-      };
-      
-      checkSubscriptionAndTrial();
-    } else {
-      // console.log('🔍 No user, resetting trial access');
-      setHasTrialAccess(false);
+      checkDatabaseSubscription();
     }
   }, [user]);
 
@@ -410,20 +295,15 @@ const Courses: React.FC = () => {
   // Fetch courses on component mount only
   useEffect(() => {
     fetchCourses(0, false);
-    if (user?.id) {
-      checkTrialAccessWithStatus(databaseSubscriptionStatus);
-    }
   }, [user?.id]); // Run when user changes
 
-  // Debug logging for trial access
+  // Debug logging for subscription access
   useEffect(() => {
-    // console.log('🔍 Trial access debug:', {
+    // console.log('🔍 Subscription access debug:', {
     //   user: user?.id,
-    //   hasTrialAccess,
-    //   subActive: databaseSubscriptionStatus || secureStorage.isSubscriptionActive(),
-    //   trialStatus: localStorage.getItem('user_trial_status')
+    //   subActive: databaseSubscriptionStatus || secureStorage.isSubscriptionActive()
     // });
-  }, [user?.id, hasTrialAccess, databaseSubscriptionStatus]);
+  }, [user?.id, databaseSubscriptionStatus]);
 
   // Watch for filter changes and refetch courses
   useEffect(() => {
@@ -522,12 +402,12 @@ const Courses: React.FC = () => {
       return;
     }
     
-    // For paid courses, check subscription/trial status
-    if (user && (databaseSubscriptionStatus || hasTrialAccess)) {
-      // User is signed in and has active subscription OR trial access - go to course overview
+    // For paid courses, check subscription status
+    if (user && databaseSubscriptionStatus) {
+      // User is signed in and has active subscription - go to course overview
       router.push(`/course/${courseId}/overview`);
     } else if (user) {
-      // User is signed in but no active subscription or trial - go to subscription page to upgrade
+      // User is signed in but no active subscription - go to subscription page to upgrade
       router.push('/subscription');
     } else {
       // User is not signed in - go to signup page to start free
@@ -542,9 +422,6 @@ const Courses: React.FC = () => {
     }
     if (user && databaseSubscriptionStatus) {
       return 'Full Access';
-    }
-    if (user && hasTrialAccess) {
-      return 'Trial Access';
     }
     return 'Membership Access';
   };
@@ -573,7 +450,7 @@ const Courses: React.FC = () => {
       return;
     }
 
-    if (user && (databaseSubscriptionStatus || hasTrialAccess)) {
+    if (user && databaseSubscriptionStatus) {
       // User has access - go to course
       handleCourseClick(course.id);
     } else if (user) {
@@ -723,46 +600,19 @@ const Courses: React.FC = () => {
                   </div>
                 )}
 
-                {/* Free Trial Active - Blue */}
-                {!databaseSubscriptionStatus && hasTrialAccess && (
-                  <div className="bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl sm:rounded-2xl p-4 sm:p-6 text-white shadow-xl border border-blue-400">
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
-                      <div className="flex items-center space-x-3 sm:space-x-4">
-                        <div className="bg-white/20 p-2 sm:p-3 rounded-full flex-shrink-0">
-                          <svg className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <h3 className="text-base sm:text-lg md:text-2xl font-bold mb-1">⏰ Free Trial Active</h3>
-                          <p className="text-blue-100 text-xs sm:text-sm md:text-lg leading-relaxed">Enjoy full access for a limited time - upgrade to continue learning</p>
-                        </div>
-                      </div>
-                      <div className="text-center sm:text-right">
-                        <button 
-                          onClick={() => router.push('/subscription')}
-                          className="bg-white text-blue-600 px-3 sm:px-4 md:px-6 py-2 sm:py-3 rounded-full font-semibold hover:bg-blue-50 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 text-xs sm:text-sm md:text-base"
-                        >
-                          Upgrade Now
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Trial Expired - Orange */}
-                {!databaseSubscriptionStatus && !hasTrialAccess && (
+                {/* No Subscription - Upgrade Banner */}
+                {!databaseSubscriptionStatus && (
                   <div className="bg-gradient-to-r from-orange-500 to-red-500 rounded-xl sm:rounded-2xl p-4 sm:p-6 text-white shadow-xl border border-orange-400">
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
                       <div className="flex items-center space-x-3 sm:space-x-4">
                         <div className="bg-white/20 p-2 sm:p-3 rounded-full flex-shrink-0">
                           <svg className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                           </svg>
                         </div>
                         <div className="min-w-0 flex-1">
-                          <h3 className="text-base sm:text-lg md:text-2xl font-bold mb-1">⚠️ Trial Expired</h3>
-                          <p className="text-orange-100 text-xs sm:text-sm md:text-lg leading-relaxed">Your free trial has ended - subscribe to continue learning</p>
+                          <h3 className="text-base sm:text-lg md:text-2xl font-bold mb-1">🔐 Unlock Premium Courses</h3>
+                          <p className="text-orange-100 text-xs sm:text-sm md:text-lg leading-relaxed">Subscribe now to access all membership courses</p>
                         </div>
                       </div>
                       <div className="text-center sm:text-right">
@@ -800,7 +650,7 @@ const Courses: React.FC = () => {
                         onClick={() => router.push('/signup')}
                         className="bg-white text-purple-600 px-3 sm:px-4 md:px-6 py-2 sm:py-3 rounded-full font-semibold hover:bg-purple-50 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 text-xs sm:text-sm md:text-base"
                       >
-                        Start Free!
+                        Start Learning!
                       </button>
                     </div>
                   </div>
@@ -1022,7 +872,7 @@ const Courses: React.FC = () => {
                                 ? 'bg-blue-600 text-white hover:bg-blue-700' 
                                 : course.access_type === 'free'
                                   ? 'bg-primary-600 text-white hover:bg-primary-700'
-                                  : user && (databaseSubscriptionStatus || hasTrialAccess)
+                                  : user && databaseSubscriptionStatus
                                     ? 'bg-primary-600 text-white hover:bg-primary-700'
                                     : user 
                                       ? 'bg-red-600 text-white hover:bg-red-700'
@@ -1037,9 +887,9 @@ const Courses: React.FC = () => {
                             ) : course.access_type === 'free' ? (
                               <>
                                 <FaUnlock className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
-                                <span className="truncate">{user ? 'Start Learning' : 'Start Free!'}</span>
+                                <span className="truncate">Start Learning</span>
                               </>
-                            ) : user && (databaseSubscriptionStatus || hasTrialAccess) ? (
+                            ) : user && databaseSubscriptionStatus ? (
                               <>
                                 <FaUnlock className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
                                 <span className="truncate">Start Learning</span>
@@ -1052,7 +902,7 @@ const Courses: React.FC = () => {
                             ) : (
                               <>
                                 <FaLock className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
-                                <span className="truncate">Start Free!</span>
+                                <span className="truncate">Start Learning!</span>
                               </>
                             )}
                           </button>

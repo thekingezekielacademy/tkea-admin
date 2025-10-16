@@ -6,7 +6,7 @@ export default function HydrationScript() {
       dangerouslySetInnerHTML={{
       __html: `
         (function() {
-          // AGGRESSIVE CLEANING: Prevent extension attributes with maximum effectiveness
+          // Optimized extension attribute cleaning - performance-focused
           const extensionAttributes = [
             'bis_skin_checked',
             'data-bis_skin_checked', 
@@ -14,40 +14,46 @@ export default function HydrationScript() {
             'data-bis_skin_checked_modified'
           ];
           
+          let cleanupScheduled = false;
+          
           function removeExtensionAttributes() {
-            // Clean all elements more aggressively
-            const allElements = document.querySelectorAll('*');
-            allElements.forEach(element => {
+            // Use requestIdleCallback for better performance when available
+            if ('requestIdleCallback' in window) {
+              requestIdleCallback(() => cleanExtensionAttrs(), { timeout: 500 });
+            } else {
+              cleanExtensionAttrs();
+            }
+          }
+          
+          function cleanExtensionAttrs() {
+            cleanupScheduled = false;
+            // More efficient: only query elements that might have these attributes
+            const elements = document.querySelectorAll('[bis_skin_checked], [data-bis_skin_checked], [data-bis_skin_checked_original], [data-bis_skin_checked_modified]');
+            elements.forEach(element => {
               extensionAttributes.forEach(attr => {
-                if (element.hasAttribute(attr)) {
-                  element.removeAttribute(attr);
-                }
+                element.removeAttribute(attr);
               });
             });
           }
           
-          // Execute immediately and on DOM ready
-          removeExtensionAttributes();
-          
+          // Execute only once on DOM ready
           if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', removeExtensionAttributes, { once: true });
+          } else {
+            removeExtensionAttributes();
           }
           
-          // More frequent cleaning to catch extension attributes
-          setTimeout(removeExtensionAttributes, 0);
-          setTimeout(removeExtensionAttributes, 50);
-          setTimeout(removeExtensionAttributes, 100);
-          setTimeout(removeExtensionAttributes, 200);
-          setTimeout(removeExtensionAttributes, 500);
-          
-          // Aggressive observer with immediate cleaning
+          // Optimized observer - debounced to prevent excessive cleaning
           if (typeof MutationObserver !== 'undefined') {
             const observer = new MutationObserver(() => {
-              removeExtensionAttributes();
+              if (!cleanupScheduled) {
+                cleanupScheduled = true;
+                removeExtensionAttributes();
+              }
             });
             
             try {
-              observer.observe(document, { 
+              observer.observe(document.documentElement, { 
                 attributes: true, 
                 subtree: true,
                 attributeFilter: extensionAttributes
@@ -56,9 +62,6 @@ export default function HydrationScript() {
               // Silently fail if observer setup fails
             }
           }
-          
-          // Additional cleanup on window load
-          window.addEventListener('load', removeExtensionAttributes);
         })();
         `,
       }}
