@@ -30,8 +30,8 @@ BEGIN
   SELECT EXISTS(
     SELECT 1 FROM user_subscriptions 
     WHERE user_id = user_uuid 
-      AND is_active = true 
-      AND end_date > NOW()
+      AND status = 'active'
+      AND (next_payment_date > NOW() OR next_payment_date IS NULL)
   ) INTO has_subscription;
   
   RETURN has_subscription;
@@ -56,9 +56,10 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 -- 1. Removed has_trial variable declaration
 -- 2. Removed trial check query (lines that checked user_trials table)
 -- 3. Removed IF has_trial THEN RETURN TRUE block
--- 4. Function now only checks:
+-- 4. Updated subscription check to use 'status' column (not 'is_active')
+-- 5. Function now only checks:
 --    a. Is the course free? → Grant access
---    b. Does user have active subscription? → Grant access
+--    b. Does user have active subscription (status = 'active')? → Grant access
 --    c. Otherwise → Deny access
 --
 -- The user_trials table still exists but is no longer used
