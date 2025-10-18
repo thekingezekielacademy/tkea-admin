@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContextOptimized';
 import { secureLog, secureError } from '@/utils/secureLogger';
+import { useHubSpot } from '@/hooks/useHubSpot';
 
 const SignUp: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -18,6 +19,7 @@ const SignUp: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const { signUp } = useAuth();
   const router = useRouter();
+  const { identifyUser, trackCustomBehavioralEvent } = useHubSpot();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
@@ -79,6 +81,25 @@ const SignUp: React.FC = () => {
         setError(error.message || 'Failed to create account');
       } else if (user) {
         secureLog(`Signup successful, user created: ${user?.id || 'None'}`);
+        
+        // Track signup in HubSpot (non-blocking)
+        try {
+          const nameParts = formData.name.split(' ');
+          identifyUser(formData.email, {
+            firstname: nameParts[0],
+            lastname: nameParts.slice(1).join(' ') || '',
+            signup_date: new Date().toISOString(),
+            user_id: user.id
+          });
+          
+          trackCustomBehavioralEvent('user_signup', {
+            signup_method: 'email',
+            user_id: user.id,
+            email_confirmed: !!user.email_confirmed_at
+          });
+        } catch (hubspotError) {
+          secureLog('HubSpot tracking error (non-critical):', hubspotError);
+        }
         
         // Subscribe user to newsletter (non-blocking)
         try {
