@@ -6,10 +6,14 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "sync-hubspot": "npx ts-node scripts/sync-users-to-hubspot.ts",
+    "export-emails": "node scripts/export-emails.js",
+    "export-hubspot": "node scripts/export-emails-hubspot-friendly.js"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
+    "@hubspot/api-client": "^13.4.0",
     "@radix-ui/react-slot": "^1.2.3",
     "@supabase/auth-helpers-nextjs": "^0.10.0",
     "@supabase/ssr": "^0.7.0",
