@@ -7,10 +7,11 @@ import { useSidebar } from '@/contexts/SidebarContext';
 import { createClient } from '@/lib/supabase/client';
 import secureStorage from '@/utils/secureStorage';
 import { shuffleCoursesDefault } from '@/utils/courseShuffle';
-import DashboardSidebar from '@/components/DashboardSidebar';
 import SEOHead from '@/components/SEO/SEOHead';
 import { generateCourseStructuredData } from '@/components/SEO/StructuredData';
 import { useFacebookPixel } from '@/hooks/useFacebookPixel';
+import FixedFlutterwavePayment from '@/components/FixedFlutterwavePayment';
+// Sidebar is now managed globally by Providers.tsx - no need to import here
 
 interface Course {
   id: string;
@@ -50,6 +51,7 @@ const Courses: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(0);
   const [loadingMore, setLoadingMore] = useState(false);
   const [databaseSubscriptionStatus, setDatabaseSubscriptionStatus] = useState<boolean>(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
   const COURSES_PER_PAGE = 10;
   const router = useRouter();
   const { user } = useAuth();
@@ -407,8 +409,8 @@ const Courses: React.FC = () => {
       // User is signed in and has active subscription - go to course overview
       router.push(`/course/${courseId}/overview`);
     } else if (user) {
-      // User is signed in but no active subscription - go to subscription page to upgrade
-      router.push('/subscription');
+      // User is signed in but no active subscription - show payment modal
+      setShowPaymentModal(true);
     } else {
       // User is not signed in - go to signup page to start free
       router.push('/signup');
@@ -454,12 +456,21 @@ const Courses: React.FC = () => {
       // User has access - go to course
       handleCourseClick(course.id);
     } else if (user) {
-      // User needs to upgrade
-      router.push('/subscription');
+      // User needs to upgrade - show payment modal
+      setShowPaymentModal(true);
     } else {
       // Guest user - go to signup
       router.push('/signup');
     }
+  };
+
+  // Handle successful subscription payment
+  const handlePaymentSuccess = async () => {
+    setShowPaymentModal(false);
+    // Refresh subscription status
+    await checkDatabaseSubscription();
+    // Show success message
+    alert('Subscription successful! You now have access to all premium courses.');
   };
 
   // Define all available categories with proper labels
@@ -535,8 +546,6 @@ const Courses: React.FC = () => {
         title="Digital Marketing Courses - King Ezekiel Academy"
         description="Master digital marketing with our comprehensive courses designed for beginners and professionals. Learn SEO, social media, e-commerce, and more from industry experts."
       />
-      {/* Only show sidebar for authenticated users */}
-      {user && <DashboardSidebar />}
       
       {/* Main Content */}
       <div className={getMainContentClasses()} style={{ minHeight: '100vh' }}>
@@ -617,7 +626,7 @@ const Courses: React.FC = () => {
                       </div>
                       <div className="text-center sm:text-right">
                         <button 
-                          onClick={() => router.push('/subscription')}
+                          onClick={() => setShowPaymentModal(true)}
                           className="bg-white text-orange-600 px-3 sm:px-4 md:px-6 py-2 sm:py-3 rounded-full font-semibold hover:bg-orange-50 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 text-xs sm:text-sm md:text-base"
                         >
                           Subscribe Now
@@ -951,6 +960,15 @@ const Courses: React.FC = () => {
           </div>
         </div>
         </div>
+
+        {/* Subscription Payment Modal */}
+        <FixedFlutterwavePayment
+          isOpen={showPaymentModal}
+          onClose={() => setShowPaymentModal(false)}
+          onSuccess={handlePaymentSuccess}
+          planName="Monthly Membership"
+          amount={2500}
+        />
     </div>
   );
 };

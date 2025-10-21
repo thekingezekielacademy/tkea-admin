@@ -78,17 +78,22 @@ const PaymentVerification: React.FC = () => {
 
         setMessage('Verifying payment with Flutterwave...');
 
-        // For now, simulate successful verification
-        // In production, you would call your Flutterwave verification service here
-        setMessage('Saving payment to database...');
+        // Call Flutterwave verification API
+        const response = await fetch('/api/payments/flutterwave/verify', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ tx_ref }),
+        });
 
-        // Simulate database operations
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        const result = await response.json();
 
-        setMessage('Creating your subscription...');
+        if (!response.ok || !result.success) {
+          throw new Error(result.error || 'Payment verification failed');
+        }
 
-        // Simulate subscription creation
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        console.log('✅ Payment verified successfully:', result);
 
         // Update user's subscription status in secure storage
         if (user?.id && typeof window !== 'undefined') {

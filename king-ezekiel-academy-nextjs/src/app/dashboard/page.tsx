@@ -14,6 +14,7 @@ import secureStorage from '@/utils/secureStorage';
 import { secureLog, secureError } from '@/utils/secureLogger';
 import { notificationService } from '@/utils/notificationService';
 import { CourseProgressService } from '@/services/courseProgressService';
+import FixedFlutterwavePayment from '@/components/FixedFlutterwavePayment';
 
 // Types matching the original CRA implementation
 interface Course {
@@ -91,6 +92,9 @@ export default function Dashboard() {
     setRefreshTrigger(prev => prev + 1);
   }, []);
   
+  // Payment modal state
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  
   // Calculate level based on XP (every 1000 XP = 1 level)
   const calculateLevel = (xp: number): number => {
     return Math.floor(xp / 1000) + 1;
@@ -141,7 +145,8 @@ export default function Dashboard() {
         .select('*')
         .eq('user_id', user.id)
         .eq('status', 'active')
-        .eq('is_active', true)
+        // Note: is_active column may not exist yet, removed to prevent errors
+        // After running fix_console_errors.sql, you can add: .eq('is_active', true)
         .order('created_at', { ascending: false })
         .limit(1);
       
@@ -590,6 +595,23 @@ export default function Dashboard() {
   const handleCourseClick = (courseId: string) => {
     router.push(`/course/${courseId}`);
   };
+  
+  // Handle payment success
+  const handlePaymentSuccess = useCallback(async () => {
+    // Refresh subscription status
+    await fetchSubscriptionStatus();
+    
+    // Close the modal
+    setShowPaymentModal(false);
+    
+    // Show success message
+    if (typeof window !== 'undefined') {
+      window.alert('Payment successful! Your subscription is now active. 🎉');
+    }
+    
+    // Optionally refresh course data to update access
+    refreshCourseData();
+  }, [fetchSubscriptionStatus, refreshCourseData]);
 
   // Loading state with skeleton
   if (isLoading) {
@@ -806,7 +828,7 @@ export default function Dashboard() {
                           <button
                           onClick={() => {
                             if (!subActive) {
-                              router.push('/subscription');
+                              setShowPaymentModal(true);
                             } else {
                               router.push(`/course/${currentCourse.id}`);
                             }
@@ -902,7 +924,7 @@ export default function Dashboard() {
                             <button 
                               onClick={() => {
                                 if (!subActive) {
-                                  router.push('/subscription');
+                                  setShowPaymentModal(true);
                                 } else {
                                   router.push('/courses');
                                 }
@@ -943,7 +965,7 @@ export default function Dashboard() {
                             <button 
                               onClick={() => {
                                 if (!subActive) {
-                                  router.push('/subscription');
+                                  setShowPaymentModal(true);
                                 } else {
                                   router.push('/courses');
                                 }
@@ -1172,6 +1194,15 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
+        
+        {/* Payment Modal */}
+        <FixedFlutterwavePayment
+          isOpen={showPaymentModal}
+          onClose={() => setShowPaymentModal(false)}
+          onSuccess={handlePaymentSuccess}
+          planName="Monthly Membership"
+          amount={2500}
+        />
       </div>
     </ErrorBoundary>
   );

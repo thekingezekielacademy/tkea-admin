@@ -1,80 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Target Safari 12+ and iOS in-app browsers
-  target: 'serverless',
+  // Modern Next.js configuration for Safari 12+ and iOS in-app browsers
   
-  // Enable experimental features for legacy browser support
-  experimental: {
-    legacyBrowsers: true,
-    browsersListForSwc: true
-  },
-
-  // Babel configuration for Safari 12+ compatibility
-  babel: {
-    presets: [
-      [
-        'next/babel',
-        {
-          'preset-env': {
-            targets: {
-              safari: '12',
-              ios_saf: '12',
-              chrome: '60',
-              firefox: '60',
-              edge: '79'
-            },
-            useBuiltIns: 'entry',
-            corejs: 3,
-            modules: false
-          }
-        }
-      ]
-    ],
-    plugins: [
-      // Polyfills for ES2020+ features
-      '@babel/plugin-proposal-optional-chaining',
-      '@babel/plugin-proposal-nullish-coalescing-operator',
-      '@babel/plugin-proposal-numeric-separator',
-      '@babel/plugin-proposal-logical-assignment-operators',
-      '@babel/plugin-proposal-nullish-coalescing-operator',
-      '@babel/plugin-proposal-optional-chaining',
-      
-      // Regex named groups support
-      '@babel/plugin-proposal-named-capturing-groups-regex',
-      
-      // Object rest/spread for Safari 12
-      '@babel/plugin-proposal-object-rest-spread',
-      
-      // Class properties
-      '@babel/plugin-proposal-class-properties',
-      
-      // Private methods
-      '@babel/plugin-proposal-private-methods',
-      '@babel/plugin-proposal-private-property-in-object',
-      
-      // Dynamic imports
-      '@babel/plugin-syntax-dynamic-import',
-      
-      // Decorators
-      ['@babel/plugin-proposal-decorators', { legacy: true }],
-      
-      // Transform runtime for polyfills
-      [
-        '@babel/plugin-transform-runtime',
-        {
-          corejs: 3,
-          helpers: true,
-          regenerator: true,
-          useESModules: false
-        }
-      ]
-    ]
-  },
-
-  // SWC configuration - disable minifier for Safari compatibility
-  swcMinify: false,
+  // SWC minification enabled (faster and more reliable than Terser)
+  swcMinify: true,
   
-  // Webpack configuration for additional Safari support
+  // Webpack configuration
   webpack: (config, { dev, isServer }) => {
     // Add polyfills for Node.js modules in browser
     if (!isServer) {
@@ -95,55 +26,33 @@ const nextConfig = {
       };
     }
 
-    // Ensure proper transpilation for Safari 12
-    config.module.rules.push({
-      test: /\.(js|jsx|ts|tsx)$/,
-      exclude: /node_modules/,
-      use: {
-        loader: 'babel-loader',
-        options: {
-          presets: [
-            [
-              '@babel/preset-env',
-              {
-                targets: {
-                  safari: '12',
-                  ios_saf: '12',
-                  chrome: '60',
-                  firefox: '60',
-                  edge: '79'
-                },
-                useBuiltIns: 'entry',
-                corejs: 3,
-                modules: false
-              }
-            ],
-            '@babel/preset-react',
-            '@babel/preset-typescript'
-          ],
-          plugins: [
-            '@babel/plugin-proposal-optional-chaining',
-            '@babel/plugin-proposal-nullish-coalescing-operator',
-            '@babel/plugin-proposal-named-capturing-groups-regex',
-            '@babel/plugin-proposal-object-rest-spread',
-            '@babel/plugin-proposal-class-properties',
-            '@babel/plugin-proposal-private-methods',
-            '@babel/plugin-proposal-private-property-in-object',
-            '@babel/plugin-syntax-dynamic-import',
-            ['@babel/plugin-proposal-decorators', { legacy: true }],
-            [
-              '@babel/plugin-transform-runtime',
-              {
-                corejs: 3,
-                helpers: true,
-                regenerator: true,
-                useESModules: false
-              }
-            ]
-          ]
+    // Optimize chunk loading
+    config.optimization = {
+      ...config.optimization,
+      moduleIds: 'deterministic',
+      runtimeChunk: 'single',
+      splitChunks: {
+        chunks: 'all',
+        cacheGroups: {
+          default: false,
+          vendors: false,
+          vendor: {
+            name: 'vendor',
+            chunks: 'all',
+            test: /node_modules/,
+            priority: 20
+          },
+          common: {
+            name: 'common',
+            minChunks: 2,
+            chunks: 'all',
+            priority: 10,
+            reuseExistingChunk: true,
+            enforce: true
+          }
         }
       }
-    });
+    };
 
     return config;
   },
@@ -179,7 +88,7 @@ const nextConfig = {
     ]
   },
 
-  // Compiler options for Safari compatibility
+  // Compiler options
   compiler: {
     // Remove console logs in production
     removeConsole: process.env.NODE_ENV === 'production',
@@ -188,11 +97,17 @@ const nextConfig = {
   // Output configuration
   output: 'standalone',
   
-  // Disable static optimization for better Safari compatibility
+  // Trailing slash configuration
   trailingSlash: false,
   
-  // Enable source maps for debugging
-  productionBrowserSourceMaps: true
+  // Enable source maps for debugging (disable in production for better performance)
+  productionBrowserSourceMaps: false,
+  
+  // Image optimization
+  images: {
+    domains: ['thekingezekielacademy.com'],
+    formats: ['image/webp', 'image/avif']
+  }
 }
 
 module.exports = nextConfig

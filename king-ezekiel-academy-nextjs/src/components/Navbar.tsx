@@ -68,6 +68,12 @@ const Navbar: React.FC = () => {
   };
 
   const { isExpanded, isMobile } = useSidebar();
+  const [sidebarState, setSidebarState] = useState({ isExpanded, isMobile });
+  
+  // Force re-render when sidebar state changes
+  useEffect(() => {
+    setSidebarState({ isExpanded, isMobile });
+  }, [isExpanded, isMobile]);
   
   // Check if we're on a page with sidebar
   const hasSidebar = ['/dashboard', '/dashboard-new', '/profile', '/achievements', '/subscription', '/diploma', '/certificates', '/assessments', '/resume', '/rooms', '/affiliates'].includes(pathname) || 
@@ -76,12 +82,12 @@ const Navbar: React.FC = () => {
   // Calculate dynamic margin and width based on sidebar state (desktop only)
   const getSidebarMargin = () => {
     if (!hasSidebar) return 'w-full'; // No sidebar, full width
-    if (isMobile) return 'ml-0 w-full'; // Mobile: no margin, let sidebar overlay
-    return isExpanded ? 'ml-64 w-[calc(100%-16rem)]' : 'ml-16 w-[calc(100%-4rem)]'; // Desktop: dynamic width
+    if (sidebarState.isMobile) return 'ml-0 w-full'; // Mobile: no margin, let sidebar overlay
+    return sidebarState.isExpanded ? 'ml-64 w-[calc(100%-16rem)]' : 'ml-16 w-[calc(100%-4rem)]'; // Desktop: dynamic width
   };
 
   return (
-    <nav className={`bg-white shadow-lg fixed top-0 z-50 transition-all duration-300 ease-in-out ${getSidebarMargin()}`} suppressHydrationWarning>
+    <nav className={`bg-white shadow-lg fixed top-0 z-40 transition-all duration-300 ease-in-out ${getSidebarMargin()}`} suppressHydrationWarning>
       <div className={`${hasSidebar ? 'w-full' : 'max-w-7xl mx-auto'} px-4 sm:px-6 lg:px-8`} suppressHydrationWarning>
         <div className="flex justify-between h-16" suppressHydrationWarning>
           {/* Logo and User Info (Left Side) */}

@@ -136,14 +136,18 @@ const DashboardSidebar: React.FC = () => {
 
   return (
     <>
-      {/* Sidebar - Always visible, no toggle needed */}
+      {/* Mobile backdrop overlay - WordPress style */}
+      {isMobile && isExpanded && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-[9996] transition-opacity duration-300"
+          onClick={toggleSidebar}
+          style={{ top: '4rem' }} // Start below navbar
+        />
+      )}
+      
+      {/* Sidebar - WordPress-style sticky sidebar */}
       <div 
-        className={`dashboard-sidebar-always-visible bg-white border-r border-gray-200 shadow-lg ${isCollapsed ? 'collapsed' : 'expanded'} ${isMobile ? (isExpanded ? 'mobile-open' : 'mobile-hidden') : ''}`}
-        style={{ 
-          width: isCollapsed ? '4rem' : '16rem',
-          overflowY: 'auto',
-          transition: 'width 0.3s ease-in-out'
-        }}
+        className={`dashboard-sidebar-always-visible ${isCollapsed ? 'collapsed' : 'expanded'} ${isMobile ? (isExpanded ? 'mobile-open' : 'mobile-hidden') : ''}`}
       >
         {/* Header */}
         <div className={`flex items-center border-b border-gray-200 ${isCollapsed ? 'justify-start p-2' : 'justify-between p-4'}`}>
@@ -165,17 +169,17 @@ const DashboardSidebar: React.FC = () => {
         </div>
 
         {/* Navigation Items */}
-        <nav className="flex-1 overflow-y-auto py-4" style={{ maxHeight: 'calc(100vh - 160px)' }}>
+        <nav className="flex-1 py-4 overflow-y-auto">
           <ul className="space-y-1">
             {sidebarItems.map((item) => (
               <li key={item.id}>
                 <button
                   onClick={() => handleItemClick(item)}
                   className={`
-                    w-full flex items-center ${isCollapsed ? 'px-2 py-3 justify-center' : 'px-3 py-3'} rounded-lg transition-all duration-200 text-left cursor-pointer sidebar-item
+                    w-full flex items-center ${isCollapsed ? 'px-2 py-3 justify-center' : 'px-4 py-3'} transition-all duration-200 text-left cursor-pointer sidebar-item
                     ${isActive(item.path) 
-                      ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-600 active' 
-                      : 'text-gray-700 hover:bg-gray-50 hover:transform hover:translate-x-1'
+                      ? 'active' 
+                      : 'text-gray-700'
                     }
                   `}
                   title={isCollapsed ? item.label : undefined}
@@ -213,7 +217,7 @@ const DashboardSidebar: React.FC = () => {
           <button
             onClick={handleLogout}
             className={`
-              w-full flex items-center ${isCollapsed ? 'px-2 py-3 justify-start' : 'px-3 py-3'} rounded-lg transition-all duration-200 text-left text-red-600 hover:bg-red-50 hover:transform hover:translate-x-1
+              w-full flex items-center ${isCollapsed ? 'px-2 py-3 justify-center' : 'px-4 py-3'} transition-all duration-200 text-left text-red-600 hover:bg-red-50 sidebar-item border-left-transparent
             `}
             title={isCollapsed ? 'Logout' : undefined}
           >

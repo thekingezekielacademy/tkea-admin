@@ -19,12 +19,26 @@ export class CourseProgressService {
       console.log('🔍 Calculating course progress for user:', userId);
       
       // Try to use the new view first, fallback to manual calculation
-      const { data: progressSummary, error: viewError } = await supabase
-        .from('user_progress_summary')
-        .select('*')
-        .eq('user_id', userId);
+      let progressSummary = null;
+      let viewError = null;
+      
+      try {
+        const result = await supabase
+          .from('user_progress_summary')
+          .select('*')
+          .eq('user_id', userId);
+        progressSummary = result.data;
+        viewError = result.error;
+      } catch (error) {
+        // Silently handle view not existing
+        viewError = error;
+      }
 
-      console.log('📊 Progress summary from view:', { progressSummary, viewError });
+      if (viewError) {
+        console.log('📊 Progress view not available, using manual calculation');
+      } else {
+        console.log('📊 Progress summary from view:', { progressSummary });
+      }
 
       if (!viewError && progressSummary && progressSummary.length > 0) {
         return progressSummary.map((item: any) => ({
@@ -196,14 +210,29 @@ export class CourseProgressService {
     try {
       console.log('🔍 Getting user course progress for user:', userId);
       
-      // Try to use the new view first
-      const { data: progressSummary, error: viewError } = await supabase
-        .from('user_progress_summary')
-        .select('*')
-        .eq('user_id', userId)
-        .order('last_accessed', { ascending: false });
+      // Try to use the new view first (will be created by fix_console_errors.sql)
+      // Silently fall back to manual calculation if view doesn't exist
+      let progressSummary = null;
+      let viewError = null;
+      
+      try {
+        const result = await supabase
+          .from('user_progress_summary')
+          .select('*')
+          .eq('user_id', userId)
+          .order('last_accessed', { ascending: false });
+        progressSummary = result.data;
+        viewError = result.error;
+      } catch (error) {
+        // Silently handle view not existing
+        viewError = error;
+      }
 
-      console.log('📊 Progress summary for dashboard:', { progressSummary, viewError });
+      if (viewError) {
+        console.log('📊 Progress view not available (run fix_console_errors.sql to create it), using fallback');
+      } else {
+        console.log('📊 Progress summary for dashboard:', { progressSummary });
+      }
 
       if (!viewError && progressSummary && progressSummary.length > 0) {
         return progressSummary.map((item: any) => ({

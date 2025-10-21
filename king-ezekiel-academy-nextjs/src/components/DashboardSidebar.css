@@ -1,4 +1,4 @@
-/* Dashboard Sidebar Styles - Matching original CRA implementation */
+/* Dashboard Sidebar Styles - WordPress-style sticky sidebar */
 .dashboard-sidebar {
   position: fixed !important;
   left: 0 !important;
@@ -11,14 +11,34 @@
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
-/* Force fixed positioning for sidebar always visible */
+/* Force fixed positioning for sidebar always visible - WordPress style */
 .dashboard-sidebar-always-visible {
   position: fixed !important;
   top: 0 !important;
   left: 0 !important;
+  bottom: 0 !important;
   height: 100vh !important;
-  z-index: 9999 !important;
+  width: 16rem !important; /* Default expanded width */
+  z-index: 9998 !important; /* Below navbar (z-index: 9999) */
   transform: translateZ(0) !important;
+  will-change: transform, width !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+  background: #ffffff !important;
+  border-right: 1px solid #ddd !important;
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05) !important;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* Collapsed state - WordPress style (icon-only) */
+.dashboard-sidebar-always-visible.collapsed {
+  width: 4rem !important; /* 64px - collapsed width */
+}
+
+/* Expanded state - WordPress style (full width with text) */
+.dashboard-sidebar-always-visible.expanded {
+  width: 16rem !important; /* 256px - expanded width */
 }
 
 .dashboard-sidebar.collapsed {
@@ -29,8 +49,10 @@
   width: 16rem;
 }
 
+/* Main content area adjusts based on sidebar state */
 .dashboard-main {
-  transition: margin-left 0.3s ease-in-out;
+  transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  min-height: 100vh;
 }
 
 .dashboard-main.with-sidebar {
@@ -41,7 +63,7 @@
   margin-left: 4rem;
 }
 
-/* Mobile responsive */
+/* Mobile responsive - WordPress style */
 @media (max-width: 768px) {
   .dashboard-sidebar {
     transform: translateX(-100%);
@@ -55,34 +77,29 @@
     margin-left: 0 !important;
   }
   
+  /* Mobile sidebar - fixed and sticky */
   .dashboard-sidebar-always-visible {
-    display: block !important;
-    transform: translateX(-100%);
-    z-index: 99999 !important; /* Much higher than navbar z-50 */
+    display: flex !important;
+    flex-direction: column !important;
     position: fixed !important;
     top: 4rem !important; /* Start below navbar (64px) */
     left: 0 !important;
+    bottom: 0 !important;
     height: calc(100vh - 4rem) !important; /* Full height minus navbar */
+    transform: translateX(-100%) !important; /* Hidden by default */
+    z-index: 9997 !important; /* Above content, below navbar */
+    overflow: hidden !important;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
   }
   
+  /* Mobile sidebar when open */
   .dashboard-sidebar-always-visible.mobile-open {
-    display: block !important;
-    transform: translateX(0);
-    z-index: 99999 !important; /* Much higher than navbar z-50 */
-    position: fixed !important;
-    top: 4rem !important; /* Start below navbar (64px) */
-    left: 0 !important;
-    height: calc(100vh - 4rem) !important; /* Full height minus navbar */
+    transform: translateX(0) !important; /* Slide in */
   }
   
+  /* Mobile sidebar when hidden */
   .dashboard-sidebar-always-visible.mobile-hidden {
-    display: block !important;
-    transform: translateX(-100%);
-    position: fixed !important;
-    top: 4rem !important; /* Start below navbar (64px) */
-    left: 0 !important;
-    height: calc(100vh - 4rem) !important; /* Full height minus navbar */
-    z-index: 99999 !important; /* Much higher than navbar z-50 */
+    transform: translateX(-100%) !important; /* Slide out */
   }
   
   /* Mobile collapsed state - respect JavaScript width */
@@ -106,33 +123,115 @@
   }
 }
 
-/* Sidebar item hover effects */
+/* Sidebar item hover effects - WordPress style */
 .sidebar-item {
-  transition: all 0.2s ease-in-out;
+  position: relative;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  border-left: 4px solid transparent;
 }
 
 .sidebar-item:hover {
-  transform: translateX(4px);
+  background-color: #f6f7f7 !important;
+  border-left-color: #0073aa;
 }
 
+/* Active state - WordPress blue left border */
 .sidebar-item.active {
-  background-color: rgb(239 246 255);
-  color: rgb(29 78 216);
-  border-right: 2px solid rgb(37 99 235);
+  background-color: #e5f5fa !important;
+  color: #0073aa !important;
+  border-left-color: #0073aa !important;
+  font-weight: 600;
 }
 
-/* Coming soon badge */
+/* Collapsed sidebar hover - show tooltip */
+.dashboard-sidebar-always-visible.collapsed .sidebar-item {
+  position: relative;
+  justify-content: center !important;
+}
+
+.dashboard-sidebar-always-visible.collapsed .sidebar-item:hover::after {
+  content: attr(title);
+  position: absolute;
+  left: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  margin-left: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background-color: #1e293b;
+  color: white;
+  font-size: 0.875rem;
+  white-space: nowrap;
+  border-radius: 0.375rem;
+  z-index: 1000;
+  pointer-events: none;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* Icon styling */
+.sidebar-item svg {
+  flex-shrink: 0;
+  transition: color 0.15s ease;
+}
+
+.sidebar-item:hover svg,
+.sidebar-item.active svg {
+  color: #0073aa;
+}
+
+/* Coming soon badge - WordPress style */
 .coming-soon-badge {
-  background-color: rgb(219 234 254);
-  color: rgb(234 88 12);
-  border: 1px solid rgb(251 146 60);
+  background-color: #fff3cd;
+  color: #856404;
+  border: 1px solid #ffc107;
   border-radius: 9999px;
-  padding: 0.25rem 0.5rem;
-  font-size: 0.75rem;
-  font-weight: 500;
+  padding: 0.125rem 0.5rem;
+  font-size: 0.625rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
-/* Smooth transitions */
-* {
-  transition: margin-left 0.3s ease-in-out;
+/* Scrollbar styling for sidebar navigation - WordPress style */
+.dashboard-sidebar-always-visible nav::-webkit-scrollbar {
+  width: 6px;
+}
+
+.dashboard-sidebar-always-visible nav::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.dashboard-sidebar-always-visible nav::-webkit-scrollbar-thumb {
+  background: #cbd5e0;
+  border-radius: 3px;
+}
+
+.dashboard-sidebar-always-visible nav::-webkit-scrollbar-thumb:hover {
+  background: #a0aec0;
+}
+
+/* Override for logout button - no left border */
+.sidebar-item.border-left-transparent {
+  border-left-color: transparent !important;
+}
+
+.sidebar-item.border-left-transparent:hover {
+  border-left-color: transparent !important;
+  background-color: #fee2e2 !important;
+}
+
+/* Header styling - WordPress style */
+.dashboard-sidebar-always-visible .border-b {
+  background: linear-gradient(to bottom, #ffffff, #f9fafb);
+}
+
+/* Toggle button styling - WordPress style */
+.dashboard-sidebar-always-visible button[title*="Collapse"],
+.dashboard-sidebar-always-visible button[title*="Expand"] {
+  transition: all 0.2s ease;
+}
+
+.dashboard-sidebar-always-visible button[title*="Collapse"]:hover,
+.dashboard-sidebar-always-visible button[title*="Expand"]:hover {
+  background-color: #e5e7eb;
+  transform: scale(1.05);
 }

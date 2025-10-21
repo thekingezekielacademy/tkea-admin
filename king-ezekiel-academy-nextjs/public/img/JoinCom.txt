@@ -1,0 +1,31 @@
+ 
+Create a page for Join Whatsapp Community
+
+
+A landing page, let it have :
+
+- Headline: Something like the 25+ Digital Skills Mastery 
+- body(explaining the importance os the king ezekiel academy)
+- Trusted by 10,000+ students
+24/7 Access
+
+Buttons: 
+- button Join Whatsapp Community - link @https://chat.whatsapp.com/EuQ5053EKiK8CPahCXGCfq?mode=ems_copy_t 
+- button Pay With Flutter - Instant access
+
+Discover Our Newest Courses
+- Stay ahead with our latest course additions, designed to keep you at the forefront of digital innovation.
+Display 10 random courses, that change everytime users refresh the page - So they see new courses
+
+Buttons:
+- button Join Whatsapp Community - link @https://chat.whatsapp.com/EuQ5053EKiK8CPahCXGCfq?mode=ems_copy_t 
+- button Pay With Flutter - Instant access
+
+- Why Choose King Ezekiel Academy?
+- Mini Meet the Team
+
+Buttons:
+- button Join Whatsapp Community - link @https://chat.whatsapp.com/EuQ5053EKiK8CPahCXGCfq?mode=ems_copy_t 
+- button Pay With Flutter - Instant access
+
+
