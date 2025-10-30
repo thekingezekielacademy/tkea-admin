@@ -67,6 +67,20 @@ const Subscription: React.FC = () => {
   const [cancelReason, setCancelReason] = useState('');
   const [cancelFeedback, setCancelFeedback] = useState('');
 
+  // Cache versioning to invalidate old cached values that used wrong normalization
+  const SUBSCRIPTION_CACHE_VERSION = 2;
+
+  // Normalize amount robustly across legacy data:
+  // - If clearly kobo (very large and divisible by 100), convert to naira
+  // - If clearly underpriced legacy divide (e.g., 25), upscale to expected price tier
+  // - Else, keep as-is
+  const normalizeAmount = (raw: number) => {
+    if (typeof raw !== 'number' || isNaN(raw)) return 0;
+    if (raw >= 100000 && raw % 100 === 0) return Math.round(raw / 100);
+    if (raw > 0 && raw < 100) return raw * 100; // fix legacy 25 → 2500
+    return raw;
+  };
+
   // Calculate dynamic margin based on sidebar state
   const getSidebarMargin = () => {
     if (isMobile) return 'ml-16'; // Mobile always uses collapsed width
@@ -87,7 +101,8 @@ const Subscription: React.FC = () => {
           // Only use cache if it's recent (less than 5 minutes old)
           const cacheTime = parsedCache.cacheTimestamp || 0;
           const now = Date.now();
-          if (now - cacheTime < 5 * 60 * 1000) { // 5 minutes
+          const cacheVersionOk = parsedCache.cacheVersion === SUBSCRIPTION_CACHE_VERSION;
+          if (cacheVersionOk && (now - cacheTime < 5 * 60 * 1000)) { // 5 minutes
             setSubscription(parsedCache);
             setLoading(false);
             return;
@@ -127,7 +142,7 @@ const Subscription: React.FC = () => {
           id: subscriptionData.id,
           status: subscriptionData.status,
           plan_name: subscriptionData.plan_name,
-          amount: subscriptionData.amount >= 1000 ? Math.round(subscriptionData.amount / 100) : subscriptionData.amount,
+          amount: normalizeAmount(subscriptionData.amount),
           currency: subscriptionData.currency || 'NGN',
           billing_cycle: 'monthly' as const,
           start_date: subscriptionData.created_at,
@@ -138,7 +153,8 @@ const Subscription: React.FC = () => {
           created_at: subscriptionData.created_at,
           updated_at: subscriptionData.updated_at,
           cancel_at_period_end: subscriptionData.cancel_at_period_end || false,
-          cacheTimestamp: Date.now() // Add cache timestamp
+          cacheTimestamp: Date.now(), // Add cache timestamp
+          cacheVersion: SUBSCRIPTION_CACHE_VERSION
         };
 
         setSubscription(subscription);
@@ -254,60 +270,71 @@ const Subscription: React.FC = () => {
     }
   };
 
+  // Helper: check if subscription is expired by date
+  const isExpired = (endDateStr?: string) => {
+    if (!endDateStr) return false;
+    const now = new Date();
+    const end = new Date(endDateStr);
+    return end < now;
+  };
+
+  // Updated access color logic
   const getAccessColor = (status: string, cancelAtPeriodEnd?: boolean, endDate?: string) => {
-    // For active subscriptions, always show active access
+    if (status === 'active' && isExpired(endDate)) {
+      return 'bg-gray-100 text-gray-800 border-gray-200'; // Treat as expired
+    }
     if (status === 'active') {
       if (cancelAtPeriodEnd) {
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200'; // Grace period (canceled but still active)
+        return 'bg-yellow-100 text-yellow-800 border-yellow-200'; // Grace
       } else {
-        return 'bg-green-100 text-green-800 border-green-200'; // Full access
+        return 'bg-green-100 text-green-800 border-green-200'; // Full
       }
     } else if (status === 'trialing') {
-      return 'bg-blue-100 text-blue-800 border-blue-200'; // Trial access
-    } else if (status === 'canceled') {
-      return 'bg-red-100 text-red-800 border-red-200'; // Canceled
-    } else if (status === 'expired') {
-      return 'bg-gray-100 text-gray-800 border-gray-200'; // Expired
+      return 'bg-blue-100 text-blue-800 border-blue-200';
+    } else if (status === 'canceled' || status === 'expired') {
+      return 'bg-gray-100 text-gray-800 border-gray-200';
     } else {
-      return 'bg-gray-100 text-gray-800 border-gray-200'; // Default
+      return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
 
+  // Updated icon logic
   const getAccessIcon = (status: string, cancelAtPeriodEnd?: boolean, endDate?: string) => {
-    // For active subscriptions, always show active access
+    if (status === 'active' && isExpired(endDate)) {
+      return <FaTimesCircle className="w-4 h-4" />;
+    }
     if (status === 'active') {
       if (cancelAtPeriodEnd) {
-        return <FaClock className="w-4 h-4" />; // Grace period (canceled but still active)
+        return <FaClock className="w-4 h-4" />;
       } else {
-        return <FaCheckCircle className="w-4 h-4" />; // Full access
+        return <FaCheckCircle className="w-4 h-4" />;
       }
     } else if (status === 'trialing') {
-      return <FaClock className="w-4 h-4" />; // Trial access
-    } else if (status === 'canceled') {
-      return <FaTimesCircle className="w-4 h-4" />; // Canceled
-    } else if (status === 'expired') {
-      return <FaTimesCircle className="w-4 h-4" />; // Expired
+      return <FaClock className="w-4 h-4" />;
     } else {
-      return <FaTimesCircle className="w-4 h-4" />; // Default
+      return <FaTimesCircle className="w-4 h-4" />;
     }
   };
 
+  // Updated text logic
   const getAccessText = (status: string, cancelAtPeriodEnd?: boolean, endDate?: string) => {
-    // For active subscriptions, always show active access
+    if (status === 'active' && isExpired(endDate)) {
+      return 'Expired';
+    }
     if (status === 'active') {
       if (cancelAtPeriodEnd) {
-        return 'Grace Period'; // Canceled but still active
+        return 'Grace Period';
       } else {
-        return 'Active'; // Full access
+        return 'Active';
       }
     } else if (status === 'trialing') {
-      return 'Trial'; // Trial access
+      return 'Trial';
     } else if (status === 'canceled') {
-      return 'Canceled'; // Canceled
+      return 'Canceled';
     } else if (status === 'expired') {
-      return 'Expired'; // Expired
+      return 'Expired';
     } else {
-      return 'Unknown'; // Default
+      return 'Unknown';
     }
   };
 
@@ -923,7 +950,7 @@ const Subscription: React.FC = () => {
                   </div>
 
                   <div className="flex flex-col sm:flex-row gap-3 mt-6">
-                    {!subscription.cancel_at_period_end && subscription.status === 'active' && (
+                    {!subscription.cancel_at_period_end && subscription.status === 'active' && !isExpired(subscription.end_date) && (
                       <button
                         onClick={handleCancelSubscription}
                         className="text-red-600 hover:text-red-700 text-sm font-medium px-4 py-2 border border-red-200 rounded-lg hover:bg-red-50 transition-colors"
@@ -931,13 +958,22 @@ const Subscription: React.FC = () => {
                         Cancel Subscription
                       </button>
                     )}
-                    
-                    <button
-                      onClick={() => setShowDirectPayment(true)}
-                      className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
-                    >
-                      Update Payment Method
-                    </button>
+                    {/* Renew Subscription if expired */}
+                    {(subscription.status === 'active' && isExpired(subscription.end_date)) || subscription.status === 'expired' ? (
+                      <button
+                        onClick={() => setShowDirectPayment(true)}
+                        className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                      >
+                        Renew Subscription
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => setShowDirectPayment(true)}
+                        className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                      >
+                        Update Payment Method
+                      </button>
+                    )}
                   </div>
                 </>
               ) : (

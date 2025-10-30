@@ -259,3 +259,4 @@ The sidebar now behaves **exactly like WordPress sidebars**:
 **All issues resolved!** 🚀
 
 
+

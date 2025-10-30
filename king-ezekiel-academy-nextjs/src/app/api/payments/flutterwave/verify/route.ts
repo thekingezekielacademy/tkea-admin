@@ -64,23 +64,60 @@ export async function POST(request: NextRequest) {
       })
       .eq('tx_ref', tx_ref)
 
-    // Create subscription
-    const planId = payment.meta?.plan_id || 'monthly'
+    // Create subscription with correct schema
     const subscriptionData = {
       user_id: user.id,
-      plan_id: planId,
+      flutterwave_subscription_id: payment.tx_ref || payment.id,
+      flutterwave_customer_code: payment.customer?.customer_code || user.id,
+      flutterwave_tx_id: payment.id,
+      flutterwave_tx_ref: payment.tx_ref,
+      plan_name: 'Monthly Membership',
       status: 'active',
+      amount: Math.round(payment.amount * 100), // Convert to kobo
+      currency: payment.currency || 'NGN',
       start_date: new Date().toISOString(),
       end_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days
-      payment_id: payment.id,
-      amount: payment.amount,
-      currency: payment.currency,
+      is_active: true,
       created_at: new Date().toISOString(),
     }
 
-    await adminClient
+    // Try to insert subscription, handle duplicates gracefully
+    const { data: subscriptionResult, error: subscriptionError } = await adminClient
       .from('user_subscriptions')
-      .upsert(subscriptionData)
+      .upsert(subscriptionData, { 
+        onConflict: 'user_id',
+        ignoreDuplicates: false 
+      })
+      .select()
+
+    if (subscriptionError) {
+      console.error('Subscription creation error:', subscriptionError)
+      // Don't fail the entire request if subscription creation fails
+      // The payment was successful, so we should still return success
+    }
+
+    // Also create payment record
+    const paymentRecord = {
+      user_id: user.id,
+      flutterwave_transaction_id: payment.id,
+      flutterwave_reference: payment.tx_ref,
+      flutterwave_tx_id: payment.id,
+      flutterwave_tx_ref: payment.tx_ref,
+      amount: Math.round(payment.amount * 100), // Convert to kobo
+      currency: payment.currency || 'NGN',
+      status: 'success',
+      payment_method: 'card',
+      paid_at: payment.created_at || new Date().toISOString(),
+      created_at: new Date().toISOString(),
+    }
+
+    const { error: paymentError } = await adminClient
+      .from('subscription_payments')
+      .insert(paymentRecord)
+
+    if (paymentError) {
+      console.error('Payment record creation error:', paymentError)
+    }
 
     return NextResponse.json({
       success: true,

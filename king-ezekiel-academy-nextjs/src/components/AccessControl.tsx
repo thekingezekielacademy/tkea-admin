@@ -57,7 +57,9 @@ const AccessControl: React.FC<AccessControlProps> = ({ children, requireAccess =
 
         // PRIORITY 1: Check database subscription status first (most reliable)
         const supabase = createClient();
-        const { data: subscriptionData, error: subscriptionError } = await supabase
+        
+        // First try with is_active column (if it exists)
+        let { data: subscriptionData, error: subscriptionError } = await supabase
           .from('user_subscriptions')
           .select('*')
           .eq('user_id', user.id)
@@ -66,25 +68,52 @@ const AccessControl: React.FC<AccessControlProps> = ({ children, requireAccess =
           .order('created_at', { ascending: false })
           .limit(1);
 
-        const hasDatabaseSubscription = !subscriptionError && subscriptionData && subscriptionData.length > 0;
-        console.log('📊 Database subscription status:', hasDatabaseSubscription);
+        // If is_active column doesn't exist, fallback to status-only check
+        if (subscriptionError && subscriptionError.message?.includes('is_active')) {
+          console.log('⚠️ is_active column not found, falling back to status-only check');
+          const fallbackResult = await supabase
+            .from('user_subscriptions')
+            .select('*')
+            .eq('user_id', user.id)
+            .eq('status', 'active')
+            .order('created_at', { ascending: false })
+            .limit(1);
+          
+          subscriptionData = fallbackResult.data;
+          subscriptionError = fallbackResult.error;
+        }
 
-        // PRIORITY 2: Check secure storage subscription
-        const isSubActive = localStorage.getItem('subscription_active') === 'true';
-        console.log('📊 Secure storage subscription status:', isSubActive);
+        // Improved access check: Only grant access if subscription's end_date/next_payment_date is in the future
+        let userSub = null;
+        if (subscriptionData && subscriptionData.length > 0) {
+          userSub = subscriptionData[0];
+        }
 
-        // If user has either type of subscription, grant access immediately
-        if (hasDatabaseSubscription || isSubActive) {
-          console.log('✅ ACCESS GRANTED - Active subscription found (DB or secure storage)');
+        let isValid = false;
+        const now = new Date();
+        if (userSub) {
+          // Prefer end_date (or next_payment_date) and ensure it's in the future
+          if (userSub.end_date && new Date(userSub.end_date) > now) {
+            isValid = true;
+          } else if (userSub.next_payment_date && new Date(userSub.next_payment_date) > now) {
+            isValid = true;
+          }
+        }
+
+        if (isValid) {
           setHasAccess(true);
           setLoading(false);
           return;
         }
 
-        // No subscription found - deny access and redirect
-        console.log('🚫 ACCESS DENIED - No subscription - redirecting to profile');
+        // DEBUG: Log localStorage status, but do NOT use for granting access
+        const isSubActive = localStorage.getItem('subscription_active') === 'true';
+        console.log('[AccessControl] DB subscription valid:', isValid, 'LocalStorage flag:', isSubActive);
+
+        // No valid subscription found - deny access and redirect
         setHasAccess(false);
-        router.push('/profile', { replace: true });
+        setLoading(false);
+        router.push('/profile');
         return;
       } catch (error) {
         console.error('❌ Error checking access:', error);
@@ -98,12 +127,12 @@ const AccessControl: React.FC<AccessControlProps> = ({ children, requireAccess =
           } else {
             console.log('🚫 FALLBACK: No subscription found, redirecting to profile');
             setHasAccess(false);
-            router.push('/profile', { replace: true });
+            router.push('/profile');
           }
         } catch (fallbackError) {
           console.error('❌ Fallback check failed:', fallbackError);
           setHasAccess(false);
-          router.push('/profile', { replace: true });
+          router.push('/profile');
         }
       } finally {
         setLoading(false);

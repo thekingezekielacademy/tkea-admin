@@ -30,6 +30,17 @@ const CourseOverview: React.FC = () => {
   const [databaseSubscriptionStatus, setDatabaseSubscriptionStatus] = useState<boolean>(false);
 
 
+  // Helper: check if a subscription is expired by end_date or next_billing_date
+  const isSubExpired = (sub: any) => {
+    if (!sub) return true;
+    const now = new Date();
+    const end = sub.end_date ? new Date(sub.end_date) : null;
+    const nextBilling = sub.next_billing_date ? new Date(sub.next_billing_date) : null;
+    if (end && now > end) return true;
+    if (nextBilling && now > nextBilling) return true;
+    return false;
+  };
+
   // Check database subscription status - FIXED to match CRA behavior EXACTLY
   const checkSubscriptionStatus = useCallback(async () => {
     if (!user?.id) return false;
@@ -49,24 +60,13 @@ const CourseOverview: React.FC = () => {
         setDatabaseSubscriptionStatus(false);
         return false;
       } else {
-        // Check if subscription is actually active (not cancelled) - exact CRA logic  
         const subscription = subscriptionData[0];
-        const now = new Date();
-        const nextBillingDate = subscription.next_billing_date ? new Date(subscription.next_billing_date) : null;
-        const endDate = subscription.end_date ? new Date(subscription.end_date) : null;
-        
-        // Subscription is active if:
-        // 1. Status is 'active' AND
-        // 2. Not canceled at period end OR
-        // 3. If canceled, still within the paid period
-        const isActuallyActive = subscription.status === 'active' && 
-          (!subscription.cancel_at_period_end || 
-           (endDate && now < endDate) ||
-           (nextBillingDate && now < nextBillingDate));
-        
-        setDatabaseSubscriptionStatus(isActuallyActive ? true : false);
-        console.log('Active subscription found and validated:', subscription, 'isActuallyActive:', isActuallyActive);
-        return isActuallyActive;
+        if (isSubExpired(subscription)) {
+          setDatabaseSubscriptionStatus(false);
+          return false;
+        }
+        setDatabaseSubscriptionStatus(true);
+        return true;
       }
     } catch (err) {
       console.error('Error checking subscription:', err);
@@ -133,6 +133,7 @@ const CourseOverview: React.FC = () => {
     }
   }, [user?.id, courseId]);
 
+  let abortTimeoutId: ReturnType<typeof setTimeout> | undefined;
   // Cache fetchCourse with proper dependencies
   const fetchCourseCallback = useCallback(async () => {
     if (!courseId || fetchedDataRef.current) return;
@@ -145,6 +146,10 @@ const CourseOverview: React.FC = () => {
       setError(null);
       
       const supabase = createClient();
+      // Add a safety timeout/abort so loading never hangs indefinitely
+      const controller = new AbortController();
+      abortTimeoutId = setTimeout(() => controller.abort(), 12000);
+
       const { data, error: fetchError } = await supabase
         .from('courses')
         .select(`
@@ -157,7 +162,8 @@ const CourseOverview: React.FC = () => {
           )
         `)
         .eq('id', courseId)
-        .single();
+        .single()
+        .abortSignal(controller.signal as any);
       
       if (fetchError) {
         console.error('❌ Error fetching course:', fetchError);
@@ -174,6 +180,8 @@ const CourseOverview: React.FC = () => {
       console.error('❌ Error fetching course:', err);
       setError(`Failed to load course: ${err instanceof Error ? err.message : 'Unknown error'}`);
     } finally {
+      // Clear the timeout if set
+      if (abortTimeoutId) clearTimeout(abortTimeoutId);
       setLoading(false);
     }
   }, [courseId]);
@@ -384,6 +392,25 @@ const CourseOverview: React.FC = () => {
     }
     return `${minutes}m`;
   };
+
+  let expiredBanner = null;
+  if (user && (!hasAccess)) {
+    // If user's only sub is expired (i.e., had a sub but now not active due to expiry)
+    expiredBanner = (
+      <div className="mb-8 bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-center">
+        <div className="font-semibold text-yellow-900 text-lg mb-2">Access Expired!</div>
+        <div className="text-yellow-800 mb-2">
+          Your subscription is expired. Renew your subscription to restore premium access.
+        </div>
+        <button
+          onClick={() => router.push('/subscription')}
+          className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+        >
+          Renew Subscription
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 pt-20" suppressHydrationWarning>

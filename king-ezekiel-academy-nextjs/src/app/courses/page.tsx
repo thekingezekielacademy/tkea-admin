@@ -72,10 +72,18 @@ const Courses: React.FC = () => {
     return `${baseClasses} ${marginClass}`.trim();
   };
 
-  // Check database subscription status
+  const isSubExpired = (sub: any) => {
+    if (!sub) return true;
+    const now = new Date();
+    const end = sub.end_date ? new Date(sub.end_date) : null;
+    const nextBilling = sub.next_billing_date ? new Date(sub.next_billing_date) : null;
+    if (end && now > end) return true;
+    if (nextBilling && now > nextBilling) return true;
+    return false;
+  };
+
   const checkDatabaseSubscription = async () => {
     if (!user?.id) return;
-    
     try {
       const supabase = createClient();
       const { data, error } = await supabase
@@ -86,18 +94,19 @@ const Courses: React.FC = () => {
         .eq('is_active', true)
         .order('created_at', { ascending: false })
         .limit(1);
-      
       if (!error && data && data.length > 0) {
-        console.log('✅ Found active subscription in database:', data[0]);
+        const sub = data[0];
+        if (isSubExpired(sub)) {
+          setDatabaseSubscriptionStatus(false);
+          return false;
+        }
         setDatabaseSubscriptionStatus(true);
         return true;
       } else {
-        console.log('❌ No active subscription found in database');
         setDatabaseSubscriptionStatus(false);
         return false;
       }
     } catch (error) {
-      console.log('⚠️ Database subscription check failed (table may not exist yet):', error);
       setDatabaseSubscriptionStatus(false);
       return false;
     }

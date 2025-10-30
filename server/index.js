@@ -5,6 +5,8 @@ const rateLimit = require('express-rate-limit');
 const dotenv = require('dotenv');
 const path = require('path');
 const fs = require('fs');
+const cron = require('node-cron');
+const SubscriptionService = require('./services/subscriptionService');
 
 // Import user agent detection
 const { browserDetectionMiddleware, requiresES5Fallback } = require('./utils/userAgentDetection');
@@ -88,6 +90,18 @@ app.use('/api/lessons', lessonRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/flutterwave', flutterwaveRoutes);
 // app.use('/api/paystack', paystackRoutes); // Disabled - using Flutterwave instead
+
+// --- Automated Cleanup of Expired Subscriptions ---
+const subscriptionService = new SubscriptionService();
+cron.schedule('0 * * * *', async () => {
+  try {
+    console.log('[CRON] Running hourly expired subscription cleanup...');
+    const cleanedUp = await subscriptionService.cleanupExpiredSubscriptions();
+    console.log(`[CRON] Cleanup complete: ${cleanedUp.length || 0} expired subscriptions`);
+  } catch (error) {
+    console.error('[CRON] Cleanup failed:', error);
+  }
+});
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
