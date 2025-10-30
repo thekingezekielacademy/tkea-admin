@@ -40,7 +40,7 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
   const getSidebarMargin = () => {
     if (!isClient) return 'ml-0'; // Prevent hydration mismatch
     if (!shouldShowSidebar) return 'ml-0'; // No sidebar on public pages
-    if (isMobile) return 'ml-0'; // Mobile: no sidebar, no margin
+    if (isMobile) return 'ml-16'; // Mobile: show icon-only sidebar, add 64px margin
     return isExpanded ? 'ml-64' : 'ml-16'; // Desktop: expanded=256px, collapsed=64px
   };
 

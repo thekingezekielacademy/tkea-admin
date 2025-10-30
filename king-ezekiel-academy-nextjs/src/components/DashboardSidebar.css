@@ -2,27 +2,29 @@
 .dashboard-sidebar {
   position: fixed !important;
   left: 0 !important;
-  top: 0 !important;
-  height: 100vh !important;
-  z-index: 9999 !important;
+  top: 4rem !important; /* stay below navbar (64px) */
+  height: calc(100vh - 4rem) !important; /* full viewport minus navbar */
+  z-index: 9998 !important; /* below navbar */
   transition: all 0.3s ease-in-out;
   background: white;
   border-right: 1px solid #e5e7eb;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  overflow-y: auto !important; /* independent scroll */
 }
 
 /* Force fixed positioning for sidebar always visible - WordPress style */
 .dashboard-sidebar-always-visible {
   position: fixed !important;
-  top: 0 !important;
+  top: 4rem !important; /* stay below navbar */
   left: 0 !important;
-  bottom: 0 !important;
-  height: 100vh !important;
+  bottom: auto !important;
+  height: calc(100vh - 4rem) !important;
   width: 16rem !important; /* Default expanded width */
   z-index: 9998 !important; /* Below navbar (z-index: 9999) */
   transform: translateZ(0) !important;
   will-change: transform, width !important;
-  overflow: hidden !important;
+  overflow-y: auto !important; /* independent scroll */
+  overflow-x: hidden !important;
   display: flex !important;
   flex-direction: column !important;
   background: #ffffff !important;
@@ -86,20 +88,20 @@
     left: 0 !important;
     bottom: 0 !important;
     height: calc(100vh - 4rem) !important; /* Full height minus navbar */
-    transform: translateX(-100%) !important; /* Hidden by default */
+    transform: translateX(0) !important; /* Visible by default (icon-only when collapsed) */
     z-index: 9997 !important; /* Above content, below navbar */
     overflow: hidden !important;
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
   }
   
-  /* Mobile sidebar when open */
+  /* Mobile sidebar when open (expanded) */
   .dashboard-sidebar-always-visible.mobile-open {
-    transform: translateX(0) !important; /* Slide in */
+    transform: translateX(0) !important; /* Full width expanded */
   }
   
-  /* Mobile sidebar when hidden */
+  /* Mobile sidebar when collapsed (icon-only, still visible) */
   .dashboard-sidebar-always-visible.mobile-hidden {
-    transform: translateX(-100%) !important; /* Slide out */
+    transform: translateX(0) !important; /* Visible but collapsed (icon-only) */
   }
   
   /* Mobile collapsed state - respect JavaScript width */
