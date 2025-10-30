@@ -4,6 +4,9 @@
   "outputDirectory": "king-ezekiel-academy-nextjs/.next",
   "installCommand": "npm run install-all",
   "framework": "nextjs",
+  "builds": [
+    { "src": "king-ezekiel-academy-nextjs/next.config.js", "use": "@vercel/next" }
+  ],
   
   "headers": [
     {
