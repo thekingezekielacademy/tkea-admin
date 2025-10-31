@@ -92,7 +92,7 @@ app.use('/api/flutterwave', flutterwaveRoutes);
 // app.use('/api/paystack', paystackRoutes); // Disabled - using Flutterwave instead
 
 // --- Automated Cleanup of Expired Subscriptions ---
-const subscriptionService = new SubscriptionService();
+const subscriptionService = require('./services/subscriptionService');
 cron.schedule('0 * * * *', async () => {
   try {
     console.log('[CRON] Running hourly expired subscription cleanup...');
