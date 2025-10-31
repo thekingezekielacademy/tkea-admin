@@ -1,13 +1,8 @@
 {
-  "version": 2,
-  "buildCommand": "npm run build",
+  "buildCommand": "cd king-ezekiel-academy-nextjs && npm run build",
   "outputDirectory": "king-ezekiel-academy-nextjs/.next",
   "installCommand": "npm run install-all",
   "framework": "nextjs",
-  "builds": [
-    { "src": "king-ezekiel-academy-nextjs/next.config.js", "use": "@vercel/next" }
-  ],
-  
   "headers": [
     {
       "source": "/api/(.*)",
