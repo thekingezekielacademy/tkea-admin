@@ -17,7 +17,7 @@ const Home: React.FC = () => {
         description="Transform your career with comprehensive digital marketing courses. Learn from industry experts and join 10,000+ successful students. Access FREE courses forever or upgrade for premium content!"
         keywords="digital marketing courses, online education, business growth, entrepreneurship, Nigeria, Africa, free courses, subscription"
         canonical="/"
-        ogImage="/img/link previewer.png"
+        ogImage="/img/link-previewer-optimized.jpg"
         ogType="website"
         structuredData={generateOrganizationStructuredData()}
       />

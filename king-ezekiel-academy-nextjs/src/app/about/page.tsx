@@ -216,7 +216,7 @@ const About: React.FC = () => {
         description="Learn about our mission to democratize digital marketing education. Founded by King Ezekiel, we've trained over 10,000 students worldwide with a 95% success rate."
         keywords="about us, King Ezekiel, digital marketing expert, education platform, mission, vision, success stories, Nigeria, Africa"
         canonical="/about"
-        ogImage="/img/link previewer.png"
+        ogImage="/img/link-previewer-optimized.jpg"
         ogType="website"
         structuredData={generatePersonStructuredData()}
       />
