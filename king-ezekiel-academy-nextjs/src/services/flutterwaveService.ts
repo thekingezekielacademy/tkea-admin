@@ -5,17 +5,17 @@ import { createClient } from '@/lib/supabase/client';
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:5000';
 
 // Professional Flutterwave Configuration - Live Mode
-const FLUTTERWAVE_PUBLIC_KEY = process.env.NEXT_PUBLIC_FLUTTERWAVE_PUBLIC_KEY;
 const FLUTTERWAVE_MODE = 'live';
 
-// Log current mode
-console.log('🔧 Flutterwave Mode:', FLUTTERWAVE_MODE);
-console.log('🔧 Flutterwave Public Key:', FLUTTERWAVE_PUBLIC_KEY?.substring(0, 20) + '...');
-
-// Validate required environment variables
-if (!FLUTTERWAVE_PUBLIC_KEY) {
-  console.error('❌ CRITICAL: NEXT_PUBLIC_FLUTTERWAVE_PUBLIC_KEY environment variable is required');
-}
+// Helper function to get Flutterwave public key with lazy validation
+const getFlutterwavePublicKey = () => {
+  const key = process.env.NEXT_PUBLIC_FLUTTERWAVE_PUBLIC_KEY;
+  if (!key && typeof window !== 'undefined') {
+    // Only log in browser environment, not during build
+    console.error('❌ CRITICAL: NEXT_PUBLIC_FLUTTERWAVE_PUBLIC_KEY environment variable is required');
+  }
+  return key;
+};
 
 export interface FlutterwaveTransaction {
   id: string;
@@ -110,6 +110,7 @@ class FlutterwaveService {
       if (process.env.NODE_ENV === 'development' || window.location.hostname === 'localhost') {
         console.log('🔧 Development mode: Simulating successful subscription creation');
         
+        const supabase = createClient();
         const user = (await supabase.auth.getUser()).data.user;
         if (!user) {
           throw new Error('User not authenticated');
@@ -142,6 +143,7 @@ class FlutterwaveService {
       // Production subscription creation via API endpoint
       const apiEndpoint = `${API_BASE}/flutterwave/create-subscription`;
       
+      const supabase = createClient();
       const response = await fetch(apiEndpoint, {
         method: 'POST',
         headers: {
@@ -332,6 +334,8 @@ class FlutterwaveService {
     try {
       console.log('💾 Saving Flutterwave subscription to database:', { userId, flutterwaveData });
       
+      const supabase = createClient();
+      
       // First, check if subscription already exists
       const { data: existingSub, error: checkError } = await supabase
         .from('user_subscriptions')
@@ -396,6 +400,7 @@ class FlutterwaveService {
   // Save payment to database
   async savePaymentToDatabase(userId: string, transactionData: any) {
     try {
+      const supabase = createClient();
       const { data, error } = await supabase
         .from('subscription_payments')
         .insert({
