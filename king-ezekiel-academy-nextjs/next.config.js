@@ -11,6 +11,23 @@ const withPWA = require('next-pwa')({
     /webpack.*\.hot-update\.js$/, // Exclude hot update files
   ],
   runtimeCaching: [
+    // CRITICAL: OAuth callback URLs - never cache or intercept
+    // This prevents service worker from breaking Google OAuth and other auth flows
+    // Must be FIRST to prevent / route from intercepting
+    {
+      urlPattern: /[&?](code|error|state)=/,
+      handler: 'NetworkOnly',
+      options: {
+        cacheName: 'auth-callbacks',
+      }
+    },
+    {
+      urlPattern: /\/auth\/callback/,
+      handler: 'NetworkOnly',
+      options: {
+        cacheName: 'auth-callbacks',
+      }
+    },
     // API requests - never cache
     {
       urlPattern: /^\/api\/.*$/i,
