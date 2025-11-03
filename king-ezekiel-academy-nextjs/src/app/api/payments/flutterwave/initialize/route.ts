@@ -129,8 +129,8 @@ export async function POST(request: NextRequest) {
       amount: amount,
       currency: 'NGN',
       redirect_url: user.id === 'pre-signup-user' 
-        ? `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/paybeforesignup?payment_success=true&tx_ref=KEA_${Date.now()}_${user.id}`
-        : `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/payment-verification`,
+        ? `${(process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXTAUTH_URL || '').replace(/\/$/, '')}/paybeforesignup?payment_success=true&tx_ref=KEA_${Date.now()}_${user.id}`
+        : `${(process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXTAUTH_URL || '').replace(/\/$/, '')}/payment-verification`,
       customer: {
         email: email,
         name: name,
@@ -138,7 +138,7 @@ export async function POST(request: NextRequest) {
       customizations: {
         title: 'King Ezekiel Academy',
         description: 'Course Subscription Payment',
-        logo: `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/favicon.ico`,
+        logo: `${(process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXTAUTH_URL || '').replace(/\/$/, '')}/favicon.ico`,
       },
       // Additional configuration to disable all tracking
       payment_options: 'card,mobilemoney,ussd,banktransfer',

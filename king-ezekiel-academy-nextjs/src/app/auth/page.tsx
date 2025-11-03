@@ -23,10 +23,13 @@ const AuthPage: React.FC = () => {
     try {
       setError(null);
       const supabase = createClient();
+      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
-          redirectTo: typeof window !== 'undefined' ? `${window.location.origin}/dashboard` : undefined,
+          redirectTo: typeof window !== 'undefined'
+            ? `${(siteUrl || window.location.origin).replace(/\/$/, '')}/dashboard`
+            : undefined,
           queryParams: provider === 'apple' ? { scope: 'name email' } : undefined,
         },
       });

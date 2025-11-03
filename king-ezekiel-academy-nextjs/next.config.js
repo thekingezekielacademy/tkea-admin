@@ -44,6 +44,21 @@ const withPWA = require('next-pwa')({
         cacheName: 'supabase-cache',
       }
     },
+    // External analytics/conversions endpoints - do not intercept (avoid SW CORS noise)
+    {
+      urlPattern: /^https:\/\/mpc2-prod-.*\.a\.run\.app\/events\/.*/i,
+      handler: 'NetworkOnly',
+      options: {
+        cacheName: 'external-events',
+      }
+    },
+    {
+      urlPattern: /^https:\/\/demo-1\.conversionsapigateway\.com\/events\/.*/i,
+      handler: 'NetworkOnly',
+      options: {
+        cacheName: 'external-events',
+      }
+    },
     // Fonts - cache aggressively
     {
       urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,

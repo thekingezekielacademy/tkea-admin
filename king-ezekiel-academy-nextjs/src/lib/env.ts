@@ -24,7 +24,7 @@ export const env = createEnv({
     FLUTTERWAVE_SECRET_KEY: process.env.FLUTTERWAVE_SECRET_KEY || 'placeholder',
     FLUTTERWAVE_HASH: process.env.FLUTTERWAVE_HASH || 'placeholder',
     NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET || 'placeholder',
-    NEXTAUTH_URL: process.env.NEXTAUTH_URL || 'http://localhost:3000',
+    NEXTAUTH_URL: process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_SITE_URL,
     MAILERLITE_API_KEY: process.env.MAILERLITE_API_KEY || 'placeholder',
     MAILERLITE_GROUP_ID: process.env.MAILERLITE_GROUP_ID || 'placeholder',
   },
