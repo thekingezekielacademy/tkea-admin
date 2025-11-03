@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContextOptimized';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/lib/supabase';
 import { FaPlay, FaPause, FaVolumeUp, FaVolumeMute, FaExpand, FaCompress, FaChevronLeft, FaChevronRight, FaCheckCircle, FaLock, FaClock, FaBook, FaUsers, FaStar } from 'react-icons/fa';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import AccessControl from '@/components/AccessControl';
@@ -35,6 +35,7 @@ const LessonPlayer: React.FC = () => {
   const params = useParams();
   const router = useRouter();
   const { user } = useAuth();
+  const supabase = createClient();
   
   const courseId = params.courseId as string;
   const lessonId = params.lessonId as string;

@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useSidebar } from '@/contexts/SidebarContext';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { ProgressService } from '@/services/progressService';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/lib/supabase';
 import { secureLog, secureError } from '@/utils/secureLogger';
 import { 
   FaTrophy, 
@@ -387,6 +387,7 @@ const Achievements = React.memo(() => {
     if (!user?.id) return;
     
     try {
+      const supabase = createClient();
       // Fetch profile data including XP and streak_count from database
       const { data: profile, error: profileError } = await supabase
         .from('profiles')

@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { FaCalendar, FaUser, FaEye, FaArrowLeft, FaClock, FaTags, FaFolder, FaCopy, FaCheck, FaTwitter, FaFacebook, FaLinkedin, FaWhatsapp } from 'react-icons/fa';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/lib/supabase';
 import DOMPurify from 'dompurify';
 import { secureLog, secureError } from '@/utils/secureLogger';
 import SEOHead from '@/components/SEO/SEOHead';
@@ -41,6 +41,7 @@ const BlogPost: React.FC = () => {
   const fetchBlogPost = useCallback(async () => {
     try {
       setLoading(true);
+      const supabase = createClient();
       const { data: posts, error: postError } = await supabase
         .from('blog_posts')
         .select(`

@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { FaSearch, FaCalendar, FaUser, FaEye } from 'react-icons/fa';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/lib/supabase';
 import SEOHead from '@/components/SEO/SEOHead';
 
 interface BlogPost {
@@ -38,6 +38,7 @@ const Blog: React.FC = () => {
     try {
       setLoading(true);
       
+      const supabase = createClient();
       let query = supabase
         .from('blog_posts')
         .select(`

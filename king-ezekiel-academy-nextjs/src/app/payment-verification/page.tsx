@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContextOptimized';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/lib/supabase';
 
 const PaymentVerification: React.FC = () => {
   const router = useRouter();
@@ -16,6 +16,7 @@ const PaymentVerification: React.FC = () => {
   useEffect(() => {
     const verifyPayment = async () => {
       try {
+        const supabase = createClient();
         // First, check if user already has an active subscription
         if (user?.id) {
           const { data: existingSubscription } = await supabase
@@ -117,6 +118,7 @@ const PaymentVerification: React.FC = () => {
         // Check if subscription might have been created despite the error
         try {
           if (user?.id) {
+            const supabase = createClient();
             const { data: existingSubscription } = await supabase
               .from('user_subscriptions')
               .select('*')

@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/lib/supabase';
 
 export interface CourseProgressData {
   course_id: string;
@@ -16,6 +16,7 @@ export class CourseProgressService {
    */
   static async calculateCourseProgress(userId: string): Promise<CourseProgressData[]> {
     try {
+      const supabase = createClient();
       console.log('🔍 Calculating course progress for user:', userId);
       
       // Try to use the new view first, fallback to manual calculation
@@ -177,6 +178,7 @@ export class CourseProgressService {
       const courseProgressData = await this.calculateCourseProgress(userId);
 
       for (const courseData of courseProgressData) {
+        const supabase = createClient();
         const { error } = await supabase
           .from('user_courses')
           .upsert({
@@ -209,6 +211,7 @@ export class CourseProgressService {
   static async getUserCourseProgress(userId: string): Promise<CourseProgressData[]> {
     try {
       console.log('🔍 Getting user course progress for user:', userId);
+      const supabase = createClient();
       
       // Try to use the new view first (will be created by fix_console_errors.sql)
       // Silently fall back to manual calculation if view doesn't exist
@@ -253,6 +256,7 @@ export class CourseProgressService {
       
       // Update user_courses table with calculated data
       for (const progress of calculatedProgress) {
+        const supabase = createClient();
         await supabase
           .from('user_courses')
           .upsert({
@@ -300,6 +304,7 @@ export class CourseProgressService {
    */
   static async updateUserStats(userId: string): Promise<boolean> {
     try {
+      const supabase = createClient();
       // Calculate total completed lessons for XP (matches actual schema)
       const { data: completedLessons, error: lessonsError } = await supabase
         .from('user_lesson_progress')

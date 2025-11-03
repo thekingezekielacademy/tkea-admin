@@ -3,7 +3,7 @@ import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { FaEnvelope, FaArrowLeft, FaCheckCircle, FaExclamationTriangle } from 'react-icons/fa';
 import { useAuth } from '@/contexts/AuthContextOptimized';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/lib/supabase';
 import { secureLog, secureError } from '@/utils/secureLogger';
 
 const ForgotPassword: React.FC = () => {
