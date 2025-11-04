@@ -680,27 +680,29 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
               clip: rect(0, auto, auto, 0) !important;
             }
             
+            /* Top-right small mask to reduce YouTube logo visibility without covering controls */
             .video-container::after {
               content: '';
               position: absolute;
               top: 0;
               right: 0;
-              width: 120px;
-              height: 50px;
+              width: 80px;
+              height: 28px;
               background: black;
               z-index: 10;
               pointer-events: none;
             }
             
+            /* Remove bottom-right mask so it doesn't overlap custom controls */
             .video-container::before {
               content: '';
               position: absolute;
               bottom: 0;
               right: 0;
-              width: 250px;
-              height: 40px;
-              background: black;
-              z-index: 10;
+              width: 0;
+              height: 0;
+              background: transparent;
+              z-index: 0;
               pointer-events: none;
             }
             
