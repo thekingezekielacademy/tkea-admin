@@ -835,10 +835,27 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
             )}
           </button>
 
-          {/* Mobile touch indicator */}
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-40 md:hidden">
-            <div className="w-16 h-16 bg-black bg-opacity-50 rounded-full flex items-center justify-center opacity-0 transition-opacity duration-150 pointer-events-none"
-                 style={{ opacity: isLoading ? 1 : (isPlaying ? 0 : 1) }}>
+          {/* Mobile/center play indicator - make it clickable to start playback */}
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-40 md:hidden"
+               onClick={(e) => {
+                 e.preventDefault();
+                 e.stopPropagation();
+                 if (isPlayerReady && !isPlaying && !isLoading) {
+                   togglePlay();
+                 }
+               }}
+               onTouchEnd={(e) => {
+                 e.preventDefault();
+                 e.stopPropagation();
+                 if (isPlayerReady && !isPlaying && !isLoading) {
+                   togglePlay();
+                 }
+               }}
+               role="button"
+               aria-label="Play video"
+               style={{ cursor: isPlayerReady && !isPlaying && !isLoading ? 'pointer' : 'default' }}>
+            <div className="w-16 h-16 bg-black bg-opacity-50 rounded-full flex items-center justify-center opacity-0 transition-opacity duration-150"
+                 style={{ opacity: isLoading ? 1 : (isPlaying ? 0 : 1), pointerEvents: isPlayerReady && !isPlaying && !isLoading ? 'auto' : 'none' }}>
               <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
               </svg>
