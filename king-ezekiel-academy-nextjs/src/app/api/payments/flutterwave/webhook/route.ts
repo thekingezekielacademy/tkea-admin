@@ -15,13 +15,18 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Verify webhook signature
-    const expectedSignature = crypto
-      .createHmac('sha256', env.FLUTTERWAVE_HASH)
-      .update(body)
-      .digest('hex')
+    // Verify webhook signature per Flutterwave docs:
+    // Compare the 'verif-hash' header directly with your dashboard secret (Secret Key)
+    const secret = env.FLUTTERWAVE_WEBHOOK_SECRET || env.FLUTTERWAVE_SECRET_KEY
+    if (!secret) {
+      console.error('Missing FLUTTERWAVE_WEBHOOK_SECRET/FLUTTERWAVE_SECRET_KEY env var')
+      return NextResponse.json(
+        { error: 'Server misconfiguration' },
+        { status: 500 }
+      )
+    }
 
-    if (signature !== expectedSignature) {
+    if (signature !== secret) {
       console.error('Invalid webhook signature')
       return NextResponse.json(
         { error: 'Invalid signature' },

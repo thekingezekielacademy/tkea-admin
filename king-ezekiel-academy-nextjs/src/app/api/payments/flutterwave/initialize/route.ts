@@ -131,6 +131,7 @@ export async function POST(request: NextRequest) {
       redirect_url: user.id === 'pre-signup-user' 
         ? `${(process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXTAUTH_URL || '').replace(/\/$/, '')}/paybeforesignup?payment_success=true&tx_ref=KEA_${Date.now()}_${user.id}`
         : `${(process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXTAUTH_URL || '').replace(/\/$/, '')}/payment-verification`,
+      webhook_url: `${(process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXTAUTH_URL || '').replace(/\/$/, '')}/api/payments/flutterwave/webhook`,
       customer: {
         email: email,
         name: name,

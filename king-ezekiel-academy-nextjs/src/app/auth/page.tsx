@@ -15,7 +15,7 @@ const AuthPage: React.FC = () => {
   useEffect(() => {
     if (!authLoading && user && !isRedirecting) {
       setIsRedirecting(true);
-      router.replace('/dashboard');
+      router.replace('/courses');
     }
   }, [user, authLoading, isRedirecting, router]);
 
@@ -28,7 +28,7 @@ const AuthPage: React.FC = () => {
         provider,
         options: {
           redirectTo: typeof window !== 'undefined'
-            ? `${(siteUrl || window.location.origin).replace(/\/$/, '')}/dashboard`
+            ? `${(siteUrl || window.location.origin).replace(/\/$/, '')}/courses`
             : undefined,
           queryParams: provider === 'apple' ? { scope: 'name email' } : undefined,
         },

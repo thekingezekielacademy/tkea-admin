@@ -14,8 +14,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Verify payment with Flutterwave
-    const response = await fetch(`https://api.flutterwave.com/v3/transactions/${tx_ref}/verify`, {
+    // Verify payment with Flutterwave by reference
+    const response = await fetch(`https://api.flutterwave.com/v3/transactions/verify_by_reference?tx_ref=${encodeURIComponent(tx_ref)}`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${env.FLUTTERWAVE_SECRET_KEY}`,
