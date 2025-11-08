@@ -445,11 +445,29 @@ const Courses: React.FC = () => {
     }
 
     try {
-      // Add notification logic here - for now just show success message
-      alert('You will be notified when this course becomes available!');
+      setLoading(true);
+      const response = await fetch('/api/courses/notify', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ courseId }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        // Show success message
+        alert(data.message || 'You will be notified when this course becomes available!');
+      } else {
+        // Show error message
+        alert(data.error || 'Failed to set up notification. Please try again.');
+      }
     } catch (error) {
       console.error('Error setting up notification:', error);
       alert('Failed to set up notification. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 

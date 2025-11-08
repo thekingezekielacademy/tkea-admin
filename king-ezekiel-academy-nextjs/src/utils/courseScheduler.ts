@@ -52,6 +52,7 @@ export class CourseScheduler {
   // Check for courses that should be published
   private async checkScheduledCourses(): Promise<void> {
     try {
+      const supabase = createClient();
       const now = new Date().toISOString();
       
       // Find courses that are scheduled and should be published now
@@ -86,6 +87,7 @@ export class CourseScheduler {
   // Publish a scheduled course
   private async publishCourse(course: any): Promise<void> {
     try {
+      const supabase = createClient();
       // Update course status to published
       const { error: updateError } = await supabase
         .from('courses')
@@ -114,15 +116,21 @@ export class CourseScheduler {
   // Notify users that a course is now available
   private async notifyCourseAvailable(course: any): Promise<void> {
     try {
-      // Get users who requested notifications for this course
-      const courseNotifications = JSON.parse(localStorage.getItem('course_notifications') || '[]');
-      
-      if (courseNotifications.includes(course.id)) {
-        // Send notification
-        await this.notificationService.sendCourseAvailableNotification(
-          course.title,
-          course.id
-        );
+      // Call the API endpoint to send notifications to all users who requested them
+      const response = await fetch('/api/courses/send-notifications', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ courseId: course.id }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        console.log(`Course notifications sent: ${data.sent} emails sent, ${data.failed} failed`);
+      } else {
+        console.error('Error sending course notifications:', data.error || 'Unknown error');
       }
     } catch (error) {
       console.error('Error notifying course available:', error);
@@ -136,6 +144,7 @@ export class CourseScheduler {
       const oneHourFromNow = new Date(now.getTime() + 60 * 60 * 1000);
       const oneDayFromNow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
 
+      const supabase = createClient();
       // Find courses coming up in the next hour
       const { data: coursesInOneHour, error: oneHourError } = await supabase
         .from('courses')
@@ -210,6 +219,7 @@ export class CourseScheduler {
   // Get scheduled courses for display
   async getScheduledCourses(): Promise<any[]> {
     try {
+      const supabase = createClient();
       const { data, error } = await supabase
         .from('courses')
         .select('*')

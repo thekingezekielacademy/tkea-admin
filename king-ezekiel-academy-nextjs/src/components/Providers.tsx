@@ -10,6 +10,7 @@ import DashboardSidebar from '@/components/DashboardSidebar';
 import MiniBrowserErrorBoundary from '@/components/MiniBrowserErrorBoundary';
 import ClientOnly from '@/components/ClientOnly';
 import HubSpotProvider from '@/components/HubSpotProvider';
+import GoogleAnalytics from '@/components/GoogleAnalytics';
 // import PerformanceMonitor from '@/components/PerformanceMonitor'; // Disabled for performance
 
 interface ProvidersProps {
@@ -70,6 +71,7 @@ export default function Providers({ children }: ProvidersProps) {
         <AuthProvider>
           <SidebarProvider>
             <HubSpotProvider>
+              <GoogleAnalytics />
               <div className="App min-h-screen bg-white" suppressHydrationWarning>
                 <Navbar />
                 <ConditionalSidebar />

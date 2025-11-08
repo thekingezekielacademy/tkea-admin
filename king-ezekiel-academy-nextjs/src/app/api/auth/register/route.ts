@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { cookies } from 'next/headers'
+import { emailService } from '@/services/emailService'
 
 export async function POST(request: NextRequest) {
   try {
@@ -77,6 +78,17 @@ export async function POST(request: NextRequest) {
     if (profileError) {
       console.error('Profile creation error:', profileError)
       // Don't fail registration if profile creation fails
+    }
+
+    // Send welcome email (non-blocking)
+    try {
+      await emailService.sendWelcomeEmail({
+        name: name.trim(),
+        email: email.trim().toLowerCase(),
+      })
+    } catch (emailError) {
+      console.error('Failed to send welcome email:', emailError)
+      // Don't fail registration if email fails
     }
 
     // If email confirmation is required, return success without session
