@@ -568,7 +568,7 @@ const Courses: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-secondary-950">
       <SEOHead
         title="Digital Marketing Courses - King Ezekiel Academy"
         description="Master digital marketing with our comprehensive courses designed for beginners and professionals. Learn SEO, social media, e-commerce, and more from industry experts."
@@ -581,7 +581,7 @@ const Courses: React.FC = () => {
           {/* Header */}
             <div className="text-center mb-6 sm:mb-8">
               <div className="flex items-center justify-center gap-2 sm:gap-4 mb-3 sm:mb-4">
-                <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 leading-tight">
+                <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white leading-tight">
                   Explore Our Courses
             </h1>
                 {user && (
@@ -595,7 +595,7 @@ const Courses: React.FC = () => {
                       }
                     }}
                     disabled={loading}
-                    className="p-1.5 sm:p-2 text-gray-600 hover:text-primary-600 transition-colors"
+                    className="p-1.5 sm:p-2 text-secondary-400 hover:text-primary-500 transition-colors"
                     title="Refresh courses"
                   >
                     <svg className={`w-4 h-4 sm:w-5 sm:h-5 ${loading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -604,7 +604,7 @@ const Courses: React.FC = () => {
                   </button>
                 )}
               </div>
-              <p className="text-base sm:text-lg md:text-xl text-gray-600 max-w-3xl mx-auto px-2 sm:px-0 leading-relaxed">
+              <p className="text-base sm:text-lg md:text-xl text-secondary-400 max-w-3xl mx-auto px-2 sm:px-0 leading-relaxed">
                 Master the most in-demand digital skills with our comprehensive courses. Start free and upgrade to access all courses.
             </p>
           </div>
@@ -699,13 +699,13 @@ const Courses: React.FC = () => {
               {/* Search Bar */}
               <div className="mb-4 sm:mb-6">
               <div className="relative">
-                  <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
+                  <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-secondary-400 w-4 h-4 sm:w-5 sm:h-5" />
                 <input
                   type="text"
                   placeholder="Search courses..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 sm:pl-12 pr-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm sm:text-base"
+                    className="w-full pl-10 sm:pl-12 pr-4 py-2.5 sm:py-3 bg-secondary-800 border border-secondary-700 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-white placeholder-secondary-400 text-sm sm:text-base"
                 />
                 </div>
             </div>
@@ -716,10 +716,10 @@ const Courses: React.FC = () => {
                 <select
                   value={selectedCategory}
                   onChange={(e) => handleCategoryChange(e.target.value)}
-                  className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-xs sm:text-sm"
+                  className="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-secondary-800 border border-secondary-700 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-white text-xs sm:text-sm"
                 >
                   {categories.map(category => (
-                    <option key={category.value} value={category.value}>{category.label}</option>
+                    <option key={category.value} value={category.value} className="bg-secondary-800">{category.label}</option>
                   ))}
                 </select>
 
@@ -727,10 +727,10 @@ const Courses: React.FC = () => {
                 <select
                   value={selectedLevel}
                   onChange={(e) => handleLevelChange(e.target.value)}
-                  className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-xs sm:text-sm"
+                  className="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-secondary-800 border border-secondary-700 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-white text-xs sm:text-sm"
                 >
                   {levels.map(level => (
-                    <option key={level.value} value={level.value}>{level.label}</option>
+                    <option key={level.value} value={level.value} className="bg-secondary-800">{level.label}</option>
                   ))}
                 </select>
 
@@ -738,10 +738,10 @@ const Courses: React.FC = () => {
                 <select
                   value={selectedSort}
                   onChange={(e) => handleSortChange(e.target.value)}
-                  className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-xs sm:text-sm"
+                  className="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-secondary-800 border border-secondary-700 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-white text-xs sm:text-sm"
                 >
                   {sortOptions.map(sort => (
-                    <option key={sort.value} value={sort.value}>{sort.label}</option>
+                    <option key={sort.value} value={sort.value} className="bg-secondary-800">{sort.label}</option>
                   ))}
                 </select>
               </div>
@@ -750,33 +750,33 @@ const Courses: React.FC = () => {
               {(selectedCategory !== 'all' || selectedLevel !== 'all' || selectedSort !== 'all') && (
                 <div className="flex flex-wrap gap-2 mb-4">
                   {selectedCategory !== 'all' && (
-                    <span className="inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs font-medium bg-primary-100 text-primary-800">
+                    <span className="inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs font-medium bg-primary-600 text-white">
                       {categories.find(c => c.value === selectedCategory)?.label}
                       <button
                         onClick={() => setSelectedCategory('all')}
-                        className="ml-1.5 sm:ml-2 text-primary-600 hover:text-primary-800"
+                        className="ml-1.5 sm:ml-2 text-white hover:text-secondary-200"
                       >
                         ×
                       </button>
                     </span>
                   )}
                   {selectedLevel !== 'all' && (
-                    <span className="inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                    <span className="inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs font-medium bg-primary-600 text-white">
                       {levels.find(l => l.value === selectedLevel)?.label}
                       <button
                         onClick={() => handleLevelChange('all')}
-                        className="ml-1.5 sm:ml-2 text-blue-600 hover:text-blue-800"
+                        className="ml-1.5 sm:ml-2 text-white hover:text-secondary-200"
                       >
                         ×
                       </button>
                     </span>
                   )}
                   {selectedSort !== 'all' && (
-                    <span className="inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                    <span className="inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs font-medium bg-primary-600 text-white">
                       {sortOptions.find(s => s.value === selectedSort)?.label}
                       <button
                         onClick={() => handleSortChange('all')}
-                        className="ml-1.5 sm:ml-2 text-green-600 hover:text-green-800"
+                        className="ml-1.5 sm:ml-2 text-white hover:text-secondary-200"
                       >
                         ×
                       </button>
@@ -791,7 +791,7 @@ const Courses: React.FC = () => {
                       setHasMore(true);
                       fetchCourses(0, false);
                     }}
-                    className="text-xs sm:text-sm text-gray-600 hover:text-gray-800 underline"
+                    className="text-xs sm:text-sm text-secondary-400 hover:text-secondary-300 underline"
                   >
                     Clear all filters
                   </button>
@@ -802,15 +802,15 @@ const Courses: React.FC = () => {
           {/* Loading State */}
           {loading && (
               <div className={`text-center py-8 sm:py-12 ${isExpanded ? 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8' : 'max-w-full mx-auto px-6 sm:px-8 lg:px-12'}`}>
-              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
-              <p className="mt-4 text-gray-600">Loading courses...</p>
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div>
+              <p className="mt-4 text-secondary-400">Loading courses...</p>
                     </div>
           )}
 
           {/* Error State */}
           {error && (
               <div className={`text-center py-8 sm:py-12 ${isExpanded ? 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8' : 'max-w-full mx-auto px-6 sm:px-8 lg:px-12'}`}>
-                <p className="text-red-600 text-base sm:text-lg">{error}</p>
+                <p className="text-red-400 text-base sm:text-lg">{error}</p>
                 <button
                   onClick={() => fetchCourses(0, false)}
                   className="mt-4 px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
@@ -825,15 +825,15 @@ const Courses: React.FC = () => {
               <div className={`${isExpanded ? 'max-w-7xl mx-auto px-2 sm:px-6 lg:px-8' : 'max-w-full mx-auto px-2 sm:px-8 lg:px-12'}`}>
                 {/* Shuffle Indicator */}
                 <div className="col-span-full mb-4 text-center">
-                  <div className="inline-flex items-center space-x-2 bg-gradient-to-r from-purple-100 to-pink-100 border border-purple-200 rounded-full px-4 py-2">
-                    <span className="text-purple-600 text-sm font-medium">🎲</span>
-                    <span className="text-purple-700 text-sm">Courses are shuffled for fresh discovery every time!</span>
+                  <div className="inline-flex items-center space-x-2 bg-secondary-800 border border-secondary-700 rounded-full px-4 py-2">
+                    <span className="text-primary-400 text-sm font-medium">🎲</span>
+                    <span className="text-secondary-300 text-sm">Courses are shuffled for fresh discovery every time!</span>
                   </div>
                 </div>
                 
                 <div className="col-span-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
                   {filteredCourses.map(course => (
-                    <div key={course.id} className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 w-full">
+                    <div key={course.id} className="bg-secondary-800 rounded-xl shadow-lg overflow-hidden hover:bg-secondary-700 transition-all duration-300 w-full">
                     <div className="relative">
                       <img
                           src={course.cover_photo || 'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=400&h=250&fit=crop'} 
@@ -857,13 +857,13 @@ const Courses: React.FC = () => {
                       <div className="p-3 sm:p-6">
                         <div className="flex items-center space-x-2 mb-2 sm:mb-3">
                           {getCategoryIcon(course.category)}
-                          <span className="text-xs sm:text-sm text-gray-500">{getCategoryDisplayName(course.category)}</span>
+                          <span className="text-xs sm:text-sm text-secondary-400">{getCategoryDisplayName(course.category)}</span>
                     </div>
 
-                        <h3 className="text-base sm:text-xl font-semibold text-gray-900 mb-2 leading-tight">{course.title}</h3>
+                        <h3 className="text-base sm:text-xl font-semibold text-white mb-2 leading-tight">{course.title}</h3>
                         {course.is_scheduled && course.scheduled_for ? (
-                          <div className="mb-3 sm:mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                            <p className="text-blue-700 text-sm sm:text-base font-medium flex items-center space-x-2">
+                          <div className="mb-3 sm:mb-4 p-3 bg-primary-900/30 rounded-lg border border-primary-700">
+                            <p className="text-primary-300 text-sm sm:text-base font-medium flex items-center space-x-2">
                               <span>📅</span>
                               <span>Coming Soon: {new Date(course.scheduled_for).toLocaleDateString('en-US', { 
                                 weekday: 'long', 
@@ -876,10 +876,10 @@ const Courses: React.FC = () => {
                             </p>
                           </div>
                         ) : (
-                          <p className="text-gray-600 mb-3 sm:mb-4 line-clamp-2 text-sm sm:text-base">{course.description || 'No description available'}</p>
+                          <p className="text-secondary-300 mb-3 sm:mb-4 line-clamp-2 text-sm sm:text-base">{course.description || 'No description available'}</p>
                         )}
                         
-                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4 mb-3 sm:mb-4 text-xs sm:text-sm text-gray-500">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4 mb-3 sm:mb-4 text-xs sm:text-sm text-secondary-400">
                         <div className="flex items-center space-x-1">
                             <FaClock className="h-3 w-3 sm:h-4 sm:w-4" />
                           <span>{course.duration}</span>
@@ -897,7 +897,7 @@ const Courses: React.FC = () => {
 
                         <div className="space-y-3">
                           <div className="flex items-center justify-center">
-                            <span className="text-xs sm:text-sm font-semibold text-primary-600 text-center px-2 py-1 bg-primary-50 rounded-full">
+                            <span className="text-xs sm:text-sm font-semibold text-primary-400 text-center px-2 py-1 bg-primary-900/30 rounded-full">
                               {getAccessStatusText(course)}
                             </span>
                         </div>
@@ -972,7 +972,7 @@ const Courses: React.FC = () => {
                     </>
                   )}
               </button>
-                <p className="text-xs sm:text-sm text-gray-500 mt-2 sm:mt-3">
+                <p className="text-xs sm:text-sm text-secondary-400 mt-2 sm:mt-3">
                   Showing {courses.length} courses • Click to load {COURSES_PER_PAGE} more
                 </p>
             </div>
@@ -981,7 +981,7 @@ const Courses: React.FC = () => {
             {/* Empty State */}
             {filteredCourses.length === 0 && !loading && !error && (
               <div className={`text-center py-8 sm:py-12 ${isExpanded ? 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8' : 'max-w-full mx-auto px-6 sm:px-8 lg:px-12'}`}>
-                <p className="text-gray-500 text-base sm:text-lg">No courses found matching your criteria.</p>
+                <p className="text-secondary-400 text-base sm:text-lg">No courses found matching your criteria.</p>
               </div>
             )}
           </div>

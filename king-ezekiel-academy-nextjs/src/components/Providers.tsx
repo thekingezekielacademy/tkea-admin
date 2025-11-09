@@ -4,8 +4,8 @@ import { usePathname } from 'next/navigation';
 import { HelmetProvider } from 'react-helmet-async';
 import { AuthProvider, useAuth } from '@/contexts/AuthContextOptimized';
 import { SidebarProvider } from '@/contexts/SidebarContext';
-import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
+import SpotifyHeader from '@/components/spotify/SpotifyHeader';
+import SpotifyFooter from '@/components/spotify/SpotifyFooter';
 import DashboardSidebar from '@/components/DashboardSidebar';
 import MiniBrowserErrorBoundary from '@/components/MiniBrowserErrorBoundary';
 import ClientOnly from '@/components/ClientOnly';
@@ -41,6 +41,12 @@ function ConditionalSidebar() {
   useEffect(() => {
     setIsClient(true);
     
+    // Don't show sidebar on homepage
+    if (pathname === '/') {
+      setShouldShowSidebar(false);
+      return;
+    }
+    
     // Check if current route should show sidebar
     const routeMatch = sidebarRoutes.some(route => pathname.startsWith(route));
     
@@ -64,6 +70,27 @@ function ConditionalSidebar() {
   );
 }
 
+function AppContent({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const isHomePage = pathname === '/';
+  
+  return (
+    <div className="App min-h-screen bg-secondary-950" suppressHydrationWarning>
+      <SpotifyHeader />
+      <ConditionalSidebar />
+      <main suppressHydrationWarning className="relative min-h-screen" style={{ position: 'relative', zIndex: '1' }}>
+        {/* Add padding for header - mobile has extra for search bar */}
+        {/* Header: 64px (h-16) + Mobile search: ~56px = ~120px total */}
+        <div className="pt-32 md:pt-16">
+          {children}
+        </div>
+      </main>
+      <SpotifyFooter />
+      {/* <PerformanceMonitor /> Disabled for performance */}
+    </div>
+  );
+}
+
 export default function Providers({ children }: ProvidersProps) {
   return (
     <MiniBrowserErrorBoundary>
@@ -72,15 +99,9 @@ export default function Providers({ children }: ProvidersProps) {
           <SidebarProvider>
             <HubSpotProvider>
               <GoogleAnalytics />
-              <div className="App min-h-screen bg-white" suppressHydrationWarning>
-                <Navbar />
-                <ConditionalSidebar />
-                <main suppressHydrationWarning className="relative" style={{ position: 'relative', zIndex: '1' }}>
-                  {children}
-                </main>
-                <Footer />
-                {/* <PerformanceMonitor /> Disabled for performance */}
-              </div>
+              <AppContent>
+                {children}
+              </AppContent>
             </HubSpotProvider>
           </SidebarProvider>
         </AuthProvider>

@@ -186,24 +186,24 @@ const Blog: React.FC = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 pt-16">
+      <div className="min-h-screen bg-secondary-950 pt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="text-center">
-            <h1 className="text-2xl font-bold text-gray-900">Blog Access Error</h1>
-            <p className="mt-2 text-gray-600 mb-4">{error}</p>
+            <h1 className="text-2xl font-bold text-white">Blog Access Error</h1>
+            <p className="mt-2 text-secondary-400 mb-4">{error}</p>
             
             {error.includes('RLS') || error.includes('security policies') ? (
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 max-w-2xl mx-auto mb-6">
-                <h3 className="text-lg font-medium text-yellow-800 mb-3">Quick Fix Required</h3>
-                <p className="text-yellow-700 mb-4">
+              <div className="bg-warning-900/30 border border-warning-700 rounded-lg p-6 max-w-2xl mx-auto mb-6">
+                <h3 className="text-lg font-medium text-warning-300 mb-3">Quick Fix Required</h3>
+                <p className="text-warning-200 mb-4">
                   The blog posts are currently blocked by database security policies. This needs to be fixed by an administrator.
                 </p>
-                <div className="bg-yellow-100 p-4 rounded-lg">
-                  <p className="text-sm font-medium text-yellow-800 mb-2">Admin Action Required:</p>
-                  <ol className="text-sm text-yellow-700 space-y-1 list-decimal list-inside">
+                <div className="bg-warning-900/50 p-4 rounded-lg">
+                  <p className="text-sm font-medium text-warning-300 mb-2">Admin Action Required:</p>
+                  <ol className="text-sm text-warning-200 space-y-1 list-decimal list-inside">
                     <li>Go to <a href="https://supabase.com/dashboard/project/hclguhbswctxfahhzrrr" target="_blank" rel="noopener noreferrer" className="underline">Supabase Dashboard</a></li>
                     <li>Click "SQL Editor" in the left sidebar</li>
-                    <li>Run this command: <code className="bg-yellow-200 px-2 py-1 rounded font-mono">ALTER TABLE blog_posts DISABLE ROW LEVEL SECURITY;</code></li>
+                    <li>Run this command: <code className="bg-warning-900 px-2 py-1 rounded font-mono">ALTER TABLE blog_posts DISABLE ROW LEVEL SECURITY;</code></li>
                     <li>Click "Run" button</li>
                   </ol>
                 </div>
@@ -212,7 +212,7 @@ const Blog: React.FC = () => {
             
             <button
               onClick={() => fetchBlogPosts()}
-              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className="px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
             >
               Try Again
             </button>
@@ -229,14 +229,14 @@ const Blog: React.FC = () => {
         description="Discover insights, tips, and strategies to help you master digital skills and grow your business. Expert advice from industry professionals."
       />
       
-      <div className="min-h-screen bg-gray-50 pt-16">
+      <div className="min-h-screen bg-secondary-950 pt-16">
         {/* Header */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="text-center mb-16">
-            <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+            <h1 className="text-4xl md:text-5xl font-bold text-white mb-6">
               Blog
             </h1>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            <p className="text-xl text-secondary-400 max-w-3xl mx-auto">
               Discover insights, tips, and strategies to help you master digital skills and grow your business.
             </p>
           </div>
@@ -248,19 +248,19 @@ const Blog: React.FC = () => {
             <div className="flex flex-col sm:flex-row gap-4">
               <div className="flex-1">
                 <div className="relative">
-                  <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                  <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-secondary-400 w-5 h-5" />
                 <input
                   type="text"
                     placeholder="Search articles..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full pl-10 pr-4 py-3 bg-secondary-800 border border-secondary-700 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-white placeholder-secondary-400"
                 />
                 </div>
               </div>
               <button
                 type="submit"
-                className="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                className="px-8 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium"
               >
                 Search
               </button>
@@ -272,11 +272,11 @@ const Blog: React.FC = () => {
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="px-4 py-2 bg-secondary-800 border border-secondary-700 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-white"
             >
-              <option value="">All Categories</option>
+              <option value="" className="bg-secondary-800">All Categories</option>
               {getUniqueCategories().map((category) => (
-                <option key={category} value={category}>
+                <option key={category} value={category} className="bg-secondary-800">
                      {category}
                 </option>
               ))}
@@ -284,11 +284,11 @@ const Blog: React.FC = () => {
             <select
               value={selectedTag}
               onChange={(e) => setSelectedTag(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="px-4 py-2 bg-secondary-800 border border-secondary-700 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-white"
             >
-              <option value="">All Tags</option>
+              <option value="" className="bg-secondary-800">All Tags</option>
               {getUniqueTags().map((tag) => (
-                <option key={tag} value={tag}>
+                <option key={tag} value={tag} className="bg-secondary-800">
                     {tag}
                 </option>
               ))}
@@ -300,22 +300,22 @@ const Blog: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
         {loading && currentPage === 1 ? (
             <div className="text-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <p className="text-gray-600">Loading blog posts...</p>
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto mb-4"></div>
+              <p className="text-secondary-400">Loading blog posts...</p>
           </div>
           ) : error ? (
           <div className="text-center py-12">
-              <p className="text-red-600 mb-4">{error}</p>
+              <p className="text-red-400 mb-4">{error}</p>
               <button
                 onClick={() => window.location.reload()}
-                className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                className="px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
               >
                 Try Again
               </button>
             </div>
           ) : blogPosts.length === 0 ? (
             <div className="text-center py-12">
-              <p className="text-gray-600 mb-4">No blog posts found.</p>
+              <p className="text-secondary-400 mb-4">No blog posts found.</p>
               <button
                 onClick={() => {
                   setSearchTerm('');
@@ -323,7 +323,7 @@ const Blog: React.FC = () => {
                   setSelectedTag('');
                   setCurrentPage(1);
                 }}
-                className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                className="px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
               >
                 Clear Filters
               </button>
@@ -332,7 +332,7 @@ const Blog: React.FC = () => {
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {blogPosts.map((post) => (
-                  <article key={post.id} className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
+                  <article key={post.id} className="bg-secondary-800 rounded-xl shadow-lg overflow-hidden hover:bg-secondary-700 transition-all duration-300">
                   {/* Featured Image */}
                   {post.featured_image_url && (
                       <div className="w-full h-48 relative overflow-hidden">
@@ -352,7 +352,7 @@ const Blog: React.FC = () => {
                           {post.categories.slice(0, 2).map((category, index) => (
                             <span
                               key={index}
-                              className="px-3 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full"
+                              className="px-3 py-1 bg-primary-600 text-white text-xs font-medium rounded-full"
                             >
                               {category.name}
                             </span>
@@ -361,17 +361,17 @@ const Blog: React.FC = () => {
                       )}
 
                       {/* Title */}
-                    <h2 className="text-xl font-bold text-gray-900 mb-3 line-clamp-2">
+                    <h2 className="text-xl font-bold text-white mb-3 line-clamp-2">
                       {post.title}
                     </h2>
                     
                       {/* Excerpt */}
-                      <p className="text-gray-600 mb-4 line-clamp-3">
+                      <p className="text-secondary-300 mb-4 line-clamp-3">
                         {post.excerpt}
                       </p>
 
                     {/* Meta Information */}
-                    <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
+                    <div className="flex items-center justify-between text-sm text-secondary-400 mb-4">
                       <div className="flex items-center gap-2">
                           <FaCalendar className="w-4 h-4" />
                         <span>{getReadingTime(post.content)} min read</span>
@@ -385,7 +385,7 @@ const Blog: React.FC = () => {
                     {/* Read More Button */}
                       <Link
                         href={`/blog/${post.slug}`}
-                      className="w-full inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                      className="w-full inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors"
                     >
                       Read Article
                         <FaEye className="w-4 h-4 ml-2" />
@@ -401,7 +401,7 @@ const Blog: React.FC = () => {
                 <button
                     onClick={() => setCurrentPage(prev => prev + 1)}
                   disabled={loading}
-                    className="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+                    className="px-8 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
                 >
                   {loading ? 'Loading...' : 'Load More Posts'}
                 </button>
