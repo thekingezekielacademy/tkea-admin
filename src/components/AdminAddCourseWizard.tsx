@@ -864,18 +864,25 @@ const AdminAddCourseWizard: React.FC = () => {
 
   const renderStep3 = () => (
     <div className="max-w-4xl mx-auto">
-      <h2 className="text-3xl font-bold text-gray-900 mb-6 text-center">Add Course Resources</h2>
-      <p className="text-gray-600 mb-8 text-center">Add downloadable PDF resources for your course (optional).</p>
+      <div className="bg-gradient-to-r from-indigo-50 to-purple-50 border-2 border-indigo-300 rounded-lg p-6 mb-6">
+        <h2 className="text-3xl font-bold text-gray-900 mb-2 text-center">📚 Downloadable PDF Resources</h2>
+        <p className="text-gray-700 text-lg mb-2 text-center font-semibold">Step 3 of 3: Add PDF Files to Your Course</p>
+        <p className="text-gray-600 text-center">Upload PDF files that students can download. This is where you add downloadable resources!</p>
+      </div>
       
-      {/* PDF Resources Section */}
-      <div className="bg-white p-6 rounded-lg shadow-md mb-8 border-2 border-indigo-200">
-        <div className="flex items-center mb-4">
-          <svg className="h-6 w-6 text-indigo-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
-          </svg>
-          <h3 className="text-xl font-bold text-gray-900">📚 Downloadable PDF Resources</h3>
+      {/* PDF Resources Section - Main Upload Area */}
+      <div className="bg-white p-8 rounded-lg shadow-lg mb-8 border-4 border-indigo-400">
+        <div className="text-center mb-6">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-indigo-100 rounded-full mb-4">
+            <svg className="h-10 w-10 text-indigo-600" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
+            </svg>
+          </div>
+          <h3 className="text-2xl font-bold text-gray-900 mb-2">Add PDF Resources Here</h3>
+          <p className="text-base text-gray-700 mb-1">This is where you upload downloadable PDF files for your course</p>
+          <p className="text-sm text-gray-600">Students will be able to download these PDFs from the course page</p>
+          <p className="text-sm font-semibold text-indigo-600 mt-2">Maximum file size: 50MB per PDF • Multiple files allowed</p>
         </div>
-        <p className="text-sm text-gray-600 mb-4">Add PDF files that students can download from this course. Maximum file size: 50MB per PDF.</p>
         
         <div
           className={`border-2 border-dashed rounded-lg p-8 text-center mb-6 ${
@@ -1042,27 +1049,40 @@ const AdminAddCourseWizard: React.FC = () => {
 
         {/* Progress Steps */}
         <div className="flex justify-center mb-8">
-          <div className="flex items-center space-x-4">
-            {[1, 2, 3].map((stepNumber) => (
-              <div key={stepNumber} className="flex items-center">
-                <div
-                  className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold ${
-                    step >= stepNumber
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-200 text-gray-600'
-                  }`}
-                >
-                  {stepNumber}
+          <div className="space-y-4">
+            <div className="flex items-center space-x-4">
+              {[
+                { number: 1, label: 'Course Details' },
+                { number: 2, label: 'Videos' },
+                { number: 3, label: '📚 PDF Resources' }
+              ].map((stepInfo) => (
+                <div key={stepInfo.number} className="flex items-center">
+                  <div className="flex flex-col items-center">
+                    <div
+                      className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold ${
+                        step >= stepInfo.number
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-gray-200 text-gray-600'
+                      }`}
+                    >
+                      {stepInfo.number}
+                    </div>
+                    <span className={`text-xs mt-1 font-medium ${
+                      step >= stepInfo.number ? 'text-blue-600' : 'text-gray-500'
+                    }`}>
+                      {stepInfo.label}
+                    </span>
+                  </div>
+                  {stepInfo.number < 3 && (
+                    <div
+                      className={`w-16 h-1 mx-2 ${
+                        step > stepInfo.number ? 'bg-blue-600' : 'bg-gray-200'
+                      }`}
+                    />
+                  )}
                 </div>
-                {stepNumber < 3 && (
-                  <div
-                    className={`w-16 h-1 mx-2 ${
-                      step > stepNumber ? 'bg-blue-600' : 'bg-gray-200'
-                    }`}
-                  />
-                )}
+              ))}
             </div>
-            ))}
           </div>
         </div>
 

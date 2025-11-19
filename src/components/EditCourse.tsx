@@ -962,20 +962,25 @@ const EditCourse: React.FC = () => {
           )}
         </div>
 
-        {/* PDF Resources Section */}
-        <div className="bg-white rounded-lg shadow-lg p-6 mb-6 border-2 border-indigo-200">
-          <div className="flex items-center mb-2">
-            <svg className="h-6 w-6 text-indigo-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
-            </svg>
-            <h2 className="text-xl font-bold text-gray-900">📚 Downloadable PDF Resources</h2>
+        {/* PDF Resources Section - HIGHLIGHTED */}
+        <div className="bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 rounded-lg shadow-xl p-8 mb-6 border-4 border-indigo-400">
+          <div className="text-center mb-6">
+            <div className="inline-flex items-center justify-center w-20 h-20 bg-indigo-100 rounded-full mb-4 shadow-lg">
+              <svg className="h-12 w-12 text-indigo-600" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">📚 Downloadable PDF Resources</h2>
+            <p className="text-lg text-gray-700 mb-2 font-semibold">Add PDF Files That Students Can Download</p>
+            <p className="text-base text-gray-600 mb-1">This section allows you to upload and manage PDF resources for this course</p>
+            <p className="text-sm font-semibold text-indigo-600">Maximum file size: 50MB per PDF • You can select multiple PDFs at once</p>
           </div>
-          <p className="text-sm text-gray-600 mb-4">Add or manage PDF files that students can download from this course. Maximum file size: 50MB per PDF.</p>
           
-          <div
-            className={`border-2 border-dashed rounded-lg p-6 text-center mb-6 ${
-              isPdfDragOver ? 'border-indigo-400 bg-indigo-50' : 'border-gray-300'
-            }`}
+          <div className="bg-white rounded-lg p-4 mb-6">
+            <div
+              className={`border-4 border-dashed rounded-lg p-8 text-center ${
+                isPdfDragOver ? 'border-indigo-500 bg-indigo-100' : 'border-indigo-300 bg-gray-50'
+              }`}
             onDragOver={handlePdfDragOver}
             onDragLeave={handlePdfDragLeave}
             onDrop={handlePdfDrop}
