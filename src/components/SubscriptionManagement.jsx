@@ -78,15 +78,23 @@ const SubscriptionManagement = () => {
         sub.status === 'expired' || sub.status === 'Expired'
       ).length;
 
-      // Calculate revenue
-      const totalRevenue = allPayments.reduce((sum, payment) => sum + (payment.amount || 0), 0) / 100;
+      // Calculate revenue - amounts are stored in kobo (smallest currency unit)
+      // Convert kobo to naira by dividing by 100 (e.g., 2500 kobo = ₦25.00)
+      const totalRevenue = allPayments.reduce((sum, payment) => {
+        const amount = payment.amount || 0;
+        return sum + (amount / 100);
+      }, 0);
+      
       const currentMonth = new Date();
       const monthlyPayments = allPayments.filter(payment => {
         const paymentDate = new Date(payment.created_at);
         return paymentDate.getMonth() === currentMonth.getMonth() && 
                paymentDate.getFullYear() === currentMonth.getFullYear();
       });
-      const monthlyRecurringRevenue = monthlyPayments.reduce((sum, payment) => sum + (payment.amount || 0), 0) / 100;
+      const monthlyRecurringRevenue = monthlyPayments.reduce((sum, payment) => {
+        const amount = payment.amount || 0;
+        return sum + (amount / 100);
+      }, 0);
 
       // Calculate trends (use filtered subscriptions for monthly comparison)
       const currentMonthSubs = filteredSubscriptions.filter(sub => {
@@ -129,7 +137,7 @@ const SubscriptionManagement = () => {
 
         const monthRevenue = monthPayments.reduce((sum, payment) => {
           const amount = payment.amount || 0;
-          return sum + (amount > 1000 ? amount : amount / 100);
+          return sum + (amount / 100); // Convert kobo to naira
         }, 0);
 
         monthlyData.push({
@@ -160,7 +168,7 @@ const SubscriptionManagement = () => {
       });
       const previousMonthMRR = previousMonthPayments.reduce((sum, payment) => {
         const amount = payment.amount || 0;
-        return sum + (amount > 1000 ? amount : amount / 100);
+        return sum + (amount / 100); // Convert kobo to naira
       }, 0);
       const revenueGrowth = previousMonthMRR > 0 
         ? ((monthlyRecurringRevenue - previousMonthMRR) / previousMonthMRR) * 100 
