@@ -42,20 +42,41 @@ const SubscriptionManagement = () => {
       startDate.setMonth(startDate.getMonth() - months);
       const startDateISO = startDate.toISOString();
 
-      // Fetch all subscriptions and payments
-      const [subscriptionsResult, paymentsResult] = await Promise.all([
+      // Fetch ALL subscriptions (for overview stats) and filtered by date (for trends)
+      const [allSubscriptionsResult, filteredSubscriptionsResult, allPaymentsResult] = await Promise.all([
+        supabase.from('user_subscriptions').select('*').order('created_at', { ascending: false }),
         supabase.from('user_subscriptions').select('*').gte('created_at', startDateISO).order('created_at', { ascending: false }),
         supabase.from('subscription_payments').select('*').eq('status', 'success').gte('created_at', startDateISO).order('created_at', { ascending: false })
       ]);
 
-      const allSubscriptions = subscriptionsResult.data || [];
-      const allPayments = paymentsResult.data || [];
+      // Use ALL subscriptions for overview stats
+      const allSubscriptions = allSubscriptionsResult.data || [];
+      // Use filtered subscriptions for monthly trends
+      const filteredSubscriptions = filteredSubscriptionsResult.data || [];
+      const allPayments = allPaymentsResult.data || [];
+      
+      console.log('📊 Subscription Data:', {
+        totalSubscriptions: allSubscriptions.length,
+        filteredSubscriptions: filteredSubscriptions.length,
+        allPayments: allPayments.length,
+        subscriptions: allSubscriptions.map(s => ({ id: s.id, status: s.status, created_at: s.created_at })),
+        payments: allPayments.map(p => ({ id: p.id, amount: p.amount, created_at: p.created_at }))
+      });
 
-      // Calculate overview stats
+      // Calculate overview stats (using ALL subscriptions, not filtered)
       const totalSubscriptions = allSubscriptions.length;
-      const activeSubscriptions = allSubscriptions.filter(sub => sub.status === 'active').length;
-      const cancelledSubscriptions = allSubscriptions.filter(sub => sub.status === 'cancelled').length;
-      const trialSubscriptions = allSubscriptions.filter(sub => sub.status === 'trial').length;
+      const activeSubscriptions = allSubscriptions.filter(sub => 
+        sub.status === 'active' || sub.status === 'Active'
+      ).length;
+      const cancelledSubscriptions = allSubscriptions.filter(sub => 
+        sub.status === 'cancelled' || sub.status === 'canceled' || sub.status === 'Cancelled'
+      ).length;
+      const trialSubscriptions = allSubscriptions.filter(sub => 
+        sub.status === 'trial' || sub.status === 'trialing' || sub.status === 'Trialing'
+      ).length;
+      const expiredSubscriptions = allSubscriptions.filter(sub => 
+        sub.status === 'expired' || sub.status === 'Expired'
+      ).length;
 
       // Calculate revenue
       const totalRevenue = allPayments.reduce((sum, payment) => sum + (payment.amount || 0), 0) / 100;
@@ -67,8 +88,8 @@ const SubscriptionManagement = () => {
       });
       const monthlyRecurringRevenue = monthlyPayments.reduce((sum, payment) => sum + (payment.amount || 0), 0) / 100;
 
-      // Calculate trends
-      const currentMonthSubs = allSubscriptions.filter(sub => {
+      // Calculate trends (use filtered subscriptions for monthly comparison)
+      const currentMonthSubs = filteredSubscriptions.filter(sub => {
         const subDate = new Date(sub.created_at);
         return subDate.getMonth() === currentMonth.getMonth() && 
                subDate.getFullYear() === currentMonth.getFullYear();
@@ -76,7 +97,7 @@ const SubscriptionManagement = () => {
 
       const lastMonth = new Date();
       lastMonth.setMonth(lastMonth.getMonth() - 1);
-      const lastMonthSubs = allSubscriptions.filter(sub => {
+      const lastMonthSubs = filteredSubscriptions.filter(sub => {
         const subDate = new Date(sub.created_at);
         return subDate.getMonth() === lastMonth.getMonth() && 
                subDate.getFullYear() === lastMonth.getFullYear();
@@ -86,40 +107,64 @@ const SubscriptionManagement = () => {
       const churnRate = totalSubscriptions > 0 ? (cancelledSubscriptions / totalSubscriptions) * 100 : 0;
       const conversionRate = trialSubscriptions > 0 ? (activeSubscriptions / trialSubscriptions) * 100 : 0;
 
-      // Generate monthly data for trends
+      // Generate monthly data for trends (use filtered subscriptions)
       const monthlyData = [];
       for (let i = months - 1; i >= 0; i--) {
         const monthDate = new Date();
         monthDate.setMonth(monthDate.getMonth() - i);
         const monthStart = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1);
-        const monthEnd = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0);
+        const monthEnd = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0, 23, 59, 59, 999);
 
-        const monthSubs = allSubscriptions.filter(sub => {
+        const monthSubs = filteredSubscriptions.filter(sub => {
+          if (!sub.created_at) return false;
           const subDate = new Date(sub.created_at);
           return subDate >= monthStart && subDate <= monthEnd;
         });
 
         const monthPayments = allPayments.filter(payment => {
+          if (!payment.created_at) return false;
           const paymentDate = new Date(payment.created_at);
           return paymentDate >= monthStart && paymentDate <= monthEnd;
         });
 
-        const monthRevenue = monthPayments.reduce((sum, payment) => sum + (payment.amount || 0), 0) / 100;
+        const monthRevenue = monthPayments.reduce((sum, payment) => {
+          const amount = payment.amount || 0;
+          return sum + (amount > 1000 ? amount : amount / 100);
+        }, 0);
 
         monthlyData.push({
           month: monthDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
           subscriptions: monthSubs.length,
-          revenue: Math.round(monthRevenue),
-          activeSubs: monthSubs.filter(sub => sub.status === 'active').length
+          revenue: Math.round(monthRevenue * 100) / 100, // Round to 2 decimal places
+          activeSubs: monthSubs.filter(sub => 
+            sub.status === 'active' || sub.status === 'Active'
+          ).length
         });
       }
 
-      // Subscription breakdown by status
+      // Subscription breakdown by status (normalize status values)
       const subscriptionBreakdown = allSubscriptions.reduce((acc, sub) => {
-        const status = sub.status || 'unknown';
+        let status = (sub.status || 'unknown').toLowerCase();
+        // Normalize status values
+        if (status === 'canceled') status = 'cancelled';
+        if (status === 'trialing') status = 'trial';
         acc[status] = (acc[status] || 0) + 1;
         return acc;
       }, {});
+
+      // Calculate revenue growth properly (compare current month MRR to previous month MRR)
+      const previousMonthPayments = allPayments.filter(payment => {
+        const paymentDate = new Date(payment.created_at);
+        return paymentDate.getMonth() === lastMonth.getMonth() && 
+               paymentDate.getFullYear() === lastMonth.getFullYear();
+      });
+      const previousMonthMRR = previousMonthPayments.reduce((sum, payment) => {
+        const amount = payment.amount || 0;
+        return sum + (amount > 1000 ? amount : amount / 100);
+      }, 0);
+      const revenueGrowth = previousMonthMRR > 0 
+        ? ((monthlyRecurringRevenue - previousMonthMRR) / previousMonthMRR) * 100 
+        : 0;
 
       setSubscriptionData({
         overview: {
@@ -127,12 +172,12 @@ const SubscriptionManagement = () => {
           activeSubscriptions,
           cancelledSubscriptions,
           trialSubscriptions,
-          totalRevenue: Math.round(totalRevenue),
-          monthlyRecurringRevenue: Math.round(monthlyRecurringRevenue)
+          totalRevenue: Math.round(totalRevenue * 100) / 100,
+          monthlyRecurringRevenue: Math.round(monthlyRecurringRevenue * 100) / 100
         },
         trends: {
           monthlyGrowth: Math.round(monthlyGrowth * 10) / 10,
-          revenueGrowth: Math.round(((monthlyRecurringRevenue - totalRevenue) / totalRevenue) * 100 * 10) / 10,
+          revenueGrowth: Math.round(revenueGrowth * 10) / 10,
           churnRate: Math.round(churnRate * 10) / 10,
           conversionRate: Math.round(conversionRate * 10) / 10
         },
