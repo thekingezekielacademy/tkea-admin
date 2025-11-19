@@ -1,0 +1,51 @@
+name: Deploy to Vercel
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch: # Allows manual triggering from GitHub Actions tab
+
+jobs:
+  deploy:
+    name: Deploy to Vercel
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies (root)
+        run: npm install
+
+      - name: Install dependencies (Next.js app)
+        working-directory: ./king-ezekiel-academy-nextjs
+        run: npm install
+
+      - name: Build Next.js app
+        working-directory: ./king-ezekiel-academy-nextjs
+        run: npm run build
+        env:
+          NODE_ENV: production
+
+      - name: Verify build output
+        run: |
+          if [ ! -d "king-ezekiel-academy-nextjs/.next" ]; then
+            echo "❌ Build output directory not found"
+            exit 1
+          fi
+          echo "✅ Build output verified"
+
+      - name: Deployment Status
+        run: |
+          echo "✅ Build completed successfully"
+          echo "🚀 Deployment to Vercel will be triggered automatically"
+          echo "📝 If Vercel is connected to this repository, it will auto-deploy on push to main"
+          echo "🔗 Check deployment status at: https://vercel.com/dashboard"
+
