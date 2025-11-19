@@ -199,31 +199,36 @@ const AdminAddCourseWizard: React.FC = () => {
   const handlePdfUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (files && files.length > 0) {
-      const file = files[0];
+      const pdfFiles = Array.from(files).filter(file => file.type === 'application/pdf');
       
-      // Validate file type (PDF only)
-      if (file.type !== 'application/pdf') {
-        setError('Please select a PDF file');
+      if (pdfFiles.length === 0) {
+        setError('Please select PDF files only');
         return;
       }
       
-      // Validate file size (max 50MB)
-      if (file.size > 50 * 1024 * 1024) {
-        setError('PDF file is too large. Please select a file smaller than 50MB');
-        return;
+      // Validate all files
+      const validFiles: PDFResource[] = [];
+      for (const file of pdfFiles) {
+        // Validate file size (max 50MB)
+        if (file.size > 50 * 1024 * 1024) {
+          setError(`"${file.name}" is too large. Maximum file size is 50MB per PDF.`);
+          continue;
+        }
+        
+        validFiles.push({
+          id: Math.random().toString(36).substr(2, 9),
+          file: file,
+          name: file.name.replace('.pdf', '')
+        });
       }
       
-      const pdfResource: PDFResource = {
-        id: Math.random().toString(36).substr(2, 9),
-        file: file,
-        name: file.name.replace('.pdf', '')
-      };
-      
-      setCourseData(prev => ({
-        ...prev,
-        pdfResources: [...prev.pdfResources, pdfResource]
-      }));
-      setError('');
+      if (validFiles.length > 0) {
+        setCourseData(prev => ({
+          ...prev,
+          pdfResources: [...prev.pdfResources, ...validFiles]
+        }));
+        setError('');
+      }
     }
   };
 
@@ -863,8 +868,14 @@ const AdminAddCourseWizard: React.FC = () => {
       <p className="text-gray-600 mb-8 text-center">Add downloadable PDF resources for your course (optional).</p>
       
       {/* PDF Resources Section */}
-      <div className="bg-white p-6 rounded-lg shadow-md mb-8">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Downloadable PDFs</h3>
+      <div className="bg-white p-6 rounded-lg shadow-md mb-8 border-2 border-indigo-200">
+        <div className="flex items-center mb-4">
+          <svg className="h-6 w-6 text-indigo-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
+          </svg>
+          <h3 className="text-xl font-bold text-gray-900">📚 Downloadable PDF Resources</h3>
+        </div>
+        <p className="text-sm text-gray-600 mb-4">Add PDF files that students can download from this course. Maximum file size: 50MB per PDF.</p>
         
         <div
           className={`border-2 border-dashed rounded-lg p-8 text-center mb-6 ${
@@ -887,16 +898,17 @@ const AdminAddCourseWizard: React.FC = () => {
             ref={pdfInputRef}
             type="file"
             accept="application/pdf"
+            multiple
             onChange={handlePdfUpload}
             className="hidden"
           />
           <button
             onClick={() => pdfInputRef.current?.click()}
-            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors duration-200"
+            className="mt-4 px-6 py-3 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition-colors duration-200 shadow-md hover:shadow-lg"
           >
-            Select PDF Files
+            📄 Select PDF Files
           </button>
-          <p className="mt-2 text-xs text-gray-500">Maximum file size: 50MB per PDF</p>
+          <p className="mt-2 text-xs text-gray-500">Maximum file size: 50MB per PDF. You can select multiple PDFs at once.</p>
         </div>
 
         {/* PDF List */}
