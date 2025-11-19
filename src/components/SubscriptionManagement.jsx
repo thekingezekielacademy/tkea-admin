@@ -54,14 +54,6 @@ const SubscriptionManagement = () => {
       // Use filtered subscriptions for monthly trends
       const filteredSubscriptions = filteredSubscriptionsResult.data || [];
       const allPayments = allPaymentsResult.data || [];
-      
-      console.log('📊 Subscription Data:', {
-        totalSubscriptions: allSubscriptions.length,
-        filteredSubscriptions: filteredSubscriptions.length,
-        allPayments: allPayments.length,
-        subscriptions: allSubscriptions.map(s => ({ id: s.id, status: s.status, created_at: s.created_at })),
-        payments: allPayments.map(p => ({ id: p.id, amount: p.amount, created_at: p.created_at }))
-      });
 
       // Calculate overview stats (using ALL subscriptions, not filtered)
       const totalSubscriptions = allSubscriptions.length;
