@@ -209,25 +209,25 @@ const AdminAddCourseWizard: React.FC = () => {
       // Validate all files
       const validFiles: PDFResource[] = [];
       for (const file of pdfFiles) {
-        // Validate file size (max 50MB)
-        if (file.size > 50 * 1024 * 1024) {
+      // Validate file size (max 50MB)
+      if (file.size > 50 * 1024 * 1024) {
           setError(`"${file.name}" is too large. Maximum file size is 50MB per PDF.`);
           continue;
-        }
-        
+      }
+      
         validFiles.push({
-          id: Math.random().toString(36).substr(2, 9),
-          file: file,
-          name: file.name.replace('.pdf', '')
+        id: Math.random().toString(36).substr(2, 9),
+        file: file,
+        name: file.name.replace('.pdf', '')
         });
       }
       
       if (validFiles.length > 0) {
-        setCourseData(prev => ({
-          ...prev,
+      setCourseData(prev => ({
+        ...prev,
           pdfResources: [...prev.pdfResources, ...validFiles]
-        }));
-        setError('');
+      }));
+      setError('');
       }
     }
   };
@@ -1002,6 +1002,7 @@ const AdminAddCourseWizard: React.FC = () => {
         onChange={handleCoverPhotoUpload}
         className="hidden"
       />
+      </div>
 
       <div className="flex justify-between mt-8">
         <button
@@ -1050,7 +1051,7 @@ const AdminAddCourseWizard: React.FC = () => {
         {/* Progress Steps */}
         <div className="flex justify-center mb-8">
           <div className="space-y-4">
-            <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-4">
               {[
                 { number: 1, label: 'Course Details' },
                 { number: 2, label: 'Videos' },
@@ -1058,15 +1059,15 @@ const AdminAddCourseWizard: React.FC = () => {
               ].map((stepInfo) => (
                 <div key={stepInfo.number} className="flex items-center">
                   <div className="flex flex-col items-center">
-                    <div
-                      className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold ${
+                <div
+                  className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold ${
                         step >= stepInfo.number
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-gray-200 text-gray-600'
-                      }`}
-                    >
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-200 text-gray-600'
+                  }`}
+                >
                       {stepInfo.number}
-                    </div>
+                </div>
                     <span className={`text-xs mt-1 font-medium ${
                       step >= stepInfo.number ? 'text-blue-600' : 'text-gray-500'
                     }`}>
@@ -1074,14 +1075,14 @@ const AdminAddCourseWizard: React.FC = () => {
                     </span>
                   </div>
                   {stepInfo.number < 3 && (
-                    <div
-                      className={`w-16 h-1 mx-2 ${
+                  <div
+                    className={`w-16 h-1 mx-2 ${
                         step > stepInfo.number ? 'bg-blue-600' : 'bg-gray-200'
-                      }`}
-                    />
-                  )}
-                </div>
-              ))}
+                    }`}
+                  />
+                )}
+            </div>
+            ))}
             </div>
           </div>
         </div>
