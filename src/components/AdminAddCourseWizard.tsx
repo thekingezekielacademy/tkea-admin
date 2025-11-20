@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef } from 'react';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { notificationService } from '../utils/notificationService';
@@ -29,7 +29,7 @@ interface CourseData {
 }
 
 const AdminAddCourseWizard: React.FC = () => {
-  const history = useHistory();
+  const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -355,7 +355,7 @@ const AdminAddCourseWizard: React.FC = () => {
         try {
           const fileExt = courseData.coverPhoto.name.split('.').pop();
           const fileName = `${Date.now()}.${fileExt}`;
-          const filePath = `course-covers/${fileName}`;
+          const filePath = fileName;
 
           const arrayBuffer = await courseData.coverPhoto.arrayBuffer();
           
@@ -422,7 +422,7 @@ const AdminAddCourseWizard: React.FC = () => {
       }
 
       setShowSchedulePopup(false);
-      history.push('/admin/courses');
+      navigate('/admin/courses');
     } catch (e: any) {
       setError(e?.message || 'Failed to schedule course');
     } finally {
@@ -452,7 +452,7 @@ const AdminAddCourseWizard: React.FC = () => {
         try {
           const fileExt = courseData.coverPhoto.name.split('.').pop();
           const fileName = `${Date.now()}.${fileExt}`;
-          const filePath = `course-covers/${fileName}`;
+          const filePath = fileName;
 
           console.log('Uploading file:', {
             name: courseData.coverPhoto.name,
@@ -550,16 +550,25 @@ const AdminAddCourseWizard: React.FC = () => {
               // Upload PDF to storage
               const fileExt = 'pdf';
               const fileName = `${Date.now()}_${Math.random().toString(36).slice(2)}.${fileExt}`;
-              const filePath = `course-resources/${courseDataResult.id}/${fileName}`;
+              const filePath = `${courseDataResult.id}/${fileName}`;
               
               const arrayBuffer = await pdfResource.file.arrayBuffer();
               
               const { error: uploadError } = await supabase.storage
                 .from('course-resources')
-                .upload(filePath, arrayBuffer);
+                .upload(filePath, arrayBuffer, {
+                  contentType: 'application/pdf',
+                  upsert: false
+                });
               
               if (uploadError) {
-                console.warn(`PDF upload failed for ${pdfResource.name}:`, uploadError.message);
+                const errorMsg = uploadError.message || 'Unknown error';
+                if (errorMsg.includes('Bucket not found') || errorMsg.includes('not found')) {
+                  console.error(`PDF upload failed: The 'course-resources' storage bucket does not exist in Supabase. Please create it in the Supabase Dashboard → Storage section.`);
+                  setError(`PDF upload failed: The 'course-resources' storage bucket needs to be created in Supabase. Go to Supabase Dashboard → Storage → Create bucket named 'course-resources' and set it to Public.`);
+                } else {
+                  console.warn(`PDF upload failed for ${pdfResource.name}:`, errorMsg);
+                }
                 continue; // Skip this PDF but continue with others
               }
               
@@ -586,16 +595,21 @@ const AdminAddCourseWizard: React.FC = () => {
           
           // Insert PDF resources into database
           if (pdfResourcesToInsert.length > 0) {
-            const { error: resourcesError } = await supabase
+            console.log('Attempting to insert PDF resources:', pdfResourcesToInsert);
+            const { data: insertedData, error: resourcesError } = await supabase
               .from('course_resources')
-              .insert(pdfResourcesToInsert);
+              .insert(pdfResourcesToInsert)
+              .select();
             
             if (resourcesError) {
-              console.warn('Failed to save PDF resources to database:', resourcesError.message);
-              // Don't throw error, course is already created
+              console.error('Failed to save PDF resources to database:', resourcesError);
+              setError(`Failed to save PDF resources: ${resourcesError.message}. Please check RLS policies and ensure you have admin permissions.`);
+              // Don't throw error, course is already created, but show error to user
             } else {
-              console.log(`Successfully uploaded ${pdfResourcesToInsert.length} PDF resource(s)`);
+              console.log(`Successfully uploaded ${pdfResourcesToInsert.length} PDF resource(s):`, insertedData);
             }
+          } else {
+            console.log('No PDF resources to insert (all may have failed upload)');
           }
         } catch (pdfUploadErr) {
           console.warn('Error during PDF upload process:', pdfUploadErr);
@@ -607,7 +621,7 @@ const AdminAddCourseWizard: React.FC = () => {
       await notifyUsersAboutNewCourse(courseData.title, courseData.category);
       
       // Navigate to courses list
-      history.push('/admin/courses');
+      navigate('/admin/courses');
     } catch (err: any) {
       console.error('Create course error:', err);
       setError(err.message || 'Failed to create course');
@@ -1039,7 +1053,7 @@ const AdminAddCourseWizard: React.FC = () => {
         {/* Header */}
         <div className="text-center mb-8">
           <button
-            onClick={() => history.push('/admin')}
+            onClick={() => navigate('/admin')}
             className="inline-flex items-center px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors duration-200 mb-4"
           >
             ← Back to Admin

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useHistory, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 
@@ -33,7 +33,7 @@ interface CourseData {
 
 const EditCourse: React.FC = () => {
   const { user } = useAuth();
-  const history = useHistory();
+  const navigate = useNavigate();
   const { id: courseId } = useParams<{ id: string }>();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -436,7 +436,7 @@ const EditCourse: React.FC = () => {
           console.log('Uploading cover photo...');
           const fileExt = courseData.coverPhoto.name.split('.').pop();
           const fileName = `${Date.now()}.${fileExt}`;
-          const filePath = `course-covers/${fileName}`;
+          const filePath = fileName;
           
           console.log('Uploading file:', {
             name: courseData.coverPhoto.name,
@@ -620,16 +620,25 @@ const EditCourse: React.FC = () => {
               // Upload PDF to storage
               const fileExt = 'pdf';
               const fileName = `${Date.now()}_${Math.random().toString(36).slice(2)}.${fileExt}`;
-              const filePath = `course-resources/${courseId}/${fileName}`;
+              const filePath = `${courseId}/${fileName}`;
 
               const arrayBuffer = await pdfResource.file.arrayBuffer();
 
               const { error: uploadError } = await supabase.storage
                 .from('course-resources')
-                .upload(filePath, arrayBuffer);
+                .upload(filePath, arrayBuffer, {
+                  contentType: 'application/pdf',
+                  upsert: false
+                });
 
               if (uploadError) {
-                console.warn(`PDF upload failed for ${pdfResource.name}:`, uploadError.message);
+                const errorMsg = uploadError.message || 'Unknown error';
+                if (errorMsg.includes('Bucket not found') || errorMsg.includes('not found')) {
+                  console.error(`PDF upload failed: The 'course-resources' storage bucket does not exist in Supabase. Please create it in the Supabase Dashboard → Storage section.`);
+                  setError(`PDF upload failed: The 'course-resources' storage bucket needs to be created in Supabase. Go to Supabase Dashboard → Storage → Create bucket named 'course-resources' and set it to Public.`);
+                } else {
+                  console.warn(`PDF upload failed for ${pdfResource.name}:`, errorMsg);
+                }
                 continue;
               }
 
@@ -654,15 +663,21 @@ const EditCourse: React.FC = () => {
 
           // Insert new PDF resources into database
           if (pdfResourcesToInsert.length > 0) {
-            const { error: resourcesError } = await supabase
+            console.log('Attempting to insert PDF resources:', pdfResourcesToInsert);
+            const { data: insertedData, error: resourcesError } = await supabase
               .from('course_resources')
-              .insert(pdfResourcesToInsert);
+              .insert(pdfResourcesToInsert)
+              .select();
 
             if (resourcesError) {
-              console.warn('Failed to save PDF resources to database:', resourcesError.message);
+              console.error('Failed to save PDF resources to database:', resourcesError);
+              setError(`Failed to save PDF resources: ${resourcesError.message}. Please check RLS policies and ensure you have admin permissions.`);
             } else {
-              console.log(`Successfully uploaded ${pdfResourcesToInsert.length} PDF resource(s)`);
+              console.log(`Successfully uploaded ${pdfResourcesToInsert.length} PDF resource(s):`, insertedData);
+              setSuccess(`Successfully uploaded ${pdfResourcesToInsert.length} PDF resource(s)!`);
             }
+          } else {
+            console.log('No PDF resources to insert (all may have failed upload)');
           }
         } catch (pdfUploadErr) {
           console.warn('Error during PDF upload process:', pdfUploadErr);
@@ -696,12 +711,12 @@ const EditCourse: React.FC = () => {
 
       setSuccess('Course updated successfully!');
       setTimeout(() => {
-        history.push('/admin/courses');
+        navigate('/admin/courses');
       }, 1500);
 
     } catch (err) {
       console.error('Error updating course:', err);
-      setError(`Failed to update course: ${err.message || err}`);
+      setError(`Failed to update course: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       setLoading(false);
     }
@@ -741,7 +756,7 @@ const EditCourse: React.FC = () => {
               <p className="mt-2 text-gray-600">Update your course information and content</p>
             </div>
             <button
-              onClick={() => history.push('/admin/courses')}
+              onClick={() => navigate('/admin/courses')}
               className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
             >
               ← Back to Courses
@@ -873,95 +888,6 @@ const EditCourse: React.FC = () => {
           </div>
         </div>
 
-        {/* Videos Section */}
-        <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Course Videos</h2>
-          
-          {/* Add New Video Form */}
-          <div className="bg-gray-50 rounded-lg p-4 mb-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Add New Video</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <input
-                type="text"
-                value={newVideo.name}
-                onChange={(e) => handleVideoInputChange('name', e.target.value)}
-                placeholder="Video Name"
-                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-              />
-              <input
-                type="text"
-                value={newVideo.duration}
-                onChange={(e) => handleVideoInputChange('duration', e.target.value)}
-                placeholder="Duration (e.g., 15:30)"
-                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-              />
-              <input
-                type="url"
-                value={newVideo.link}
-                onChange={(e) => handleVideoInputChange('link', e.target.value)}
-                placeholder="Video Link (YouTube embed or direct URL)"
-                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-              />
-            </div>
-            <button
-              onClick={addVideo}
-              disabled={!newVideo.name || !newVideo.duration || !newVideo.link}
-              className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              + Add New Video
-            </button>
-          </div>
-
-          {/* Videos List */}
-          {courseData.videos.length > 0 && (
-            <div>
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Current Videos ({courseData.videos.length})</h3>
-              <div className="space-y-3">
-                {courseData.videos.map((video, index) => (
-                  <div
-                    key={video.id || index} // Use video.id if available, otherwise index
-                    className="flex items-center justify-between bg-gray-50 rounded-lg p-4"
-                    draggable={true}
-                    onDragStart={(e) => handleDragStart(e, index)}
-                    onDragOver={handleDragOver}
-                    onDrop={(e) => handleDrop(e, index)}
-                    onDragEnd={() => setDraggedVideoIndex(null)}
-                  >
-                    <div className="flex-1">
-                      <p className="font-medium text-gray-900">{video.name}</p>
-                      <p className="text-sm text-gray-600">Duration: {video.duration}</p>
-                      <p className="text-sm text-gray-600 truncate">Link: {video.link}</p>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <button
-                        onClick={() => moveVideoUp(index)}
-                        className="p-2 text-gray-600 hover:text-gray-800 rounded-full hover:bg-gray-200"
-                        title="Move up"
-                      >
-                        <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" /></svg>
-                      </button>
-                      <button
-                        onClick={() => moveVideoDown(index)}
-                        className="p-2 text-gray-600 hover:text-gray-800 rounded-full hover:bg-gray-200"
-                        title="Move down"
-                      >
-                        <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-                      </button>
-                      <button
-                        onClick={() => removeVideo(index)}
-                        className="ml-4 px-3 py-1 text-red-600 hover:text-red-800 text-sm font-medium"
-                        title="Remove"
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-
         {/* PDF Resources Section - HIGHLIGHTED */}
         <div className="bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 rounded-lg shadow-xl p-8 mb-6 border-4 border-indigo-400">
           <div className="text-center mb-6">
@@ -1049,6 +975,96 @@ const EditCourse: React.FC = () => {
           )}
         </div>
 
+        {/* Videos Section */}
+        <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">Course Videos</h2>
+          
+          {/* Add New Video Form */}
+          <div className="bg-gray-50 rounded-lg p-4 mb-6">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Add New Video</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <input
+                type="text"
+                value={newVideo.name}
+                onChange={(e) => handleVideoInputChange('name', e.target.value)}
+                placeholder="Video Name"
+                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              />
+              <input
+                type="text"
+                value={newVideo.duration}
+                onChange={(e) => handleVideoInputChange('duration', e.target.value)}
+                placeholder="Duration (e.g., 15:30)"
+                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              />
+              <input
+                type="url"
+                value={newVideo.link}
+                onChange={(e) => handleVideoInputChange('link', e.target.value)}
+                placeholder="Video Link (YouTube embed or direct URL)"
+                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              />
+            </div>
+            <button
+              onClick={addVideo}
+              disabled={!newVideo.name || !newVideo.duration || !newVideo.link}
+              className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              + Add New Video
+            </button>
+          </div>
+
+          {/* Videos List */}
+          {courseData.videos.length > 0 && (
+            <div>
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Current Videos ({courseData.videos.length})</h3>
+              <div className="space-y-3">
+                {courseData.videos.map((video, index) => (
+                  <div
+                    key={video.id || index} // Use video.id if available, otherwise index
+                    className="flex items-center justify-between bg-gray-50 rounded-lg p-4"
+                    draggable={true}
+                    onDragStart={(e) => handleDragStart(e, index)}
+                    onDragOver={handleDragOver}
+                    onDrop={(e) => handleDrop(e, index)}
+                    onDragEnd={() => setDraggedVideoIndex(null)}
+                  >
+                    <div className="flex-1">
+                      <p className="font-medium text-gray-900">{video.name}</p>
+                      <p className="text-sm text-gray-600">Duration: {video.duration}</p>
+                      <p className="text-sm text-gray-600 truncate">Link: {video.link}</p>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => moveVideoUp(index)}
+                        className="p-2 text-gray-600 hover:text-gray-800 rounded-full hover:bg-gray-200"
+                        title="Move up"
+                      >
+                        <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" /></svg>
+                      </button>
+                      <button
+                        onClick={() => moveVideoDown(index)}
+                        className="p-2 text-gray-600 hover:text-gray-800 rounded-full hover:bg-gray-200"
+                        title="Move down"
+                      >
+                        <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                      </button>
+                      <button
+                        onClick={() => removeVideo(index)}
+                        className="ml-4 px-3 py-1 text-red-600 hover:text-red-800 text-sm font-medium"
+                        title="Remove"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          </div>
+        </div>
+
         {/* Cover Photo Section */}
         <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Cover Photo</h2>
@@ -1102,7 +1118,7 @@ const EditCourse: React.FC = () => {
         {/* Action Buttons */}
         <div className="flex justify-end space-x-4">
           <button
-            onClick={() => history.push('/admin/courses')}
+            onClick={() => navigate('/admin/courses')}
             className="px-6 py-3 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
           >
             Cancel
