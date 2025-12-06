@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 
 interface Course {
@@ -22,10 +22,11 @@ interface Course {
 
 const AdminCourses: React.FC = () => {
   const { user } = useAuth();
-  const history = useHistory();
+  const navigate = useNavigate();
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterLevel, setFilterLevel] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all'); // Add status filter
@@ -233,16 +234,39 @@ const AdminCourses: React.FC = () => {
   };
 
   const handleEditCourse = (courseId: string) => {
-    history.push(`/admin/edit-course/${courseId}`);
+    navigate(`/admin/courses/edit/${courseId}`);
   };
 
   const handleViewCourse = (courseId: string) => {
-    history.push(`/admin/view-course/${courseId}`);
+    navigate(`/admin/courses/view/${courseId}`);
   };
 
   const handleDeleteCourse = async (courseId: string) => {
     if (window.confirm('Are you sure you want to delete this course? This action cannot be undone.')) {
       try {
+        setError('');
+        setSuccess('');
+        
+        // First, delete related videos
+        const { error: videosError } = await supabase
+          .from('course_videos')
+          .delete()
+          .eq('course_id', courseId);
+
+        if (videosError) {
+          console.warn('Error deleting videos:', videosError);
+        }
+
+        // Delete PDF resources
+        const { error: pdfsError } = await supabase
+          .from('course_pdf_resources')
+          .delete()
+          .eq('course_id', courseId);
+
+        if (pdfsError) {
+          console.warn('Error deleting PDF resources:', pdfsError);
+        }
+
         // Delete from Supabase database
         const { error } = await supabase
           .from('courses')
@@ -255,10 +279,14 @@ const AdminCourses: React.FC = () => {
 
         // Remove from local state
         setCourses(prev => prev.filter(course => course.id !== courseId));
-        console.log(`Course ${courseId} deleted successfully`);
+        setSuccess('Course deleted successfully');
+        
+        // Clear success message after 3 seconds
+        setTimeout(() => setSuccess(''), 3000);
       } catch (err) {
         console.error('Error deleting course:', err);
-        setError('Failed to delete course from database');
+        setError(err instanceof Error ? err.message : 'Failed to delete course from database');
+        setTimeout(() => setError(''), 5000);
       }
     }
   };
@@ -293,7 +321,7 @@ const AdminCourses: React.FC = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <button
-                onClick={() => history.push('/admin')}
+                onClick={() => navigate('/admin')}
                 className="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
               >
                 <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -307,7 +335,7 @@ const AdminCourses: React.FC = () => {
               </div>
             </div>
             <button
-              onClick={() => history.push('/admin/add-course')}
+              onClick={() => navigate('/admin/courses/add')}
               className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
             >
               <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -321,6 +349,12 @@ const AdminCourses: React.FC = () => {
         {error && (
           <div className="mb-6 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded">
             {error}
+          </div>
+        )}
+
+        {success && (
+          <div className="mb-6 bg-green-50 border border-green-200 text-green-600 px-4 py-3 rounded">
+            {success}
           </div>
         )}
 

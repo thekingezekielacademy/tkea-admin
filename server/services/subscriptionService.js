@@ -310,12 +310,36 @@ class SubscriptionService {
 
       if (revenueError) throw revenueError;
 
-      const totalRevenue = revenueData.reduce((sum, sub) => sum + (sub.amount || 0), 0);
+      // Normalize amount function - handles both kobo and naira formats
+      const normalizeAmount = (raw) => {
+        if (typeof raw !== 'number' || isNaN(raw)) return 0;
+        
+        // If amount is >= 100000, it's likely in kobo (250000 kobo = 2500 naira)
+        if (raw >= 100000 && raw % 100 === 0) {
+          return Math.round(raw / 100);
+        }
+        
+        // If amount is between 100 and 10000, it's likely already in naira (keep as-is)
+        // Common subscription price: 2500 naira
+        if (raw >= 100 && raw < 10000) {
+          return raw;
+        }
+        
+        // If amount is very small (< 100), might be legacy divide (e.g., 25 → 2500)
+        if (raw > 0 && raw < 100) {
+          return raw * 100; // fix legacy 25 → 2500
+        }
+        
+        // Default: keep as-is
+        return raw;
+      };
+
+      const totalRevenue = revenueData.reduce((sum, sub) => sum + normalizeAmount(sub.amount || 0), 0);
 
       return {
         totalSubscriptions,
         activeSubscriptions,
-        totalRevenue: totalRevenue / 100, // Convert from kobo to NGN
+        totalRevenue: totalRevenue, // Already normalized to naira
         conversionRate: totalSubscriptions > 0 ? (activeSubscriptions / totalSubscriptions) * 100 : 0
       };
     } catch (error) {

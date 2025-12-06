@@ -71,13 +71,30 @@ const Subscription: React.FC = () => {
   const SUBSCRIPTION_CACHE_VERSION = 2;
 
   // Normalize amount robustly across legacy data:
-  // - If clearly kobo (very large and divisible by 100), convert to naira
-  // - If clearly underpriced legacy divide (e.g., 25), upscale to expected price tier
-  // - Else, keep as-is
+  // Amounts in database can be stored as:
+  // - Kobo (250000 = ₦2,500)
+  // - Naira (2500 = ₦2,500)
+  // This function ensures correct display
   const normalizeAmount = (raw: number) => {
     if (typeof raw !== 'number' || isNaN(raw)) return 0;
-    if (raw >= 100000 && raw % 100 === 0) return Math.round(raw / 100);
-    if (raw > 0 && raw < 100) return raw * 100; // fix legacy 25 → 2500
+    
+    // If amount is >= 100000, it's likely in kobo (250000 kobo = 2500 naira)
+    if (raw >= 100000 && raw % 100 === 0) {
+      return Math.round(raw / 100);
+    }
+    
+    // If amount is between 100 and 10000, it's likely already in naira (keep as-is)
+    // Common subscription price: 2500 naira
+    if (raw >= 100 && raw < 10000) {
+      return raw;
+    }
+    
+    // If amount is very small (< 100), might be legacy divide (e.g., 25 → 2500)
+    if (raw > 0 && raw < 100) {
+      return raw * 100; // fix legacy 25 → 2500
+    }
+    
+    // Default: keep as-is
     return raw;
   };
 
@@ -114,38 +131,135 @@ const Subscription: React.FC = () => {
       
       // Fetch from Supabase with optimized query
       const supabase = createClient();
+      const now = new Date();
+      
+      // Fetch user subscriptions - check all statuses first, then filter by date
+      // Order by start_date descending first (most recent), then by created_at
       const { data: supabaseData, error: supabaseError } = await supabase
         .from('user_subscriptions')
         .select('*')
         .eq('user_id', user.id)
-        .eq('status', 'active')
-        .order('created_at', { ascending: false })
-        .limit(1);
+        .order('start_date', { ascending: false, nullsLast: true })
+        .order('created_at', { ascending: false });
 
-      if (supabaseData && supabaseData.length > 0 && !supabaseError) {
-        const subscriptionData = supabaseData[0];
-        const now = new Date();
-        let startDate = new Date(subscriptionData.created_at);
+      if (supabaseError) {
+        console.error('Error fetching subscriptions:', supabaseError);
+        setSubscription(null);
+        localStorage.removeItem('subscription');
+        return;
+      }
+
+      if (!supabaseData || supabaseData.length === 0) {
+        setSubscription(null);
+        localStorage.removeItem('subscription');
+        localStorage.removeItem('flutterwave_subscription_id');
+        localStorage.removeItem('flutterwave_customer_code');
+        return;
+      }
+
+      // Check for successful payments in subscription_payments table
+      const { data: paymentsData, error: paymentsError } = await supabase
+        .from('subscription_payments')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('status', 'success')
+        .order('created_at', { ascending: false });
+
+      if (paymentsError) {
+        console.error('Error fetching payments:', paymentsError);
+      }
+
+      // Find active subscription: must have successful payment AND valid date range
+      // Only return the MOST RECENT active subscription (already sorted by start_date desc)
+      let activeSubscription = null;
+      
+      // Sort subscriptions by start_date descending to get most recent first
+      const sortedSubscriptions = [...supabaseData].sort((a, b) => {
+        const dateA = a.start_date ? new Date(a.start_date).getTime() : new Date(a.created_at).getTime();
+        const dateB = b.start_date ? new Date(b.start_date).getTime() : new Date(b.created_at).getTime();
+        return dateB - dateA; // Most recent first
+      });
+      
+      for (const subscriptionData of sortedSubscriptions) {
+        // Use actual start_date and end_date from database
+        const startDate = subscriptionData.start_date 
+          ? new Date(subscriptionData.start_date) 
+          : new Date(subscriptionData.created_at);
+        const endDate = subscriptionData.end_date 
+          ? new Date(subscriptionData.end_date) 
+          : null;
         
+        // Check if subscription is within valid date range
+        // Must have started (start_date <= now) and not expired (end_date >= now or null)
+        const hasStarted = startDate <= now;
+        const notExpired = !endDate || endDate >= now;
+        const isInDateRange = hasStarted && notExpired;
+        
+        // Check if there's a successful payment for this subscription
+        // Payment should be related to this subscription (same user_id is enough for now)
+        const hasSuccessfulPayment = paymentsData && paymentsData.length > 0;
+        
+        // Subscription is active ONLY if:
+        // 1. Has successful payment(s) in subscription_payments table
+        // 2. Current date is between start_date and end_date (or no end_date and started)
+        // Priority: Payment + Date Range > Status field
+        if (hasSuccessfulPayment && isInDateRange) {
+          // Consider subscription active if it has payment and valid date range
+          // Ignore status field if payment and dates are valid
+          activeSubscription = subscriptionData;
+          break; // Take the first (most recent) active subscription only
+        } else if (hasSuccessfulPayment && !isInDateRange && subscriptionData.status === 'active') {
+          // If payment exists but date range is invalid, still show if status is active
+          // This handles edge cases where dates might not be set correctly
+          activeSubscription = subscriptionData;
+          break; // Take the first (most recent) active subscription only
+        }
+      }
+
+      if (activeSubscription) {
+        const subscriptionData = activeSubscription;
+        
+        // Use actual dates from database, fallback to calculated if missing
+        let startDate = subscriptionData.start_date 
+          ? new Date(subscriptionData.start_date) 
+          : new Date(subscriptionData.created_at);
+        let endDate = subscriptionData.end_date 
+          ? new Date(subscriptionData.end_date) 
+          : new Date(startDate.getTime() + 30 * 24 * 60 * 60 * 1000);
+        
+        // Ensure start_date is not in the future
         if (startDate > now) {
           startDate = now;
         }
         
-        let endDate = new Date(startDate.getTime() + 30 * 24 * 60 * 60 * 1000);
-        let nextBillingDate = new Date(endDate.getTime());
+        // If end_date is in the past, subscription has expired
+        if (endDate < now && subscriptionData.status === 'active') {
+          // Update status to expired in database if needed
+          await supabase
+            .from('user_subscriptions')
+            .update({ status: 'expired' })
+            .eq('id', subscriptionData.id);
+          
+          setSubscription(null);
+          localStorage.removeItem('subscription');
+          return;
+        }
         
+        let nextBillingDate = endDate;
         if (subscriptionData.next_billing_date) {
           nextBillingDate = new Date(subscriptionData.next_billing_date);
+        } else if (subscriptionData.next_payment_date) {
+          nextBillingDate = new Date(subscriptionData.next_payment_date);
         }
         
         const subscription = {
           id: subscriptionData.id,
-          status: subscriptionData.status,
+          status: endDate < now ? 'expired' : subscriptionData.status,
           plan_name: subscriptionData.plan_name,
           amount: normalizeAmount(subscriptionData.amount),
           currency: subscriptionData.currency || 'NGN',
-          billing_cycle: 'monthly' as const,
-          start_date: subscriptionData.created_at,
+          billing_cycle: subscriptionData.billing_cycle || 'monthly',
+          start_date: startDate.toISOString(),
           end_date: endDate.toISOString(),
           next_billing_date: nextBillingDate.toISOString(),
           flutterwave_subscription_id: subscriptionData.flutterwave_subscription_id,
@@ -211,6 +325,46 @@ const Subscription: React.FC = () => {
       setError(null);
       
       try {
+        const supabase = createClient();
+        const billingHistoryItems: BillingHistory[] = [];
+        
+        // Fetch payments from subscription_payments table
+        const { data: paymentsData, error: paymentsError } = await supabase
+          .from('subscription_payments')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
+
+        if (paymentsError) {
+          console.error('❌ Error fetching payments:', paymentsError);
+        }
+
+        // Add subscription payments to billing history
+        if (paymentsData && paymentsData.length > 0) {
+          paymentsData.forEach((payment) => {
+            // Use Flutterwave reference fields (primary), fallback to Paystack for legacy data
+            const reference = payment.flutterwave_reference || 
+                             payment.flutterwave_transaction_id ||
+                             payment.flutterwave_tx_ref ||
+                             payment.paystack_reference || 
+                             payment.paystack_transaction_id || 
+                             'N/A';
+            
+            billingHistoryItems.push({
+              id: payment.id,
+              type: 'payment' as const,
+              amount: normalizeAmount(payment.amount),
+              currency: payment.currency || 'NGN',
+              status: payment.status === 'success' ? 'paid' : payment.status === 'pending' ? 'pending' : 'failed',
+              description: `Payment - ${payment.payment_method || 'Card'} - ${reference}`,
+              date: payment.paid_at || payment.created_at,
+              payment_method: payment.payment_method,
+              flutterwave_reference: reference
+            });
+          });
+        }
+
+        // Add current subscription to billing history if active
         if (subscription) {
           const subscriptionBilling: BillingHistory = {
             id: `sub-${subscription.id}`,
@@ -218,22 +372,29 @@ const Subscription: React.FC = () => {
             amount: subscription.amount,
             currency: subscription.currency || 'NGN',
             status: mapSubscriptionStatusToBillingStatus(subscription.status),
-            description: `${subscription.plan_name} - Monthly billing`,
+            description: `${subscription.plan_name} - ${subscription.billing_cycle || 'Monthly'} billing`,
             date: subscription.start_date,
             invoice_url: `#subscription-${subscription.id}`,
             subscription_id: subscription.id,
             flutterwave_subscription_id: subscription.flutterwave_subscription_id,
-            billing_cycle: 'monthly',
+            billing_cycle: subscription.billing_cycle || 'monthly',
             start_date: subscription.start_date,
             end_date: subscription.next_billing_date || subscription.end_date,
             flutterwave_reference: subscription.flutterwave_subscription_id
           };
-          setBillingHistory([subscriptionBilling]);
-        } else {
-          setBillingHistory([]);
+          billingHistoryItems.unshift(subscriptionBilling); // Add to beginning
         }
+
+        // Sort by date (most recent first)
+        billingHistoryItems.sort((a, b) => {
+          const dateA = new Date(a.date).getTime();
+          const dateB = new Date(b.date).getTime();
+          return dateB - dateA;
+        });
+
+        setBillingHistory(billingHistoryItems);
       } catch (error) {
-        console.error('❌ Error creating billing history from subscription:', error);
+        console.error('❌ Error creating billing history:', error);
         setBillingHistory([]);
       } finally {
         setLoading(false);

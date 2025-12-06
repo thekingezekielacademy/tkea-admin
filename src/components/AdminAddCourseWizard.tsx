@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { notificationService } from '../utils/notificationService';
+import { emailService } from '../services/emailService';
 
 interface Video {
   id: string;
@@ -23,6 +24,7 @@ interface CourseData {
   level: string;
   category: string;
   access_type: 'free' | 'membership';
+  purchase_price: number;
   coverPhoto?: File;
   videos: Video[];
   pdfResources: PDFResource[];
@@ -43,6 +45,7 @@ const AdminAddCourseWizard: React.FC = () => {
     level: 'beginner', // Default level (lowercase)
     category: 'business-entrepreneurship', // Default category
     access_type: 'free', // Default access type
+    purchase_price: 0, // Default price (free)
     coverPhoto: undefined,
     videos: [],
     pdfResources: []
@@ -107,7 +110,7 @@ const AdminAddCourseWizard: React.FC = () => {
     });
   };
 
-  const handleInputChange = (field: keyof CourseData, value: string) => {
+  const handleInputChange = (field: keyof CourseData, value: string | number) => {
     setCourseData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -279,12 +282,18 @@ const AdminAddCourseWizard: React.FC = () => {
     }));
   };
 
-  // Function to notify all active users about new course
-  const notifyUsersAboutNewCourse = async (courseTitle: string, category: string) => {
+  // Function to notify all active users about scheduled course
+  const notifyUsersAboutScheduledCourse = async (courseTitle: string, scheduledDate: string, courseId: string) => {
     try {
-      console.log('🔔 Notifying users about new course:', courseTitle);
+      console.log('🔔 Notifying users about scheduled course:', courseTitle);
       
-      // Get all active users (users with recent activity or subscriptions)
+      // Check if Resend is configured
+      if (!emailService.isConfigured()) {
+        console.warn('⚠️ Resend API key not configured. Emails will not be sent.');
+        return;
+      }
+      
+      // Get all active users (users with email addresses)
       const { data: activeUsers, error: usersError } = await supabase
         .from('profiles')
         .select('id, email, full_name')
@@ -300,26 +309,110 @@ const AdminAddCourseWizard: React.FC = () => {
         return;
       }
 
-      console.log(`📢 Sending new course notification to ${activeUsers.length} users`);
+      console.log(`📢 Sending scheduled course notification emails to ${activeUsers.length} users`);
 
-      // Send notification to each user
-      // Note: In a real implementation, you might want to use a background job
-      // or push notification service for better performance
+      // Send email to each user
+      let sentCount = 0;
+      let failedCount = 0;
+
       for (const user of activeUsers) {
         try {
-          // For now, we'll just log the notification
-          // In a real implementation, you'd send push notifications or emails
-          console.log(`📧 Would notify ${user.full_name || user.email} about: ${courseTitle}`);
-          
-          // If the user has notification permissions enabled, send the notification
-          // This would require storing notification preferences in the database
-          await notificationService.sendNewCourseNotification(courseTitle, category);
+          if (!user.email) {
+            console.warn(`Skipping user ${user.id} - no email address`);
+            failedCount++;
+            continue;
+          }
+
+          const result = await emailService.sendCourseScheduledEmail({
+            name: user.full_name || 'Student',
+            email: user.email,
+            courseTitle,
+            courseId,
+            scheduledDate,
+          });
+
+          if (result.success) {
+            sentCount++;
+            console.log(`✅ Scheduled course email sent to ${user.email}`);
+          } else {
+            failedCount++;
+            console.error(`❌ Failed to send scheduled course email to ${user.email}:`, result.error);
+          }
         } catch (notifyError) {
+          failedCount++;
           console.error(`Error notifying user ${user.email}:`, notifyError);
         }
       }
 
-      console.log('✅ New course notifications sent successfully');
+      console.log(`✅ Scheduled course notifications completed: ${sentCount} sent, ${failedCount} failed`);
+    } catch (error) {
+      console.error('Error in notifyUsersAboutScheduledCourse:', error);
+    }
+  };
+
+  // Function to notify all active users about new course
+  const notifyUsersAboutNewCourse = async (courseTitle: string, category: string, courseId: string) => {
+    try {
+      console.log('🔔 Notifying users about new course:', courseTitle);
+      
+      // Check if Resend is configured
+      if (!emailService.isConfigured()) {
+        console.warn('⚠️ Resend API key not configured. Emails will not be sent.');
+        console.warn('⚠️ To enable email notifications, set REACT_APP_RESEND_API_KEY and REACT_APP_RESEND_FROM_EMAIL environment variables.');
+        return;
+      }
+      
+      // Get all active users (users with email addresses)
+      const { data: activeUsers, error: usersError } = await supabase
+        .from('profiles')
+        .select('id, email, full_name')
+        .not('email', 'is', null);
+
+      if (usersError) {
+        console.error('Error fetching users for notification:', usersError);
+        return;
+      }
+
+      if (!activeUsers || activeUsers.length === 0) {
+        console.log('No active users found to notify');
+        return;
+      }
+
+      console.log(`📢 Sending new course notification emails to ${activeUsers.length} users`);
+
+      // Send email to each user
+      let sentCount = 0;
+      let failedCount = 0;
+
+      for (const user of activeUsers) {
+        try {
+          if (!user.email) {
+            console.warn(`Skipping user ${user.id} - no email address`);
+            failedCount++;
+            continue;
+          }
+
+          const result = await emailService.sendCourseAvailableEmail({
+            name: user.full_name || 'Student',
+            email: user.email,
+            courseTitle,
+            courseId,
+          });
+
+          if (result.success) {
+            sentCount++;
+            console.log(`✅ Email sent to ${user.email}`);
+          } else {
+            failedCount++;
+            console.error(`❌ Failed to send email to ${user.email}:`, result.error);
+          }
+        } catch (notifyError) {
+          failedCount++;
+          console.error(`Error notifying user ${user.email}:`, notifyError);
+        }
+      }
+
+      console.log(`✅ Course notifications completed: ${sentCount} sent, ${failedCount} failed`);
     } catch (error) {
       console.error('Error in notifyUsersAboutNewCourse:', error);
     }
@@ -383,6 +476,7 @@ const AdminAddCourseWizard: React.FC = () => {
           level: courseData.level,
           category: courseData.category,
           cover_photo_url: coverPhotoUrl,
+          purchase_price: courseData.purchase_price || 0,
           is_scheduled: true,
           status: 'scheduled',
           scheduled_for: scheduledFor,
@@ -414,9 +508,8 @@ const AdminAddCourseWizard: React.FC = () => {
 
       // Send notification about scheduled course
       try {
-        const { CourseScheduler } = require('../utils/courseScheduler');
-        const scheduler = CourseScheduler.getInstance();
-        await scheduler.notifyCourseScheduled(courseData.title, scheduledFor, courseIns.id);
+        // Notify all users about the scheduled course
+        await notifyUsersAboutScheduledCourse(courseData.title, scheduledFor, courseIns.id);
       } catch (error) {
         console.error('Error sending course scheduled notification:', error);
       }
@@ -505,6 +598,7 @@ const AdminAddCourseWizard: React.FC = () => {
           level: courseData.level,
           category: courseData.category,
           access_type: courseData.access_type,
+          purchase_price: courseData.purchase_price || 0,
           cover_photo_url: coverPhotoUrl,
           created_by: user?.id
         })
@@ -618,7 +712,7 @@ const AdminAddCourseWizard: React.FC = () => {
       }
       
       // Notify all users about the new course
-      await notifyUsersAboutNewCourse(courseData.title, courseData.category);
+      await notifyUsersAboutNewCourse(courseData.title, courseData.category, courseDataResult.id);
       
       // Navigate to courses list
       navigate('/admin/courses');
@@ -715,6 +809,24 @@ const AdminAddCourseWizard: React.FC = () => {
             <option value="free">Free Access</option>
             <option value="membership">Membership Required</option>
           </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Purchase Price (₦)
+          </label>
+          <input
+            type="number"
+            min="0"
+            step="0.01"
+            value={courseData.purchase_price}
+            onChange={(e) => handleInputChange('purchase_price', e.target.value)}
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="0.00"
+          />
+          <p className="mt-1 text-sm text-gray-500">
+            Enter the price in NGN (Nigerian Naira). Set to 0 for free courses.
+          </p>
         </div>
 
       </div>
