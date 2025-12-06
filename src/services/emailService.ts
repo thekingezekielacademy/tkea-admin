@@ -17,6 +17,14 @@ interface CourseNotificationParams {
   courseUrl?: string;
 }
 
+interface PurchaseConfirmationEmailParams {
+  email: string;
+  name: string;
+  productType: 'course' | 'learning_path';
+  productTitle: string;
+  productUrl: string;
+}
+
 /**
  * Get Resend API key from environment variables
  * Supports Create React App (REACT_APP_) prefix
@@ -207,6 +215,66 @@ const getCourseScheduledEmailTemplate = ({ name, courseTitle, courseId, schedule
 };
 
 /**
+ * Generate purchase confirmation email template
+ * Sent when user purchases a course/learning path (or admin grants access)
+ */
+const getPurchaseConfirmationEmailTemplate = ({
+  name,
+  productTitle,
+  productUrl,
+  productType,
+}: PurchaseConfirmationEmailParams): string => {
+  const productTypeLabel = productType === 'course' ? 'Course' : 'Learning Path';
+  
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Purchase Confirmation - ${productTitle}</title>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+    <h1 style="color: white; margin: 0; font-size: 28px;">🎉 Purchase Confirmed!</h1>
+  </div>
+  
+  <div style="background: #ffffff; padding: 40px 30px; border-radius: 0 0 10px 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+    <p style="font-size: 18px; margin-bottom: 20px;">Hi ${name},</p>
+    
+    <p style="font-size: 16px; color: #555; margin-bottom: 20px;">
+      Great news! You now have access to your new ${productTypeLabel.toLowerCase()}:
+    </p>
+    
+    <div style="background: #f8f9fa; padding: 25px; border-radius: 8px; margin: 30px 0; border-left: 4px solid #667eea;">
+      <h2 style="color: #333; margin-top: 0; font-size: 22px; font-weight: bold;">${productTitle}</h2>
+      <p style="color: #666; margin-bottom: 0;">Access granted and ready to start learning!</p>
+    </div>
+    
+    <div style="text-align: center; margin: 40px 0;">
+      <a href="${productUrl}" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 40px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold; font-size: 16px;">Start Learning</a>
+    </div>
+    
+    <p style="font-size: 14px; color: #888; margin-top: 40px; border-top: 1px solid #eee; padding-top: 20px;">
+      Need help? Contact us at 
+      <a href="mailto:support@thekingezekielacademy.com" style="color: #667eea;">support@thekingezekielacademy.com</a>
+    </p>
+    
+    <p style="font-size: 14px; color: #888; margin-top: 10px;">
+      Happy learning!<br>
+      The King Ezekiel Academy Team
+    </p>
+  </div>
+  
+  <div style="text-align: center; margin-top: 20px; color: #888; font-size: 12px;">
+    <p>© ${new Date().getFullYear()} King Ezekiel Academy. All rights reserved.</p>
+  </div>
+</body>
+</html>
+  `.trim();
+};
+
+/**
  * Email service for sending course notifications
  */
 export const emailService = {
@@ -230,6 +298,21 @@ export const emailService = {
     return sendEmailViaResend({
       to: params.email,
       subject: `📅 ${params.courseTitle} - Coming Soon!`,
+      html,
+    });
+  },
+
+  /**
+   * Send purchase confirmation email
+   * Sent when user purchases a course/learning path or admin grants access
+   */
+  async sendPurchaseConfirmationEmail(
+    params: PurchaseConfirmationEmailParams
+  ): Promise<{ success: boolean; error?: string }> {
+    const html = getPurchaseConfirmationEmailTemplate(params);
+    return sendEmailViaResend({
+      to: params.email,
+      subject: `🎉 Access Granted: ${params.productTitle}`,
       html,
     });
   },

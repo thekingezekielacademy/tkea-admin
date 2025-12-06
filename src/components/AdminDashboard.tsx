@@ -248,6 +248,21 @@ const AdminDashboard: React.FC = () => {
             </button>
 
             <button
+              onClick={() => navigate('/admin/manual-add-to-library')}
+              className="flex items-center space-x-3 p-4 border border-gray-200 rounded-lg hover:bg-green-50 hover:border-green-300 transition-colors text-left"
+            >
+              <div className="bg-green-100 rounded-lg p-2">
+                <svg className="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+              </div>
+              <div>
+                <p className="font-medium text-gray-900">Manual Add to Library</p>
+                <p className="text-sm text-gray-600">Grant access by email</p>
+              </div>
+            </button>
+
+            <button
               onClick={() => navigate('/admin/learning-paths')}
               className="flex items-center space-x-3 p-4 border border-gray-200 rounded-lg hover:bg-purple-50 hover:border-purple-300 transition-colors text-left"
             >

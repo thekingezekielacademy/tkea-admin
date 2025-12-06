@@ -12,6 +12,7 @@ import PurchaseManagement from './components/PurchaseManagement';
 import LearningPathManagement from './components/LearningPathManagement';
 import AddLearningPathWizard from './components/AddLearningPathWizard';
 import LearningPathView from './components/LearningPathView';
+import ManualAddToLibrary from './components/ManualAddToLibrary';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, loading } = useAuth();
@@ -55,6 +56,7 @@ function App() {
             <Route path="/admin/learning-paths" element={<ProtectedRoute><LearningPathManagement /></ProtectedRoute>} />
             <Route path="/admin/learning-paths/add" element={<ProtectedRoute><AddLearningPathWizard /></ProtectedRoute>} />
             <Route path="/admin/learning-paths/view/:id" element={<ProtectedRoute><LearningPathView /></ProtectedRoute>} />
+            <Route path="/admin/manual-add-to-library" element={<ProtectedRoute><ManualAddToLibrary /></ProtectedRoute>} />
             <Route path="/admin/subscriptions" element={<ProtectedRoute><SubscriptionManagement /></ProtectedRoute>} />
           </Routes>
         </div>
