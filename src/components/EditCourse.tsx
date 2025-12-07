@@ -124,12 +124,17 @@ const EditCourse: React.FC = () => {
         isNew: false
       }));
 
+      // Ensure access_type is valid ('free' or 'membership')
+      const validAccessType = (course.access_type === 'free' || course.access_type === 'membership') 
+        ? course.access_type 
+        : 'free';
+      
       setCourseData({
         title: course.title || '',
         description: course.description || '',
         level: course.level || 'beginner',
         category: course.category || 'business-entrepreneurship',
-        access_type: course.access_type || 'free',
+        access_type: validAccessType,
         coverPhoto: undefined,
         videos: videos || [],
         pdfResources: transformedPdfResources
@@ -468,6 +473,14 @@ const EditCourse: React.FC = () => {
 
       // Update the course
       console.log('Updating course in database...');
+      
+      // Validate access_type before updating
+      const validAccessType = (courseData.access_type === 'free' || courseData.access_type === 'membership')
+        ? courseData.access_type
+        : 'free';
+      
+      console.log('Updating with access_type:', validAccessType);
+      
       const { error: courseError } = await supabase
         .from('courses')
         .update({
@@ -475,7 +488,7 @@ const EditCourse: React.FC = () => {
           description: courseData.description,
           level: courseData.level,
           category: courseData.category,
-          access_type: courseData.access_type,
+          access_type: validAccessType,
           ...(coverPhotoUrl && { cover_photo_url: coverPhotoUrl })
         })
         .eq('id', courseId);
