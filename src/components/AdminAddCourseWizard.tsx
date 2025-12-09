@@ -467,6 +467,11 @@ const AdminAddCourseWizard: React.FC = () => {
         }
       }
 
+      // Ensure access_type is valid ('free' or 'membership')
+      const validAccessType = (courseData.access_type === 'free' || courseData.access_type === 'membership') 
+        ? courseData.access_type 
+        : 'membership'; // Default to 'membership' if invalid
+
       // Create the course with scheduled status
       const { data: courseIns, error: courseError } = await supabase
         .from('courses')
@@ -475,6 +480,7 @@ const AdminAddCourseWizard: React.FC = () => {
           description: courseData.description,
           level: courseData.level,
           category: courseData.category,
+          access_type: validAccessType,
           cover_photo_url: coverPhotoUrl,
           purchase_price: courseData.purchase_price || 0,
           is_scheduled: true,
@@ -580,12 +586,18 @@ const AdminAddCourseWizard: React.FC = () => {
       }
 
       // Create the course
+      // Ensure access_type is valid ('free' or 'membership')
+      const validAccessType = (courseData.access_type === 'free' || courseData.access_type === 'membership') 
+        ? courseData.access_type 
+        : 'membership'; // Default to 'membership' if invalid
+
       console.log('About to create course with data:', {
         title: courseData.title,
         description: courseData.description,
         level: courseData.level,
         category: courseData.category,
-        levelType: typeof courseData.level,
+        access_type: validAccessType,
+        purchase_price: courseData.purchase_price || 0,
         cover_photo_url: coverPhotoUrl,
         created_by: user?.id
       });
@@ -597,7 +609,7 @@ const AdminAddCourseWizard: React.FC = () => {
           description: courseData.description,
           level: courseData.level,
           category: courseData.category,
-          access_type: courseData.access_type,
+          access_type: validAccessType,
           purchase_price: courseData.purchase_price || 0,
           cover_photo_url: coverPhotoUrl,
           created_by: user?.id
@@ -813,16 +825,17 @@ const AdminAddCourseWizard: React.FC = () => {
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Purchase Price (₦)
+            Purchase Price (₦) *
           </label>
           <input
             type="number"
             min="0"
             step="0.01"
-            value={courseData.purchase_price}
-            onChange={(e) => handleInputChange('purchase_price', e.target.value)}
+            value={courseData.purchase_price || 0}
+            onChange={(e) => handleInputChange('purchase_price', parseFloat(e.target.value) || 0)}
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             placeholder="0.00"
+            required
           />
           <p className="mt-1 text-sm text-gray-500">
             Enter the price in NGN (Nigerian Naira). Set to 0 for free courses.

@@ -127,7 +127,7 @@ const EditCourse: React.FC = () => {
       // Ensure access_type is valid ('free' or 'membership')
       const validAccessType = (course.access_type === 'free' || course.access_type === 'membership') 
         ? course.access_type 
-        : 'free';
+        : 'membership'; // Default to 'membership' if invalid (matches database default)
       
       setCourseData({
         title: course.title || '',
@@ -477,7 +477,7 @@ const EditCourse: React.FC = () => {
       // Validate access_type before updating
       const validAccessType = (courseData.access_type === 'free' || courseData.access_type === 'membership')
         ? courseData.access_type
-        : 'free';
+        : 'membership'; // Default to 'membership' if invalid (matches database default)
       
       console.log('Updating with access_type:', validAccessType);
       
