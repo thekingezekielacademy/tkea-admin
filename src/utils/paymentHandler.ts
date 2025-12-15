@@ -14,7 +14,7 @@ export async function handleGuestPaymentSuccess(
     // First, fetch the purchase details to get product info and buyer email
     const { data: purchase, error: fetchError } = await supabase
       .from('product_purchases')
-      .select('product_id, product_type, buyer_email')
+      .select('product_id, product_type, buyer_email, purchase_price, access_granted_at, created_at')
       .eq('id', purchaseId)
       .single();
 
@@ -50,22 +50,36 @@ export async function handleGuestPaymentSuccess(
 
         if (!productError && product) {
           const appUrl = window.location.origin;
-          const productUrl =
+          const accessLink =
             purchase.product_type === 'course'
               ? `${appUrl}/course/${purchase.product_id}`
               : `${appUrl}/learning-path/${purchase.product_id}`;
 
-          const emailResult = await emailService.sendPurchaseConfirmationEmail({
-            email: purchase.buyer_email,
+          // Get purchase price in kobo (purchase_price is stored in kobo)
+          const priceInKobo = purchase.purchase_price || amountPaid * 100;
+          
+          // Format purchase date (use access_granted_at if available, otherwise created_at)
+          const purchaseDateValue = purchase.access_granted_at || purchase.created_at || new Date().toISOString();
+          const purchaseDate = new Date(purchaseDateValue).toLocaleDateString('en-US', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+          });
+
+          const emailResult = await emailService.sendPurchaseAccessEmail({
             name: 'Valued Student', // Guest users don't have a name yet
-            productType: purchase.product_type as 'course' | 'learning_path',
-            productTitle: product.title,
-            productUrl: productUrl,
+            email: purchase.buyer_email,
+            courseName: product.title,
+            purchasePrice: priceInKobo,
+            purchaseDate: purchaseDate,
+            accessLink: accessLink,
+            purchaseId: purchaseId,
           });
 
           emailSent = emailResult.success;
           if (!emailResult.success) {
-            console.warn('Failed to send purchase confirmation email:', emailResult.error);
+            console.warn('Failed to send purchase access email:', emailResult.error);
           }
         }
       } catch (emailError: any) {

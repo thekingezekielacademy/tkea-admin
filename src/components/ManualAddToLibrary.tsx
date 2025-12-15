@@ -258,27 +258,44 @@ const ManualAddToLibrary: React.FC = () => {
 
       if (insertError) throw insertError;
 
-      // Send email
+      // Send purchase access email
       setSendingEmail(true);
       try {
         const appUrl = window.location.origin;
-        const productUrl =
+        const accessLink =
           productType === 'course'
             ? `${appUrl}/course/${selectedProductId}`
             : `${appUrl}/learning-path/${selectedProductId}`;
 
-        await emailService.sendPurchaseConfirmationEmail({
-          email: userEmail,
-          name: searchedUser?.name || 'Valued Student',
-          productType: productType,
-          productTitle: selectedProduct.title,
-          productUrl: productUrl,
+        // Convert price back to kobo for email (email template expects kobo)
+        const priceInKobo = productPrice * 100;
+        
+        // Format purchase date
+        const purchaseDate = new Date().toLocaleDateString('en-US', {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
         });
 
-        setEmailSent(true);
+        const emailResult = await emailService.sendPurchaseAccessEmail({
+          name: searchedUser?.name || 'Valued Student',
+          email: userEmail,
+          courseName: selectedProduct.title,
+          purchasePrice: priceInKobo,
+          purchaseDate: purchaseDate,
+          accessLink: accessLink,
+          purchaseId: purchase.id,
+        });
+
+        setEmailSent(emailResult.success);
+        if (!emailResult.success) {
+          console.warn('Failed to send purchase access email:', emailResult.error);
+        }
       } catch (emailErr: any) {
         console.error('Error sending email:', emailErr);
         // Don't block success, just log the error
+        setEmailSent(false);
       } finally {
         setSendingEmail(false);
       }
