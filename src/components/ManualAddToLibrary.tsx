@@ -224,6 +224,14 @@ const ManualAddToLibrary: React.FC = () => {
       // Generate a unique payment reference for manual grants
       const paymentReference = `ADMIN_MANUAL_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       
+      // Generate access token (64-character hex string, same as webhook)
+      // Using Web Crypto API to generate 32 random bytes, then convert to hex
+      const tokenArray = new Uint8Array(32);
+      crypto.getRandomValues(tokenArray);
+      const accessToken = Array.from(tokenArray)
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('');
+      
       // amount_paid must be > 0 based on check constraint, but for manual grants we set it to purchase_price
       // This allows tracking the value while indicating it was a manual grant (amount_paid = purchase_price)
       const amountPaid = productPrice > 0 ? productPrice : 0.01; // Use 0.01 as minimum if free product
@@ -237,6 +245,7 @@ const ManualAddToLibrary: React.FC = () => {
         payment_reference: paymentReference, // Required field
         access_granted: true,
         access_granted_at: new Date().toISOString(),
+        access_token: accessToken, // Store access token for secure access link
       };
 
       // Set buyer information
@@ -264,10 +273,12 @@ const ManualAddToLibrary: React.FC = () => {
         const siteUrl = process.env.REACT_APP_SITE_URL || 
                        process.env.REACT_APP_APP_URL || 
                        'https://app.thekingezekielacademy.com';
+        
+        // Generate access link with purchase ID and token (same format as webhook)
         const accessLink =
           productType === 'course'
-            ? `${siteUrl}/course/${selectedProductId}`
-            : `${siteUrl}/learning-path/${selectedProductId}`;
+            ? `${siteUrl}/course/${selectedProductId}/overview?purchase=${purchase.id}&token=${accessToken}`
+            : `${siteUrl}/access/${purchase.id}?token=${accessToken}`;
 
         // Convert price back to kobo for email (email template expects kobo)
         const priceInKobo = productPrice * 100;

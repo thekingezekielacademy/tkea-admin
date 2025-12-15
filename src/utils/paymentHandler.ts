@@ -14,24 +14,42 @@ export async function handleGuestPaymentSuccess(
     // First, fetch the purchase details to get product info and buyer email
     const { data: purchase, error: fetchError } = await supabase
       .from('product_purchases')
-      .select('product_id, product_type, buyer_email, purchase_price, access_granted_at, created_at')
+      .select('product_id, product_type, buyer_email, purchase_price, access_granted_at, created_at, access_token')
       .eq('id', purchaseId)
       .single();
 
     if (fetchError) throw fetchError;
     if (!purchase) throw new Error('Purchase not found');
 
-    // Update purchase record
+    // Generate access token if it doesn't exist (64-character hex string)
+    // Using Web Crypto API to generate 32 random bytes, then convert to hex
+    let accessToken = purchase.access_token;
+    if (!accessToken) {
+      const tokenArray = new Uint8Array(32);
+      crypto.getRandomValues(tokenArray);
+      accessToken = Array.from(tokenArray)
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('');
+    }
+
+    // Update purchase record (include access_token if we generated it)
+    const updateData: any = {
+      payment_status: 'success',
+      amount_paid: amountPaid,
+      access_granted: true,
+      access_granted_at: new Date().toISOString(),
+      payment_reference: paymentReference,
+      updated_at: new Date().toISOString(),
+    };
+    
+    // Only update access_token if we generated a new one
+    if (!purchase.access_token) {
+      updateData.access_token = accessToken;
+    }
+
     const { error: updateError } = await supabase
       .from('product_purchases')
-      .update({
-        payment_status: 'success',
-        amount_paid: amountPaid,
-        access_granted: true,
-        access_granted_at: new Date().toISOString(),
-        payment_reference: paymentReference,
-        updated_at: new Date().toISOString(),
-      })
+      .update(updateData)
       .eq('id', purchaseId);
 
     if (updateError) throw updateError;
@@ -55,10 +73,12 @@ export async function handleGuestPaymentSuccess(
                          window.location.origin.includes('tkeaadmin') 
                            ? 'https://app.thekingezekielacademy.com'
                            : window.location.origin;
+          
+          // Generate access link with purchase ID and token (same format as webhook)
           const accessLink =
             purchase.product_type === 'course'
-              ? `${siteUrl}/course/${purchase.product_id}`
-              : `${siteUrl}/learning-path/${purchase.product_id}`;
+              ? `${siteUrl}/course/${purchase.product_id}/overview?purchase=${purchaseId}&token=${accessToken}`
+              : `${siteUrl}/access/${purchaseId}?token=${accessToken}`;
 
           // Get purchase price in kobo (purchase_price is stored in kobo)
           const priceInKobo = purchase.purchase_price || amountPaid * 100;
