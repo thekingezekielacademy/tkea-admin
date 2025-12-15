@@ -143,31 +143,80 @@ export default async function handler(req, res) {
     `.trim();
 
     // Send email via Resend API
-    const response = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        from: fromEmail,
-        to: [email],
-        subject: `Your Course Access - ${courseName}`,
-        html,
-      }),
+    console.log('[send-purchase-access-email API] Attempting to send email:', { 
+      to: email, 
+      courseName, 
+      purchaseId,
+      fromEmail 
     });
 
-    const data = await response.json();
-
-    if (!response.ok) {
-      console.error('[send-purchase-access-email API] Resend API error:', data);
-      return res.status(response.status).json({
+    let resendResponse;
+    try {
+      resendResponse = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          from: fromEmail,
+          to: [email],
+          subject: `Your Course Access - ${courseName}`,
+          html,
+        }),
+      });
+    } catch (fetchError) {
+      console.error('[send-purchase-access-email API] Network error calling Resend:', fetchError);
+      return res.status(500).json({
         success: false,
-        error: data.message || 'Failed to send email'
+        error: `Network error: ${fetchError.message}`
       });
     }
 
-    console.log('[send-purchase-access-email API] Purchase access email sent successfully:', { email, courseName, purchaseId, data });
+    // Check response status before parsing
+    if (!resendResponse.ok) {
+      let errorData;
+      try {
+        errorData = await resendResponse.json();
+      } catch (parseError) {
+        const errorText = await resendResponse.text();
+        console.error('[send-purchase-access-email API] Resend API error (non-JSON):', {
+          status: resendResponse.status,
+          statusText: resendResponse.statusText,
+          body: errorText
+        });
+        return res.status(resendResponse.status).json({
+          success: false,
+          error: `Resend API error: ${resendResponse.status} ${resendResponse.statusText}`
+        });
+      }
+      
+      console.error('[send-purchase-access-email API] Resend API error:', errorData);
+      return res.status(resendResponse.status).json({
+        success: false,
+        error: errorData.message || 'Failed to send email'
+      });
+    }
+
+    // Parse successful response
+    let data;
+    try {
+      data = await resendResponse.json();
+    } catch (parseError) {
+      console.error('[send-purchase-access-email API] Failed to parse Resend response:', parseError);
+      return res.status(500).json({
+        success: false,
+        error: 'Invalid response from Resend API'
+      });
+    }
+
+    console.log('[send-purchase-access-email API] Purchase access email sent successfully:', { 
+      email, 
+      courseName, 
+      purchaseId, 
+      resendId: data.id 
+    });
+    
     return res.status(200).json({
       success: true,
       message: 'Purchase access email sent successfully',

@@ -292,7 +292,17 @@ const ManualAddToLibrary: React.FC = () => {
         });
 
         // Call local API route (no CORS issues - same origin)
-        const apiUrl = '/api/send-purchase-access-email';
+        // Use full URL to ensure it works on mobile devices
+        const baseUrl = window.location.origin;
+        const apiUrl = `${baseUrl}/api/send-purchase-access-email`;
+        console.log('[ManualAddToLibrary] Sending email request:', { 
+          apiUrl, 
+          baseUrl,
+          email: userEmail, 
+          courseName: selectedProduct.title,
+          userAgent: navigator.userAgent 
+        });
+        
         const response = await fetch(apiUrl, {
           method: 'POST',
           headers: {
@@ -309,19 +319,46 @@ const ManualAddToLibrary: React.FC = () => {
           }),
         });
 
-        const result = await response.json();
+        // Check if response is ok before parsing JSON
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('[ManualAddToLibrary] API error response:', {
+            status: response.status,
+            statusText: response.statusText,
+            body: errorText
+          });
+          setEmailSent(false);
+          throw new Error(`Email API error: ${response.status} ${response.statusText}`);
+        }
+
+        // Parse JSON response
+        let result;
+        try {
+          result = await response.json();
+        } catch (parseError) {
+          console.error('[ManualAddToLibrary] Failed to parse JSON response:', parseError);
+          setEmailSent(false);
+          throw new Error('Invalid response from email API');
+        }
+
+        console.log('[ManualAddToLibrary] Email API response:', result);
 
         if (result.success) {
           setEmailSent(true);
           console.log('[ManualAddToLibrary] Purchase access email sent successfully');
         } else {
           setEmailSent(false);
-          console.warn('Failed to send purchase access email:', result.error || result.message);
+          const errorMsg = result.error || result.message || 'Unknown error';
+          console.warn('[ManualAddToLibrary] Failed to send purchase access email:', errorMsg);
+          throw new Error(errorMsg);
         }
       } catch (emailErr: any) {
-        console.error('Error sending email:', emailErr);
-        // Don't block success, just log the error
+        console.error('[ManualAddToLibrary] Error sending email:', emailErr);
         setEmailSent(false);
+        // Show error to user but don't block purchase success
+        const errorMessage = emailErr.message || 'Failed to send email. Purchase was added successfully.';
+        console.warn('[ManualAddToLibrary] Email sending failed:', errorMessage);
+        // You could optionally show a toast/notification here
       } finally {
         setSendingEmail(false);
       }
