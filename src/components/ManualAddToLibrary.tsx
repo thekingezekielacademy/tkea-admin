@@ -277,8 +277,8 @@ const ManualAddToLibrary: React.FC = () => {
           day: 'numeric',
         });
 
-        // Call API route instead of emailService directly (fixes CORS)
-        const apiUrl = 'https://app.thekingezekielacademy.com/api/emails/send-purchase-access';
+        // Call local API route (no CORS issues - same origin)
+        const apiUrl = '/api/send-purchase-access-email';
         const response = await fetch(apiUrl, {
           method: 'POST',
           headers: {
