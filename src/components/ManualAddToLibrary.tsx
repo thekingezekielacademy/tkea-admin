@@ -232,15 +232,17 @@ const ManualAddToLibrary: React.FC = () => {
         .map(b => b.toString(16).padStart(2, '0'))
         .join('');
       
-      // amount_paid must be > 0 based on check constraint, but for manual grants we set it to purchase_price
-      // This allows tracking the value while indicating it was a manual grant (amount_paid = purchase_price)
-      const amountPaid = productPrice > 0 ? productPrice : 0.01; // Use 0.01 as minimum if free product
+      // Store amounts in kobo for consistency with real purchases
+      // amount_paid must be > 0 based on check constraint
+      // Convert naira to kobo: multiply by 100 (e.g., 2500 naira = 250000 kobo)
+      const amountPaidInKobo = productPrice > 0 ? Math.round(productPrice * 100) : 1; // Use 1 kobo as minimum if free product
+      const purchasePriceInKobo = Math.round(productPrice * 100);
       
       const purchaseData: any = {
         product_id: selectedProductId,
         product_type: productType,
-        amount_paid: amountPaid, // Must be > 0 per check constraint
-        purchase_price: productPrice,
+        amount_paid: amountPaidInKobo, // Store in kobo for consistency
+        purchase_price: purchasePriceInKobo, // Store in kobo for consistency
         payment_status: 'success',
         payment_reference: paymentReference, // Required field
         access_granted: true,
@@ -280,9 +282,6 @@ const ManualAddToLibrary: React.FC = () => {
             ? `${siteUrl}/course/${selectedProductId}/overview?purchase=${purchase.id}&token=${accessToken}`
             : `${siteUrl}/access/${purchase.id}?token=${accessToken}`;
 
-        // Convert price back to kobo for email (email template expects kobo)
-        const priceInKobo = productPrice * 100;
-        
         // Format purchase date
         const purchaseDate = new Date().toLocaleDateString('en-US', {
           weekday: 'long',
@@ -312,7 +311,7 @@ const ManualAddToLibrary: React.FC = () => {
             name: searchedUser?.name || 'Valued Student',
             email: userEmail,
             courseName: selectedProduct.title,
-            purchasePrice: priceInKobo,
+            purchasePrice: purchasePriceInKobo, // Already in kobo
             purchaseDate: purchaseDate,
             accessLink: accessLink,
             purchaseId: purchase.id,

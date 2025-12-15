@@ -131,12 +131,44 @@ const PurchaseManagement: React.FC = () => {
 
       setPurchases(enrichedPurchases);
 
+      // Normalize amount (handles both kobo and naira formats)
+      const normalizeAmount = (raw: number): number => {
+        if (typeof raw !== 'number' || isNaN(raw) || raw === 0) return 0;
+        
+        // If amount is >= 100000, it's likely in kobo (250000 kobo = 2500 naira)
+        if (raw >= 100000 && raw % 100 === 0) {
+          return Math.round(raw / 100);
+        }
+        
+        // If amount is between 100 and 10000, it's likely already in naira (keep as-is)
+        if (raw >= 100 && raw < 10000) {
+          return raw;
+        }
+        
+        // If amount is very small (< 100), might be legacy divide
+        if (raw > 0 && raw < 100) {
+          return raw * 100;
+        }
+        
+        // For amounts between 10000 and 100000, check if divisible by 100
+        if (raw >= 10000 && raw < 100000 && raw % 100 === 0) {
+          return raw / 100;
+        }
+        
+        // Default: convert from kobo if very large
+        if (raw >= 100000) {
+          return Math.round(raw / 100);
+        }
+        
+        return raw;
+      };
+
       // Calculate statistics
       const successfulPurchases = enrichedPurchases.filter(
         p => p.payment_status === 'success'
       );
       const totalRevenue = successfulPurchases.reduce(
-        (sum, p) => sum + (p.amount_paid || 0),
+        (sum, p) => sum + normalizeAmount(p.amount_paid || 0),
         0
       );
       const coursePurchases = enrichedPurchases.filter(

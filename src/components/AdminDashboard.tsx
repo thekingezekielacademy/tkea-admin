@@ -22,6 +22,41 @@ const AdminDashboard: React.FC = () => {
     }
   }, [user]);
 
+  // Normalize amount (handles both kobo and naira formats)
+  const normalizeAmount = (raw: number): number => {
+    if (typeof raw !== 'number' || isNaN(raw) || raw === 0) return 0;
+    
+    // If amount is >= 100000, it's likely in kobo (250000 kobo = 2500 naira)
+    if (raw >= 100000 && raw % 100 === 0) {
+      return Math.round(raw / 100);
+    }
+    
+    // If amount is between 100 and 10000, it's likely already in naira (keep as-is)
+    // Common course price: 2500 naira
+    if (raw >= 100 && raw < 10000) {
+      return raw;
+    }
+    
+    // If amount is very small (< 100), might be legacy divide (e.g., 25 → 2500)
+    if (raw > 0 && raw < 100) {
+      return raw * 100; // fix legacy 25 → 2500
+    }
+    
+    // For amounts between 10000 and 100000, check if divisible by 100
+    // If divisible by 100, likely kobo (e.g., 25000 = 250 naira)
+    if (raw >= 10000 && raw < 100000 && raw % 100 === 0) {
+      return raw / 100;
+    }
+    
+    // Default: assume it's already in naira if it's a reasonable amount
+    // or convert from kobo if it's very large
+    if (raw >= 100000) {
+      return Math.round(raw / 100); // Convert kobo to naira
+    }
+    
+    return raw;
+  };
+
   const fetchStats = async () => {
     try {
       // Fetch courses count
@@ -41,13 +76,15 @@ const AdminDashboard: React.FC = () => {
         .eq('payment_status', 'success');
 
       // Fetch total revenue (sum of all successful purchases)
+      // Normalize amounts to naira (some may be in kobo, some in naira)
       const { data: purchasesData } = await supabase
         .from('product_purchases')
         .select('amount_paid')
         .eq('payment_status', 'success');
 
       const totalRevenue = purchasesData?.reduce((sum, purchase) => {
-        return sum + (purchase.amount_paid || 0);
+        const normalizedAmount = normalizeAmount(purchase.amount_paid || 0);
+        return sum + normalizedAmount;
       }, 0) || 0;
 
       // Fetch active users (users with at least one successful purchase)
