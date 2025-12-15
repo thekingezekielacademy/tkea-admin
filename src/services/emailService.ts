@@ -36,22 +36,6 @@ interface PurchaseAccessEmailParams {
 }
 
 /**
- * Get Resend API key from environment variables
- * Supports Create React App (REACT_APP_) prefix
- */
-const getResendApiKey = (): string | null => {
-  // Check if we're in a browser environment
-  if (typeof window === 'undefined') return null;
-  
-  // Try to get from environment (if set via build-time)
-  // Priority: REACT_APP_ (CRA) > window global
-  const apiKey = process.env?.REACT_APP_RESEND_API_KEY ||
-                 (window as any).__RESEND_API_KEY__;
-  
-  return apiKey || null;
-};
-
-/**
  * Get Resend from email
  * Supports Create React App (REACT_APP_) prefix
  */
@@ -64,26 +48,43 @@ const getFromEmail = (): string => {
 };
 
 /**
- * Send email via Resend API
+ * Get API base URL
+ * Uses environment variable if set, otherwise uses current origin
+ */
+const getApiBaseUrl = (): string => {
+  if (typeof window === 'undefined') return '';
+  
+  // Check for explicit API URL in environment
+  const apiUrl = process.env?.REACT_APP_API_URL || 
+                 (window as any).__API_URL__;
+  
+  if (apiUrl) {
+    return apiUrl;
+  }
+  
+  // Default to same origin (relative URL)
+  return window.location.origin;
+};
+
+/**
+ * Send email via backend API endpoint (to avoid CORS issues)
+ * The backend API will handle the Resend API call server-side
  */
 const sendEmailViaResend = async ({ to, subject, html }: SendEmailParams): Promise<{ success: boolean; error?: string }> => {
-  const apiKey = getResendApiKey();
-  
-  if (!apiKey) {
-    console.warn('Resend API key not configured. Email will not be sent.');
-    return { success: false, error: 'Resend API key not configured' };
-  }
-
   try {
-    const response = await fetch('https://api.resend.com/emails', {
+    const apiBaseUrl = getApiBaseUrl();
+    const apiUrl = `${apiBaseUrl}/api/send-email`;
+    
+    console.log('[emailService] Sending email via API:', { apiUrl, to, subject });
+
+    const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
         from: getFromEmail(),
-        to: [to],
+        to,
         subject,
         html,
       }),
@@ -92,14 +93,19 @@ const sendEmailViaResend = async ({ to, subject, html }: SendEmailParams): Promi
     const data = await response.json();
 
     if (!response.ok) {
-      console.error('Resend API error:', data);
-      return { success: false, error: data.message || 'Failed to send email' };
+      console.error('[emailService] API error:', data);
+      return { success: false, error: data.error || 'Failed to send email' };
     }
 
-    console.log('Email sent successfully:', data);
+    if (!data.success) {
+      console.error('[emailService] API returned error:', data);
+      return { success: false, error: data.error || 'Failed to send email' };
+    }
+
+    console.log('[emailService] Email sent successfully via API:', data);
     return { success: true };
   } catch (error) {
-    console.error('Error sending email via Resend:', error);
+    console.error('[emailService] Error sending email via API:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',
@@ -440,10 +446,12 @@ export const emailService = {
   },
 
   /**
-   * Check if Resend is configured
+   * Check if email service is configured
+   * Since we use a backend API, we assume it's configured if we're in a browser environment
+   * The actual configuration check happens on the backend
    */
   isConfigured(): boolean {
-    return getResendApiKey() !== null;
+    return typeof window !== 'undefined';
   },
 };
 
