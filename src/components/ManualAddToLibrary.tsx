@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
-import { emailService } from '../services/emailService';
 
 // Interfaces
 interface Profile {
@@ -258,7 +257,7 @@ const ManualAddToLibrary: React.FC = () => {
 
       if (insertError) throw insertError;
 
-      // Send purchase access email
+      // Send purchase access email via API route (no CORS issues)
       setSendingEmail(true);
       try {
         const appUrl = window.location.origin;
@@ -278,19 +277,32 @@ const ManualAddToLibrary: React.FC = () => {
           day: 'numeric',
         });
 
-        const emailResult = await emailService.sendPurchaseAccessEmail({
-          name: searchedUser?.name || 'Valued Student',
-          email: userEmail,
-          courseName: selectedProduct.title,
-          purchasePrice: priceInKobo,
-          purchaseDate: purchaseDate,
-          accessLink: accessLink,
-          purchaseId: purchase.id,
+        // Call API route instead of emailService directly (fixes CORS)
+        const apiUrl = 'https://app.thekingezekielacademy.com/api/emails/send-purchase-access';
+        const response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            name: searchedUser?.name || 'Valued Student',
+            email: userEmail,
+            courseName: selectedProduct.title,
+            purchasePrice: priceInKobo,
+            purchaseDate: purchaseDate,
+            accessLink: accessLink,
+            purchaseId: purchase.id,
+          }),
         });
 
-        setEmailSent(emailResult.success);
-        if (!emailResult.success) {
-          console.warn('Failed to send purchase access email:', emailResult.error);
+        const result = await response.json();
+
+        if (result.success) {
+          setEmailSent(true);
+          console.log('[ManualAddToLibrary] Purchase access email sent successfully');
+        } else {
+          setEmailSent(false);
+          console.warn('Failed to send purchase access email:', result.error || result.message);
         }
       } catch (emailErr: any) {
         console.error('Error sending email:', emailErr);
