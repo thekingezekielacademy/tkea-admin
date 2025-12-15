@@ -45,7 +45,12 @@ export default async function handler(req, res) {
 
     // Generate purchase access email HTML template
     const APP_NAME = 'The King Ezekiel Academy';
-    const APP_URL = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || 'https://app.thekingezekielacademy.com';
+    // Use the actual site URL (not admin panel URL)
+    const APP_URL = process.env.REACT_APP_SITE_URL || 
+                   process.env.REACT_APP_APP_URL || 
+                   process.env.NEXT_PUBLIC_APP_URL || 
+                   process.env.NEXT_PUBLIC_SITE_URL || 
+                   'https://app.thekingezekielacademy.com';
     
     const priceInNaira = purchasePrice ? (purchasePrice / 100).toLocaleString() : '0';
     const formattedDate = purchaseDate || new Date().toLocaleDateString('en-US', {
@@ -138,14 +143,6 @@ export default async function handler(req, res) {
     `.trim();
 
     // Send email via Resend API
-    console.log('[send-purchase-access-email API] Sending email via Resend:', {
-      from: fromEmail,
-      to: email,
-      subject: `Your Course Access - ${courseName}`,
-      hasApiKey: !!apiKey,
-      apiKeyPrefix: apiKey ? apiKey.substring(0, 5) + '...' : 'none'
-    });
-
     const response = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
@@ -162,51 +159,19 @@ export default async function handler(req, res) {
 
     const data = await response.json();
 
-    // Log full response for debugging
-    console.log('[send-purchase-access-email API] Resend API response:', {
-      status: response.status,
-      statusText: response.statusText,
-      data: data
-    });
-
     if (!response.ok) {
-      console.error('[send-purchase-access-email API] Resend API error:', {
-        status: response.status,
-        error: data
-      });
+      console.error('[send-purchase-access-email API] Resend API error:', data);
       return res.status(response.status).json({
         success: false,
-        error: data.message || data.error?.message || 'Failed to send email',
-        details: data
+        error: data.message || 'Failed to send email'
       });
     }
 
-    // Check if Resend returned an error in the data (sometimes they return 200 with error)
-    if (data.error) {
-      console.error('[send-purchase-access-email API] Resend returned error in response:', data.error);
-      return res.status(500).json({
-        success: false,
-        error: data.error.message || 'Failed to send email',
-        details: data
-      });
-    }
-
-    // Success - log the email ID for tracking
-    const emailId = data.id || data.data?.id;
-    console.log('[send-purchase-access-email API] Purchase access email sent successfully:', {
-      email,
-      courseName,
-      purchaseId,
-      resendEmailId: emailId,
-      data
-    });
-
+    console.log('[send-purchase-access-email API] Purchase access email sent successfully:', { email, courseName, purchaseId, data });
     return res.status(200).json({
       success: true,
       message: 'Purchase access email sent successfully',
-      emailId: emailId,
-      data: data,
-      note: 'Check Resend dashboard if email not received. Email may be in spam folder.'
+      data
     });
 
   } catch (error) {

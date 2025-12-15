@@ -49,11 +49,16 @@ export async function handleGuestPaymentSuccess(
           .single();
 
         if (!productError && product) {
-          const appUrl = window.location.origin;
+          // Use the actual site URL, not the current origin (which might be admin panel)
+          const siteUrl = process.env.REACT_APP_SITE_URL || 
+                         process.env.REACT_APP_APP_URL || 
+                         window.location.origin.includes('tkeaadmin') 
+                           ? 'https://app.thekingezekielacademy.com'
+                           : window.location.origin;
           const accessLink =
             purchase.product_type === 'course'
-              ? `${appUrl}/course/${purchase.product_id}`
-              : `${appUrl}/learning-path/${purchase.product_id}`;
+              ? `${siteUrl}/course/${purchase.product_id}`
+              : `${siteUrl}/learning-path/${purchase.product_id}`;
 
           // Get purchase price in kobo (purchase_price is stored in kobo)
           const priceInKobo = purchase.purchase_price || amountPaid * 100;

@@ -260,11 +260,14 @@ const ManualAddToLibrary: React.FC = () => {
       // Send purchase access email via API route (no CORS issues)
       setSendingEmail(true);
       try {
-        const appUrl = window.location.origin;
+        // Use the actual site URL, not the admin panel URL
+        const siteUrl = process.env.REACT_APP_SITE_URL || 
+                       process.env.REACT_APP_APP_URL || 
+                       'https://app.thekingezekielacademy.com';
         const accessLink =
           productType === 'course'
-            ? `${appUrl}/course/${selectedProductId}`
-            : `${appUrl}/learning-path/${selectedProductId}`;
+            ? `${siteUrl}/course/${selectedProductId}`
+            : `${siteUrl}/learning-path/${selectedProductId}`;
 
         // Convert price back to kobo for email (email template expects kobo)
         const priceInKobo = productPrice * 100;
@@ -299,22 +302,10 @@ const ManualAddToLibrary: React.FC = () => {
 
         if (result.success) {
           setEmailSent(true);
-          console.log('[ManualAddToLibrary] Purchase access email sent successfully:', {
-            emailId: result.emailId,
-            email: userEmail,
-            data: result.data
-          });
-          
-          // Log Resend email ID for tracking
-          if (result.emailId) {
-            console.log(`[ManualAddToLibrary] Resend Email ID: ${result.emailId} - Check Resend dashboard for delivery status`);
-          }
+          console.log('[ManualAddToLibrary] Purchase access email sent successfully');
         } else {
           setEmailSent(false);
-          console.error('Failed to send purchase access email:', {
-            error: result.error,
-            details: result.details
-          });
+          console.warn('Failed to send purchase access email:', result.error || result.message);
         }
       } catch (emailErr: any) {
         console.error('Error sending email:', emailErr);
@@ -453,18 +444,13 @@ const ManualAddToLibrary: React.FC = () => {
                     {selectedProduct?.title} has been added to {searchedUser?.name || email}'s library.
                   </p>
                   {emailSent && (
-                    <div className="text-sm mt-1">
-                      <p className="text-green-600">
-                        ✓ Purchase confirmation email sent to {email}
-                      </p>
-                      <p className="text-xs text-gray-500 mt-1 italic">
-                        💡 Tip: If email not received, check spam folder. Email delivery may take a few minutes.
-                      </p>
-                    </div>
+                    <p className="text-sm mt-1">
+                      ✓ Purchase confirmation email sent to {email}
+                    </p>
                   )}
                   {!emailSent && (
                     <p className="text-sm mt-1 text-yellow-600">
-                      ⚠ Purchase added but email failed to send. Check console for details.
+                      ⚠ Purchase added but email failed to send
                     </p>
                   )}
                 </div>
