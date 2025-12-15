@@ -299,10 +299,22 @@ const ManualAddToLibrary: React.FC = () => {
 
         if (result.success) {
           setEmailSent(true);
-          console.log('[ManualAddToLibrary] Purchase access email sent successfully');
+          console.log('[ManualAddToLibrary] Purchase access email sent successfully:', {
+            emailId: result.emailId,
+            email: userEmail,
+            data: result.data
+          });
+          
+          // Log Resend email ID for tracking
+          if (result.emailId) {
+            console.log(`[ManualAddToLibrary] Resend Email ID: ${result.emailId} - Check Resend dashboard for delivery status`);
+          }
         } else {
           setEmailSent(false);
-          console.warn('Failed to send purchase access email:', result.error || result.message);
+          console.error('Failed to send purchase access email:', {
+            error: result.error,
+            details: result.details
+          });
         }
       } catch (emailErr: any) {
         console.error('Error sending email:', emailErr);
@@ -441,13 +453,18 @@ const ManualAddToLibrary: React.FC = () => {
                     {selectedProduct?.title} has been added to {searchedUser?.name || email}'s library.
                   </p>
                   {emailSent && (
-                    <p className="text-sm mt-1">
-                      ✓ Purchase confirmation email sent to {email}
-                    </p>
+                    <div className="text-sm mt-1">
+                      <p className="text-green-600">
+                        ✓ Purchase confirmation email sent to {email}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1 italic">
+                        💡 Tip: If email not received, check spam folder. Email delivery may take a few minutes.
+                      </p>
+                    </div>
                   )}
                   {!emailSent && (
                     <p className="text-sm mt-1 text-yellow-600">
-                      ⚠ Purchase added but email failed to send
+                      ⚠ Purchase added but email failed to send. Check console for details.
                     </p>
                   )}
                 </div>
