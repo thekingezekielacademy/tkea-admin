@@ -13,6 +13,7 @@ import LearningPathManagement from './components/LearningPathManagement';
 import AddLearningPathWizard from './components/AddLearningPathWizard';
 import LearningPathView from './components/LearningPathView';
 import ManualAddToLibrary from './components/ManualAddToLibrary';
+import ResellerAnalysisDashboard from './components/ResellerAnalysisDashboard';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, loading } = useAuth();
@@ -58,6 +59,7 @@ function App() {
             <Route path="/admin/learning-paths/view/:id" element={<ProtectedRoute><LearningPathView /></ProtectedRoute>} />
             <Route path="/admin/manual-add-to-library" element={<ProtectedRoute><ManualAddToLibrary /></ProtectedRoute>} />
             <Route path="/admin/subscriptions" element={<ProtectedRoute><SubscriptionManagement /></ProtectedRoute>} />
+            <Route path="/admin/resellers" element={<ProtectedRoute><ResellerAnalysisDashboard /></ProtectedRoute>} />
           </Routes>
         </div>
       </Router>
