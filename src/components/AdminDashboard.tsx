@@ -343,6 +343,21 @@ const AdminDashboard: React.FC = () => {
                 <p className="text-sm text-gray-600">View reseller performance and analytics</p>
               </div>
             </button>
+
+            <button
+              onClick={() => navigate('/admin/blog')}
+              className="flex items-center space-x-3 p-4 border border-gray-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-colors text-left"
+            >
+              <div className="bg-blue-100 rounded-lg p-2">
+                <svg className="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+              </div>
+              <div>
+                <p className="font-medium text-gray-900">Blog Management</p>
+                <p className="text-sm text-gray-600">Add, edit, and delete blog posts</p>
+              </div>
+            </button>
           </div>
         </div>
       </div>

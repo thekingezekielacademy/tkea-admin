@@ -14,6 +14,8 @@ import AddLearningPathWizard from './components/AddLearningPathWizard';
 import LearningPathView from './components/LearningPathView';
 import ManualAddToLibrary from './components/ManualAddToLibrary';
 import ResellerAnalysisDashboard from './components/ResellerAnalysisDashboard';
+import BlogManagement from './components/BlogManagement';
+import AddEditBlogPost from './components/AddEditBlogPost';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, loading } = useAuth();
@@ -60,6 +62,9 @@ function App() {
             <Route path="/admin/manual-add-to-library" element={<ProtectedRoute><ManualAddToLibrary /></ProtectedRoute>} />
             <Route path="/admin/subscriptions" element={<ProtectedRoute><SubscriptionManagement /></ProtectedRoute>} />
             <Route path="/admin/resellers" element={<ProtectedRoute><ResellerAnalysisDashboard /></ProtectedRoute>} />
+            <Route path="/admin/blog" element={<ProtectedRoute><BlogManagement /></ProtectedRoute>} />
+            <Route path="/admin/blog/add" element={<ProtectedRoute><AddEditBlogPost /></ProtectedRoute>} />
+            <Route path="/admin/blog/edit/:id" element={<ProtectedRoute><AddEditBlogPost /></ProtectedRoute>} />
           </Routes>
         </div>
       </Router>
