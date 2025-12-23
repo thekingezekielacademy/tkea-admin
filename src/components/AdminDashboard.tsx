@@ -13,6 +13,8 @@ const AdminDashboard: React.FC = () => {
     totalRevenue: 0,
     activeUsers: 0,
     totalUsers: 0,
+    skillPathCompletions: 0,
+    skillPathCompletionRate: 0,
     loading: true,
   });
 
@@ -101,6 +103,40 @@ const AdminDashboard: React.FC = () => {
         .from('profiles')
         .select('*', { count: 'exact', head: true });
 
+      // Fetch Skill Path Discovery completions
+      // Count unique users who completed Skill Path (by email or user_id)
+      let skillPathCompletions = 0;
+      let skillPathCompletionRate = 0;
+      
+      try {
+        const { data: skillPathData, error: skillPathError } = await supabase
+          .from('skill_path_responses')
+          .select('email, user_id')
+          .order('completed_at', { ascending: false });
+
+        if (skillPathError) {
+          console.warn('Error fetching Skill Path data (table may not exist yet):', skillPathError);
+        } else {
+          // Count unique completions (by email if user_id is null, otherwise by user_id)
+          const uniqueSkillPathCompletions = new Set<string>();
+          skillPathData?.forEach((response) => {
+            if (response.user_id) {
+              uniqueSkillPathCompletions.add(response.user_id);
+            } else if (response.email) {
+              uniqueSkillPathCompletions.add(response.email.toLowerCase().trim());
+            }
+          });
+
+          skillPathCompletions = uniqueSkillPathCompletions.size;
+          skillPathCompletionRate = usersCount && usersCount > 0 
+            ? Math.round((skillPathCompletions / usersCount) * 100) 
+            : 0;
+        }
+      } catch (error) {
+        console.warn('Error fetching Skill Path completions:', error);
+        // Continue with 0 values if table doesn't exist yet
+      }
+
       setStats({
         totalCourses: coursesCount || 0,
         totalLearningPaths: learningPathsCount || 0,
@@ -108,6 +144,8 @@ const AdminDashboard: React.FC = () => {
         totalRevenue: totalRevenue,
         activeUsers: uniqueActiveUsers.size,
         totalUsers: usersCount || 0,
+        skillPathCompletions: skillPathCompletions,
+        skillPathCompletionRate: skillPathCompletionRate,
         loading: false,
       });
     } catch (error) {
@@ -203,7 +241,7 @@ const AdminDashboard: React.FC = () => {
         </div>
 
         {/* Additional Stats Row */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
           <div className="bg-white rounded-lg shadow-lg p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -229,6 +267,25 @@ const AdminDashboard: React.FC = () => {
               <div className="bg-gray-100 rounded-full p-3">
                 <svg className="h-8 w-8 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow-lg p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Skill Path Discovery</p>
+                <p className="text-3xl font-bold text-gray-900 mt-2">{stats.skillPathCompletions}</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {stats.skillPathCompletionRate > 0 
+                    ? `${stats.skillPathCompletionRate}% of users completed` 
+                    : 'Users completed diagnostic'}
+                </p>
+              </div>
+              <div className="bg-teal-100 rounded-full p-3">
+                <svg className="h-8 w-8 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
                 </svg>
               </div>
             </div>
