@@ -105,18 +105,43 @@ const AdminDashboard: React.FC = () => {
 
       // Fetch Skill Path Discovery completions
       // Count unique users who completed Skill Path (by email or user_id)
+      // Note: Using skill_path_results table (actual table name in database)
       let skillPathCompletions = 0;
       let skillPathCompletionRate = 0;
       
       try {
+        // Try skill_path_results first (actual table name)
         const { data: skillPathData, error: skillPathError } = await supabase
-          .from('skill_path_responses')
-          .select('email, user_id')
+          .from('skill_path_results')
+          .select('email, user_id, completed_at, created_at')
           .order('completed_at', { ascending: false });
 
         if (skillPathError) {
-          console.warn('Error fetching Skill Path data (table may not exist yet):', skillPathError);
-        } else {
+          console.warn('Error fetching Skill Path data from skill_path_results:', skillPathError);
+          // Fallback: try skill_path_responses (if migration was run)
+          const { data: fallbackData, error: fallbackError } = await supabase
+            .from('skill_path_responses')
+            .select('email, user_id, completed_at')
+            .order('completed_at', { ascending: false });
+          
+          if (fallbackError) {
+            console.warn('Error fetching Skill Path data (both tables not found):', fallbackError);
+          } else if (fallbackData) {
+            // Count unique completions from fallback table
+            const uniqueSkillPathCompletions = new Set<string>();
+            fallbackData?.forEach((response) => {
+              if (response.user_id) {
+                uniqueSkillPathCompletions.add(response.user_id);
+              } else if (response.email) {
+                uniqueSkillPathCompletions.add(response.email.toLowerCase().trim());
+              }
+            });
+            skillPathCompletions = uniqueSkillPathCompletions.size;
+            skillPathCompletionRate = usersCount && usersCount > 0 
+              ? Math.round((skillPathCompletions / usersCount) * 100) 
+              : 0;
+          }
+        } else if (skillPathData) {
           // Count unique completions (by email if user_id is null, otherwise by user_id)
           const uniqueSkillPathCompletions = new Set<string>();
           skillPathData?.forEach((response) => {
