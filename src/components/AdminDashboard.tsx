@@ -111,44 +111,74 @@ const AdminDashboard: React.FC = () => {
       
       try {
         // Try skill_path_results first (actual table name)
-        const { data: skillPathData, error: skillPathError } = await supabase
-          .from('skill_path_results')
-          .select('email, user_id, completed_at, created_at')
-          .order('completed_at', { ascending: false });
+        // Try different possible column name combinations
+        let skillPathData: any[] | null = null;
+        let skillPathError: any = null;
 
-        if (skillPathError) {
-          console.warn('Error fetching Skill Path data from skill_path_results:', skillPathError);
-          // Fallback: try skill_path_responses (if migration was run)
+        // First, try a simple count to see if table exists and is accessible
+        const { count: totalCount, error: countError } = await supabase
+          .from('skill_path_results')
+          .select('*', { count: 'exact', head: true });
+
+        if (countError) {
+          console.warn('Cannot access skill_path_results table:', countError);
+          skillPathError = countError;
+        } else {
+          console.log('skill_path_results table accessible, total records:', totalCount);
+          
+          // Now try to get the actual data
+          const { data: data1, error: error1 } = await supabase
+            .from('skill_path_results')
+            .select('email, user_id, completed_at, created_at');
+
+          if (error1) {
+            console.warn('Error with specific columns, trying all columns:', error1);
+            // Try selecting all columns
+            const { data: data2, error: error2 } = await supabase
+              .from('skill_path_results')
+              .select('*')
+              .limit(1000);
+            
+            if (error2) {
+              console.warn('Error fetching all columns from skill_path_results:', error2);
+              skillPathError = error2;
+            } else {
+              skillPathData = data2;
+              console.log('Fetched Skill Path data (all columns):', data2?.length, 'records');
+            }
+          } else {
+            skillPathData = data1;
+            console.log('Fetched Skill Path data:', data1?.length, 'records');
+          }
+        }
+
+        // If skill_path_results failed, try fallback table
+        if (skillPathError || (!skillPathData && skillPathError)) {
+          console.warn('Trying fallback table skill_path_responses...');
           const { data: fallbackData, error: fallbackError } = await supabase
             .from('skill_path_responses')
-            .select('email, user_id, completed_at')
-            .order('completed_at', { ascending: false });
+            .select('email, user_id, completed_at');
           
           if (fallbackError) {
-            console.warn('Error fetching Skill Path data (both tables not found):', fallbackError);
+            console.warn('Both tables failed:', fallbackError);
           } else if (fallbackData) {
-            // Count unique completions from fallback table
-            const uniqueSkillPathCompletions = new Set<string>();
-            fallbackData?.forEach((response) => {
-              if (response.user_id) {
-                uniqueSkillPathCompletions.add(response.user_id);
-              } else if (response.email) {
-                uniqueSkillPathCompletions.add(response.email.toLowerCase().trim());
-              }
-            });
-            skillPathCompletions = uniqueSkillPathCompletions.size;
-            skillPathCompletionRate = usersCount && usersCount > 0 
-              ? Math.round((skillPathCompletions / usersCount) * 100) 
-              : 0;
+            skillPathData = fallbackData;
+            console.log('Using fallback table, found:', fallbackData.length, 'records');
           }
-        } else if (skillPathData) {
-          // Count unique completions (by email if user_id is null, otherwise by user_id)
+        }
+
+        // Count unique completions
+        if (skillPathData && skillPathData.length > 0) {
           const uniqueSkillPathCompletions = new Set<string>();
-          skillPathData?.forEach((response) => {
-            if (response.user_id) {
-              uniqueSkillPathCompletions.add(response.user_id);
-            } else if (response.email) {
-              uniqueSkillPathCompletions.add(response.email.toLowerCase().trim());
+          skillPathData.forEach((response: any) => {
+            // Handle different possible column name formats
+            const userId = response.user_id || response.userId || response.userId || null;
+            const email = response.email || response.user_email || response.userEmail || null;
+            
+            if (userId) {
+              uniqueSkillPathCompletions.add(String(userId));
+            } else if (email) {
+              uniqueSkillPathCompletions.add(String(email).toLowerCase().trim());
             }
           });
 
@@ -156,9 +186,17 @@ const AdminDashboard: React.FC = () => {
           skillPathCompletionRate = usersCount && usersCount > 0 
             ? Math.round((skillPathCompletions / usersCount) * 100) 
             : 0;
+          
+          console.log('Skill Path completions calculated:', {
+            totalRecords: skillPathData.length,
+            uniqueCompletions: skillPathCompletions,
+            completionRate: skillPathCompletionRate
+          });
+        } else {
+          console.log('No Skill Path data found');
         }
       } catch (error) {
-        console.warn('Error fetching Skill Path completions:', error);
+        console.error('Error fetching Skill Path completions:', error);
         // Continue with 0 values if table doesn't exist yet
       }
 
