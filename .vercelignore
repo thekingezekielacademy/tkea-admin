@@ -1,5 +1,7 @@
-# Exclude Next.js app from admin deployment
+api/
+server/
 king-ezekiel-academy-nextjs/
-.next/
-node_modules/
-
+*.md
+scripts/
+verify-*.sh
+verify_*.sql
