@@ -27,6 +27,7 @@ interface LiveClass {
   id: string;
   course_id?: string;
   title?: string;
+  cover_photo_url?: string | null;
   is_active: boolean;
   course_title?: string;
   created_at: string;
