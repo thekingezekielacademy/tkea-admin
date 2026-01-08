@@ -223,15 +223,21 @@ const LiveClassesAll: React.FC = () => {
 
       if (error) throw error;
 
-      const transformedLiveClasses: LiveClass[] = (data || []).map((lc: any) => ({
-        id: lc.id,
-        course_id: lc.course_id,
-        title: lc.title,
-        is_active: lc.is_active,
-        course_title: lc.courses?.title || null,
-        created_at: lc.created_at
-      }));
+      console.log('Fetched live classes raw data:', data);
 
+      const transformedLiveClasses: LiveClass[] = (data || []).map((lc: any) => {
+        console.log('Processing live class:', { id: lc.id, course_id: lc.course_id, title: lc.title, courses_title: lc.courses?.title });
+        return {
+          id: lc.id,
+          course_id: lc.course_id,
+          title: lc.title || null, // Standalone classes use title field
+          is_active: lc.is_active,
+          course_title: lc.courses?.title || null, // Course-based classes use courses.title
+          created_at: lc.created_at
+        };
+      });
+
+      console.log('Transformed live classes:', transformedLiveClasses);
       setLiveClasses(transformedLiveClasses);
     } catch (err: any) {
       console.error('Error fetching live classes:', err);
@@ -542,7 +548,10 @@ const LiveClassesAll: React.FC = () => {
                       </td>
                       <td className="px-6 py-4">
                         <div className="text-sm font-medium text-gray-900">
-                          {liveClass.course_title || liveClass.title || 'Untitled'}
+                          {liveClass.course_id 
+                            ? (liveClass.course_title || 'Untitled Course')
+                            : (liveClass.title || 'Untitled')
+                          }
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">

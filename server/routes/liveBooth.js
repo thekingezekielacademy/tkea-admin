@@ -64,7 +64,15 @@ router.post('/create-standalone', checkAdmin, async (req, res) => {
   try {
     const { title, description, videoUrl, videoTitle, videoDescription } = req.body;
     
-    if (!title) {
+    console.log('Creating standalone live class with data:', {
+      title,
+      description,
+      videoUrl,
+      videoTitle,
+      videoDescription
+    });
+    
+    if (!title || title.trim() === '') {
       return res.status(400).json({ success: false, message: 'Title is required' });
     }
 
@@ -98,14 +106,16 @@ router.post('/create-standalone', checkAdmin, async (req, res) => {
     const { data: liveClass, error: liveClassError } = await supabase
       .from('live_classes')
       .insert({
-        title: title,
-        description: description || null,
+        title: title.trim(), // Trim whitespace
+        description: description ? description.trim() : null,
         course_id: null, // Standalone - not tied to a course
         is_active: true,
         cycle_day: 1
       })
       .select()
       .single();
+    
+    console.log('Created live class:', liveClass);
 
     if (liveClassError) {
       console.error('Error creating standalone live class:', liveClassError);
