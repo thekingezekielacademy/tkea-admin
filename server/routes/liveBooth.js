@@ -62,14 +62,15 @@ const checkAdmin = async (req, res, next) => {
 // Create standalone live class (not tied to a course)
 router.post('/create-standalone', checkAdmin, async (req, res) => {
   try {
-    const { title, description, videoUrl, videoTitle, videoDescription } = req.body;
+    const { title, description, videoUrl, videoTitle, videoDescription, coverPhotoUrl } = req.body;
     
     console.log('Creating standalone live class with data:', {
       title,
       description,
       videoUrl,
       videoTitle,
-      videoDescription
+      videoDescription,
+      coverPhotoUrl
     });
     
     if (!title || title.trim() === '') {
@@ -108,6 +109,7 @@ router.post('/create-standalone', checkAdmin, async (req, res) => {
       .insert({
         title: title.trim(), // Trim whitespace
         description: description ? description.trim() : null,
+        cover_photo_url: coverPhotoUrl || null, // Cover image URL if provided
         course_id: null, // Standalone - not tied to a course
         is_active: true,
         cycle_day: 1

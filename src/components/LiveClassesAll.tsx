@@ -50,7 +50,8 @@ const LiveClassesAll: React.FC = () => {
     description: '',
     videoUrl: '',
     videoTitle: '',
-    videoDescription: ''
+    videoDescription: '',
+    coverPhoto: undefined as File | undefined
   });
   const [filterDate, setFilterDate] = useState('');
   const [filterSessionType, setFilterSessionType] = useState<string>('all');
@@ -215,6 +216,7 @@ const LiveClassesAll: React.FC = () => {
           id,
           course_id,
           title,
+          cover_photo_url,
           is_active,
           created_at,
           courses(title)
@@ -231,6 +233,7 @@ const LiveClassesAll: React.FC = () => {
           id: lc.id,
           course_id: lc.course_id,
           title: lc.title || null, // Standalone classes use title field
+          cover_photo_url: lc.cover_photo_url || null, // Cover image URL
           is_active: lc.is_active,
           course_title: lc.courses?.title || null, // Course-based classes use courses.title
           created_at: lc.created_at
@@ -348,6 +351,46 @@ const LiveClassesAll: React.FC = () => {
         throw new Error('Not authenticated');
       }
 
+      // Upload cover photo if provided
+      let coverPhotoUrl = null;
+      if (standaloneForm.coverPhoto) {
+        try {
+          const fileExt = standaloneForm.coverPhoto.name.split('.').pop();
+          const fileName = `live-class-${Date.now()}.${fileExt}`;
+          const filePath = fileName;
+
+          console.log('Uploading cover photo:', {
+            name: standaloneForm.coverPhoto.name,
+            type: standaloneForm.coverPhoto.type,
+            size: standaloneForm.coverPhoto.size,
+            path: filePath
+          });
+
+          // Convert to ArrayBuffer
+          const arrayBuffer = await standaloneForm.coverPhoto.arrayBuffer();
+          
+          const { error: uploadError } = await supabase.storage
+            .from('course-covers')
+            .upload(filePath, arrayBuffer);
+
+          if (uploadError) {
+            console.warn('Cover photo upload failed, continuing without it:', uploadError.message);
+            // Don't throw error, just continue without cover photo
+          } else {
+            // Get public URL
+            const { data: { publicUrl } } = supabase.storage
+              .from('course-covers')
+              .getPublicUrl(filePath);
+
+            coverPhotoUrl = publicUrl;
+            console.log('Cover photo uploaded successfully:', coverPhotoUrl);
+          }
+        } catch (uploadErr) {
+          console.warn('Cover photo upload failed, continuing without it:', uploadErr);
+          // Don't throw error, just continue without cover photo
+        }
+      }
+
       const apiBaseUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000';
       const response = await fetch(`${apiBaseUrl}/api/admin/live-booth/create-standalone`, {
         method: 'POST',
@@ -355,7 +398,11 @@ const LiveClassesAll: React.FC = () => {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session.access_token}`
         },
-        body: JSON.stringify(standaloneForm)
+        body: JSON.stringify({
+          ...standaloneForm,
+          coverPhotoUrl: coverPhotoUrl,
+          coverPhoto: undefined // Don't send the file object
+        })
       });
 
       const result = await response.json();
@@ -371,7 +418,8 @@ const LiveClassesAll: React.FC = () => {
         description: '',
         videoUrl: '',
         videoTitle: '',
-        videoDescription: ''
+        videoDescription: '',
+        coverPhoto: undefined
       });
       fetchSessions();
       fetchLiveClasses();
@@ -743,6 +791,42 @@ const LiveClassesAll: React.FC = () => {
                     rows={3}
                     placeholder="Brief description of the live class..."
                   />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Cover Image (Optional)
+                  </label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        if (!file.type.startsWith('image/')) {
+                          setError('Please select a valid image file');
+                          return;
+                        }
+                        if (file.size > 10 * 1024 * 1024) {
+                          setError('Image file is too large. Please select a file smaller than 10MB');
+                          return;
+                        }
+                        setStandaloneForm({ ...standaloneForm, coverPhoto: file });
+                        setError('');
+                      }
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                  />
+                  {standaloneForm.coverPhoto && (
+                    <div className="mt-2">
+                      <p className="text-sm text-gray-600 mb-1">Selected: {standaloneForm.coverPhoto.name}</p>
+                      <img
+                        src={URL.createObjectURL(standaloneForm.coverPhoto)}
+                        alt="Cover preview"
+                        className="mt-2 w-full h-48 object-cover rounded-lg border border-gray-300"
+                      />
+                    </div>
+                  )}
                 </div>
 
                 <div>
