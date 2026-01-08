@@ -25,7 +25,8 @@ interface CourseData {
   description: string;
   level: string;
   category: string;
-  access_type: 'free' | 'membership';
+  access_type: 'free' | 'purchase';
+  purchase_price: number;
   coverPhoto?: File;
   videos: Video[];
   pdfResources: PDFResource[];
@@ -43,6 +44,7 @@ const EditCourse: React.FC = () => {
     level: 'beginner',
     category: 'business-entrepreneurship',
     access_type: 'free',
+    purchase_price: 0,
     coverPhoto: undefined,
     videos: [],
     pdfResources: []
@@ -124,10 +126,13 @@ const EditCourse: React.FC = () => {
         isNew: false
       }));
 
-      // Ensure access_type is valid ('free' or 'membership')
-      const validAccessType = (course.access_type === 'free' || course.access_type === 'membership') 
-        ? course.access_type 
-        : 'membership'; // Default to 'membership' if invalid (matches database default)
+      // Ensure access_type is valid ('free' or 'purchase')
+      // Handle migration from 'membership' to 'purchase'
+      const rawAccessType = course.access_type?.toString().trim().toLowerCase() || '';
+      const normalizedAccessType = rawAccessType === 'membership' ? 'purchase' : rawAccessType;
+      const validAccessType = (normalizedAccessType === 'free' || normalizedAccessType === 'purchase') 
+        ? normalizedAccessType 
+        : 'purchase'; // Default to 'purchase' if invalid (matches database default)
       
       setCourseData({
         title: course.title || '',
@@ -135,6 +140,7 @@ const EditCourse: React.FC = () => {
         level: course.level || 'beginner',
         category: course.category || 'business-entrepreneurship',
         access_type: validAccessType,
+        purchase_price: course.purchase_price || 0,
         coverPhoto: undefined,
         videos: videos || [],
         pdfResources: transformedPdfResources
@@ -159,7 +165,11 @@ const EditCourse: React.FC = () => {
     }
   }, [courseId, user?.id, user?.role]);
 
-  const handleInputChange = (field: keyof CourseData, value: string) => {
+  const handleInputChange = (field: keyof CourseData, value: string | number) => {
+    // Handle purchase_price as a number
+    if (field === 'purchase_price' && typeof value === 'string') {
+      value = parseFloat(value) || 0;
+    }
     setCourseData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -475,9 +485,12 @@ const EditCourse: React.FC = () => {
       console.log('Updating course in database...');
       
       // Validate access_type before updating
-      const validAccessType = (courseData.access_type === 'free' || courseData.access_type === 'membership')
-        ? courseData.access_type
-        : 'membership'; // Default to 'membership' if invalid (matches database default)
+      // Handle migration from 'membership' to 'purchase'
+      const rawAccessType = courseData.access_type?.toString().trim().toLowerCase() || '';
+      const normalizedAccessType = rawAccessType === 'membership' ? 'purchase' : rawAccessType;
+      const validAccessType = (normalizedAccessType === 'free' || normalizedAccessType === 'purchase')
+        ? normalizedAccessType
+        : 'purchase'; // Default to 'purchase' if invalid (matches database default)
       
       console.log('Updating with access_type:', validAccessType);
       
@@ -489,6 +502,7 @@ const EditCourse: React.FC = () => {
           level: courseData.level,
           category: courseData.category,
           access_type: validAccessType,
+          purchase_price: courseData.purchase_price || 0,
           ...(coverPhotoUrl && { cover_photo_url: coverPhotoUrl })
         })
         .eq('id', courseId);
@@ -895,8 +909,28 @@ const EditCourse: React.FC = () => {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
               >
                 <option value="free">Free Access</option>
-                <option value="membership">Membership Required</option>
+                <option value="purchase">Purchase Required</option>
               </select>
+            </div>
+
+            {/* Purchase Price */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Purchase Price (₦) *
+              </label>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={courseData.purchase_price || 0}
+                onChange={(e) => handleInputChange('purchase_price', parseFloat(e.target.value) || 0)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                placeholder="0.00"
+                required
+              />
+              <p className="mt-1 text-sm text-gray-500">
+                Enter the price in NGN (Nigerian Naira). Set to 0 for free courses.
+              </p>
             </div>
           </div>
         </div>

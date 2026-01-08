@@ -478,6 +478,21 @@ const AdminDashboard: React.FC = () => {
                 <p className="text-sm text-gray-600">Add, edit, and delete blog posts</p>
               </div>
             </button>
+
+            <button
+              onClick={() => navigate('/live-classes/all')}
+              className="flex items-center space-x-3 p-4 border border-gray-200 rounded-lg hover:bg-pink-50 hover:border-pink-300 transition-colors text-left"
+            >
+              <div className="bg-pink-100 rounded-lg p-2">
+                <svg className="h-6 w-6 text-pink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                </svg>
+              </div>
+              <div>
+                <p className="font-medium text-gray-900">Live Classes</p>
+                <p className="text-sm text-gray-600">Manage scheduled live classes</p>
+              </div>
+            </button>
           </div>
         </div>
       </div>

@@ -16,7 +16,7 @@ interface Course {
   title: string;
   description: string;
   level: string;
-  access_type: 'free' | 'membership';
+  access_type: 'free' | 'purchase';
   cover_photo_url?: string;
   created_by?: string;
   created_at: string;

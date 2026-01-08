@@ -49,18 +49,34 @@ CREATE INDEX IF NOT EXISTS idx_skill_path_responses_created_at ON skill_path_res
 ALTER TABLE skill_path_responses ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies
+-- Drop policies if they exist (safe for re-running migration)
+DROP POLICY IF EXISTS "Users can view own skill path responses" ON skill_path_responses;
+DROP POLICY IF EXISTS "Users can insert own skill path responses" ON skill_path_responses;
+DROP POLICY IF EXISTS "Users can update own skill path responses" ON skill_path_responses;
+DROP POLICY IF EXISTS "Admins can view all skill path responses" ON skill_path_responses;
+DROP POLICY IF EXISTS "Admins can manage all skill path responses" ON skill_path_responses;
+
 -- Users can view their own Skill Path responses
+-- Authenticated users can view by user_id or email match
+-- Note: Guest users won't be able to view until they sign up (then they can view by email)
 CREATE POLICY "Users can view own skill path responses" ON skill_path_responses
   FOR SELECT USING (
-    auth.uid() = user_id OR
-    email = (SELECT email FROM profiles WHERE id = auth.uid())
+    -- Authenticated users can view their own responses
+    (auth.uid() IS NOT NULL AND (
+      auth.uid() = user_id OR
+      email = (SELECT email FROM profiles WHERE id = auth.uid())
+    ))
   );
 
 -- Users can insert their own Skill Path responses
+-- Allows authenticated users OR guest users (user_id is NULL for guests)
 CREATE POLICY "Users can insert own skill path responses" ON skill_path_responses
   FOR INSERT WITH CHECK (
-    user_id = auth.uid() OR
-    email = (SELECT email FROM profiles WHERE id = auth.uid())
+    -- Authenticated users: must match their user_id or email
+    (auth.uid() IS NOT NULL AND (user_id = auth.uid() OR email = (SELECT email FROM profiles WHERE id = auth.uid())))
+    OR
+    -- Guest users: user_id must be NULL (guests don't have user_id yet)
+    (auth.uid() IS NULL AND user_id IS NULL)
   );
 
 -- Users can update their own Skill Path responses

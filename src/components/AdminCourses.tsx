@@ -8,7 +8,7 @@ interface Course {
   title: string;
   description: string;
   level: string;
-  access_type: 'free' | 'membership';
+  access_type: 'free' | 'purchase';
   cover_photo_url?: string;
   created_by?: string;
   created_at: string;
@@ -187,7 +187,9 @@ const AdminCourses: React.FC = () => {
   const getAccessBadge = (accessType: string) => {
     const accessConfig = {
       free: { color: 'bg-blue-100 text-blue-800', text: 'Free Access' },
-      membership: { color: 'bg-purple-100 text-purple-800', text: 'Membership Required' }
+      purchase: { color: 'bg-purple-100 text-purple-800', text: 'Purchase Required' },
+      // Legacy support for 'membership' (will be migrated to 'purchase')
+      membership: { color: 'bg-purple-100 text-purple-800', text: 'Purchase Required' }
     };
     
     const config = accessConfig[accessType as keyof typeof accessConfig] || accessConfig.free;

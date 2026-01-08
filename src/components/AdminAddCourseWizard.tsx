@@ -23,7 +23,7 @@ interface CourseData {
   description: string;
   level: string;
   category: string;
-  access_type: 'free' | 'membership';
+  access_type: 'free' | 'purchase';
   purchase_price: number;
   coverPhoto?: File;
   videos: Video[];
@@ -44,7 +44,7 @@ const AdminAddCourseWizard: React.FC = () => {
     description: '',
     level: 'beginner', // Default level (lowercase)
     category: 'business-entrepreneurship', // Default category
-    access_type: 'free', // Default access type
+    access_type: 'purchase', // Default access type
     purchase_price: 0, // Default price (free)
     coverPhoto: undefined,
     videos: [],
@@ -111,6 +111,13 @@ const AdminAddCourseWizard: React.FC = () => {
   };
 
   const handleInputChange = (field: keyof CourseData, value: string | number) => {
+    // Normalize access_type to ensure it's always a valid value
+    if (field === 'access_type' && typeof value === 'string') {
+      const normalized = value.trim().toLowerCase();
+      // Handle migration from 'membership' to 'purchase'
+      const normalizedValue = normalized === 'membership' ? 'purchase' : normalized;
+      value = (normalizedValue === 'free' || normalizedValue === 'purchase') ? normalizedValue : 'purchase';
+    }
     setCourseData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -467,10 +474,14 @@ const AdminAddCourseWizard: React.FC = () => {
         }
       }
 
-      // Ensure access_type is valid ('free' or 'membership')
-      const validAccessType = (courseData.access_type === 'free' || courseData.access_type === 'membership') 
-        ? courseData.access_type 
-        : 'membership'; // Default to 'membership' if invalid
+      // Ensure access_type is valid ('free' or 'purchase')
+      // Trim whitespace and handle null/undefined/empty values
+      const rawAccessType = courseData.access_type?.toString().trim().toLowerCase() || '';
+      // Handle migration from 'membership' to 'purchase'
+      const normalizedAccessType = rawAccessType === 'membership' ? 'purchase' : rawAccessType;
+      const validAccessType = (normalizedAccessType === 'free' || normalizedAccessType === 'purchase') 
+        ? normalizedAccessType 
+        : 'purchase'; // Default to 'purchase' if invalid
 
       // Create the course with scheduled status
       const { data: courseIns, error: courseError } = await supabase
@@ -586,10 +597,14 @@ const AdminAddCourseWizard: React.FC = () => {
       }
 
       // Create the course
-      // Ensure access_type is valid ('free' or 'membership')
-      const validAccessType = (courseData.access_type === 'free' || courseData.access_type === 'membership') 
-        ? courseData.access_type 
-        : 'membership'; // Default to 'membership' if invalid
+      // Ensure access_type is valid ('free' or 'purchase')
+      // Trim whitespace and handle null/undefined/empty values
+      const rawAccessType = courseData.access_type?.toString().trim().toLowerCase() || '';
+      // Handle migration from 'membership' to 'purchase'
+      const normalizedAccessType = rawAccessType === 'membership' ? 'purchase' : rawAccessType;
+      const validAccessType = (normalizedAccessType === 'free' || normalizedAccessType === 'purchase') 
+        ? normalizedAccessType 
+        : 'purchase'; // Default to 'purchase' if invalid
 
       console.log('About to create course with data:', {
         title: courseData.title,
@@ -597,6 +612,7 @@ const AdminAddCourseWizard: React.FC = () => {
         level: courseData.level,
         category: courseData.category,
         access_type: validAccessType,
+        raw_access_type: courseData.access_type,
         purchase_price: courseData.purchase_price || 0,
         cover_photo_url: coverPhotoUrl,
         created_by: user?.id
@@ -819,7 +835,7 @@ const AdminAddCourseWizard: React.FC = () => {
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
             <option value="free">Free Access</option>
-            <option value="membership">Membership Required</option>
+            <option value="purchase">Purchase Required</option>
           </select>
         </div>
 

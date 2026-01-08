@@ -20,6 +20,8 @@ const courseRoutes = require('./routes/courses');
 const lessonRoutes = require('./routes/lessons');
 const paymentRoutes = require('./routes/payments');
 const flutterwaveRoutes = require('./routes/flutterwave');
+const liveBoothRoutes = require('./routes/liveBooth');
+const cronRoutes = require('./routes/cron');
 // const paystackRoutes = require('./routes/paystack'); // Disabled - using Flutterwave instead
 
 // Load environment variables from parent directory
@@ -65,15 +67,31 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Supabase configuration
 const { createClient } = require('@supabase/supabase-js');
 
-const supabaseUrl = process.env.SUPABASE_URL || 'https://evqerkqiquwxqlizdqmg.supabase.co';
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV2cWVya3FpcXV3eHFsaXpkcW1nIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NDY3MTQ1NSwiZXhwIjoyMDcwMjQ3NDU1fQ.0hoqOOvJzRFX6zskur2HixoIW2XfAP0fMBwTMGcd7kw';
+const supabaseUrl =
+  process.env.SUPABASE_URL ||
+  process.env.REACT_APP_SUPABASE_URL ||
+  'https://evqerkqiquwxqlizdqmg.supabase.co';
 
-if (!supabaseUrl || !supabaseServiceKey) {
+// Prefer service role key (server-side). For local dev, fall back to anon key so the server can boot.
+const supabaseKey =
+  process.env.SUPABASE_SERVICE_ROLE_KEY ||
+  process.env.REACT_APP_SUPABASE_ANON_KEY ||
+  process.env.SUPABASE_ANON_KEY ||
+  // Local dev fallback (matches `src/lib/supabase.ts`). Safe to embed because it's the public anon key.
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV2cWVya3FpcXV3eHFsaXpkcW1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ2NzE0NTUsImV4cCI6MjA3MDI0NzQ1NX0.0hoqOOvJzRFX6zskur2HixoIW2XfAP0fMBwTMGcd7kw';
+
+if (!supabaseUrl || !supabaseKey) {
   console.error('❌ Missing Supabase environment variables');
+  console.error('   - SUPABASE_URL (or REACT_APP_SUPABASE_URL)');
+  console.error('   - SUPABASE_SERVICE_ROLE_KEY (recommended) OR REACT_APP_SUPABASE_ANON_KEY (local dev fallback)');
   process.exit(1);
 }
 
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+  console.warn('⚠️ SUPABASE_SERVICE_ROLE_KEY not set; using anon key fallback for local dev. Some server routes may be limited by RLS.');
+}
+
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Make supabase available to routes
 app.locals.supabase = supabase;
@@ -89,6 +107,8 @@ app.use('/api/courses', courseRoutes);
 app.use('/api/lessons', lessonRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/flutterwave', flutterwaveRoutes);
+app.use('/api/admin/live-booth', liveBoothRoutes);
+app.use('/api/cron', cronRoutes);
 // app.use('/api/paystack', paystackRoutes); // Disabled - using Flutterwave instead
 
 // --- Automated Cleanup of Expired Subscriptions ---

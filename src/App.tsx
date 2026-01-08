@@ -16,6 +16,8 @@ import ManualAddToLibrary from './components/ManualAddToLibrary';
 import ResellerAnalysisDashboard from './components/ResellerAnalysisDashboard';
 import BlogManagement from './components/BlogManagement';
 import AddEditBlogPost from './components/AddEditBlogPost';
+import LiveClassesAll from './components/LiveClassesAll';
+import LiveClassSessionView from './components/LiveClassSessionView';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, loading } = useAuth();
@@ -65,6 +67,8 @@ function App() {
             <Route path="/admin/blog" element={<ProtectedRoute><BlogManagement /></ProtectedRoute>} />
             <Route path="/admin/blog/add" element={<ProtectedRoute><AddEditBlogPost /></ProtectedRoute>} />
             <Route path="/admin/blog/edit/:id" element={<ProtectedRoute><AddEditBlogPost /></ProtectedRoute>} />
+            <Route path="/live-classes/all" element={<ProtectedRoute><LiveClassesAll /></ProtectedRoute>} />
+            <Route path="/live-classes/session/:sessionId" element={<LiveClassSessionView />} />
           </Routes>
         </div>
       </Router>
