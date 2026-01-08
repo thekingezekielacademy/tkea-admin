@@ -37,14 +37,16 @@ const checkAdmin = async (req, res, next) => {
       return res.status(401).json({ success: false, message: 'Unauthorized - Invalid token' });
     }
 
-    // Check if admin
-    const { data: profile, error: profileError } = await supabaseClient
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single();
+    // Check if admin using the is_admin() database function (bypasses RLS via SECURITY DEFINER)
+    const { data: isAdmin, error: adminCheckError } = await supabaseClient
+      .rpc('is_admin', { user_id: user.id });
 
-    if (profileError || !profile || profile.role !== 'admin') {
+    if (adminCheckError) {
+      console.error('Error checking admin status:', adminCheckError);
+      return res.status(500).json({ success: false, message: 'Error checking admin status' });
+    }
+
+    if (!isAdmin) {
       return res.status(403).json({ success: false, message: 'Forbidden - Admin access required' });
     }
 

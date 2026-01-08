@@ -472,12 +472,12 @@ const LiveClassesAll: React.FC = () => {
 
         {/* Action Buttons */}
         <div className="mb-6 flex flex-wrap gap-4">
-          <button
-            onClick={() => setShowConvertModal(true)}
-            className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-          >
-            Convert Courses to Live Booth
-          </button>
+            <button
+              onClick={() => setShowConvertModal(true)}
+              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+            >
+              Convert Courses to Live Booth
+            </button>
           <button
             onClick={() => setShowStandaloneModal(true)}
             className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
