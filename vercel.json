@@ -3,6 +3,10 @@
   "outputDirectory": "build",
   "installCommand": "npm install",
   "framework": null,
+  "ignore": [
+    "api/**",
+    "server/**"
+  ],
   "rewrites": [
     {
       "source": "/(.*)",
