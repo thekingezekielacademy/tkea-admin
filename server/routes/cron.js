@@ -50,15 +50,15 @@ const checkCronAuth = (req, res, next) => {
   next();
 };
 
-// Auto-schedule Live Booth classes
+// Auto-schedule Live Booth classes (INDEFINITE - runs until stopped)
 router.post('/auto-schedule-live-booth', checkCronAuth, async (req, res) => {
   try {
     const supabase = getSupabaseForCron(req);
 
-    // Get all active Live Booth courses
+    // Get all active Live Booth classes (both course-based and standalone)
     const { data: liveClasses, error: liveClassesError } = await supabase
       .from('live_classes')
-      .select('id, course_id, cycle_day')
+      .select('id, course_id, cycle_day, title')
       .eq('is_active', true);
 
     if (liveClassesError) {
@@ -75,99 +75,190 @@ router.post('/auto-schedule-live-booth', checkCronAuth, async (req, res) => {
     if (!liveClasses || liveClasses.length === 0) {
       return res.status(200).json({ 
         success: true, 
-        message: 'No active Live Booth courses found',
+        message: 'No active Live Booth classes found',
         scheduled: 0
       });
     }
 
     let totalScheduled = 0;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
     for (const liveClass of liveClasses) {
-      // Check how many sessions are scheduled
-      const { count: futureSessionsCount } = await supabase
-        .from('class_sessions')
-        .select('*', { count: 'exact', head: true })
-        .eq('live_class_id', liveClass.id)
-        .gte('scheduled_datetime', new Date().toISOString());
-
-      if (futureSessionsCount >= 75) {
-        continue; // Already has enough sessions
-      }
-
-      // Get course videos
-      const { data: videos, error: videosError } = await supabase
-        .from('course_videos')
-        .select('id, order_index')
-        .eq('course_id', liveClass.course_id)
-        .order('order_index', { ascending: true });
-
-      if (videosError || !videos || videos.length === 0) {
-        console.error(`No videos found for course ${liveClass.course_id}`);
-        continue;
-      }
-
-      const daysToSchedule = 30;
-      const sessions = [];
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      today.setDate(today.getDate() + 1);
-
-      const sessionTimes = {
-        morning: { hour: 6, minute: 30, time: '06:30:00' },
-        afternoon: { hour: 13, minute: 0, time: '13:00:00' },
-        evening: { hour: 19, minute: 30, time: '19:30:00' }
-      };
-
-      const cycleLength = Math.min(videos.length, 5);
-      let cycleDay = (liveClass.cycle_day - 1) || 0;
-
-      for (let day = 0; day < daysToSchedule; day++) {
-        const currentDate = new Date(today);
-        currentDate.setDate(today.getDate() + day);
-        const scheduledDate = currentDate.toISOString().split('T')[0];
-        
-        const lessonIndex = cycleDay % cycleLength;
-        const video = videos[lessonIndex];
-
-        for (const [sessionType, timeConfig] of Object.entries(sessionTimes)) {
-          const scheduledTime = new Date(currentDate);
-          scheduledTime.setHours(timeConfig.hour, timeConfig.minute, 0, 0);
-          const isFree = video.order_index < 2;
-
-          sessions.push({
-            live_class_id: liveClass.id,
-            course_video_id: video.id,
-            session_type: sessionType,
-            scheduled_date: scheduledDate,
-            scheduled_time: timeConfig.time,
-            scheduled_datetime: scheduledTime.toISOString(),
-            status: 'scheduled',
-            is_free: isFree,
-            available_slots: 25,
-            current_slots: 25
-          });
-        }
-
-        cycleDay = (cycleDay + 1) % cycleLength;
-      }
-
-      if (sessions.length > 0) {
-        const { error: sessionsError } = await supabase
+      try {
+        // Find the last scheduled session to know where to continue from
+        const { data: lastSessionData, error: lastSessionError } = await supabase
           .from('class_sessions')
-          .insert(sessions);
+          .select('scheduled_datetime')
+          .eq('live_class_id', liveClass.id)
+          .order('scheduled_datetime', { ascending: false })
+          .limit(1)
+          .maybeSingle();
 
-        if (sessionsError) {
-          console.error(`Error creating sessions for live class ${liveClass.id}:`, sessionsError);
+        // Count how many days of future sessions we have
+        const { count: futureSessionsCount } = await supabase
+          .from('class_sessions')
+          .select('*', { count: 'exact', head: true })
+          .eq('live_class_id', liveClass.id)
+          .gte('scheduled_datetime', today.toISOString());
+
+        const daysRemaining = Math.floor((futureSessionsCount || 0) / 3); // 3 sessions per day
+        
+        // Only schedule if we have less than 7 days remaining (INDEFINITE - auto-extend)
+        if (daysRemaining >= 7) {
+          console.log(`Live class ${liveClass.id} has ${daysRemaining} days remaining (>= 7), skipping...`);
           continue;
         }
 
-        const newCycleDay = (cycleDay % cycleLength) + 1;
-        await supabase
-          .from('live_classes')
-          .update({ cycle_day: newCycleDay })
-          .eq('id', liveClass.id);
+        console.log(`🔄 Scheduling new 30-day extension for live class ${liveClass.id} (${daysRemaining} days remaining)...`);
 
-        totalScheduled += sessions.length;
+        // Determine start date: either after last session or tomorrow
+        let startDate = new Date(today);
+        startDate.setDate(startDate.getDate() + 1); // Default: tomorrow
+        
+        if (lastSessionData && lastSessionData.scheduled_datetime) {
+          const lastSessionDate = new Date(lastSessionData.scheduled_datetime);
+          lastSessionDate.setHours(0, 0, 0, 0);
+          lastSessionDate.setDate(lastSessionDate.getDate() + 1); // Start the day after last session
+          
+          // Only use last session date if it's in the future or today
+          if (lastSessionDate >= today) {
+            startDate = lastSessionDate;
+          }
+        }
+
+        const isStandalone = !liveClass.course_id;
+        let videos = [];
+        let cycleLength = 5;
+
+        if (isStandalone) {
+          // Get standalone videos
+          const { data: standaloneVideos, error: videosError } = await supabase
+            .from('standalone_live_class_videos')
+            .select('id, name, video_url, video_title, video_description, order_index')
+            .eq('live_class_id', liveClass.id)
+            .order('order_index', { ascending: true });
+
+          if (videosError || !standaloneVideos || standaloneVideos.length === 0) {
+            console.error(`No videos found for standalone live class ${liveClass.id}`);
+            continue;
+          }
+
+          videos = standaloneVideos.map(v => ({
+            id: v.id,
+            order_index: v.order_index,
+            name: v.name,
+            video_url: v.video_url,
+            video_title: v.video_title,
+            video_description: v.video_description
+          }));
+          cycleLength = Math.max(5, videos.length);
+        } else {
+          // Get course videos
+          const { data: courseVideos, error: videosError } = await supabase
+            .from('course_videos')
+            .select('id, order_index, name')
+            .eq('course_id', liveClass.course_id)
+            .order('order_index', { ascending: true });
+
+          if (videosError || !courseVideos || courseVideos.length === 0) {
+            console.error(`No videos found for course ${liveClass.course_id}`);
+            continue;
+          }
+
+          videos = courseVideos;
+          cycleLength = Math.min(videos.length, 5);
+        }
+
+        const daysToSchedule = 30;
+        const sessions = [];
+        
+        const sessionTimes = {
+          morning: { hour: 6, minute: 30, time: '06:30:00' },
+          afternoon: { hour: 13, minute: 0, time: '13:00:00' },
+          evening: { hour: 19, minute: 30, time: '19:30:00' }
+        };
+
+        let cycleDay = (liveClass.cycle_day - 1) || 0;
+
+        for (let day = 0; day < daysToSchedule; day++) {
+          const currentDate = new Date(startDate);
+          currentDate.setDate(startDate.getDate() + day);
+          const scheduledDate = currentDate.toISOString().split('T')[0];
+          
+          const lessonIndex = cycleDay % cycleLength;
+          const video = videos[lessonIndex];
+
+          if (!video) {
+            console.error(`No video found at index ${lessonIndex} for live class ${liveClass.id}`);
+            continue;
+          }
+
+          for (const [sessionType, timeConfig] of Object.entries(sessionTimes)) {
+            const scheduledTime = new Date(currentDate);
+            scheduledTime.setHours(timeConfig.hour, timeConfig.minute, 0, 0);
+            
+            // First 2 videos are free (order_index 0 and 1)
+            const isFree = video.order_index < 2;
+
+            if (isStandalone) {
+              sessions.push({
+                live_class_id: liveClass.id,
+                course_video_id: null,
+                video_url: video.video_url,
+                video_title: video.video_title || video.name,
+                video_description: video.video_description || null,
+                session_type: sessionType,
+                scheduled_date: scheduledDate,
+                scheduled_time: timeConfig.time,
+                scheduled_datetime: scheduledTime.toISOString(),
+                status: 'scheduled',
+                is_free: isFree,
+                available_slots: 25,
+                current_slots: 25
+              });
+            } else {
+              sessions.push({
+                live_class_id: liveClass.id,
+                course_video_id: video.id,
+                session_type: sessionType,
+                scheduled_date: scheduledDate,
+                scheduled_time: timeConfig.time,
+                scheduled_datetime: scheduledTime.toISOString(),
+                status: 'scheduled',
+                is_free: isFree,
+                available_slots: 25,
+                current_slots: 25
+              });
+            }
+          }
+
+          cycleDay = (cycleDay + 1) % cycleLength;
+        }
+
+        if (sessions.length > 0) {
+          const { error: sessionsError } = await supabase
+            .from('class_sessions')
+            .insert(sessions);
+
+          if (sessionsError) {
+            console.error(`Error creating sessions for live class ${liveClass.id}:`, sessionsError);
+            continue;
+          }
+
+          // Update cycle_day to continue from where we left off
+          const newCycleDay = (cycleDay % cycleLength) + 1;
+          await supabase
+            .from('live_classes')
+            .update({ cycle_day: newCycleDay, updated_at: new Date().toISOString() })
+            .eq('id', liveClass.id);
+
+          totalScheduled += sessions.length;
+          console.log(`✅ Scheduled ${sessions.length} new sessions for live class ${liveClass.id} (starting ${startDate.toISOString().split('T')[0]})`);
+        }
+      } catch (classError) {
+        console.error(`Error processing live class ${liveClass.id}:`, classError);
+        continue; // Continue with next live class
       }
     }
 
@@ -175,7 +266,7 @@ router.post('/auto-schedule-live-booth', checkCronAuth, async (req, res) => {
       success: true,
       message: 'Scheduling completed',
       scheduled: totalScheduled,
-      coursesProcessed: liveClasses.length
+      classesProcessed: liveClasses.length
     });
 
   } catch (error) {

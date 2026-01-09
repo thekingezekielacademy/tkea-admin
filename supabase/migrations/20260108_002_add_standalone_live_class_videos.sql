@@ -26,15 +26,18 @@ CREATE INDEX IF NOT EXISTS idx_standalone_videos_order
 ALTER TABLE standalone_live_class_videos ENABLE ROW LEVEL SECURITY;
 
 -- Public can view all standalone live class videos
+DROP POLICY IF EXISTS "Public can view standalone live class videos" ON standalone_live_class_videos;
 CREATE POLICY "Public can view standalone live class videos" 
   ON standalone_live_class_videos
   FOR SELECT 
   USING (true);
 
 -- Admins can manage standalone live class videos
+DROP POLICY IF EXISTS "Admins can manage standalone live class videos" ON standalone_live_class_videos;
 CREATE POLICY "Admins can manage standalone live class videos" 
   ON standalone_live_class_videos
   FOR ALL 
-  USING (is_admin(auth.uid()));
+  USING (is_admin(auth.uid()))
+  WITH CHECK (is_admin(auth.uid()));
 
 COMMENT ON TABLE standalone_live_class_videos IS 'Videos for standalone live classes (not tied to courses)';

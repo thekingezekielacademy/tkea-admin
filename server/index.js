@@ -123,6 +123,64 @@ cron.schedule('0 * * * *', async () => {
   }
 });
 
+// --- Automated Live Booth Session Extension (INDEFINITE) ---
+// Runs daily at 2 AM to check and extend sessions for active live classes
+// This ensures live classes continue indefinitely until manually stopped
+cron.schedule('0 2 * * *', async () => {
+  try {
+    console.log('[CRON] Running daily live booth auto-schedule (indefinite extension)...');
+    
+    // Use built-in https/http module
+    const http = require('http');
+    const https = require('https');
+    const { URL } = require('url');
+    
+    const apiBaseUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+    const cronSecret = process.env.CRON_SECRET || 'internal-cron-secret';
+    const url = new URL(`${apiBaseUrl}/api/cron/auto-schedule-live-booth`);
+    
+    const isHttps = url.protocol === 'https:';
+    const client = isHttps ? https : http;
+    
+    const options = {
+      hostname: url.hostname,
+      port: url.port || (isHttps ? 443 : 80),
+      path: url.pathname,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${cronSecret}`
+      }
+    };
+    
+    const req = client.request(options, (res) => {
+      let data = '';
+      res.on('data', (chunk) => { data += chunk; });
+      res.on('end', () => {
+        try {
+          const result = JSON.parse(data);
+          if (result.success) {
+            console.log(`[CRON] ✅ Live booth auto-schedule complete: ${result.scheduled || 0} sessions scheduled for ${result.classesProcessed || 0} live classes`);
+          } else {
+            console.error('[CRON] ❌ Live booth auto-schedule failed:', result.message);
+          }
+        } catch (e) {
+          console.log('[CRON] Live booth auto-schedule response:', data);
+        }
+      });
+    });
+    
+    req.on('error', (error) => {
+      // If request fails (server not ready), log and continue - will retry next day
+      console.warn('[CRON] ⚠️ Could not call auto-schedule endpoint (server may not be ready):', error.message);
+    });
+    
+    req.end();
+  } catch (error) {
+    console.error('[CRON] ❌ Live booth auto-schedule cron job failed:', error);
+  }
+});
+
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({ 
