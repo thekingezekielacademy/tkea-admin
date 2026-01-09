@@ -34,6 +34,8 @@ Stores live class information (both course-based and standalone).
 - `title` must be present if `course_id` is NULL (standalone classes)
 - `access_type` must be either `'free'` or `'paid'` (CHECK constraint)
 - `access_type` defaults to `'paid'` if not specified
+- `access_type` must be either `'free'` or `'paid'` (CHECK constraint)
+- `access_type` defaults to `'paid'` if not specified
 
 ### 2. `standalone_live_class_videos` Table
 
@@ -116,23 +118,44 @@ const { data: standaloneClasses, error } = await supabase
 
 ### Understanding Access Types
 
+The `access_type` field in the `live_classes` table determines which sessions are free and which require payment/authentication.
+
 **FREE (`access_type = 'free'`):**
-- All classes are accessible for free, forever
+- **All classes are accessible for free, forever**
 - Every session created has `is_free = true`
 - No authentication required for any session
+- All videos (regardless of order_index) are free
 - Ideal for promotional content, sample classes, or fully free courses
 
 **PAID (`access_type = 'paid'`):**
-- First 2 classes (order_index 0 and 1) are free
+- **First 2 classes (order_index 0 and 1) are free**
 - Remaining classes require payment/authentication
 - Only sessions with `is_free = true` are publicly accessible
 - Default access type for most live classes
+- Only the first 2 videos have `is_free = true` in their sessions
 
 ### How Access Type Affects Sessions
 
-When sessions are created:
-- **FREE live class**: All sessions have `is_free = true` regardless of video order_index
-- **PAID live class**: Only sessions for videos with `order_index < 2` have `is_free = true`
+When sessions are created, the `is_free` field in `class_sessions` is set based on `live_classes.access_type`:
+
+- **FREE live class (`access_type = 'free'`)**: 
+  - ALL sessions have `is_free = true` regardless of video order_index
+  - Every video, from first to last, is free
+  
+- **PAID live class (`access_type = 'paid'`)**: 
+  - Only sessions for videos with `order_index < 2` have `is_free = true`
+  - Sessions for videos with `order_index >= 2` have `is_free = false`
+  - First 2 videos (order_index 0 and 1) are free, rest require payment
+
+### Database Column Details
+
+- **Column Name**: `access_type`
+- **Type**: `TEXT`
+- **Default**: `'paid'`
+- **Values**: `'free'` or `'paid'` (CHECK constraint)
+- **Nullable**: No (has default value)
+- **Migration**: Added via `20260108_003_add_access_type_to_live_classes.sql`
+- **Existing Records**: All existing records are automatically set to `'paid'` when migration is run
 
 ## Fetching Standalone Live Classes
 
