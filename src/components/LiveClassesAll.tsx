@@ -229,14 +229,27 @@ const LiveClassesAll: React.FC = () => {
       console.log('Fetched live classes raw data:', data);
 
       const transformedLiveClasses: LiveClass[] = (data || []).map((lc: any) => {
-        console.log('Processing live class:', { id: lc.id, course_id: lc.course_id, title: lc.title, courses_title: lc.courses?.title });
+        const isStandalone = !lc.course_id;
+        const title = isStandalone ? (lc.title || null) : null;
+        const courseTitle = !isStandalone ? (lc.courses?.title || null) : null;
+        
+        console.log('Processing live class:', { 
+          id: lc.id, 
+          course_id: lc.course_id, 
+          title: lc.title, 
+          courses_title: lc.courses?.title,
+          isStandalone,
+          finalTitle: title,
+          finalCourseTitle: courseTitle
+        });
+        
         return {
           id: lc.id,
-          course_id: lc.course_id,
-          title: lc.title || null, // Standalone classes use title field
+          course_id: lc.course_id || null,
+          title: title,
           cover_photo_url: lc.cover_photo_url || null, // Cover image URL
           is_active: lc.is_active,
-          course_title: lc.courses?.title || null, // Course-based classes use courses.title
+          course_title: courseTitle,
           created_at: lc.created_at
         };
       });
@@ -599,9 +612,16 @@ const LiveClassesAll: React.FC = () => {
                         <div className="text-sm font-medium text-gray-900">
                           {liveClass.course_id 
                             ? (liveClass.course_title || 'Untitled Course')
-                            : (liveClass.title || 'Untitled')
+                            : (liveClass.title || (
+                              <span className="text-red-500 italic">⚠️ Title Missing</span>
+                            ))
                           }
                         </div>
+                        {!liveClass.course_id && !liveClass.title && (
+                          <div className="text-xs text-gray-500 mt-1">
+                            ID: {liveClass.id.substring(0, 8)}...
+                          </div>
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`px-2 py-1 rounded-full text-xs font-semibold ${

@@ -104,20 +104,29 @@ router.post('/create-standalone', checkAdmin, async (req, res) => {
     }
 
     // Create standalone Live Booth record (no course_id)
+    const trimmedTitle = title.trim();
+    console.log('Inserting live class with title:', trimmedTitle);
+    
     const { data: liveClass, error: liveClassError } = await supabase
       .from('live_classes')
       .insert({
-        title: title.trim(), // Trim whitespace
+        title: trimmedTitle, // Trim whitespace
         description: description ? description.trim() : null,
         cover_photo_url: coverPhotoUrl || null, // Cover image URL if provided
         course_id: null, // Standalone - not tied to a course
         is_active: true,
         cycle_day: 1
       })
-      .select()
+      .select('id, title, course_id, description, cover_photo_url, is_active, created_at')
       .single();
     
-    console.log('Created live class:', liveClass);
+    console.log('Created live class result:', {
+      data: liveClass,
+      error: liveClassError,
+      savedTitle: liveClass?.title,
+      hasTitle: !!liveClass?.title,
+      titleLength: liveClass?.title?.length
+    });
 
     if (liveClassError) {
       console.error('Error creating standalone live class:', liveClassError);
