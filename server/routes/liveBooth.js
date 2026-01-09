@@ -663,10 +663,13 @@ router.get('/public/free-sessions', async (req, res) => {
   }
 });
 
-// Public endpoint to get a specific session by ID (if it's free)
+// Public endpoint to get current live session dynamically (same link, fresh content)
+// Route: /public/session/:sessionId (sessionId can be any value - shows current session based on date/time)
+// Extracts liveClassId from sessionId lookup, then returns current session
 router.get('/public/session/:sessionId', async (req, res) => {
   try {
-    const { sessionId } = req.params;
+    const { sessionId } = req.params; // sessionId is used to lookup liveClassId, then ignored
+    const now = new Date();
 
     const supabaseUrl =
       process.env.SUPABASE_URL ||
@@ -682,48 +685,156 @@ router.get('/public/session/:sessionId', async (req, res) => {
       auth: { persistSession: false }
     });
 
-    // Get session details
-    const { data: session, error } = await supabase
+    // Extract liveClassId from sessionId (lookup in database)
+    // This allows backward compatibility - any sessionId works, we just need to find the live class
+    const { data: sessionById, error: sessionLookupError } = await supabase
       .from('class_sessions')
-      .select(`
-        id,
-        live_class_id,
-        course_video_id,
-        video_url,
-        video_title,
-        video_description,
-        session_type,
-        scheduled_datetime,
-        status,
-        is_free,
-        live_classes!inner(
-          course_id,
-          title,
-          description,
-          is_active,
-          courses(title)
-        ),
-        course_videos(name, order_index, link)
-      `)
+      .select('live_class_id')
       .eq('id', sessionId)
-      .eq('live_classes.is_active', true)
+      .single();
+    
+    let liveClassId = null;
+    
+    if (sessionById && sessionById.live_class_id) {
+      liveClassId = sessionById.live_class_id;
+    } else {
+      // If sessionId doesn't exist in database, try to extract from query param (for new links)
+      liveClassId = req.query.liveClassId;
+      
+      if (!liveClassId) {
+        return res.status(404).json({ 
+          success: false, 
+          message: 'Could not determine live class. Please use a valid session link.' 
+        });
+      }
+    }
+
+    // Get live class details
+    const { data: liveClass, error: liveClassError } = await supabase
+      .from('live_classes')
+      .select('id, course_id, title, description, access_type, is_active, created_at')
+      .eq('id', liveClassId)
+      .eq('is_active', true)
       .single();
 
-    if (error || !session) {
-      return res.status(404).json({ success: false, message: 'Session not found' });
+    if (liveClassError || !liveClass) {
+      return res.status(404).json({ success: false, message: 'Live class not found or inactive' });
     }
 
-    // Check if session is free
-    const isFree = session.is_free === true || 
-                   (session.course_videos?.order_index !== undefined && session.course_videos.order_index < 2);
+    // Get first session date (when live class started)
+    const { data: firstSession, error: firstSessionError } = await supabase
+      .from('class_sessions')
+      .select('scheduled_datetime')
+      .eq('live_class_id', liveClassId)
+      .order('scheduled_datetime', { ascending: true })
+      .limit(1)
+      .single();
 
-    if (!isFree) {
-      return res.status(403).json({ success: false, message: 'This session requires authentication' });
+    if (firstSessionError || !firstSession) {
+      return res.status(404).json({ success: false, message: 'No sessions found for this live class' });
     }
+
+    // Calculate current day in cycle
+    const startDate = new Date(firstSession.scheduled_datetime);
+    startDate.setHours(0, 0, 0, 0);
+    
+    const today = new Date(now);
+    today.setHours(0, 0, 0, 0);
+    
+    const daysSinceStart = Math.floor((today - startDate) / (1000 * 60 * 60 * 24));
+    
+    // Get videos
+    let videos = [];
+    const isStandalone = !liveClass.course_id;
+    
+    if (isStandalone) {
+      const { data: standaloneVideos, error: videosError } = await supabase
+        .from('standalone_live_class_videos')
+        .select('id, name, video_url, video_title, video_description, order_index')
+        .eq('live_class_id', liveClassId)
+        .order('order_index', { ascending: true });
+      
+      if (videosError || !standaloneVideos || standaloneVideos.length === 0) {
+        return res.status(404).json({ success: false, message: 'No videos found for this live class' });
+      }
+      
+      videos = standaloneVideos;
+    } else {
+      const { data: courseVideos, error: videosError } = await supabase
+        .from('course_videos')
+        .select('id, name, link, order_index')
+        .eq('course_id', liveClass.course_id)
+        .order('order_index', { ascending: true });
+      
+      if (videosError || !courseVideos || courseVideos.length === 0) {
+        return res.status(404).json({ success: false, message: 'No videos found for this course' });
+      }
+      
+      videos = courseVideos;
+    }
+    
+    // Calculate which video should be playing today (cycles through)
+    const videoIndex = daysSinceStart % videos.length;
+    const currentVideo = videos[videoIndex];
+    
+    // Determine session type based on current time
+    // Morning: 6:00 AM - 12:59 PM (6:30 AM session)
+    // Afternoon: 1:00 PM - 6:59 PM (1:00 PM session)
+    // Evening: 7:00 PM - 5:59 AM (7:30 PM session)
+    const currentHour = now.getHours();
+    const currentMinute = now.getMinutes();
+    let sessionType = 'evening';
+    let sessionTime = { hour: 19, minute: 30, time: '19:30:00' };
+    
+    if (currentHour >= 6 && currentHour < 13) {
+      sessionType = 'morning';
+      sessionTime = { hour: 6, minute: 30, time: '06:30:00' };
+    } else if (currentHour >= 13 && currentHour < 19) {
+      sessionType = 'afternoon';
+      sessionTime = { hour: 13, minute: 0, time: '13:00:00' };
+    } else {
+      sessionType = 'evening';
+      sessionTime = { hour: 19, minute: 30, time: '19:30:00' };
+    }
+    
+    // Determine if free
+    const isFree = liveClass.access_type === 'free' 
+      ? true 
+      : (currentVideo.order_index < 2);
+    
+    // Build scheduled datetime for today
+    const scheduledTime = new Date(today);
+    scheduledTime.setHours(sessionTime.hour, sessionTime.minute, 0, 0);
+    
+    // Build response in same format as before
+    const sessionData = {
+      id: sessionId, // Keep original sessionId for compatibility
+      live_class_id: liveClassId,
+      course_video_id: isStandalone ? null : currentVideo.id,
+      video_url: isStandalone ? currentVideo.video_url : null,
+      video_title: isStandalone ? (currentVideo.video_title || currentVideo.name) : null,
+      video_description: isStandalone ? currentVideo.video_description : null,
+      session_type: sessionType,
+      scheduled_datetime: scheduledTime.toISOString(),
+      status: 'scheduled',
+      is_free: isFree,
+      live_classes: {
+        course_id: liveClass.course_id,
+        title: liveClass.title,
+        description: liveClass.description,
+        is_active: liveClass.is_active,
+        courses: liveClass.course_id ? { title: liveClass.title } : null
+      },
+      course_videos: !isStandalone ? {
+        name: currentVideo.name,
+        order_index: currentVideo.order_index,
+        link: currentVideo.link
+      } : null
+    };
 
     res.json({
       success: true,
-      data: session
+      data: sessionData
     });
   } catch (error) {
     console.error('Error in public/session:', error);

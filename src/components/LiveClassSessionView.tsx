@@ -28,17 +28,17 @@ interface SessionData {
 }
 
 const LiveClassSessionView: React.FC = () => {
-  const { sessionId } = useParams<{ sessionId: string }>();
+  const { liveClassId, sessionId } = useParams<{ liveClassId: string; sessionId: string }>();
   const navigate = useNavigate();
   const [session, setSession] = useState<SessionData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (sessionId) {
+    if (liveClassId && sessionId) {
       fetchSession();
     }
-  }, [sessionId]);
+  }, [liveClassId, sessionId]);
 
   const fetchSession = async () => {
     try {
@@ -46,7 +46,9 @@ const LiveClassSessionView: React.FC = () => {
       setError('');
 
       const apiBaseUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000';
-      const response = await fetch(`${apiBaseUrl}/api/admin/live-booth/public/session/${sessionId}`);
+      // Same route - backend extracts liveClassId from sessionId and returns current session dynamically
+      // Pass liveClassId as query param for faster lookup (optional - backend can also extract from sessionId)
+      const response = await fetch(`${apiBaseUrl}/api/admin/live-booth/public/session/${sessionId}?liveClassId=${liveClassId}`);
 
       const result = await response.json();
 

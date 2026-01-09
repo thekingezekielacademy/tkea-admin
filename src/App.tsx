@@ -68,7 +68,7 @@ function App() {
             <Route path="/admin/blog/add" element={<ProtectedRoute><AddEditBlogPost /></ProtectedRoute>} />
             <Route path="/admin/blog/edit/:id" element={<ProtectedRoute><AddEditBlogPost /></ProtectedRoute>} />
             <Route path="/live-classes/all" element={<ProtectedRoute><LiveClassesAll /></ProtectedRoute>} />
-            <Route path="/live-classes/session/:sessionId" element={<LiveClassSessionView />} />
+            <Route path="/live-classes/:liveClassId/session/:sessionId" element={<LiveClassSessionView />} />
           </Routes>
         </div>
       </Router>
