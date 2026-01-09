@@ -917,6 +917,25 @@ const LiveClassesAll: React.FC = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Access Type <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={standaloneForm.access_type}
+                    onChange={(e) => setStandaloneForm({ ...standaloneForm, access_type: e.target.value as 'free' | 'paid' })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                  >
+                    <option value="free">FREE - All classes accessible for free, forever</option>
+                    <option value="paid">PAID - First 2 classes free, rest require payment</option>
+                  </select>
+                  <p className="mt-1 text-xs text-gray-500">
+                    {standaloneForm.access_type === 'free' 
+                      ? '✅ All classes will be accessible for free, forever'
+                      : '✅ First 2 classes will be free, remaining classes require payment'}
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     Cover Image (Optional)
                   </label>
                   <input
