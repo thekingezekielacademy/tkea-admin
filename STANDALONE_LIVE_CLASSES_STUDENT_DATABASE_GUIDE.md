@@ -32,6 +32,8 @@ Stores live class information (both course-based and standalone).
 - Either `course_id` OR `title` must be present (CHECK constraint)
 - `course_id` can be NULL (standalone classes)
 - `title` must be present if `course_id` is NULL (standalone classes)
+- `access_type` must be either `'free'` or `'paid'` (CHECK constraint)
+- `access_type` defaults to `'paid'` if not specified
 
 ### 2. `standalone_live_class_videos` Table
 
