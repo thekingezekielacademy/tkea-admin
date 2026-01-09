@@ -46,13 +46,28 @@ const LiveClassesAll: React.FC = () => {
   const [converting, setConverting] = useState(false);
   const [activating, setActivating] = useState(false);
   const [toggling, setToggling] = useState<string | null>(null);
+  interface StandaloneVideo {
+    id: string;
+    name: string;
+    video_url: string;
+    video_title?: string;
+    video_description?: string;
+    duration?: string;
+  }
+
   const [standaloneForm, setStandaloneForm] = useState({
     title: '',
     description: '',
-    videoUrl: '',
-    videoTitle: '',
-    videoDescription: '',
-    coverPhoto: undefined as File | undefined
+    coverPhoto: undefined as File | undefined,
+    videos: [] as StandaloneVideo[]
+  });
+  
+  const [newVideo, setNewVideo] = useState({
+    name: '',
+    video_url: '',
+    video_title: '',
+    video_description: '',
+    duration: ''
   });
   const [filterDate, setFilterDate] = useState('');
   const [filterSessionType, setFilterSessionType] = useState<string>('all');
@@ -349,14 +364,68 @@ const LiveClassesAll: React.FC = () => {
     }
   };
 
+  const addStandaloneVideo = () => {
+    if (!newVideo.name.trim() || !newVideo.video_url.trim()) {
+      setError('Video name and URL are required');
+      return;
+    }
+
+    const video: StandaloneVideo = {
+      id: Math.random().toString(36).substr(2, 9),
+      name: newVideo.name.trim(),
+      video_url: newVideo.video_url.trim(),
+      video_title: newVideo.video_title.trim() || undefined,
+      video_description: newVideo.video_description.trim() || undefined,
+      duration: newVideo.duration.trim() || undefined
+    };
+
+    setStandaloneForm(prev => ({
+      ...prev,
+      videos: [...prev.videos, video]
+    }));
+
+    setNewVideo({ name: '', video_url: '', video_title: '', video_description: '', duration: '' });
+    setError('');
+  };
+
+  const removeStandaloneVideo = (videoId: string) => {
+    setStandaloneForm(prev => ({
+      ...prev,
+      videos: prev.videos.filter(v => v.id !== videoId)
+    }));
+  };
+
+  const moveStandaloneVideoUp = (index: number) => {
+    if (index === 0) return;
+    setStandaloneForm(prev => {
+      const newVideos = [...prev.videos];
+      [newVideos[index], newVideos[index - 1]] = [newVideos[index - 1], newVideos[index]];
+      return { ...prev, videos: newVideos };
+    });
+  };
+
+  const moveStandaloneVideoDown = (index: number) => {
+    setStandaloneForm(prev => {
+      if (index === prev.videos.length - 1) return prev;
+      const newVideos = [...prev.videos];
+      [newVideos[index], newVideos[index + 1]] = [newVideos[index + 1], newVideos[index]];
+      return { ...prev, videos: newVideos };
+    });
+  };
+
   const createStandaloneLiveClass = async () => {
     try {
       setConverting(true);
       setError('');
       setSuccess('');
 
-      if (!standaloneForm.title || !standaloneForm.videoUrl) {
-        setError('Title and Video URL are required');
+      if (!standaloneForm.title.trim()) {
+        setError('Title is required');
+        return;
+      }
+
+      if (standaloneForm.videos.length === 0) {
+        setError('At least one video is required');
         return;
       }
 
@@ -413,9 +482,16 @@ const LiveClassesAll: React.FC = () => {
           'Authorization': `Bearer ${session.access_token}`
         },
         body: JSON.stringify({
-          ...standaloneForm,
+          title: standaloneForm.title,
+          description: standaloneForm.description,
           coverPhotoUrl: coverPhotoUrl,
-          coverPhoto: undefined // Don't send the file object
+          videos: standaloneForm.videos.map(v => ({
+            name: v.name,
+            video_url: v.video_url,
+            video_title: v.video_title,
+            video_description: v.video_description,
+            duration: v.duration
+          }))
         })
       });
 
@@ -430,11 +506,10 @@ const LiveClassesAll: React.FC = () => {
       setStandaloneForm({
         title: '',
         description: '',
-        videoUrl: '',
-        videoTitle: '',
-        videoDescription: '',
-        coverPhoto: undefined
+        coverPhoto: undefined,
+        videos: []
       });
+      setNewVideo({ name: '', video_url: '', video_title: '', video_description: '', duration: '' });
       fetchSessions();
       fetchLiveClasses();
     } catch (err: any) {
@@ -850,49 +925,135 @@ const LiveClassesAll: React.FC = () => {
                   )}
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Video URL <span className="text-red-500">*</span>
+                {/* Videos Section */}
+                <div className="border-t pt-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-3">
+                    Videos <span className="text-red-500">*</span>
+                    <span className="text-xs font-normal text-gray-500 ml-2">(At least one video required)</span>
                   </label>
-                  <input
-                    type="url"
-                    value={standaloneForm.videoUrl}
-                    onChange={(e) => setStandaloneForm({ ...standaloneForm, videoUrl: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                    placeholder="https://youtube.com/watch?v=... or direct video URL"
-                  />
-                </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Video Title (Optional)
-                  </label>
-                  <input
-                    type="text"
-                    value={standaloneForm.videoTitle}
-                    onChange={(e) => setStandaloneForm({ ...standaloneForm, videoTitle: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                    placeholder="Leave empty to use class title"
-                  />
-                </div>
+                  {/* Video List */}
+                  {standaloneForm.videos.length > 0 && (
+                    <div className="space-y-2 mb-4">
+                      {standaloneForm.videos.map((video, index) => (
+                        <div key={video.id} className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
+                          <div className="flex-1">
+                            <div className="font-medium text-sm text-gray-900">{video.name}</div>
+                            <div className="text-xs text-gray-500 truncate">{video.video_url}</div>
+                            {video.duration && (
+                              <div className="text-xs text-gray-400">Duration: {video.duration}</div>
+                            )}
+                          </div>
+                          <div className="flex gap-1">
+                            <button
+                              type="button"
+                              onClick={() => moveStandaloneVideoUp(index)}
+                              disabled={index === 0}
+                              className="px-2 py-1 text-xs bg-gray-200 hover:bg-gray-300 rounded disabled:opacity-50"
+                            >
+                              ↑
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => moveStandaloneVideoDown(index)}
+                              disabled={index === standaloneForm.videos.length - 1}
+                              className="px-2 py-1 text-xs bg-gray-200 hover:bg-gray-300 rounded disabled:opacity-50"
+                            >
+                              ↓
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => removeStandaloneVideo(video.id)}
+                              className="px-2 py-1 text-xs bg-red-100 hover:bg-red-200 text-red-700 rounded"
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Video Description (Optional)
-                  </label>
-                  <textarea
-                    value={standaloneForm.videoDescription}
-                    onChange={(e) => setStandaloneForm({ ...standaloneForm, videoDescription: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                    rows={2}
-                    placeholder="Additional details about the video..."
-                  />
+                  {/* Add Video Form */}
+                  <div className="border border-gray-300 rounded-lg p-4 bg-gray-50">
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">
+                          Video Name <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={newVideo.name}
+                          onChange={(e) => setNewVideo({ ...newVideo, name: e.target.value })}
+                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                          placeholder="e.g., Introduction to Advanced Techniques"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">
+                          Video URL <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="url"
+                          value={newVideo.video_url}
+                          onChange={(e) => setNewVideo({ ...newVideo, video_url: e.target.value })}
+                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                          placeholder="https://youtube.com/watch?v=... or direct video URL"
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">
+                            Video Title (Optional)
+                          </label>
+                          <input
+                            type="text"
+                            value={newVideo.video_title}
+                            onChange={(e) => setNewVideo({ ...newVideo, video_title: e.target.value })}
+                            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                            placeholder="Optional display title"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">
+                            Duration (Optional)
+                          </label>
+                          <input
+                            type="text"
+                            value={newVideo.duration}
+                            onChange={(e) => setNewVideo({ ...newVideo, duration: e.target.value })}
+                            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                            placeholder="e.g., 15:30"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">
+                          Video Description (Optional)
+                        </label>
+                        <textarea
+                          value={newVideo.video_description}
+                          onChange={(e) => setNewVideo({ ...newVideo, video_description: e.target.value })}
+                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                          rows={2}
+                          placeholder="Additional details about this video..."
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={addStandaloneVideo}
+                        className="w-full px-4 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 transition-colors"
+                      >
+                        + Add Video
+                      </button>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="flex gap-3 pt-4">
                   <button
                     onClick={createStandaloneLiveClass}
-                    disabled={converting || !standaloneForm.title || !standaloneForm.videoUrl}
+                    disabled={converting || !standaloneForm.title || standaloneForm.videos.length === 0}
                     className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {converting ? 'Creating...' : 'Create Live Class'}

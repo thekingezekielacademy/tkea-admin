@@ -62,14 +62,12 @@ const checkAdmin = async (req, res, next) => {
 // Create standalone live class (not tied to a course)
 router.post('/create-standalone', checkAdmin, async (req, res) => {
   try {
-    const { title, description, videoUrl, videoTitle, videoDescription, coverPhotoUrl } = req.body;
+    const { title, description, videos, coverPhotoUrl } = req.body;
     
     console.log('Creating standalone live class with data:', {
       title,
       description,
-      videoUrl,
-      videoTitle,
-      videoDescription,
+      videosCount: videos?.length || 0,
       coverPhotoUrl
     });
     
@@ -77,8 +75,15 @@ router.post('/create-standalone', checkAdmin, async (req, res) => {
       return res.status(400).json({ success: false, message: 'Title is required' });
     }
 
-    if (!videoUrl) {
-      return res.status(400).json({ success: false, message: 'Video URL is required' });
+    if (!videos || !Array.isArray(videos) || videos.length === 0) {
+      return res.status(400).json({ success: false, message: 'At least one video is required' });
+    }
+
+    // Validate videos
+    for (const video of videos) {
+      if (!video.name || !video.video_url) {
+        return res.status(400).json({ success: false, message: 'Each video must have a name and video_url' });
+      }
     }
 
     // Use service role key for admin operations to bypass RLS
@@ -140,7 +145,36 @@ router.post('/create-standalone', checkAdmin, async (req, res) => {
       });
     }
 
-    // Schedule classes for next 30 days with direct video URL
+    // Save videos to standalone_live_class_videos table
+    const videosToInsert = videos.map((video, index) => ({
+      live_class_id: liveClass.id,
+      name: video.name.trim(),
+      video_url: video.video_url.trim(),
+      video_title: video.video_title?.trim() || null,
+      video_description: video.video_description?.trim() || null,
+      duration: video.duration?.trim() || null,
+      order_index: index
+    }));
+
+    const { data: savedVideos, error: videosError } = await supabase
+      .from('standalone_live_class_videos')
+      .insert(videosToInsert)
+      .select();
+
+    if (videosError) {
+      console.error('Error saving standalone videos:', videosError);
+      // Delete the live class if video saving fails
+      await supabase.from('live_classes').delete().eq('id', liveClass.id);
+      return res.status(500).json({
+        success: false,
+        message: 'Error saving videos',
+        error: videosError.message || 'Unknown error',
+      });
+    }
+
+    console.log(`Saved ${savedVideos?.length || 0} videos for standalone live class`);
+
+    // Schedule classes for next 30 days, cycling through videos
     const sessions = [];
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -152,27 +186,38 @@ router.post('/create-standalone', checkAdmin, async (req, res) => {
       evening: { hour: 19, minute: 30, time: '19:30:00' }
     };
 
+    const totalVideos = savedVideos.length;
+    const cycleLength = Math.max(5, totalVideos); // Cycle through videos, minimum 5 days
+
     for (let day = 0; day < 30; day++) {
       const currentDate = new Date(today);
       currentDate.setDate(today.getDate() + day);
       const scheduledDate = currentDate.toISOString().split('T')[0];
 
+      // Calculate which video to use based on cycle_day (1-5) and day
+      const cycleDay = ((day % cycleLength) % 5) + 1; // Cycle day 1-5
+      const videoIndex = (day % totalVideos); // Which video in the array
+      const video = savedVideos[videoIndex];
+
       for (const [sessionType, timeConfig] of Object.entries(sessionTimes)) {
         const scheduledTime = new Date(currentDate);
         scheduledTime.setHours(timeConfig.hour, timeConfig.minute, 0, 0);
 
+        // First 2 videos are free (order_index 0 and 1)
+        const isFree = videoIndex < 2;
+
         sessions.push({
           live_class_id: liveClass.id,
           course_video_id: null, // Standalone - no course video
-          video_url: videoUrl,
-          video_title: videoTitle || title,
-          video_description: videoDescription || description || null,
+          video_url: video.video_url,
+          video_title: video.video_title || video.name,
+          video_description: video.video_description || description || null,
           session_type: sessionType,
           scheduled_date: scheduledDate,
           scheduled_time: timeConfig.time,
           scheduled_datetime: scheduledTime.toISOString(),
           status: 'scheduled',
-          is_free: true, // Standalone classes are free by default (can be changed)
+          is_free: isFree,
           available_slots: 25,
           current_slots: 25,
         });
@@ -201,6 +246,7 @@ router.post('/create-standalone', checkAdmin, async (req, res) => {
       message: 'Standalone live class created successfully',
       data: {
         liveClass,
+        videosSaved: savedVideos?.length || 0,
         sessionsCreated: createdSessions?.length || 0,
       },
     });
