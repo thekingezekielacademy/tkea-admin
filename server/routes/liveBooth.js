@@ -62,11 +62,12 @@ const checkAdmin = async (req, res, next) => {
 // Create standalone live class (not tied to a course)
 router.post('/create-standalone', checkAdmin, async (req, res) => {
   try {
-    const { title, description, videos, coverPhotoUrl } = req.body;
+    const { title, description, videos, coverPhotoUrl, access_type } = req.body;
     
     console.log('Creating standalone live class with data:', {
       title,
       description,
+      access_type,
       videosCount: videos?.length || 0,
       coverPhotoUrl
     });
@@ -110,7 +111,11 @@ router.post('/create-standalone', checkAdmin, async (req, res) => {
 
     // Create standalone Live Booth record (no course_id)
     const trimmedTitle = title.trim();
-    console.log('Inserting live class with title:', trimmedTitle);
+    const validAccessType = (access_type === 'free' || access_type === 'paid') 
+      ? access_type 
+      : 'paid'; // Default to paid if invalid
+    
+    console.log('Inserting live class with title:', trimmedTitle, 'access_type:', validAccessType);
     
     const { data: liveClass, error: liveClassError } = await supabase
       .from('live_classes')
@@ -118,11 +123,12 @@ router.post('/create-standalone', checkAdmin, async (req, res) => {
         title: trimmedTitle, // Trim whitespace
         description: description ? description.trim() : null,
         cover_photo_url: coverPhotoUrl || null, // Cover image URL if provided
+        access_type: validAccessType, // 'free' or 'paid'
         course_id: null, // Standalone - not tied to a course
         is_active: true,
         cycle_day: 1
       })
-      .select('id, title, course_id, description, cover_photo_url, is_active, created_at')
+      .select('id, title, course_id, description, cover_photo_url, access_type, is_active, created_at')
       .single();
     
     console.log('Created live class result:', {
@@ -203,8 +209,12 @@ router.post('/create-standalone', checkAdmin, async (req, res) => {
         const scheduledTime = new Date(currentDate);
         scheduledTime.setHours(timeConfig.hour, timeConfig.minute, 0, 0);
 
-        // First 2 videos are free (order_index 0 and 1)
-        const isFree = videoIndex < 2;
+        // Determine if session is free based on access_type
+        // FREE: All sessions are free
+        // PAID: Only first 2 videos (order_index 0 and 1) are free
+        const isFree = liveClass.access_type === 'free' 
+          ? true 
+          : (videoIndex < 2);
 
         sessions.push({
           live_class_id: liveClass.id,

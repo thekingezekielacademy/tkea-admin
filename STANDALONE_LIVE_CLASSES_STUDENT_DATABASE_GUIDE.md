@@ -19,6 +19,9 @@ Stores live class information (both course-based and standalone).
 - title (TEXT, REQUIRED for standalone - NOT NULL when course_id IS NULL)
 - description (TEXT, Optional)
 - cover_photo_url (TEXT, Optional - cover image URL)
+- access_type (TEXT, 'free' | 'paid' - DEFAULT 'paid')
+  - 'free': All classes accessible for free, forever
+  - 'paid': First 2 classes free, rest require payment
 - is_active (BOOLEAN, DEFAULT true)
 - cycle_day (INTEGER, 1-5 - tracks video cycling)
 - created_at (TIMESTAMPTZ)
@@ -51,7 +54,7 @@ Stores multiple videos for standalone live classes.
 **Constraints:**
 - `order_index >= 0`
 - Unique `(live_class_id, order_index)` - one video per order position
-- First 2 videos (order_index 0, 1) are FREE
+- **Note:** Free access is determined by `live_classes.access_type`, not just order_index
 
 ### 3. `class_sessions` Table
 
@@ -78,7 +81,10 @@ Stores scheduled sessions for all live classes (course-based and standalone).
 **Constraints:**
 - Either `course_video_id` OR `video_url` must be present (CHECK constraint)
 - For standalone: `course_video_id` is NULL, `video_url` is present
-- First 2 sessions (order_index 0, 1) are FREE
+- **Free Sessions:**
+  - If `live_classes.access_type = 'free'`: ALL sessions are free
+  - If `live_classes.access_type = 'paid'`: Only first 2 videos (order_index 0, 1) are free
+- `is_free` field in `class_sessions` indicates if a session is free
 
 ---
 
@@ -104,6 +110,28 @@ const { data: standaloneClasses, error } = await supabase
 
 ---
 
+## Access Type: FREE vs PAID
+
+### Understanding Access Types
+
+**FREE (`access_type = 'free'`):**
+- All classes are accessible for free, forever
+- Every session created has `is_free = true`
+- No authentication required for any session
+- Ideal for promotional content, sample classes, or fully free courses
+
+**PAID (`access_type = 'paid'`):**
+- First 2 classes (order_index 0 and 1) are free
+- Remaining classes require payment/authentication
+- Only sessions with `is_free = true` are publicly accessible
+- Default access type for most live classes
+
+### How Access Type Affects Sessions
+
+When sessions are created:
+- **FREE live class**: All sessions have `is_free = true` regardless of video order_index
+- **PAID live class**: Only sessions for videos with `order_index < 2` have `is_free = true`
+
 ## Fetching Standalone Live Classes
 
 ### 1. Get All Active Standalone Live Classes
@@ -115,6 +143,7 @@ SELECT
   title,
   description,
   cover_photo_url,
+  access_type,
   is_active,
   created_at
 FROM live_classes
@@ -132,6 +161,7 @@ const { data: standaloneClasses, error } = await supabase
     title,
     description,
     cover_photo_url,
+    access_type,
     is_active,
     created_at
   `)
@@ -149,6 +179,7 @@ SELECT
   lc.title,
   lc.description,
   lc.cover_photo_url,
+  lc.access_type,
   lc.is_active,
   json_agg(
     json_build_object(
@@ -177,6 +208,7 @@ const { data: liveClass, error } = await supabase
     title,
     description,
     cover_photo_url,
+    access_type,
     is_active,
     standalone_live_class_videos (
       id,
@@ -193,6 +225,13 @@ const { data: liveClass, error } = await supabase
   .single();
 
 // Videos are automatically sorted by order_index in the relation
+
+// Check access type
+if (liveClass.access_type === 'free') {
+  console.log('All classes are free!');
+} else {
+  console.log('First 2 classes are free, rest require payment');
+}
 ```
 
 ---
@@ -366,6 +405,7 @@ if (result.success) {
 | **videos** | `standalone_live_class_videos` table | `course_videos` table |
 | **session video** | `class_sessions.video_url` | `class_sessions.course_video_id` → `course_videos.link` |
 | **cover image** | `cover_photo_url` field | `courses.cover_photo_url` |
+| **access type** | `access_type` field ('free' or 'paid') | Always 'paid' (tied to course pricing) |
 
 ---
 
@@ -382,6 +422,7 @@ const fetchStandaloneLiveClasses = async () => {
       title,
       description,
       cover_photo_url,
+      access_type,
       is_active,
       created_at
     `)
@@ -405,6 +446,7 @@ const fetchStandaloneLiveClassDetails = async (liveClassId: string) => {
       title,
       description,
       cover_photo_url,
+      access_type,
       is_active,
       standalone_live_class_videos (
         id,
@@ -422,6 +464,14 @@ const fetchStandaloneLiveClassDetails = async (liveClassId: string) => {
     .single();
 
   if (error) throw error;
+  
+  // Log access type info
+  if (data.access_type === 'free') {
+    console.log('✅ All classes are free!');
+  } else {
+    console.log('ℹ️ First 2 classes are free, rest require payment');
+  }
+  
   return data;
 };
 ```
@@ -482,13 +532,14 @@ const fetchFreePublicSessions = async () => {
         title,
         description,
         cover_photo_url,
+        access_type,
         course_id,
         is_active
       )
     `)
     .is('live_classes.course_id', null)
     .eq('live_classes.is_active', true)
-    .eq('is_free', true)
+    .eq('is_free', true) // Only free sessions (already filtered based on access_type)
     .gte('scheduled_datetime', new Date().toISOString())
     .order('scheduled_datetime', { ascending: true })
     .limit(50);
@@ -597,34 +648,80 @@ const getSessionVideo = (session: ClassSession) => {
 
 ## Free vs Paid Sessions
 
+### Determining Free Sessions Based on Access Type
+
+**For FREE Live Classes (`access_type = 'free'`):**
+- ALL sessions have `is_free = true`
+- All sessions are publicly accessible
+- No authentication required for any session
+- Check: `live_classes.access_type = 'free'` → All sessions are free
+
+**For PAID Live Classes (`access_type = 'paid'`):**
+- Only first 2 videos (order_index 0, 1) have `is_free = true`
+- Remaining videos have `is_free = false`
+- Only free sessions are publicly accessible
+- Check: `live_classes.access_type = 'paid'` AND `class_sessions.is_free = true` (for first 2 videos)
+
 ### Free Sessions (Public Access - No Sign-In Required)
 
 **Criteria:**
-- `is_free = true` OR
-- Video `order_index < 2` (first 2 videos)
+1. **FREE live class**: `live_classes.access_type = 'free'` → All sessions are free
+2. **PAID live class**: `class_sessions.is_free = true` (first 2 videos only)
 
 **Query for Free Sessions:**
 ```typescript
-const freeSessions = sessions.filter(session => {
-  // For standalone classes
-  if (session.video_url) {
-    // Check if this video is in the first 2 (order_index 0 or 1)
-    // This is already set in is_free when session is created
-    return session.is_free === true;
+const getFreeSessions = async (liveClassId: string) => {
+  // First, get the live class to check access_type
+  const { data: liveClass } = await supabase
+    .from('live_classes')
+    .select('access_type')
+    .eq('id', liveClassId)
+    .single();
+
+  // Then get sessions
+  const { data: sessions } = await supabase
+    .from('class_sessions')
+    .select('*')
+    .eq('live_class_id', liveClassId);
+
+  if (liveClass.access_type === 'free') {
+    // All sessions are free for FREE live classes
+    return sessions.filter(s => s.scheduled_datetime >= new Date().toISOString());
+  } else {
+    // Only sessions with is_free = true are free for PAID live classes
+    return sessions.filter(s => s.is_free === true && s.scheduled_datetime >= new Date().toISOString());
   }
-  // For course-based classes
-  if (session.course_videos?.order_index < 2) {
-    return true;
-  }
-  return session.is_free === true;
-});
+};
+```
+
+**Simple Query (Check `is_free` field):**
+```typescript
+// The is_free field is already set correctly based on access_type
+// So you can simply filter by is_free = true
+const { data: freeSessions } = await supabase
+  .from('class_sessions')
+  .select('*')
+  .eq('live_class_id', liveClassId)
+  .eq('is_free', true)
+  .gte('scheduled_datetime', new Date().toISOString());
 ```
 
 ### Paid Sessions (Authentication Required)
 
-- All sessions after the first 2 videos
-- `is_free = false`
+**For PAID Live Classes:**
+- Sessions with `is_free = false` (videos with order_index >= 2)
 - Requires user authentication and access verification
+- Check user's subscription/payment status before allowing access
+
+**Query for Paid Sessions:**
+```typescript
+const { data: paidSessions } = await supabase
+  .from('class_sessions')
+  .select('*')
+  .eq('live_class_id', liveClassId)
+  .eq('is_free', false)
+  .gte('scheduled_datetime', new Date().toISOString());
+```
 
 ---
 
@@ -826,9 +923,15 @@ const fetchStandaloneLiveClassComplete = async (liveClassId: string): Promise<St
 - **Standalone live classes**: `course_id = NULL`, use `title` field
 - **Videos**: Stored in `standalone_live_class_videos` table
 - **Sessions**: Stored in `class_sessions` with `video_url` (not `course_video_id`)
-- **Free sessions**: First 2 videos (`order_index < 2`) are publicly accessible
+- **Access Type (`access_type`)**:
+  - `'free'`: All classes are free, forever. All sessions have `is_free = true`
+  - `'paid'`: First 2 videos (order_index < 2) are free. Only those sessions have `is_free = true`
+- **Free sessions**: 
+  - For FREE classes: ALL sessions are free (`is_free = true`)
+  - For PAID classes: Only first 2 videos have `is_free = true`
+  - Check `class_sessions.is_free` field to determine if a session is free
 - **Auto-extension**: Sessions extend automatically every 30 days indefinitely
-- **Public access**: No authentication required for free sessions (first 2 videos)
+- **Public access**: No authentication required for sessions with `is_free = true`
 
 ---
 

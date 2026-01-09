@@ -28,6 +28,7 @@ interface LiveClass {
   course_id?: string;
   title?: string;
   cover_photo_url?: string | null;
+  access_type?: 'free' | 'paid';
   is_active: boolean;
   course_title?: string;
   created_at: string;
@@ -58,6 +59,7 @@ const LiveClassesAll: React.FC = () => {
   const [standaloneForm, setStandaloneForm] = useState({
     title: '',
     description: '',
+    access_type: 'paid' as 'free' | 'paid', // 'free' = all free, 'paid' = first 2 free
     coverPhoto: undefined as File | undefined,
     videos: [] as StandaloneVideo[]
   });
@@ -263,6 +265,7 @@ const LiveClassesAll: React.FC = () => {
           course_id: lc.course_id || null,
           title: title,
           cover_photo_url: lc.cover_photo_url || null, // Cover image URL
+          access_type: lc.access_type || 'paid', // Access type: 'free' or 'paid'
           is_active: lc.is_active,
           course_title: courseTitle,
           created_at: lc.created_at
@@ -484,6 +487,7 @@ const LiveClassesAll: React.FC = () => {
         body: JSON.stringify({
           title: standaloneForm.title,
           description: standaloneForm.description,
+          access_type: standaloneForm.access_type,
           coverPhotoUrl: coverPhotoUrl,
           videos: standaloneForm.videos.map(v => ({
             name: v.name,
@@ -506,6 +510,7 @@ const LiveClassesAll: React.FC = () => {
       setStandaloneForm({
         title: '',
         description: '',
+        access_type: 'paid',
         coverPhoto: undefined,
         videos: []
       });
@@ -667,6 +672,7 @@ const LiveClassesAll: React.FC = () => {
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Access</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                   </tr>
@@ -696,6 +702,26 @@ const LiveClassesAll: React.FC = () => {
                           <div className="text-xs text-gray-500 mt-1">
                             ID: {liveClass.id.substring(0, 8)}...
                           </div>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {!liveClass.course_id ? (
+                          <>
+                            <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                              liveClass.access_type === 'free'
+                                ? 'bg-green-100 text-green-800'
+                                : 'bg-blue-100 text-blue-800'
+                            }`}>
+                              {liveClass.access_type === 'free' ? 'FREE' : 'PAID'}
+                            </span>
+                            <div className="text-xs text-gray-500 mt-1">
+                              {liveClass.access_type === 'free' 
+                                ? 'All classes free'
+                                : 'First 2 classes free'}
+                            </div>
+                          </>
+                        ) : (
+                          <span className="text-sm text-gray-500">-</span>
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">

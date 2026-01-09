@@ -58,7 +58,7 @@ router.post('/auto-schedule-live-booth', checkCronAuth, async (req, res) => {
     // Get all active Live Booth classes (both course-based and standalone)
     const { data: liveClasses, error: liveClassesError } = await supabase
       .from('live_classes')
-      .select('id, course_id, cycle_day, title')
+      .select('id, course_id, cycle_day, title, access_type')
       .eq('is_active', true);
 
     if (liveClassesError) {
@@ -153,6 +153,15 @@ router.post('/auto-schedule-live-booth', checkCronAuth, async (req, res) => {
             video_description: v.video_description
           }));
           cycleLength = Math.max(5, videos.length);
+          
+          // Get access_type for standalone classes
+          const { data: liveClassDetails } = await supabase
+            .from('live_classes')
+            .select('access_type')
+            .eq('id', liveClass.id)
+            .single();
+          
+          liveClass.access_type = liveClassDetails?.access_type || 'paid';
         } else {
           // Get course videos
           const { data: courseVideos, error: videosError } = await supabase
@@ -168,6 +177,8 @@ router.post('/auto-schedule-live-booth', checkCronAuth, async (req, res) => {
 
           videos = courseVideos;
           cycleLength = Math.min(videos.length, 5);
+          // Course-based classes default to 'paid'
+          liveClass.access_type = liveClass.access_type || 'paid';
         }
 
         const daysToSchedule = 30;
@@ -198,8 +209,12 @@ router.post('/auto-schedule-live-booth', checkCronAuth, async (req, res) => {
             const scheduledTime = new Date(currentDate);
             scheduledTime.setHours(timeConfig.hour, timeConfig.minute, 0, 0);
             
-            // First 2 videos are free (order_index 0 and 1)
-            const isFree = video.order_index < 2;
+            // Determine if session is free based on access_type
+            // FREE (standalone only): All sessions are free
+            // PAID: Only first 2 videos (order_index 0 and 1) are free
+            const isFree = isStandalone && liveClass.access_type === 'free'
+              ? true  // All sessions free for FREE standalone classes
+              : (video.order_index < 2); // First 2 videos free for PAID classes
 
             if (isStandalone) {
               sessions.push({
