@@ -17,7 +17,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { name, email, courseName, purchasePrice, purchaseDate, accessLink, purchaseId } = req.body;
+    const { name, email, courseName, purchasePrice, purchaseDate, accessLink, purchaseId, coverPhotoUrl } = req.body;
 
     // Validate required fields
     if (!email || !courseName || !accessLink) {
@@ -80,6 +80,12 @@ export default async function handler(req, res) {
     <p style="font-size: 16px; color: #555; margin-bottom: 20px;">
       Thank you for your purchase! Your course is ready for you.
     </p>
+    
+    ${coverPhotoUrl ? `
+    <div style="margin: 30px 0; text-align: center;">
+      <img src="${coverPhotoUrl}" alt="${courseName}" style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);" />
+    </div>
+    ` : ''}
     
     <div style="background: #f8f9fa; padding: 25px; border-radius: 8px; margin: 30px 0; border-left: 4px solid #667eea;">
       <h2 style="color: #333; margin-top: 0; font-size: 22px; font-weight: bold;">${courseName}</h2>

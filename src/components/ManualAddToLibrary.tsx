@@ -315,6 +315,7 @@ const ManualAddToLibrary: React.FC = () => {
             purchaseDate: purchaseDate,
             accessLink: accessLink,
             purchaseId: purchase.id,
+            coverPhotoUrl: selectedProduct.cover_photo_url || null,
           }),
         });
 
