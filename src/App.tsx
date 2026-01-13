@@ -13,6 +13,7 @@ import LearningPathManagement from './components/LearningPathManagement';
 import AddLearningPathWizard from './components/AddLearningPathWizard';
 import LearningPathView from './components/LearningPathView';
 import ManualAddToLibrary from './components/ManualAddToLibrary';
+import BuildAccess from './components/BuildAccess';
 import ResellerAnalysisDashboard from './components/ResellerAnalysisDashboard';
 import BlogManagement from './components/BlogManagement';
 import AddEditBlogPost from './components/AddEditBlogPost';
@@ -62,6 +63,7 @@ function App() {
             <Route path="/admin/learning-paths/add" element={<ProtectedRoute><AddLearningPathWizard /></ProtectedRoute>} />
             <Route path="/admin/learning-paths/view/:id" element={<ProtectedRoute><LearningPathView /></ProtectedRoute>} />
             <Route path="/admin/manual-add-to-library" element={<ProtectedRoute><ManualAddToLibrary /></ProtectedRoute>} />
+            <Route path="/admin/build-access" element={<ProtectedRoute><BuildAccess /></ProtectedRoute>} />
             <Route path="/admin/subscriptions" element={<ProtectedRoute><SubscriptionManagement /></ProtectedRoute>} />
             <Route path="/admin/resellers" element={<ProtectedRoute><ResellerAnalysisDashboard /></ProtectedRoute>} />
             <Route path="/admin/blog" element={<ProtectedRoute><BlogManagement /></ProtectedRoute>} />
