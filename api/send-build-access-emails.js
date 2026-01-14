@@ -135,19 +135,34 @@ export default async function handler(req, res) {
           <a href="https://t.me/LIVECLASSREMINDER" style="color: #667eea; text-decoration: none;">Join Update Channel →</a>
         </p>
       </div>
-      
-      <div style="border-top: 2px solid #eee; padding-top: 20px; margin-top: 20px;">
-        <h3 style="color: #333; font-size: 16px; font-weight: bold; margin-bottom: 10px;">🎯 BONUS: FREE COURSE SELECTION:</h3>
-        <p style="color: #666; margin-bottom: 15px;">
-          As a bonus, complete our Career Path Discovery to get matched with your ideal skill path and select a <strong>FREE</strong> course that aligns perfectly with your natural strengths and interests.
-        </p>
-        <div style="text-align: center;">
-          <a href="${APP_URL}/access/courses" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold; font-size: 14px;">Start Career Path Discovery & Select Free Course</a>
-        </div>
-        <p style="color: #666; margin-top: 10px; font-size: 13px; font-style: italic;">
-          💡 Takes just 3 minutes - Complete the discovery, get matched, and select your FREE course!
-        </p>
+    </div>
+    
+    <!-- Separate Bonus Section - Career Path Discovery & Course Selection -->
+    <div style="background: linear-gradient(135deg, #fff5f5 0%, #ffe5e5 100%); padding: 30px; border-radius: 8px; margin: 30px 0; border: 2px solid #f5576c;">
+      <div style="text-align: center; margin-bottom: 20px;">
+        <h2 style="color: #c53030; margin: 0 0 10px 0; font-size: 22px; font-weight: bold;">🎯 BONUS: Get a FREE Course!</h2>
+        <p style="color: #744242; margin: 0; font-size: 16px; font-weight: 500;">Complete Career Path Discovery & Select Your Free Course</p>
       </div>
+      
+      <div style="background: #ffffff; padding: 20px; border-radius: 6px; margin-bottom: 20px;">
+        <p style="color: #333; margin-bottom: 15px; font-size: 15px; line-height: 1.6;">
+          As a special bonus, complete our <strong>Career Path Discovery</strong> (takes just 3 minutes) to:
+        </p>
+        <ol style="color: #555; padding-left: 20px; margin: 0; font-size: 14px; line-height: 1.8;">
+          <li style="margin-bottom: 8px;">Get matched to your ideal skill path based on your strengths</li>
+          <li style="margin-bottom: 8px;">See courses that align perfectly with your natural interests</li>
+          <li style="margin-bottom: 8px;">Select <strong style="color: #c53030;">ONE FREE COURSE</strong> to add to your Library</li>
+          <li>Your selected course will be automatically added to your Library</li>
+        </ol>
+      </div>
+      
+      <div style="text-align: center;">
+        <a href="${APP_URL}/access/courses" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 16px 40px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold; font-size: 16px; box-shadow: 0 4px 6px rgba(245, 87, 108, 0.3);">Start Career Path Discovery →</a>
+      </div>
+      
+      <p style="color: #744242; margin-top: 15px; font-size: 13px; text-align: center; font-style: italic;">
+        💡 This is completely FREE and takes only 3 minutes!
+      </p>
     </div>
     
     <div style="text-align: center; margin: 40px 0;">
