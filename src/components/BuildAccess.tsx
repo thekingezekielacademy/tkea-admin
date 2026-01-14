@@ -172,22 +172,24 @@ const BuildAccess: React.FC = () => {
 
         if (liveClasses && liveClasses.length > 0) {
           // Create access record for each live class
-          const accessRecords = liveClasses.map(lc => ({
-            user_id: userId,
-            live_class_id: lc.id,
-            access_type: 'full_course',
-          }));
+          // Insert each one individually and ignore duplicates
+          for (const liveClass of liveClasses) {
+            const { error: insertError } = await supabase
+              .from('live_class_access')
+              .insert({
+                user_id: userId,
+                live_class_id: liveClass.id,
+                access_type: 'full_course',
+              });
 
-          const { error: insertError } = await supabase
-            .from('live_class_access')
-            .upsert(accessRecords, {
-              onConflict: 'user_id,live_class_id',
-              ignoreDuplicates: true,
-            });
-
-          if (insertError && !insertError.message.includes('duplicate') && !insertError.message.includes('UNIQUE')) {
-            console.error('Error granting live class access:', insertError);
-            // Don't throw - continue even if this fails
+            // Ignore duplicate errors (user already has access)
+            if (insertError && 
+                !insertError.message.includes('duplicate') && 
+                !insertError.message.includes('UNIQUE') &&
+                !insertError.code?.includes('23505')) { // PostgreSQL unique violation
+              console.error('Error granting live class access:', insertError);
+              // Don't throw - continue with other live classes
+            }
           }
         }
       } else {
@@ -225,8 +227,9 @@ const BuildAccess: React.FC = () => {
 
       // Use serverless function API (works from Vercel admin panel)
       // The api/ folder contains serverless functions that work from any origin
-      const apiBaseUrl = window.location.origin; // Use same origin (Vercel handles routing)
-      const apiUrl = `${apiBaseUrl}/api/send-build-access-emails`;
+      // Always use the same origin to avoid CORS issues
+      const apiUrl = `${window.location.origin}/api/send-build-access-emails`;
+      console.log('[BuildAccess] Using API URL:', apiUrl);
 
       // Send BUILD COMMUNITY Access Email (includes career discovery info)
       try {
