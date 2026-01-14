@@ -716,10 +716,10 @@ const YouTubeStreamPlayer: React.FC<YouTubeStreamPlayerProps> = ({
         )}
         
         {/* YouTube branding removal overlay - covers any remaining elements */}
-        <div className="absolute bottom-0 left-0 right-0 h-16 bg-black z-40 pointer-events-none"></div>
+        <div className="absolute bottom-0 left-0 right-0 h-32 bg-black z-40 pointer-events-none"></div>
         
         {/* Additional overlay to completely cover any YouTube branding at bottom */}
-        <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-black via-black to-transparent z-50 pointer-events-none"></div>
+        <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-black via-black to-transparent z-50 pointer-events-none"></div>
         
         {/* Error message */}
         {error && (
