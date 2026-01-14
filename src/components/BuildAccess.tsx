@@ -40,7 +40,7 @@ const BuildAccess: React.FC = () => {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
   const [coursesGranted, setCoursesGranted] = useState<string[]>([]);
-  const [emailsSent, setEmailsSent] = useState({ email1: false, email2: false });
+  const [emailSent, setEmailSent] = useState(false);
 
   // Admin check
   if (!user || user.role !== 'admin') {
@@ -193,8 +193,8 @@ const BuildAccess: React.FC = () => {
     if (error) throw error;
   }, []);
 
-  // Send BUILD emails
-  const sendBuildEmails = useCallback(async (userEmail: string, userName: string) => {
+  // Send BUILD access email
+  const sendBuildEmail = useCallback(async (userEmail: string, userName: string) => {
     try {
       const siteUrl = process.env.REACT_APP_SITE_URL || 
                      process.env.REACT_APP_APP_URL || 
@@ -222,9 +222,9 @@ const BuildAccess: React.FC = () => {
       }
       const apiUrl = `${apiBaseUrl}/api/emails/send-build-access-emails`;
 
-      // Send Email 1: BUILD COMMUNITY Access Email
+      // Send BUILD COMMUNITY Access Email (includes career discovery info)
       try {
-        const response1 = await fetch(apiUrl, {
+        const response = await fetch(apiUrl, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -238,44 +238,23 @@ const BuildAccess: React.FC = () => {
           }),
         });
 
-        if (response1.ok) {
-          const result1 = await response1.json();
-          if (result1.success) {
-            setEmailsSent(prev => ({ ...prev, email1: true }));
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success) {
+            setEmailSent(true);
             console.log('[BuildAccess] BUILD access email sent successfully');
+          } else {
+            console.error('[BuildAccess] Email API returned error:', result.error);
           }
+        } else {
+          const errorText = await response.text();
+          console.error('[BuildAccess] Email API error response:', response.status, errorText);
         }
-      } catch (email1Err) {
-        console.error('[BuildAccess] Error sending BUILD access email:', email1Err);
-      }
-
-      // Send Email 2: Career Path Discovery Email
-      try {
-        const response2 = await fetch(apiUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            emailType: 'career_discovery',
-            name: userName,
-            email: userEmail,
-            careerPathLink: `${siteUrl}/career-path`,
-          }),
-        });
-
-        if (response2.ok) {
-          const result2 = await response2.json();
-          if (result2.success) {
-            setEmailsSent(prev => ({ ...prev, email2: true }));
-            console.log('[BuildAccess] Career Path Discovery email sent successfully');
-          }
-        }
-      } catch (email2Err) {
-        console.error('[BuildAccess] Error sending Career Path Discovery email:', email2Err);
+      } catch (emailErr) {
+        console.error('[BuildAccess] Error sending BUILD access email:', emailErr);
       }
     } catch (err) {
-      console.error('[BuildAccess] Error in sendBuildEmails:', err);
+      console.error('[BuildAccess] Error in sendBuildEmail:', err);
       // Don't throw - emails are not critical
     }
   }, []);
@@ -292,7 +271,7 @@ const BuildAccess: React.FC = () => {
       setError('');
       setSuccess(false);
       setCoursesGranted([]);
-      setEmailsSent({ email1: false, email2: false });
+      setEmailSent(false);
 
       const userEmail = email.toLowerCase().trim();
       const userId = searchedUser?.id || null;
@@ -337,9 +316,9 @@ const BuildAccess: React.FC = () => {
       // 3. Grant live class access
       await grantLiveClassAccess(userId, userEmail);
 
-      // 4. Send emails
+      // 4. Send email
       setSendingEmails(true);
-      await sendBuildEmails(userEmail, userName);
+      await sendBuildEmail(userEmail, userName);
       setSendingEmails(false);
 
       setCoursesGranted(grantedCourses);
@@ -351,7 +330,7 @@ const BuildAccess: React.FC = () => {
       setGranting(false);
       setSendingEmails(false);
     }
-  }, [email, searchedUser, findCoursesByTitles, checkDuplicatePurchase, createPurchaseRecord, grantLiveClassAccess, sendBuildEmails]);
+  }, [email, searchedUser, findCoursesByTitles, checkDuplicatePurchase, createPurchaseRecord, grantLiveClassAccess, sendBuildEmail]);
 
   // Handle search user
   const handleSearchUser = () => {
@@ -370,7 +349,7 @@ const BuildAccess: React.FC = () => {
     setSuccess(false);
     setError('');
     setCoursesGranted([]);
-    setEmailsSent({ email1: false, email2: false });
+    setEmailSent(false);
   };
 
   return (
@@ -419,11 +398,7 @@ const BuildAccess: React.FC = () => {
                       </ul>
                     )}
                     <p className="mt-2"><strong>Live Classes:</strong> ✓ Access granted</p>
-                    <div className="mt-2">
-                      <p><strong>Emails Sent:</strong></p>
-                      <p className="ml-4">Email 1 (Access): {emailsSent.email1 ? '✓ Sent' : '✗ Failed'}</p>
-                      <p className="ml-4">Email 2 (Career Discovery): {emailsSent.email2 ? '✓ Sent' : '✗ Failed'}</p>
-                    </div>
+                    <p className="mt-2"><strong>Email Sent:</strong> {emailSent ? '✓ Sent' : '✗ Failed'}</p>
                   </div>
                 </div>
               </div>

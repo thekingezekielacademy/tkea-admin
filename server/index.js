@@ -49,7 +49,20 @@ app.use(helmet({
     }
   }
 }));
-app.use(cors());
+// CORS configuration - allow admin panel and main app
+app.use(cors({
+  origin: [
+    'https://app.thekingezekielacademy.com',
+    'https://thekingezekielacademy.com',
+    'https://tkeaadmin.vercel.app', // Admin panel
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'http://localhost:5000'
+  ],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+}));
 
 // Browser detection middleware
 app.use(browserDetectionMiddleware);
