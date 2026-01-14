@@ -135,6 +135,19 @@ export default async function handler(req, res) {
           <a href="https://t.me/LIVECLASSREMINDER" style="color: #667eea; text-decoration: none;">Join Update Channel →</a>
         </p>
       </div>
+      
+      <div style="border-top: 2px solid #eee; padding-top: 20px; margin-top: 20px;">
+        <h3 style="color: #333; font-size: 16px; font-weight: bold; margin-bottom: 10px;">🎯 BONUS: FREE COURSE SELECTION:</h3>
+        <p style="color: #666; margin-bottom: 15px;">
+          As a bonus, complete our Career Path Discovery to get matched with your ideal skill path and select a <strong>FREE</strong> course that aligns perfectly with your natural strengths and interests.
+        </p>
+        <div style="text-align: center;">
+          <a href="${APP_URL}/access/courses" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold; font-size: 14px;">Start Career Path Discovery & Select Free Course</a>
+        </div>
+        <p style="color: #666; margin-top: 10px; font-size: 13px; font-style: italic;">
+          💡 Takes just 3 minutes - Complete the discovery, get matched, and select your FREE course!
+        </p>
+      </div>
     </div>
     
     <div style="text-align: center; margin: 40px 0;">
