@@ -325,6 +325,61 @@ const BuildAccess: React.FC = () => {
       // 3. Grant live class access
       await grantLiveClassAccess(userId, userEmail);
 
+      // 3b. Create product_purchases record with product_type='live_class' for BUILD COMMUNITY access check
+      // This is required for the /choose-skill page to recognize BUILD COMMUNITY access
+      try {
+        // Get first active live class ID to use as product_id
+        const { data: liveClasses } = await supabase
+          .from('live_classes')
+          .select('id')
+          .eq('is_active', true)
+          .limit(1);
+
+        if (liveClasses && liveClasses.length > 0) {
+          const liveClassId = liveClasses[0].id;
+          
+          // Check if BUILD COMMUNITY purchase record already exists
+          let buildCommunityQuery = supabase
+            .from('product_purchases')
+            .select('id')
+            .eq('product_type', 'live_class')
+            .eq('payment_status', 'success')
+            .eq('access_granted', true);
+
+          if (userId) {
+            buildCommunityQuery = buildCommunityQuery.eq('buyer_id', userId);
+          } else {
+            buildCommunityQuery = buildCommunityQuery.eq('buyer_email', userEmail);
+          }
+
+          const { data: existingBuildPurchase } = await buildCommunityQuery.maybeSingle();
+
+          // Only create if it doesn't exist
+          if (!existingBuildPurchase) {
+            const accessToken = generateAccessToken();
+            await createPurchaseRecord({
+              product_id: liveClassId,
+              product_type: 'live_class',
+              buyer_id: userId,
+              buyer_email: userEmail,
+              amount_paid: 1, // Minimum (1 kobo)
+              purchase_price: 1, // Minimum (1 kobo) - required by check constraint
+              payment_status: 'success',
+              payment_reference: `BUILD_COMMUNITY_${paymentReference}`,
+              access_granted: true,
+              access_granted_at: new Date().toISOString(),
+              access_token: accessToken,
+            });
+            console.log('[BuildAccess] Created BUILD COMMUNITY purchase record (product_type=live_class)');
+          }
+        } else {
+          console.warn('[BuildAccess] No active live classes found - skipping BUILD COMMUNITY purchase record');
+        }
+      } catch (buildCommunityErr) {
+        console.error('[BuildAccess] Error creating BUILD COMMUNITY purchase record:', buildCommunityErr);
+        // Don't throw - continue even if this fails
+      }
+
       // 4. Send email
       setSendingEmails(true);
       await sendBuildEmail(userEmail, userName);
