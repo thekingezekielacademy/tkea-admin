@@ -4,3 +4,9 @@ king-ezekiel-academy-nextjs/
 scripts/
 verify-*.sh
 verify_*.sql
+api/admin/
+api/cron/
+api/flutterwave/
+api/test-verification.js
+api/health.js
+api/index.js
