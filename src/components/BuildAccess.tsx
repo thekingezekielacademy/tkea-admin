@@ -155,27 +155,43 @@ const BuildAccess: React.FC = () => {
   };
 
   // Grant live class access
+  // Note: live_class_id cannot be NULL, so we grant access to all active live classes individually
   const grantLiveClassAccess = useCallback(async (userId: string | null, userEmail: string) => {
     try {
       if (userId) {
-        // For existing users, create live_class_access record with NULL live_class_id (means all classes)
-        // Don't include session_id in the insert - it's optional and causes schema cache issues
-        const { error } = await supabase
-          .from('live_class_access')
-          .insert({
-            user_id: userId,
-            live_class_id: null, // NULL means access to ALL live classes
-            access_type: 'full_course',
-          });
+        // Get all active live classes
+        const { data: liveClasses, error: fetchError } = await supabase
+          .from('live_classes')
+          .select('id')
+          .eq('is_active', true);
 
-        if (error && !error.message.includes('duplicate') && !error.message.includes('UNIQUE')) {
-          console.error('Error granting live class access:', error);
-          // Don't throw - continue even if this fails
+        if (fetchError) {
+          console.error('Error fetching live classes:', fetchError);
+          return;
+        }
+
+        if (liveClasses && liveClasses.length > 0) {
+          // Create access record for each live class
+          const accessRecords = liveClasses.map(lc => ({
+            user_id: userId,
+            live_class_id: lc.id,
+            access_type: 'full_course',
+          }));
+
+          const { error: insertError } = await supabase
+            .from('live_class_access')
+            .upsert(accessRecords, {
+              onConflict: 'user_id,live_class_id',
+              ignoreDuplicates: true,
+            });
+
+          if (insertError && !insertError.message.includes('duplicate') && !insertError.message.includes('UNIQUE')) {
+            console.error('Error granting live class access:', insertError);
+            // Don't throw - continue even if this fails
+          }
         }
       } else {
-        // For guest users, we'll need to handle this when they sign up
-        // For now, we can create a purchase record or handle it later
-        // This is a limitation - guest users need to sign up to get live class access
+        // For guest users, live class access will be granted when they sign up
         console.log('Guest user live class access will be granted upon signup');
       }
     } catch (err) {
@@ -207,20 +223,10 @@ const BuildAccess: React.FC = () => {
         day: 'numeric',
       });
 
-      // Use API URL from environment or default to Express server
-      // In development, Express server typically runs on port 5000
-      // In production, use the configured API URL
-      let apiBaseUrl = process.env.REACT_APP_API_URL;
-      if (!apiBaseUrl) {
-        // Default to Express server (port 5000) in development
-        const origin = window.location.origin;
-        if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
-          apiBaseUrl = origin.replace(/:\d+$/, ':5000'); // Replace port with 5000
-        } else {
-          apiBaseUrl = 'https://app.thekingezekielacademy.com'; // Production fallback
-        }
-      }
-      const apiUrl = `${apiBaseUrl}/api/emails/send-build-access-emails`;
+      // Use serverless function API (works from Vercel admin panel)
+      // The api/ folder contains serverless functions that work from any origin
+      const apiBaseUrl = window.location.origin; // Use same origin (Vercel handles routing)
+      const apiUrl = `${apiBaseUrl}/api/send-build-access-emails`;
 
       // Send BUILD COMMUNITY Access Email (includes career discovery info)
       try {
