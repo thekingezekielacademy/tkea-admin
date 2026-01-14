@@ -41,6 +41,13 @@ interface PurchaseAccessEmailProps {
   purchaseId: string
 }
 
+interface BuildCommunityAccessEmailProps {
+  name: string
+  email: string
+  purchaseDate: string
+  libraryLink?: string
+}
+
 /**
  * Welcome email template - sent when user signs up
  */
@@ -244,6 +251,161 @@ function getPurchaseAccessEmailTemplate({
 }
 
 /**
+ * BUILD COMMUNITY access email template - sent when user joins BUILD COMMUNITY
+ */
+function getBuildCommunityAccessEmailTemplate({
+  name,
+  purchaseDate,
+  libraryLink
+}: BuildCommunityAccessEmailProps): string {
+  const formattedDate = purchaseDate || new Date().toLocaleDateString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Welcome to B.U.I.L.D COMMUNITY</title>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+    <h1 style="color: white; margin: 0; font-size: 28px;">✅ Welcome to B.U.I.L.D COMMUNITY!</h1>
+  </div>
+  
+  <div style="background: #ffffff; padding: 40px 30px; border-radius: 0 0 10px 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+    <p style="font-size: 18px; margin-bottom: 20px;">Hi ${name},</p>
+    
+    <p style="font-size: 16px; color: #555; margin-bottom: 20px;">
+      Thank you for joining the B.U.I.L.D COMMUNITY! You now have lifetime access to all our premium courses and live classes.
+    </p>
+    
+    <div style="background: #f8f9fa; padding: 25px; border-radius: 8px; margin: 30px 0; border-left: 4px solid #667eea;">
+      <h2 style="color: #333; margin-top: 0; font-size: 20px; font-weight: bold; margin-bottom: 15px;">🎯 WHAT YOU NOW HAVE ACCESS TO:</h2>
+      
+      <div style="margin-bottom: 20px;">
+        <h3 style="color: #333; font-size: 16px; font-weight: bold; margin-bottom: 10px;">📚 COURSES (Access via Library):</h3>
+        <ul style="list-style: none; padding: 0; margin: 0;">
+          <li style="padding: 8px 0; border-bottom: 1px solid #eee;">
+            <strong>1. FREELANCING - THE UNTAPPED MARKET</strong>
+          </li>
+          <li style="padding: 8px 0; border-bottom: 1px solid #eee;">
+            <strong>2. INFORMATION MARKETING: THE INFINITE CASH LOOP</strong>
+          </li>
+          <li style="padding: 8px 0; border-bottom: 1px solid #eee;">
+            <strong>3. YOUTUBE MONETIZATION: From Setup To Monetization</strong>
+          </li>
+          <li style="padding: 8px 0; border-bottom: 1px solid #eee;">
+            <strong>4. EARN 500K SIDE INCOME SELLING EBOOKS</strong>
+          </li>
+          <li style="padding: 8px 0;">
+            <strong>5. CPA MARKETING BLUEPRINT: TKEA RESELLERS</strong> <span style="color: #28a745;">(FREE)</span>
+          </li>
+        </ul>
+        <div style="text-align: center; margin-top: 15px;">
+          <a href="${libraryLink || `${APP_URL}/library`}" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold; font-size: 14px;">View All Courses in Library</a>
+        </div>
+      </div>
+      
+      <div style="border-top: 2px solid #eee; padding-top: 20px; margin-top: 20px;">
+        <h3 style="color: #333; font-size: 16px; font-weight: bold; margin-bottom: 10px;">🎥 LIVE CLASSES:</h3>
+        <p style="color: #666; margin-bottom: 15px;">
+          Access to ALL live classes - Join scheduled sessions and learn in real-time with other students.
+        </p>
+        <div style="text-align: center;">
+          <a href="${APP_URL}/live-classes" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold; font-size: 14px;">View Live Classes</a>
+        </div>
+      </div>
+      
+      <div style="border-top: 2px solid #eee; padding-top: 20px; margin-top: 20px;">
+        <h3 style="color: #333; font-size: 16px; font-weight: bold; margin-bottom: 10px;">💬 COMMUNITY ACCESS:</h3>
+        <p style="color: #666; margin-bottom: 8px;">
+          <strong>B.U.I.L.D COMMUNITY:</strong><br>
+          <a href="https://t.me/+H6nI8QbGy1E0NGI0" style="color: #667eea; text-decoration: none;">Join Telegram Community →</a>
+        </p>
+        <p style="color: #666; margin-bottom: 0;">
+          <strong>LIVE CLASS UPDATE CHANNEL:</strong><br>
+          <a href="https://t.me/LIVECLASSREMINDER" style="color: #667eea; text-decoration: none;">Join Update Channel →</a>
+        </p>
+      </div>
+    </div>
+    
+    <!-- BONUS: CHOOSE YOUR SKILL SECTION -->
+    <div style="background: linear-gradient(135deg, #ffd700 0%, #ffb347 100%); padding: 30px; border-radius: 8px; margin: 30px 0; border: 3px solid #ffa500;">
+      <h2 style="color: #333; margin-top: 0; font-size: 22px; font-weight: bold; margin-bottom: 15px; text-align: center;">🎁 BONUS: CHOOSE YOUR SKILL (FREE COURSE)</h2>
+      
+      <p style="font-size: 16px; color: #333; margin-bottom: 15px; text-align: center; font-weight: bold;">
+        As a B.U.I.L.D COMMUNITY member, you get to choose ONE premium skill course absolutely FREE!
+      </p>
+      
+      <p style="font-size: 14px; color: #555; margin-bottom: 20px; text-align: center;">
+        This is a bonus course that will be added to your Library immediately.
+      </p>
+      
+      <div style="background: #fff; padding: 20px; border-radius: 6px; margin: 20px 0;">
+        <p style="font-size: 14px; color: #d32f2f; margin: 0 0 15px 0; font-weight: bold; text-align: center;">
+          ⚠️ IMPORTANT: You can only choose once. This selection cannot be changed, so choose wisely!
+        </p>
+        
+        <p style="font-size: 15px; color: #333; margin-bottom: 10px; font-weight: bold;">Available Skills to Choose From:</p>
+        <ul style="list-style: none; padding: 0; margin: 0;">
+          <li style="padding: 8px 0; border-bottom: 1px solid #eee; color: #333;">
+            <strong>• META ANDROMEDA AI</strong>
+          </li>
+          <li style="padding: 8px 0; border-bottom: 1px solid #eee; color: #333;">
+            <strong>• VIBE CODING</strong>
+          </li>
+          <li style="padding: 8px 0; border-bottom: 1px solid #eee; color: #333;">
+            <strong>• BRANDING</strong>
+          </li>
+          <li style="padding: 8px 0; color: #333;">
+            <strong>• GOOGLE ADS</strong>
+          </li>
+        </ul>
+      </div>
+      
+      <div style="text-align: center; margin-top: 25px;">
+        <a href="${APP_URL}/choose-skill" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 40px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold; font-size: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">🎯 Choose Your Skill Now</a>
+      </div>
+      
+      <p style="font-size: 12px; color: #666; margin-top: 15px; text-align: center; font-style: italic;">
+        Make sure you're signed in to access the skill selection page.
+      </p>
+    </div>
+    
+    <div style="text-align: center; margin: 40px 0;">
+      <a href="${APP_URL}/auth?redirect=/library" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 40px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold; font-size: 16px;">Sign In to Access Library</a>
+    </div>
+    
+    <p style="font-size: 14px; color: #666; margin-top: 30px;">
+      <strong>Purchase Date:</strong> ${formattedDate}
+    </p>
+    
+    <p style="font-size: 14px; color: #888; margin-top: 40px; border-top: 1px solid #eee; padding-top: 20px;">
+      Need help? Contact us at 
+      <a href="mailto:support@thekingezekielacademy.com" style="color: #667eea;">support@thekingezekielacademy.com</a>
+    </p>
+    
+    <p style="font-size: 14px; color: #888; margin-top: 10px;">
+      Best regards,<br>
+      ${APP_NAME}
+    </p>
+  </div>
+  
+  <div style="text-align: center; margin-top: 20px; color: #888; font-size: 12px;">
+    <p>© ${new Date().getFullYear()} ${APP_NAME}. All rights reserved.</p>
+  </div>
+</body>
+</html>
+  `.trim()
+}
+
+/**
  * Email service for sending transactional emails via Resend
  */
 export const emailService = {
@@ -366,6 +528,52 @@ export const emailService = {
       return { success: true }
     } catch (error) {
       console.error('[emailService] Exception sending purchase access email:', error)
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      }
+    }
+  },
+
+  /**
+   * Send BUILD COMMUNITY access email with skill selection bonus
+   */
+  async sendBuildCommunityAccessEmail({
+    name,
+    email,
+    purchaseDate,
+    libraryLink
+  }: BuildCommunityAccessEmailProps): Promise<{ success: boolean; error?: string }> {
+    try {
+      // Validate Resend is configured
+      const client = getResendClient();
+      if (!client) {
+        console.warn('[emailService] Resend API key not configured. Skipping BUILD COMMUNITY access email.')
+        return { success: false, error: 'Resend not configured' }
+      }
+
+      console.log('[emailService] Sending BUILD COMMUNITY access email:', { email, name });
+
+      const { data, error } = await client.emails.send({
+        from: FROM_EMAIL,
+        to: email,
+        subject: 'Welcome to B.U.I.L.D COMMUNITY - Your Access Details',
+        html: getBuildCommunityAccessEmailTemplate({
+          name,
+          purchaseDate,
+          libraryLink
+        }),
+      })
+
+      if (error) {
+        console.error('[emailService] Error sending BUILD COMMUNITY access email:', error)
+        return { success: false, error: error.message || 'Failed to send email' }
+      }
+
+      console.log('[emailService] BUILD COMMUNITY access email sent successfully:', { email, name, data })
+      return { success: true }
+    } catch (error) {
+      console.error('[emailService] Exception sending BUILD COMMUNITY access email:', error)
       return { 
         success: false, 
         error: error instanceof Error ? error.message : 'Unknown error' 
