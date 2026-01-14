@@ -1,5 +1,5 @@
 {
-  "buildCommand": "npm run build:admin",
+  "buildCommand": "CI=false npm run build:admin",
   "outputDirectory": "build",
   "installCommand": "npm install",
   "framework": null,
