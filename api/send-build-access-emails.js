@@ -137,22 +137,22 @@ export default async function handler(req, res) {
       </div>
     </div>
     
-    <!-- Separate Bonus Section - Career Path Discovery & Course Selection -->
+    <!-- Step 1: Career Path Discovery Section -->
     <div style="background: linear-gradient(135deg, #fff5f5 0%, #ffe5e5 100%); padding: 30px; border-radius: 8px; margin: 30px 0; border: 2px solid #f5576c;">
       <div style="text-align: center; margin-bottom: 20px;">
-        <h2 style="color: #c53030; margin: 0 0 10px 0; font-size: 22px; font-weight: bold;">🎯 BONUS: Get a FREE Course!</h2>
-        <p style="color: #744242; margin: 0; font-size: 16px; font-weight: 500;">Complete Career Path Discovery & Select Your Free Course</p>
+        <h2 style="color: #c53030; margin: 0 0 10px 0; font-size: 22px; font-weight: bold;">🎯 STEP 1: Career Path Discovery</h2>
+        <p style="color: #744242; margin: 0; font-size: 16px; font-weight: 500;">Discover Your Ideal Skill Path (Recommended First Step)</p>
       </div>
       
       <div style="background: #ffffff; padding: 20px; border-radius: 6px; margin-bottom: 20px;">
         <p style="color: #333; margin-bottom: 15px; font-size: 15px; line-height: 1.6;">
-          As a special bonus, complete our <strong>Career Path Discovery</strong> (takes just 3 minutes) to:
+          We recommend completing our <strong>Career Path Discovery</strong> (takes just 3 minutes) to:
         </p>
         <ol style="color: #555; padding-left: 20px; margin: 0; font-size: 14px; line-height: 1.8;">
-          <li style="margin-bottom: 8px;">Get matched to your ideal skill path based on your strengths</li>
-          <li style="margin-bottom: 8px;">See courses that align perfectly with your natural interests</li>
-          <li style="margin-bottom: 8px;">Select <strong style="color: #c53030;">ONE FREE COURSE</strong> to add to your Library</li>
-          <li>Your selected course will be automatically added to your Library</li>
+          <li style="margin-bottom: 8px;">Get matched to your ideal skill path based on your natural strengths</li>
+          <li style="margin-bottom: 8px;">See which courses align perfectly with your interests and goals</li>
+          <li style="margin-bottom: 8px;">Make an informed decision before selecting your free skill course</li>
+          <li>Understand which skill path is best suited for your career journey</li>
         </ol>
       </div>
       
@@ -162,6 +162,54 @@ export default async function handler(req, res) {
       
       <p style="color: #744242; margin-top: 15px; font-size: 13px; text-align: center; font-style: italic;">
         💡 This is completely FREE and takes only 3 minutes!
+      </p>
+    </div>
+    
+    <!-- Step 2: Choose Your Skill Section -->
+    <div style="background: linear-gradient(135deg, #fff9e6 0%, #ffe6b3 100%); padding: 30px; border-radius: 8px; margin: 30px 0; border: 3px solid #ffa500;">
+      <div style="text-align: center; margin-bottom: 20px;">
+        <h2 style="color: #b8860b; margin: 0 0 10px 0; font-size: 22px; font-weight: bold;">🎁 STEP 2: Choose Your Skill (FREE COURSE)</h2>
+        <p style="color: #8b6914; margin: 0; font-size: 16px; font-weight: 500;">Select ONE Premium Skill Course - Absolutely FREE!</p>
+      </div>
+      
+      <div style="background: #ffffff; padding: 20px; border-radius: 6px; margin-bottom: 20px;">
+        <p style="font-size: 16px; color: #333; margin-bottom: 15px; text-align: center; font-weight: bold;">
+          As a B.U.I.L.D COMMUNITY member, you get to choose ONE premium skill course absolutely FREE!
+        </p>
+        
+        <p style="font-size: 14px; color: #555; margin-bottom: 20px; text-align: center;">
+          This bonus course will be added to your Library immediately after selection.
+        </p>
+        
+        <div style="background: #fff3cd; padding: 15px; border-radius: 6px; margin-bottom: 20px; border-left: 4px solid #ffc107;">
+          <p style="font-size: 14px; color: #856404; margin: 0; font-weight: bold; text-align: center;">
+            ⚠️ IMPORTANT: You can only choose once. This selection cannot be changed, so choose wisely!
+          </p>
+        </div>
+        
+        <p style="font-size: 15px; color: #333; margin-bottom: 12px; font-weight: bold; text-align: center;">Available Skills to Choose From:</p>
+        <ul style="list-style: none; padding: 0; margin: 0;">
+          <li style="padding: 10px 0; border-bottom: 1px solid #eee; color: #333; text-align: center;">
+            <strong>• META ANDROMEDA AI</strong>
+          </li>
+          <li style="padding: 10px 0; border-bottom: 1px solid #eee; color: #333; text-align: center;">
+            <strong>• VIBE CODING</strong>
+          </li>
+          <li style="padding: 10px 0; border-bottom: 1px solid #eee; color: #333; text-align: center;">
+            <strong>• BRANDING</strong>
+          </li>
+          <li style="padding: 10px 0; color: #333; text-align: center;">
+            <strong>• GOOGLE ADS</strong>
+          </li>
+        </ul>
+      </div>
+      
+      <div style="text-align: center; margin-top: 25px;">
+        <a href="${APP_URL}/choose-skill" style="background: linear-gradient(135deg, #ffa500 0%, #ff8c00 100%); color: white; padding: 16px 40px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold; font-size: 16px; box-shadow: 0 4px 6px rgba(255, 165, 0, 0.3);">🎯 Choose Your Skill Now</a>
+      </div>
+      
+      <p style="font-size: 12px; color: #8b6914; margin-top: 15px; text-align: center; font-style: italic;">
+        💡 We recommend completing Career Path Discovery (Step 1) first to make an informed choice!
       </p>
     </div>
     
