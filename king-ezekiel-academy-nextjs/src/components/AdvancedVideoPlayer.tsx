@@ -1203,6 +1203,12 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
               </div>
             </div>
           </div>
+          
+          {/* YouTube branding removal overlay - covers any remaining elements */}
+          <div className="absolute bottom-0 left-0 right-0 h-64 bg-black z-40 pointer-events-none"></div>
+          
+          {/* Additional overlay to completely cover any YouTube branding at bottom */}
+          <div className="absolute bottom-0 left-0 right-0 h-96 bg-gradient-to-t from-black via-black to-transparent z-50 pointer-events-none"></div>
           </div>
         </div>
       </div>
