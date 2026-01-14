@@ -352,12 +352,16 @@ const BuildAccess: React.FC = () => {
             buildCommunityQuery = buildCommunityQuery.eq('buyer_email', userEmail);
           }
 
-          const { data: existingBuildPurchase } = await buildCommunityQuery.maybeSingle();
+          const { data: existingBuildPurchase, error: checkError } = await buildCommunityQuery.maybeSingle();
+
+          if (checkError) {
+            console.warn('[BuildAccess] Error checking for existing BUILD COMMUNITY purchase:', checkError);
+          }
 
           // Only create if it doesn't exist
           if (!existingBuildPurchase) {
             const accessToken = generateAccessToken();
-            await createPurchaseRecord({
+            const buildCommunityPurchaseData = {
               product_id: liveClassId,
               product_type: 'live_class',
               buyer_id: userId,
@@ -369,15 +373,27 @@ const BuildAccess: React.FC = () => {
               access_granted: true,
               access_granted_at: new Date().toISOString(),
               access_token: accessToken,
-            });
-            console.log('[BuildAccess] Created BUILD COMMUNITY purchase record (product_type=live_class)');
+            };
+            
+            console.log('[BuildAccess] Creating BUILD COMMUNITY purchase record:', buildCommunityPurchaseData);
+            await createPurchaseRecord(buildCommunityPurchaseData);
+            console.log('[BuildAccess] ✅ Successfully created BUILD COMMUNITY purchase record (product_type=live_class)');
+          } else {
+            console.log('[BuildAccess] BUILD COMMUNITY purchase record already exists, skipping creation');
           }
         } else {
           console.warn('[BuildAccess] No active live classes found - skipping BUILD COMMUNITY purchase record');
         }
-      } catch (buildCommunityErr) {
-        console.error('[BuildAccess] Error creating BUILD COMMUNITY purchase record:', buildCommunityErr);
-        // Don't throw - continue even if this fails
+      } catch (buildCommunityErr: any) {
+        console.error('[BuildAccess] ❌ Error creating BUILD COMMUNITY purchase record:', buildCommunityErr);
+        console.error('[BuildAccess] Error details:', {
+          message: buildCommunityErr?.message,
+          code: buildCommunityErr?.code,
+          details: buildCommunityErr?.details,
+          hint: buildCommunityErr?.hint
+        });
+        // Don't throw - continue even if this fails, but log it prominently
+        setError(prev => prev + (prev ? ' | ' : '') + 'Warning: BUILD COMMUNITY purchase record creation failed. User may need to be re-granted access.');
       }
 
       // 4. Send email
