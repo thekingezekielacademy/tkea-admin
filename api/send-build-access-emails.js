@@ -201,8 +201,11 @@ export default async function handler(req, res) {
           <li style="padding: 10px 0; border-bottom: 1px solid #eee; color: #333; text-align: center;">
             <strong>• BRANDING</strong>
           </li>
-          <li style="padding: 10px 0; color: #333; text-align: center;">
+          <li style="padding: 10px 0; border-bottom: 1px solid #eee; color: #333; text-align: center;">
             <strong>• GOOGLE ADS</strong>
+          </li>
+          <li style="padding: 10px 0; color: #333; text-align: center;">
+            <strong>• AI GHOSTWRITING PLAYBOOK: Write Faster. Stay Invisible.</strong>
           </li>
         </ul>
       </div>
