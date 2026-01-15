@@ -207,14 +207,14 @@ export class CourseProgressService {
 
   /**
    * Get user's current course progress for dashboard
+   * Includes both courses with progress AND purchased courses without progress
    */
   static async getUserCourseProgress(userId: string): Promise<CourseProgressData[]> {
     try {
       console.log('🔍 Getting user course progress for user:', userId);
       const supabase = createClient();
       
-      // Try to use the new view first (will be created by fix_console_errors.sql)
-      // Silently fall back to manual calculation if view doesn't exist
+      // Step 1: Get courses with progress (from user_progress_summary or manual calculation)
       let progressSummary = null;
       let viewError = null;
       
@@ -227,18 +227,13 @@ export class CourseProgressService {
         progressSummary = result.data;
         viewError = result.error;
       } catch (error) {
-        // Silently handle view not existing
         viewError = error;
       }
 
-      if (viewError) {
-        console.log('📊 Progress view not available (run fix_console_errors.sql to create it), using fallback');
-      } else {
-        console.log('📊 Progress summary for dashboard:', { progressSummary });
-      }
-
+      let coursesWithProgress: CourseProgressData[] = [];
+      
       if (!viewError && progressSummary && progressSummary.length > 0) {
-        return progressSummary.map((item: any) => ({
+        coursesWithProgress = progressSummary.map((item: any) => ({
           course_id: item.course_id,
           course_title: item.course_title,
           total_lessons: item.total_lessons || 0,
@@ -247,16 +242,58 @@ export class CourseProgressService {
           last_accessed: item.last_accessed || new Date().toISOString(),
           last_lesson_completed: item.last_lesson_completed
         }));
+      } else {
+        // Fallback: Calculate progress manually
+        coursesWithProgress = await this.calculateCourseProgress(userId);
       }
 
-      console.log('📊 View not available, falling back to manual calculation');
+      // Step 2: Get ALL purchased courses from product_purchases (including those without progress)
+      const { data: purchases, error: purchasesError } = await supabase
+        .from('product_purchases')
+        .select('product_id, product_type, access_granted_at')
+        .eq('buyer_id', userId)
+        .eq('product_type', 'course')
+        .eq('payment_status', 'success')
+        .eq('access_granted', true);
 
-      // Fallback: Calculate progress manually
-      const calculatedProgress = await this.calculateCourseProgress(userId);
+      if (purchasesError) {
+        console.error('Error fetching purchased courses:', purchasesError);
+      }
+
+      // Step 3: Get course details for purchased courses
+      const purchasedCourseIds = purchases?.map(p => p.product_id) || [];
+      const coursesWithProgressIds = new Set(coursesWithProgress.map(c => c.course_id));
       
-      // Update user_courses table with calculated data
-      for (const progress of calculatedProgress) {
-        const supabase = createClient();
+      // Find purchased courses that don't have progress yet
+      const missingCourseIds = purchasedCourseIds.filter(id => !coursesWithProgressIds.has(id));
+      
+      if (missingCourseIds.length > 0) {
+        console.log('📚 Found purchased courses without progress:', missingCourseIds);
+        
+        // Fetch course details for purchased courses without progress
+        const { data: purchasedCourses, error: coursesError } = await supabase
+          .from('courses')
+          .select('id, title')
+          .in('id', missingCourseIds);
+
+        if (!coursesError && purchasedCourses) {
+          // Add purchased courses with 0% progress
+          for (const course of purchasedCourses) {
+            const purchase = purchases?.find(p => p.product_id === course.id);
+            coursesWithProgress.push({
+              course_id: course.id,
+              course_title: course.title,
+              total_lessons: 0,
+              completed_lessons: 0,
+              progress_percentage: 0,
+              last_accessed: purchase?.access_granted_at || new Date().toISOString(),
+            });
+          }
+        }
+      }
+
+      // Step 4: Update user_courses table with all courses (with and without progress)
+      for (const progress of coursesWithProgress) {
         await supabase
           .from('user_courses')
           .upsert({
@@ -272,7 +309,7 @@ export class CourseProgressService {
           });
       }
 
-      return calculatedProgress;
+      return coursesWithProgress;
     } catch (error) {
       console.error('Error getting user course progress:', error);
       return [];
