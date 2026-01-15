@@ -247,8 +247,16 @@ export class CourseProgressService {
         coursesWithProgress = await this.calculateCourseProgress(userId);
       }
 
-      // Step 2: Get ALL purchased courses from product_purchases (including those without progress)
-      const { data: purchases, error: purchasesError } = await supabase
+      // Step 2: Get user's email for fallback query
+      const { data: userProfile } = await supabase
+        .from('profiles')
+        .select('email')
+        .eq('id', userId)
+        .single();
+
+      // Step 3: Get ALL purchased courses from product_purchases (including those without progress)
+      // First try by buyer_id
+      let { data: purchases, error: purchasesError } = await supabase
         .from('product_purchases')
         .select('product_id, product_type, access_granted_at')
         .eq('buyer_id', userId)
@@ -256,11 +264,51 @@ export class CourseProgressService {
         .eq('payment_status', 'success')
         .eq('access_granted', true);
 
+      // If no purchases found by buyer_id, try by email (for guest purchases not yet linked)
+      if ((!purchases || purchases.length === 0) && userProfile?.email) {
+        console.log('📧 No purchases found by buyer_id, checking by email:', userProfile.email);
+        const { data: emailPurchases, error: emailError } = await supabase
+          .from('product_purchases')
+          .select('product_id, product_type, access_granted_at')
+          .eq('buyer_email', userProfile.email.toLowerCase().trim())
+          .eq('product_type', 'course')
+          .eq('payment_status', 'success')
+          .eq('access_granted', true)
+          .is('buyer_id', null); // Only get guest purchases (not yet linked)
+
+        if (!emailError && emailPurchases && emailPurchases.length > 0) {
+          console.log('📧 Found guest purchases by email, attempting to link...');
+          purchases = emailPurchases;
+          
+          // Try to link guest purchases to user account
+          try {
+            const { error: linkError } = await supabase.rpc('link_guest_purchases_to_user', {
+              p_user_id: userId,
+              p_user_email: userProfile.email
+            });
+            
+            if (linkError) {
+              console.warn('Could not link guest purchases (function may not exist):', linkError);
+              // Manually link if function doesn't exist
+              await supabase
+                .from('product_purchases')
+                .update({ buyer_id: userId })
+                .eq('buyer_email', userProfile.email.toLowerCase().trim())
+                .is('buyer_id', null);
+            } else {
+              console.log('✅ Successfully linked guest purchases to user account');
+            }
+          } catch (linkErr) {
+            console.warn('Error linking guest purchases:', linkErr);
+          }
+        }
+      }
+
       if (purchasesError) {
         console.error('Error fetching purchased courses:', purchasesError);
       }
 
-      // Step 3: Get course details for purchased courses
+      // Step 4: Get course details for purchased courses
       const purchasedCourseIds = purchases?.map(p => p.product_id) || [];
       const coursesWithProgressIds = new Set(coursesWithProgress.map(c => c.course_id));
       
@@ -292,7 +340,7 @@ export class CourseProgressService {
         }
       }
 
-      // Step 4: Update user_courses table with all courses (with and without progress)
+      // Step 5: Update user_courses table with all courses (with and without progress)
       for (const progress of coursesWithProgress) {
         await supabase
           .from('user_courses')
