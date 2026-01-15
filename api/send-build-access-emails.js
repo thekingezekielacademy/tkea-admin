@@ -105,8 +105,11 @@ export default async function handler(req, res) {
           <li style="padding: 8px 0; border-bottom: 1px solid #eee;">
             <strong>4. EARN 500K SIDE INCOME SELLING EBOOKS</strong>
           </li>
-          <li style="padding: 8px 0;">
+          <li style="padding: 8px 0; border-bottom: 1px solid #eee;">
             <strong>5. CPA MARKETING BLUEPRINT: TKEA RESELLERS</strong> <span style="color: #28a745;">(FREE)</span>
+          </li>
+          <li style="padding: 8px 0;">
+            <strong>6. AI GHOSTWRITING PLAYBOOK: Write Faster. Stay Invisible.</strong>
           </li>
         </ul>
         <div style="text-align: center; margin-top: 15px;">
