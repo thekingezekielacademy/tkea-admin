@@ -48,28 +48,59 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
   const [showSpeedMenu, setShowSpeedMenu] = useState(false);
   const [availableSpeeds, setAvailableSpeeds] = useState<number[]>([0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2]);
   const [isPlayerReady, setIsPlayerReady] = useState(false);
+  const [isBuffering, setIsBuffering] = useState(false);
+  const [networkQuality, setNetworkQuality] = useState<'good' | 'poor'>('good');
+  const [currentQuality, setCurrentQuality] = useState<string>('auto');
 
-  // Load YouTube Player API
+  // Network quality detection
   useEffect(() => {
-    const loadYouTubeAPI = () => {
-      if (window.YT && window.YT.Player) {
-        return;
+    const detectNetworkQuality = async () => {
+      try {
+        // Use Network Information API if available
+        const connection = (navigator as any).connection || (navigator as any).mozConnection || (navigator as any).webkitConnection;
+        
+        if (connection) {
+          const effectiveType = connection.effectiveType;
+          const downlink = connection.downlink;
+          
+          // Determine quality based on connection
+          if (effectiveType === 'slow-2g' || effectiveType === '2g' || (downlink && downlink < 0.5)) {
+            setNetworkQuality('poor');
+          } else {
+            setNetworkQuality('good');
+          }
+        } else {
+          // Fallback: Simple speed test
+          const startTime = Date.now();
+          try {
+            await fetch('https://www.google.com/favicon.ico', { 
+              cache: 'no-cache',
+              mode: 'no-cors'
+            });
+            const duration = Date.now() - startTime;
+            
+            // If request takes more than 2 seconds, consider it poor
+            if (duration > 2000) {
+              setNetworkQuality('poor');
+            } else {
+              setNetworkQuality('good');
+            }
+          } catch (error) {
+            // If fetch fails, assume poor network
+            setNetworkQuality('poor');
+          }
+        }
+      } catch (error) {
+        console.warn('Network quality detection failed:', error);
+        // Default to good if detection fails
+        setNetworkQuality('good');
       }
-      
-      const script = document.createElement('script');
-      script.src = 'https://www.youtube.com/iframe_api';
-      script.onload = () => {
-        window.onYouTubeIframeAPIReady = () => {
-          console.log('YouTube API loaded');
-        };
-      };
-      document.head.appendChild(script);
     };
 
     if (type === 'youtube') {
-      loadYouTubeAPI();
+      detectNetworkQuality();
     }
-  }, [type]);
+  }, [type, src]);
 
   // Reset loading state when src changes
   useEffect(() => {
@@ -195,13 +226,18 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
               wmode: 'opaque',
               html5: 1,
               start: 0,
-              end: 0
+              end: 0,
+              // Quality settings for better buffering
+              quality: networkQuality === 'poor' ? 'small' : 'auto',
+              // Preload settings
+              preload: 1
             },
             events: {
               onReady: (event: any) => {
                 setTimeout(() => {
         setIsLoading(false);
                   setIsPlayerReady(true);
+                  setIsBuffering(false);
                   hideYouTubeBranding();
                   
                   const brandingInterval = setInterval(() => {
@@ -209,6 +245,24 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
                   }, 1000);
                   
                   (playerRef.current as any)._brandingInterval = brandingInterval;
+                  
+                  // Pre-buffer video for smoother playback
+                  if (playerRef.current) {
+                    try {
+                      // Load video but don't play
+                      playerRef.current.loadVideoById(videoId);
+                      // Set quality based on network
+                      if (networkQuality === 'poor' && playerRef.current.setPlaybackQuality) {
+                        playerRef.current.setPlaybackQuality('small');
+                        setCurrentQuality('small');
+                      } else if (playerRef.current.setPlaybackQuality) {
+                        playerRef.current.setPlaybackQuality('auto');
+                        setCurrentQuality('auto');
+                      }
+                    } catch (error) {
+                      console.warn('Pre-buffering failed:', error);
+                    }
+                  }
                 }, 500);
                 
                 if (playerRef.current && playerRef.current.getAvailablePlaybackRates) {
@@ -222,14 +276,33 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
               },
               onStateChange: (event: any) => {
                 if (event.data === 1) {
-        setIsPlaying(true);
-        onPlay?.();
-                } else if (event.data === 2 || event.data === 0) {
-        setIsPlaying(false);
-        onPause?.();
-                  if (event.data === 0) {
-                    onEnded?.();
-                  }
+                  // PLAYING
+                  setIsPlaying(true);
+                  setIsBuffering(false);
+                  setIsLoading(false);
+                  onPlay?.();
+                } else if (event.data === 2) {
+                  // PAUSED
+                  setIsPlaying(false);
+                  setIsBuffering(false);
+                  setIsLoading(false);
+                  onPause?.();
+                } else if (event.data === 3) {
+                  // BUFFERING - Handle buffering state
+                  setIsBuffering(true);
+                  setIsLoading(true);
+                  // Keep playing state but show buffering indicator
+                  // Don't call onPause - video is still "playing" but buffering
+                } else if (event.data === 0) {
+                  // ENDED
+                  setIsPlaying(false);
+                  setIsBuffering(false);
+                  setIsLoading(false);
+                  onEnded?.();
+                } else if (event.data === 5) {
+                  // CUED - Video is ready but not playing
+                  setIsBuffering(false);
+                  setIsLoading(false);
                 }
               },
               onError: (event: any) => {
@@ -1036,6 +1109,23 @@ const AdvancedVideoPlayer: React.FC<AdvancedVideoPlayerProps> = ({
               </p>
             </div>
           </div>
+          
+          {/* Poor network connection message */}
+          {networkQuality === 'poor' && isPlayerReady && (
+            <div className="absolute top-20 left-1/2 transform -translate-x-1/2 z-50 bg-yellow-600 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-lg">
+              Poor network connection
+            </div>
+          )}
+          
+          {/* Buffering indicator */}
+          {isBuffering && isPlaying && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 z-30">
+              <div className="text-center text-white">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-2"></div>
+                <p className="text-sm">Buffering...</p>
+              </div>
+            </div>
+          )}
           
           {/* Custom controls overlay - Above YouTube branding blocker */}
           <div className={`absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black via-black to-transparent px-3 pb-2 pt-2 z-70 transition-opacity duration-300 controls-overlay ${
