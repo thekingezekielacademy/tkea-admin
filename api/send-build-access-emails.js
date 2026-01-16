@@ -38,10 +38,15 @@ export default async function handler(req, res) {
       });
     }
 
-    // Get from email
-    const fromEmail = process.env.RESEND_FROM_EMAIL || 
-                     process.env.REACT_APP_RESEND_FROM_EMAIL ||
-                     'noreply@thekingezekielacademy.com';
+    // Get from email with proper sender name
+    const fromEmailAddress = process.env.RESEND_FROM_EMAIL || 
+                             process.env.REACT_APP_RESEND_FROM_EMAIL ||
+                             'noreply@thekingezekielacademy.com';
+    const fromEmail = `The King Ezekiel Academy <${fromEmailAddress}>`;
+    
+    // Reply-To email
+    const replyToEmail = process.env.RESEND_REPLY_TO_EMAIL || 
+                        'support@thekingezekielacademy.com';
 
     // Get APP URL
     const APP_URL = process.env.REACT_APP_SITE_URL || 
@@ -53,12 +58,29 @@ export default async function handler(req, res) {
     const APP_NAME = 'The King Ezekiel Academy';
     const userName = name || email.split('@')[0];
 
-    let html, subject;
+    let html, text, subject;
+
+    // Helper function to generate plain text version
+    const generatePlainText = (htmlContent) => {
+      // Remove HTML tags and convert to plain text
+      return htmlContent
+        .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+        .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/\s+/g, ' ')
+        .replace(/&nbsp;/g, ' ')
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+        .trim();
+    };
 
     // Generate email HTML based on type
     if (emailType === 'build_access') {
       // Email 1: BUILD COMMUNITY Access Email
-      subject = 'Welcome to B.U.I.L.D COMMUNITY - Your Access Details';
+      subject = 'Your B.U.I.L.D COMMUNITY Access is Ready';
       
       const formattedDate = purchaseDate || new Date().toLocaleDateString('en-US', {
         weekday: 'long',
@@ -241,6 +263,69 @@ export default async function handler(req, res) {
 </body>
 </html>
       `.trim();
+      
+      // Generate plain text version
+      text = `Hi ${userName},
+
+Thank you for joining the B.U.I.L.D COMMUNITY! You now have lifetime access to all our premium courses and live classes.
+
+WHAT YOU NOW HAVE ACCESS TO:
+
+COURSES (Access via Library):
+1. FREELANCING - THE UNTAPPED MARKET
+2. INFORMATION MARKETING: THE INFINITE CASH LOOP
+3. YOUTUBE MONETIZATION: From Setup To Monetization
+4. EARN 500K SIDE INCOME SELLING EBOOKS
+5. CPA MARKETING BLUEPRINT: TKEA RESELLERS (FREE)
+
+View all courses: ${libraryLink || `${APP_URL}/library`}
+
+LIVE CLASSES:
+Access to ALL live classes - Join scheduled sessions and learn in real-time with other students.
+View live classes: ${APP_URL}/live-classes
+
+COMMUNITY ACCESS:
+B.U.I.L.D COMMUNITY: https://t.me/+H6nI8QbGy1E0NGI0
+LIVE CLASS UPDATE CHANNEL: https://t.me/LIVECLASSREMINDER
+
+STEP 1: Career Path Discovery
+Discover Your Ideal Skill Path (Recommended First Step)
+We recommend completing our Career Path Discovery (takes just 3 minutes) to:
+1. Get matched to your ideal skill path based on your natural strengths
+2. See which courses align perfectly with your interests and goals
+3. Make an informed decision before selecting your free skill course
+4. Understand which skill path is best suited for your career journey
+
+Start Career Path Discovery: ${APP_URL}/access/courses
+This is completely FREE and takes only 3 minutes!
+
+STEP 2: Choose Your Skill (FREE COURSE)
+Select ONE Premium Skill Course - Absolutely FREE!
+As a B.U.I.L.D COMMUNITY member, you get to choose ONE premium skill course absolutely FREE!
+This bonus course will be added to your Library immediately after selection.
+
+IMPORTANT: You can only choose once. This selection cannot be changed, so choose wisely!
+
+Available Skills to Choose From:
+• META ANDROMEDA AI
+• VIBE CODING
+• BRANDING
+• GOOGLE ADS
+• AI GHOSTWRITING PLAYBOOK: Write Faster. Stay Invisible.
+
+Choose Your Skill Now: ${APP_URL}/choose-skill
+We recommend completing Career Path Discovery (Step 1) first to make an informed choice!
+
+Sign In to Access Library: ${APP_URL}/auth?redirect=/library
+
+Purchase Date: ${formattedDate}
+
+Need help? Contact us at support@thekingezekielacademy.com
+
+Best regards,
+${APP_NAME}
+
+© ${new Date().getFullYear()} ${APP_NAME}. All rights reserved.`;
 
     } else if (emailType === 'career_discovery') {
       // Email 2: Career Path Discovery Email
@@ -308,6 +393,31 @@ export default async function handler(req, res) {
 </body>
 </html>
       `.trim();
+      
+      // Generate plain text version
+      text = `Hi ${userName},
+
+🎯 Discover Your Career Path - Free Course Selection
+
+We're excited to help you discover your ideal career path! As a B.U.I.L.D COMMUNITY member, you have access to our Career Path Discovery tool.
+
+HOW IT WORKS (4 Simple Steps):
+1. Click the button below to start your Career Path Discovery
+2. Answer a few quick questions about your interests and goals (takes 3 minutes)
+3. Get matched to your ideal skill path based on your natural strengths
+4. Choose your FREE premium skill course from the recommendations
+
+Start Career Path Discovery: ${careerPathLink || `${APP_URL}/access/courses`}
+
+This is completely FREE!
+The Career Path Discovery will help you choose the best course to start with based on your natural strengths and interests.
+
+Need help? Contact us at support@thekingezekielacademy.com
+
+Best regards,
+${APP_NAME}
+
+© ${new Date().getFullYear()} ${APP_NAME}. All rights reserved.`;
 
     } else {
       return res.status(400).json({
@@ -335,8 +445,15 @@ export default async function handler(req, res) {
         body: JSON.stringify({
           from: fromEmail,
           to: [email],
+          reply_to: replyToEmail,
           subject,
           html,
+          text: text || generatePlainText(html),
+          headers: {
+            'X-Entity-Ref-ID': `build-access-${Date.now()}`,
+            'List-Unsubscribe': `<mailto:${replyToEmail}?subject=unsubscribe>`,
+            'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click'
+          },
         }),
       });
     } catch (fetchError) {
