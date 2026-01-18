@@ -405,6 +405,21 @@ const AdminDashboard: React.FC = () => {
             </button>
 
             <button
+              onClick={() => navigate('/admin/broadcast')}
+              className="flex items-center space-x-3 p-4 border border-gray-200 rounded-lg hover:bg-orange-50 hover:border-orange-300 transition-colors text-left"
+            >
+              <div className="bg-orange-100 rounded-lg p-2">
+                <svg className="h-6 w-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                </svg>
+              </div>
+              <div>
+                <p className="font-medium text-gray-900">Bulk Broadcast</p>
+                <p className="text-sm text-gray-600">Send emails and SMS to user groups</p>
+              </div>
+            </button>
+
+            <button
               onClick={() => navigate('/admin/purchases')}
               className="flex items-center space-x-3 p-4 border border-gray-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-colors text-left"
             >

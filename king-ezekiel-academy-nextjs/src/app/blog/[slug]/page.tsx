@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { FaCalendar, FaUser, FaEye, FaArrowLeft, FaClock, FaTags, FaFolder, FaCopy, FaCheck, FaTwitter, FaFacebook, FaLinkedin, FaWhatsapp } from 'react-icons/fa';
+import { FaCalendar, FaUser, FaEye, FaArrowLeft, FaClock, FaTags, FaFolder, FaCopy, FaCheck, FaTwitter, FaFacebook, FaLinkedin, FaWhatsapp, FaYoutube, FaHeart, FaMousePointer } from 'react-icons/fa';
 import { createClient } from '@/lib/supabase';
 import DOMPurify from 'dompurify';
 import { secureLog, secureError } from '@/utils/secureLogger';
@@ -14,14 +14,18 @@ import { isOldSafari } from '@/utils/safariCompatibility';
 interface BlogPostData {
   id: string;
   title: string;
-  content: string;
-  excerpt: string;
-  slug: string;
-  featured_image_url?: string;
+  body: string;
+  header: string;
+  conclusion?: string;
+  image?: string;
+  youtube_link?: string;
+  button_text?: string;
+  button_url?: string;
   reading_time?: number;
   featured?: boolean;
   view_count?: number;
   like_count?: number;
+  button_click_count?: number;
   created_at: string;
   updated_at: string;
   status: string;
@@ -37,11 +41,15 @@ const BlogPost: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [blogPost, setBlogPost] = useState<BlogPostData | null>(null);
   const [copied, setCopied] = useState(false);
+  const [liked, setLiked] = useState(false);
+  const [localLikeCount, setLocalLikeCount] = useState(0);
 
   const fetchBlogPost = useCallback(async () => {
     try {
       setLoading(true);
       const supabase = createClient();
+      // Try to fetch by ID (since slug column was removed)
+      // The slug in the URL will be the blog post ID
       const { data: posts, error: postError } = await supabase
         .from('blog_posts')
         .select(`
@@ -49,7 +57,7 @@ const BlogPost: React.FC = () => {
           blog_post_categories(blog_categories(name)),
           blog_post_tags(blog_tags(name))
         `)
-        .eq('slug', slug)
+        .eq('id', slug)
         .eq('status', 'published')
         .single();
 
@@ -59,14 +67,26 @@ const BlogPost: React.FC = () => {
 
       secureLog('Blog post data:', posts);
       setBlogPost(posts);
+      setLocalLikeCount(posts.like_count || 0);
+      
+      // Check if user has already liked (using localStorage for now)
+      const likedPosts = JSON.parse(localStorage.getItem('liked_blog_posts') || '[]');
+      setLiked(likedPosts.includes(posts.id));
       
       // Increment view count (only if view_count field exists)
       if (posts.id && posts.view_count !== undefined) {
         try {
-          await supabase
+          const { error: updateError } = await supabase
             .from('blog_posts')
             .update({ view_count: (posts.view_count || 0) + 1 })
             .eq('id', posts.id);
+          
+          if (updateError) {
+            secureError('Could not update view count:', updateError);
+          } else {
+            // Update local state with new view count
+            setBlogPost(prev => prev ? { ...prev, view_count: (prev.view_count || 0) + 1 } : null);
+          }
         } catch (error) {
           secureError('Could not update view count:', error);
         }
@@ -199,9 +219,62 @@ const BlogPost: React.FC = () => {
     }
   };
 
+  const handleLike = async () => {
+    if (!blogPost || liked) return;
+    
+    try {
+      const supabase = createClient();
+      const newLikeCount = (blogPost.like_count || 0) + 1;
+      
+      const { error: updateError } = await supabase
+        .from('blog_posts')
+        .update({ like_count: newLikeCount })
+        .eq('id', blogPost.id);
+      
+      if (updateError) {
+        secureError('Could not update like count:', updateError);
+      } else {
+        setLiked(true);
+        setLocalLikeCount(newLikeCount);
+        setBlogPost(prev => prev ? { ...prev, like_count: newLikeCount } : null);
+        
+        // Store in localStorage to prevent multiple likes
+        const likedPosts = JSON.parse(localStorage.getItem('liked_blog_posts') || '[]');
+        likedPosts.push(blogPost.id);
+        localStorage.setItem('liked_blog_posts', JSON.stringify(likedPosts));
+      }
+    } catch (error) {
+      secureError('Error liking post:', error);
+    }
+  };
+
+  const handleButtonClick = async () => {
+    if (!blogPost || !blogPost.button_url) return;
+    
+    try {
+      const supabase = createClient();
+      const newClickCount = (blogPost.button_click_count || 0) + 1;
+      
+      // Update click count (don't wait for response to avoid delaying navigation)
+      supabase
+        .from('blog_posts')
+        .update({ button_click_count: newClickCount })
+        .eq('id', blogPost.id)
+        .then(({ error }) => {
+          if (error) {
+            secureError('Could not update button click count:', error);
+          } else {
+            setBlogPost(prev => prev ? { ...prev, button_click_count: newClickCount } : null);
+          }
+        });
+    } catch (error) {
+      secureError('Error tracking button click:', error);
+    }
+  };
+
   const shareToSocial = (platform: string) => {
     const url = encodeURIComponent(window.location.href);
-    const text = encodeURIComponent(blogPost?.excerpt || 'Interesting read from King Ezekiel Academy');
+    const text = encodeURIComponent(blogPost?.header || blogPost?.title || 'Interesting read from King Ezekiel Academy');
     
     let shareUrl = '';
     
@@ -231,6 +304,16 @@ const BlogPost: React.FC = () => {
       month: 'long',
       day: 'numeric'
     });
+  };
+
+  const getYouTubeVideoId = (url: string): string => {
+    const regex = /(?:youtube\.com\/(?:[^/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?/\s]{11})/;
+    const match = url.match(regex);
+    return match ? match[1] : '';
+  };
+
+  const getYouTubeEmbedUrl = (videoId: string): string => {
+    return `https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1`;
   };
 
   if (loading) {
@@ -269,18 +352,18 @@ const BlogPost: React.FC = () => {
     <>
       <SEOHead
         title={`${blogPost.title} - King Ezekiel Academy`}
-        description={blogPost.excerpt}
-        canonical={`/blog/${blogPost.slug}`}
-        ogImage={blogPost.featured_image_url}
+        description={blogPost.header || blogPost.title}
+        canonical={`/blog/${slug}`}
+        ogImage={blogPost.image}
         ogType="article"
         structuredData={generateBlogPostStructuredData({
           title: blogPost.title,
-          description: blogPost.excerpt,
-          content: blogPost.content,
+          description: blogPost.header || blogPost.title,
+          content: blogPost.body || '',
           author: 'King Ezekiel Academy',
           publishedTime: blogPost.created_at,
           modifiedTime: blogPost.updated_at,
-          image: blogPost.featured_image_url
+          image: blogPost.image
         })}
       />
       <div className="min-h-screen bg-gray-50 pt-16">
@@ -299,10 +382,10 @@ const BlogPost: React.FC = () => {
           {/* Blog Post Content */}
           <article className="bg-white rounded-xl shadow-lg overflow-hidden">
             {/* Featured Image */}
-            {blogPost.featured_image_url && (
+            {blogPost.image && (
               <div className="w-full h-64 sm:h-80 lg:h-96 relative overflow-hidden">
                 <img
-                  src={blogPost.featured_image_url}
+                  src={blogPost.image}
                   alt={blogPost.title}
                   className="w-full h-full object-cover"
                 />
@@ -335,9 +418,31 @@ const BlogPost: React.FC = () => {
                   {blogPost.view_count !== undefined && (
                     <div className="flex items-center">
                       <FaEye className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-                      <span>{blogPost.view_count} views</span>
+                      <span>{blogPost.view_count || 0} views</span>
                     </div>
                   )}
+                  {blogPost.like_count !== undefined && (
+                    <div className="flex items-center">
+                      <FaHeart className={`w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 ${liked ? 'text-red-500' : 'text-gray-400'}`} />
+                      <span>{localLikeCount || 0} likes</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Like Button */}
+                <div className="mb-4 sm:mb-6">
+                  <button
+                    onClick={handleLike}
+                    disabled={liked}
+                    className={`inline-flex items-center px-4 py-2 rounded-lg transition-colors ${
+                      liked
+                        ? 'bg-red-100 text-red-700 cursor-not-allowed'
+                        : 'bg-gray-100 text-gray-700 hover:bg-red-100 hover:text-red-700'
+                    }`}
+                  >
+                    <FaHeart className={`w-4 h-4 mr-2 ${liked ? 'text-red-500' : ''}`} />
+                    {liked ? 'Liked' : 'Like this post'}
+                  </button>
                 </div>
 
                 {/* Categories and Tags */}
@@ -374,11 +479,11 @@ const BlogPost: React.FC = () => {
                   )}
                 </div>
 
-                {/* Excerpt */}
-                {blogPost.excerpt && (
+                {/* Header/Excerpt */}
+                {blogPost.header && (
                   <div className="mb-6 sm:mb-8 p-3 sm:p-4 bg-gray-50 rounded-lg">
                     <p className="text-base sm:text-lg text-gray-700 italic">
-                      {blogPost.excerpt}
+                      {blogPost.header}
                     </p>
                   </div>
                 )}
@@ -387,22 +492,90 @@ const BlogPost: React.FC = () => {
               {/* Content */}
               <div className="prose prose-lg max-w-none mb-8">
                 <div
-                  dangerouslySetInnerHTML={{ __html: formatBlogContent(removeConclusion(blogPost.content)) }}
+                  dangerouslySetInnerHTML={{ __html: formatBlogContent(removeConclusion(blogPost.body || '')) }}
                   className="text-gray-800 leading-relaxed blog-content"
                 />
               </div>
 
-              {/* Conclusion Section - Only show if content contains conclusion */}
-              {blogPost.content.toLowerCase().includes('conclusion') && (
+              {/* YouTube Video - Only show if youtube_link exists */}
+              {blogPost.youtube_link && (
+                <div className="mb-8 sm:mb-12">
+                  <div className="bg-red-50 border-l-4 border-red-500 rounded-lg p-4 sm:p-6 mb-4">
+                    <div className="flex items-center mb-3">
+                      <FaYoutube className="w-5 h-5 sm:w-6 sm:h-6 text-red-600 mr-2" />
+                      <h3 className="text-lg sm:text-xl font-bold text-red-900">Watch on YouTube</h3>
+                    </div>
+                    <p className="text-sm sm:text-base text-red-700 mb-4">
+                      Check out the related video content for this blog post
+                    </p>
+                  </div>
+                  <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
+                    <iframe
+                      src={getYouTubeEmbedUrl(getYouTubeVideoId(blogPost.youtube_link))}
+                      title={blogPost.title}
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                      className="absolute top-0 left-0 w-full h-full rounded-lg"
+                      style={{ border: 'none' }}
+                    />
+                  </div>
+                  <div className="mt-4 text-center">
+                    <a
+                      href={blogPost.youtube_link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                    >
+                      <FaYoutube className="w-4 h-4 mr-2" />
+                      Watch on YouTube
+                    </a>
+                  </div>
+                </div>
+              )}
+
+              {/* CTA Button - Only show if both button_text and button_url are provided */}
+              {blogPost.button_text && blogPost.button_url && (
+                <div className="mt-8 sm:mt-12 mb-8 sm:mb-12 text-center">
+                  <div>
+                    <a
+                      href={blogPost.button_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={handleButtonClick}
+                      className="inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 bg-indigo-600 text-white text-base sm:text-lg font-semibold rounded-lg hover:bg-indigo-700 transition-colors shadow-lg hover:shadow-xl"
+                    >
+                      {blogPost.button_text}
+                    </a>
+                    {blogPost.button_click_count !== undefined && blogPost.button_click_count > 0 && (
+                      <p className="mt-2 text-sm text-gray-500 flex items-center justify-center">
+                        <FaMousePointer className="w-3 h-3 mr-1" />
+                        {blogPost.button_click_count} click{blogPost.button_click_count !== 1 ? 's' : ''}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Conclusion Section - Show if conclusion field exists or if body contains conclusion */}
+              {(blogPost.conclusion || (blogPost.body && blogPost.body.toLowerCase().includes('conclusion'))) && (
                 <div className="mt-8 sm:mt-12 p-4 sm:p-6 bg-blue-50 border-l-4 border-blue-400 rounded-lg">
                   <h3 className="text-lg sm:text-xl font-bold text-blue-900 mb-3 sm:mb-4">Conclusion</h3>
                   <div className="text-blue-800 leading-relaxed">
-                    <div
-                      dangerouslySetInnerHTML={{ 
-                        __html: formatBlogContent(extractConclusion(blogPost.content)) 
-                      }}
-                      className="prose prose-blue max-w-none"
-                    />
+                    {blogPost.conclusion ? (
+                      <div
+                        dangerouslySetInnerHTML={{ 
+                          __html: formatBlogContent(blogPost.conclusion) 
+                        }}
+                        className="prose prose-blue max-w-none"
+                      />
+                    ) : (
+                      <div
+                        dangerouslySetInnerHTML={{ 
+                          __html: formatBlogContent(extractConclusion(blogPost.body || '')) 
+                        }}
+                        className="prose prose-blue max-w-none"
+                      />
+                    )}
                   </div>
                 </div>
               )}

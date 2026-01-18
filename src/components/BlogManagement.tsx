@@ -10,6 +10,10 @@ interface BlogPost {
   body: string;
   conclusion?: string;
   image?: string;
+  youtube_link?: string;
+  button_text?: string;
+  button_url?: string;
+  button_click_count?: number;
   author_id: string;
   status: 'draft' | 'published';
   published_at?: string;
@@ -101,6 +105,10 @@ const BlogManagement: React.FC = () => {
           body: post.body || '',
           conclusion: post.conclusion || '',
           image: post.image || '',
+          youtube_link: post.youtube_link || '',
+          button_text: post.button_text || '',
+          button_url: post.button_url || '',
+          button_click_count: post.button_click_count || 0,
           author_id: post.author_id,
           status: post.status || 'draft',
           published_at: post.published_at,
@@ -259,6 +267,8 @@ const BlogManagement: React.FC = () => {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Views</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Likes</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Button Clicks</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Conversion Rate</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Featured</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
@@ -303,6 +313,40 @@ const BlogManagement: React.FC = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {post.like_count || post.likes || 0}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <div className="flex flex-col">
+                          <span>{post.button_click_count || 0}</span>
+                          <div className="flex items-center gap-1 mt-1">
+                            {post.youtube_link && (
+                              <span className="text-xs text-red-600" title="Has YouTube link">🎥</span>
+                            )}
+                            {post.button_text && post.button_url && (
+                              <span className="text-xs text-indigo-600" title="Has CTA button">🔗</span>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        {(() => {
+                          const views = post.view_count || post.viewers || 0;
+                          const clicks = post.button_click_count || 0;
+                          if (views === 0 || clicks === 0) {
+                            return <span className="text-gray-400">—</span>;
+                          }
+                          const conversionRate = ((clicks / views) * 100).toFixed(2);
+                          const rate = parseFloat(conversionRate);
+                          return (
+                            <span className={`font-medium ${
+                              rate >= 5 ? 'text-green-600' : 
+                              rate >= 2 ? 'text-yellow-600' : 
+                              rate > 0 ? 'text-orange-600' : 
+                              'text-gray-400'
+                            }`} title={`${clicks} clicks / ${views} views`}>
+                              {conversionRate}%
+                            </span>
+                          );
+                        })()}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         {post.featured ? (

@@ -9,6 +9,9 @@ interface BlogPostForm {
   body: string;
   conclusion: string;
   image: string;
+  youtube_link: string;
+  button_text: string;
+  button_url: string;
   status: 'draft' | 'published';
   featured: boolean;
   reading_time: number;
@@ -26,6 +29,9 @@ const AddEditBlogPost: React.FC = () => {
     body: '',
     conclusion: '',
     image: '',
+    youtube_link: '',
+    button_text: '',
+    button_url: '',
     status: 'draft',
     featured: false,
     reading_time: 1,
@@ -37,47 +43,50 @@ const AddEditBlogPost: React.FC = () => {
   const [fetching, setFetching] = useState(isEditMode);
 
   useEffect(() => {
-    if (user?.role === 'admin') {
-      if (isEditMode) {
-        fetchPost();
+    const fetchPost = async () => {
+      if (!id || !isEditMode) return;
+      
+      try {
+        setFetching(true);
+        setError('');
+
+        const { data: post, error: fetchError } = await supabase
+          .from('blog_posts')
+          .select('*')
+          .eq('id', id)
+          .single();
+
+        if (fetchError) {
+          throw fetchError;
+        }
+
+        if (post) {
+          setFormData({
+            title: post.title || '',
+            header: post.header || '',
+            body: post.body || '',
+            conclusion: post.conclusion || '',
+            image: post.image || '',
+            youtube_link: post.youtube_link || '',
+            button_text: post.button_text || '',
+            button_url: post.button_url || '',
+            status: post.status || 'draft',
+            featured: post.featured || false,
+            reading_time: post.reading_time || 1,
+          });
+        }
+      } catch (err: any) {
+        console.error('Error fetching blog post:', err);
+        setError(err.message || 'Failed to fetch blog post');
+      } finally {
+        setFetching(false);
       }
+    };
+
+    if (user?.role === 'admin' && isEditMode && id) {
+      fetchPost();
     }
-  }, [user, id]);
-
-  const fetchPost = async () => {
-    try {
-      setFetching(true);
-      setError('');
-
-      const { data: post, error: fetchError } = await supabase
-        .from('blog_posts')
-        .select('*')
-        .eq('id', id)
-        .single();
-
-      if (fetchError) {
-        throw fetchError;
-      }
-
-      if (post) {
-        setFormData({
-          title: post.title || '',
-          header: post.header || '',
-          body: post.body || '',
-          conclusion: post.conclusion || '',
-          image: post.image || '',
-          status: post.status || 'draft',
-          featured: post.featured || false,
-          reading_time: post.reading_time || 1,
-        });
-      }
-    } catch (err: any) {
-      console.error('Error fetching blog post:', err);
-      setError(err.message || 'Failed to fetch blog post');
-    } finally {
-      setFetching(false);
-    }
-  };
+  }, [user, id, isEditMode]);
 
   const calculateReadingTime = (text: string): number => {
     const wordsPerMinute = 200;
@@ -132,6 +141,9 @@ const AddEditBlogPost: React.FC = () => {
         body: formData.body.trim(),
         conclusion: formData.conclusion.trim() || null,
         image: formData.image.trim() || null,
+        youtube_link: formData.youtube_link.trim() || null,
+        button_text: formData.button_text.trim() || null,
+        button_url: formData.button_url.trim() || null,
         status: formData.status,
         featured: formData.featured,
         reading_time: formData.reading_time,
@@ -329,6 +341,66 @@ const AddEditBlogPost: React.FC = () => {
                 />
               </div>
             )}
+          </div>
+
+          {/* YouTube Link */}
+          <div>
+            <label htmlFor="youtube_link" className="block text-sm font-medium text-gray-700 mb-2">
+              YouTube Link (Optional)
+            </label>
+            <input
+              type="url"
+              id="youtube_link"
+              name="youtube_link"
+              value={formData.youtube_link}
+              onChange={handleInputChange}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              placeholder="https://www.youtube.com/watch?v=... or https://youtu.be/..."
+            />
+            <p className="mt-2 text-sm text-gray-500">
+              Enter a YouTube video URL. The link will only display when added.
+            </p>
+          </div>
+
+          {/* Button (CTA) */}
+          <div className="border-t pt-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Call-to-Action Button (Optional)</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Add a button that appears before the conclusion section. The button will only display when both text and URL are provided.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label htmlFor="button_text" className="block text-sm font-medium text-gray-700 mb-2">
+                  Button Text
+                </label>
+                <input
+                  type="text"
+                  id="button_text"
+                  name="button_text"
+                  value={formData.button_text}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  placeholder="e.g., Get Started, Learn More, Sign Up"
+                />
+              </div>
+              <div>
+                <label htmlFor="button_url" className="block text-sm font-medium text-gray-700 mb-2">
+                  Button URL
+                </label>
+                <input
+                  type="url"
+                  id="button_url"
+                  name="button_url"
+                  value={formData.button_url}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  placeholder="https://example.com/page"
+                />
+              </div>
+            </div>
+            <p className="mt-2 text-sm text-gray-500">
+              Both fields are required for the button to display.
+            </p>
           </div>
 
           {/* Status and Featured */}
