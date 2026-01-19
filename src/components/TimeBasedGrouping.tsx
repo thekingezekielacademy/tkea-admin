@@ -58,10 +58,97 @@ const TimeBasedGrouping: React.FC<TimeBasedGroupingProps> = ({ onSelectGroups, s
         return;
       }
 
-      // Group by date
+      // Get all users who HAVE BUILD access (to filter them out)
+      const hasBuildAccessIds = new Set<string>();
+      const hasBuildAccessEmails = new Set<string>();
+
+      // Method 1: Check for product_type='live_class' records
+      const { data: buildPurchases } = await supabase
+        .from('product_purchases')
+        .select('buyer_id, buyer_email')
+        .eq('product_type', 'live_class')
+        .eq('payment_status', 'success')
+        .eq('access_granted', true);
+
+      buildPurchases?.forEach(p => {
+        if (p.buyer_id) hasBuildAccessIds.add(p.buyer_id);
+        if (p.buyer_email) hasBuildAccessEmails.add(p.buyer_email.toLowerCase().trim());
+      });
+
+      // Method 2: Check for users with 3+ BUILD courses
+      const BUILD_COURSE_TITLES = [
+        'FREELANCING - THE UNTAPPED MARKET',
+        'INFORMATION MARKETING: THE INFINITE CASH LOOP',
+        'YOUTUBE MONETIZATION: From Setup To Monetization',
+        'EARN 500K SIDE INCOME SELLING EBOOKS',
+        'CPA MARKETING BLUEPRINT: TKEA RESELLERS'
+      ];
+
+      // Get BUILD course IDs
+      const buildCourseIds: string[] = [];
+      for (const title of BUILD_COURSE_TITLES) {
+        const { data: courses } = await supabase
+          .from('courses')
+          .select('id')
+          .ilike('title', `%${title}%`)
+          .eq('status', 'published')
+          .limit(1);
+        
+        if (courses && courses.length > 0) {
+          buildCourseIds.push(courses[0].id);
+        }
+      }
+
+      if (buildCourseIds.length > 0) {
+        // Get all course purchases for BUILD courses
+        const { data: buildCoursePurchases } = await supabase
+          .from('product_purchases')
+          .select('buyer_id, buyer_email, product_id')
+          .eq('product_type', 'course')
+          .eq('payment_status', 'success')
+          .eq('access_granted', true)
+          .in('product_id', buildCourseIds);
+
+        // Group by user and count BUILD courses
+        const userBuildCourseCount = new Map<string, Set<string>>();
+        const userIdentifiers = new Map<string, { id?: string; email?: string }>();
+
+        buildCoursePurchases?.forEach(purchase => {
+          const userId = purchase.buyer_id;
+          const userEmail = purchase.buyer_email?.toLowerCase().trim();
+          const identifier = userId || userEmail || '';
+
+          if (identifier) {
+            if (!userBuildCourseCount.has(identifier)) {
+              userBuildCourseCount.set(identifier, new Set());
+              userIdentifiers.set(identifier, { id: userId, email: userEmail });
+            }
+            userBuildCourseCount.get(identifier)?.add(purchase.product_id);
+          }
+        });
+
+        // Add users with 3+ BUILD courses to the access sets
+        userBuildCourseCount.forEach((courseIds, identifier) => {
+          if (courseIds.size >= 3) {
+            const userInfo = userIdentifiers.get(identifier);
+            if (userInfo?.id) hasBuildAccessIds.add(userInfo.id);
+            if (userInfo?.email) hasBuildAccessEmails.add(userInfo.email);
+          }
+        });
+      }
+
+      // Filter out leads who have paid for BUILD
+      const unpaidLeads = leads?.filter(lead => {
+        const leadEmail = lead.email?.toLowerCase().trim();
+        // Check if this lead's email is in the list of people who have paid
+        const hasPaid = hasBuildAccessEmails.has(leadEmail || '');
+        return !hasPaid; // Only include leads who HAVEN'T paid
+      }) || [];
+
+      // Group by date (only unpaid leads)
       const groupsMap = new Map<string, Lead[]>();
       
-      leads?.forEach(lead => {
+      unpaidLeads.forEach(lead => {
         const date = new Date(lead.created_at).toISOString().split('T')[0]; // YYYY-MM-DD
         if (!groupsMap.has(date)) {
           groupsMap.set(date, []);
