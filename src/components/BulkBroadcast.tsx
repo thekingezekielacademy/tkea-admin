@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import ContactUploader from './ContactUploader';
 import TimeBasedGrouping from './TimeBasedGrouping';
+import CategoryManager from './CategoryManager';
 
 // User group types
 type UserGroup = 
@@ -510,18 +511,43 @@ const BulkBroadcast: React.FC = () => {
           phone: lead.phone
         }));
       } else if (useUploadedContacts) {
-        // Use uploaded contacts
-        users = uploadedContacts.map(contact => ({
-          id: '',
-          email: contact.email || '',
-          name: contact.name || contact.email?.split('@')[0] || '',
-          phone: contact.phone || null
-        })).filter(u => {
-          // Filter based on active tab
-          if (activeTab === 'email') return u.email;
-          if (activeTab === 'sms') return u.phone;
-          return true;
-        });
+        // Use uploaded contacts (filtered by selected categories)
+        if (selectedCategories.length > 0) {
+          // Fetch contacts from selected categories
+          const { data: contacts, error } = await supabase
+            .from('broadcast_contacts')
+            .select('name, email, phone')
+            .in('category', selectedCategories);
+
+          if (error) {
+            throw new Error('Failed to fetch contacts: ' + error.message);
+          }
+
+          users = (contacts || []).map(contact => ({
+            id: '',
+            email: contact.email || '',
+            name: contact.name || contact.email?.split('@')[0] || '',
+            phone: contact.phone || null
+          })).filter(u => {
+            // Filter based on active tab
+            if (activeTab === 'email') return u.email;
+            if (activeTab === 'sms') return u.phone;
+            return true;
+          });
+        } else {
+          // Use in-memory uploaded contacts
+          users = uploadedContacts.map(contact => ({
+            id: '',
+            email: contact.email || '',
+            name: contact.name || contact.email?.split('@')[0] || '',
+            phone: contact.phone || null
+          })).filter(u => {
+            // Filter based on active tab
+            if (activeTab === 'email') return u.email;
+            if (activeTab === 'sms') return u.phone;
+            return true;
+          });
+        }
       } else {
         // Use predefined groups
         users = await fetchUsersByGroup(selectedGroup as UserGroup);
@@ -855,14 +881,51 @@ const BulkBroadcast: React.FC = () => {
           </div>
           )}
 
+          {/* Category Selection (for uploaded contacts) */}
+          {useUploadedContacts && (
+            <div className="mb-8">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">
+                📁 Select Categories
+              </h2>
+              <CategoryManager
+                type={activeTab}
+                selectedCategories={selectedCategories}
+                onSelectCategories={async (categoryNames) => {
+                  setSelectedCategories(categoryNames);
+                  
+                  // Fetch contacts from selected categories
+                  if (categoryNames.length > 0) {
+                    const { data: contacts, error } = await supabase
+                      .from('broadcast_contacts')
+                      .select('name, email, phone, category')
+                      .in('category', categoryNames);
+
+                    if (!error && contacts) {
+                      const filteredContacts = contacts.filter(c => {
+                        if (activeTab === 'email') return c.email;
+                        if (activeTab === 'sms') return c.phone;
+                        return true;
+                      });
+                      setUploadedContacts(filteredContacts);
+                      setUserCount(filteredContacts.length);
+                    }
+                  } else {
+                    setUploadedContacts([]);
+                    setUserCount(0);
+                  }
+                }}
+              />
+            </div>
+          )}
+
           {/* Uploaded Contacts Summary */}
           {useUploadedContacts && uploadedContacts.length > 0 && (
             <div className="mb-8 p-4 bg-green-50 border border-green-200 rounded-lg">
               <h3 className="font-semibold text-green-900 mb-2">
-                ✅ Uploaded Contacts Ready
+                ✅ {uploadedContacts.length} contacts ready from {selectedCategories.length} categor{selectedCategories.length === 1 ? 'y' : 'ies'}
               </h3>
               <p className="text-sm text-green-700">
-                {uploadedContacts.length} contacts ready to send {activeTab === 'email' ? 'emails' : 'SMS'} to
+                Ready to send {activeTab === 'email' ? 'emails' : 'SMS'} to these contacts
               </p>
             </div>
           )}
