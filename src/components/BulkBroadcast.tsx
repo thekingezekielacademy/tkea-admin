@@ -2,6 +2,8 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
+import ContactUploader from './ContactUploader';
+import TimeBasedGrouping from './TimeBasedGrouping';
 
 // User group types
 type UserGroup = 
@@ -22,12 +24,20 @@ const BulkBroadcast: React.FC = () => {
   const navigate = useNavigate();
 
   // State
+  const [activeTab, setActiveTab] = useState<'sms' | 'email'>('email');
   const [selectedGroup, setSelectedGroup] = useState<UserGroup | ''>('');
   const [emailSubject, setEmailSubject] = useState('');
   const [emailBody, setEmailBody] = useState('');
   const [smsBody, setSmsBody] = useState('');
   const [sendEmail, setSendEmail] = useState(true);
   const [sendSMS, setSendSMS] = useState(false);
+  
+  // New state for enhanced features
+  const [uploadedContacts, setUploadedContacts] = useState<Contact[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedLeads, setSelectedLeads] = useState<User[]>([]);
+  const [useTimeBasedGrouping, setUseTimeBasedGrouping] = useState(false);
+  const [useUploadedContacts, setUseUploadedContacts] = useState(false);
   
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [userCount, setUserCount] = useState<number | null>(null);
@@ -461,8 +471,9 @@ const BulkBroadcast: React.FC = () => {
 
   // Send broadcast
   const handleSendBroadcast = useCallback(async () => {
-    if (!selectedGroup) {
-      setError('Please select a user group');
+    // Validate selection
+    if (!useTimeBasedGrouping && !useUploadedContacts && !selectedGroup) {
+      setError('Please select a user group, upload contacts, or select leads by date');
       return;
     }
 
@@ -487,8 +498,34 @@ const BulkBroadcast: React.FC = () => {
       setResults(null);
       setProgress({ sent: 0, total: 0, failed: 0 });
 
-      // Fetch users
-      const users = await fetchUsersByGroup(selectedGroup as UserGroup);
+      // Get users based on selection method
+      let users: User[] = [];
+      
+      if (useTimeBasedGrouping) {
+        // Use selected leads from time-based grouping
+        users = selectedLeads.map(lead => ({
+          id: lead.id || '',
+          email: lead.email,
+          name: lead.name || lead.email.split('@')[0],
+          phone: lead.phone
+        }));
+      } else if (useUploadedContacts) {
+        // Use uploaded contacts
+        users = uploadedContacts.map(contact => ({
+          id: '',
+          email: contact.email || '',
+          name: contact.name || contact.email?.split('@')[0] || '',
+          phone: contact.phone || null
+        })).filter(u => {
+          // Filter based on active tab
+          if (activeTab === 'email') return u.email;
+          if (activeTab === 'sms') return u.phone;
+          return true;
+        });
+      } else {
+        // Use predefined groups
+        users = await fetchUsersByGroup(selectedGroup as UserGroup);
+      }
       
       if (users.length === 0) {
         setError('No users found in the selected group');
@@ -573,7 +610,114 @@ const BulkBroadcast: React.FC = () => {
             </div>
           )}
 
+          {/* Contact Upload Section */}
+          <div className="mb-8 p-6 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">
+              📤 Upload Contacts (Optional)
+            </h2>
+            <p className="text-sm text-gray-600 mb-4">
+              Upload a CSV or Excel file with contacts. They will be automatically categorized.
+            </p>
+            <ContactUploader
+              type={activeTab}
+              onUploadComplete={async (contacts, category) => {
+                try {
+                  // Save to database
+                  const apiUrl = `${window.location.origin}/api/save-broadcast-contacts`;
+                  const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      contacts,
+                      category: category || `Upload Batch - ${new Date().toLocaleDateString()}`,
+                      source: 'upload'
+                    })
+                  });
+
+                  const result = await response.json();
+                  if (result.success) {
+                    setUploadedContacts(prev => [...prev, ...contacts]);
+                    setUseUploadedContacts(true);
+                    setError('');
+                    alert(`✅ Successfully uploaded ${result.data.inserted} contacts!`);
+                  } else {
+                    setError(result.error || 'Failed to save contacts');
+                  }
+                } catch (err: any) {
+                  setError('Failed to save contacts: ' + err.message);
+                }
+              }}
+            />
+          </div>
+
+          {/* Selection Method Toggle (Email only) */}
+          {activeTab === 'email' && (
+            <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <h3 className="font-semibold text-blue-900 mb-3">Choose Contact Source:</h3>
+              <div className="space-y-2">
+                <label className="flex items-center">
+                  <input
+                    type="radio"
+                    name="contactSource"
+                    checked={useTimeBasedGrouping}
+                    onChange={() => {
+                      setUseTimeBasedGrouping(true);
+                      setUseUploadedContacts(false);
+                      setSelectedGroup('');
+                    }}
+                    className="mr-2"
+                  />
+                  <span>Use Leads from Database (Time-Based Grouping)</span>
+                </label>
+                <label className="flex items-center">
+                  <input
+                    type="radio"
+                    name="contactSource"
+                    checked={useUploadedContacts}
+                    onChange={() => {
+                      setUseUploadedContacts(true);
+                      setUseTimeBasedGrouping(false);
+                      setSelectedGroup('');
+                    }}
+                    className="mr-2"
+                  />
+                  <span>Use Uploaded Contacts</span>
+                </label>
+                <label className="flex items-center">
+                  <input
+                    type="radio"
+                    name="contactSource"
+                    checked={!useTimeBasedGrouping && !useUploadedContacts}
+                    onChange={() => {
+                      setUseTimeBasedGrouping(false);
+                      setUseUploadedContacts(false);
+                    }}
+                    className="mr-2"
+                  />
+                  <span>Use Predefined User Groups</span>
+                </label>
+              </div>
+            </div>
+          )}
+
+          {/* Time-Based Grouping (Email only) */}
+          {activeTab === 'email' && useTimeBasedGrouping && (
+            <div className="mb-8">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">
+                📅 Select Leads by Date
+              </h2>
+              <TimeBasedGrouping
+                onSelectGroups={(leads) => {
+                  setSelectedLeads(leads);
+                  setUserCount(leads.length);
+                }}
+                selectedLeads={selectedLeads}
+              />
+            </div>
+          )}
+
           {/* User Group Selection */}
+          {(!useTimeBasedGrouping && !useUploadedContacts) && (
           <div className="mb-8">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold text-gray-900">Step 1: Select User Group</h2>
@@ -709,6 +853,19 @@ const BulkBroadcast: React.FC = () => {
               </div>
             )}
           </div>
+          )}
+
+          {/* Uploaded Contacts Summary */}
+          {useUploadedContacts && uploadedContacts.length > 0 && (
+            <div className="mb-8 p-4 bg-green-50 border border-green-200 rounded-lg">
+              <h3 className="font-semibold text-green-900 mb-2">
+                ✅ Uploaded Contacts Ready
+              </h3>
+              <p className="text-sm text-green-700">
+                {uploadedContacts.length} contacts ready to send {activeTab === 'email' ? 'emails' : 'SMS'} to
+              </p>
+            </div>
+          )}
 
           {/* Delivery Methods */}
           <div className="mb-8">
