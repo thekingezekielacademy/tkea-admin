@@ -151,7 +151,7 @@ const BulkBroadcast: React.FC = () => {
 
       switch (group) {
         case 'hasnt_paid_build': {
-          // Get all leads from the leads table ONLY
+          // Get all leads from the leads table
           const { data: leads, error: leadsError } = await supabase
             .from('leads')
             .select('name, email, phone');
@@ -162,13 +162,26 @@ const BulkBroadcast: React.FC = () => {
             break;
           }
 
-          // Convert leads to User format
-          users = (leads || []).map(lead => ({
-            id: '', // Leads don't have user IDs
-            email: lead.email || '',
-            name: lead.name || lead.email?.split('@')[0] || '',
-            phone: lead.phone || null,
-          }));
+          // Get all users who HAVE BUILD access (to filter them out)
+          const { hasBuildAccessIds, hasBuildAccessEmails } = await getUserBuildAccess();
+
+          // Convert leads to User format and filter out those who have paid
+          users = (leads || [])
+            .filter(lead => {
+              // Filter out leads whose email matches someone who has paid for BUILD
+              const leadEmail = lead.email?.toLowerCase().trim();
+              if (!leadEmail) return false; // Skip leads without email
+              
+              // Check if this lead's email is in the list of people who have paid
+              const hasPaid = hasBuildAccessEmails.has(leadEmail);
+              return !hasPaid; // Only include leads who HAVEN'T paid
+            })
+            .map(lead => ({
+              id: '', // Leads don't have user IDs
+              email: lead.email || '',
+              name: lead.name || lead.email?.split('@')[0] || '',
+              phone: lead.phone || null,
+            }));
 
           // Remove duplicates by email
           const uniqueUsers = new Map<string, User>();
