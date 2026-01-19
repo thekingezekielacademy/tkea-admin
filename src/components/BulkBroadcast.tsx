@@ -151,39 +151,24 @@ const BulkBroadcast: React.FC = () => {
 
       switch (group) {
         case 'hasnt_paid_build': {
-          // Users who don't have BUILD access (via either method)
-          const { data: allProfiles } = await supabase
-            .from('profiles')
-            .select('id, email, name, phone');
-
-          // Get all users who HAVE BUILD access
-          const { hasBuildAccessIds, hasBuildAccessEmails } = await getUserBuildAccess();
-
-          // Filter out users who have BUILD access
-          let profileUsers: User[] = [];
-          if (allProfiles) {
-            profileUsers = allProfiles.filter(profile => {
-              const hasAccess = hasBuildAccessIds.has(profile.id) || 
-                              hasBuildAccessEmails.has(profile.email?.toLowerCase().trim() || '');
-              return !hasAccess;
-            }) as User[];
-          }
-
-          // Get all leads from the leads table
-          const { data: leads } = await supabase
+          // Get all leads from the leads table ONLY
+          const { data: leads, error: leadsError } = await supabase
             .from('leads')
             .select('name, email, number');
 
+          if (leadsError) {
+            console.error('Error fetching leads:', leadsError);
+            users = [];
+            break;
+          }
+
           // Convert leads to User format
-          const leadUsers: User[] = (leads || []).map(lead => ({
+          users = (leads || []).map(lead => ({
             id: '', // Leads don't have user IDs
             email: lead.email || '',
             name: lead.name || lead.email?.split('@')[0] || '',
             phone: lead.number || null,
           }));
-
-          // Combine profile users and leads
-          users = [...profileUsers, ...leadUsers];
 
           // Remove duplicates by email
           const uniqueUsers = new Map<string, User>();
