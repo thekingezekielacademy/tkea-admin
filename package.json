@@ -17,7 +17,7 @@
     "dev:5001": "concurrently \"npm run server:5001\" \"npm run client\"",
     "dev:custom": "concurrently \"npm run server:5001\" \"npm run client:3001\"",
     "build": "cd king-ezekiel-academy-nextjs && npm run build",
-    "build:admin": "react-scripts build",
+    "build:admin": "CI=false react-scripts build",
     "install-client": "cd king-ezekiel-academy-nextjs && npm install",
     "install-server": "npm install",
     "install-all": "npm run install-server && npm run install-client",

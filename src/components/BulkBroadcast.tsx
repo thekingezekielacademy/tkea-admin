@@ -2,7 +2,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
-import ContactUploader from './ContactUploader';
+import ContactUploader, { Contact } from './ContactUploader';
 import TimeBasedGrouping from './TimeBasedGrouping';
 import CategoryManager from './CategoryManager';
 
@@ -36,7 +36,7 @@ const BulkBroadcast: React.FC = () => {
   // New state for enhanced features
   const [uploadedContacts, setUploadedContacts] = useState<Contact[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const [selectedLeads, setSelectedLeads] = useState<User[]>([]);
+  const [selectedLeads, setSelectedLeads] = useState<Array<{id: string; name: string; email: string; phone: string | null; created_at: string}>>([]);
   const [useTimeBasedGrouping, setUseTimeBasedGrouping] = useState(false);
   const [useUploadedContacts, setUseUploadedContacts] = useState(false);
   
@@ -508,7 +508,7 @@ const BulkBroadcast: React.FC = () => {
           id: lead.id || '',
           email: lead.email,
           name: lead.name || lead.email.split('@')[0],
-          phone: lead.phone
+          phone: lead.phone || null
         }));
       } else if (useUploadedContacts) {
         // Use uploaded contacts (filtered by selected categories)

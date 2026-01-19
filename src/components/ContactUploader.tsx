@@ -1,9 +1,10 @@
 import React, { useState, useCallback } from 'react';
 import Papa from 'papaparse';
+// @ts-ignore - XLSX has dynamic requires
 import * as XLSX from 'xlsx';
 import { supabase } from '../lib/supabase';
 
-interface Contact {
+export interface Contact {
   name?: string;
   email?: string;
   phone?: string;
@@ -210,7 +211,11 @@ const ContactUploader: React.FC<ContactUploaderProps> = ({ onUploadComplete, typ
       setError('');
 
       // Generate upload batch ID
-      const uploadBatchId = crypto.randomUUID();
+      const uploadBatchId = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        const r = Math.random() * 16 | 0;
+        const v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+      });
 
       // Prepare contacts for insertion (use allContacts, not just preview)
       const contactsToInsert = allContacts.map(contact => ({
