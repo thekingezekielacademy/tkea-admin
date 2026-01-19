@@ -154,7 +154,7 @@ const BulkBroadcast: React.FC = () => {
           // Get all leads from the leads table ONLY
           const { data: leads, error: leadsError } = await supabase
             .from('leads')
-            .select('name, email, number');
+            .select('name, email, phone');
 
           if (leadsError) {
             console.error('Error fetching leads:', leadsError);
@@ -167,7 +167,7 @@ const BulkBroadcast: React.FC = () => {
             id: '', // Leads don't have user IDs
             email: lead.email || '',
             name: lead.name || lead.email?.split('@')[0] || '',
-            phone: lead.number || null,
+            phone: lead.phone || null,
           }));
 
           // Remove duplicates by email
