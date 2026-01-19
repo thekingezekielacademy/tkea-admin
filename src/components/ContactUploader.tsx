@@ -19,6 +19,7 @@ const ContactUploader: React.FC<ContactUploaderProps> = ({ onUploadComplete, typ
   const [dragging, setDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [preview, setPreview] = useState<Contact[]>([]);
+  const [allContacts, setAllContacts] = useState<Contact[]>([]);
   const [error, setError] = useState('');
   const [category, setCategory] = useState('');
 
@@ -172,6 +173,7 @@ const ContactUploader: React.FC<ContactUploaderProps> = ({ onUploadComplete, typ
         throw new Error('Unsupported file format. Please upload CSV or Excel file.');
       }
 
+      setAllContacts(contacts); // Store all contacts
       setPreview(contacts.slice(0, 10)); // Show first 10 for preview
       setUploading(false);
     } catch (err: any) {
@@ -198,7 +200,7 @@ const ContactUploader: React.FC<ContactUploaderProps> = ({ onUploadComplete, typ
   }, [handleFile]);
 
   const handleConfirm = useCallback(async () => {
-    if (preview.length === 0) {
+    if (allContacts.length === 0) {
       setError('No contacts to upload');
       return;
     }
@@ -210,8 +212,8 @@ const ContactUploader: React.FC<ContactUploaderProps> = ({ onUploadComplete, typ
       // Generate upload batch ID
       const uploadBatchId = crypto.randomUUID();
 
-      // Prepare contacts for insertion
-      const contactsToInsert = preview.map(contact => ({
+      // Prepare contacts for insertion (use allContacts, not just preview)
+      const contactsToInsert = allContacts.map(contact => ({
         name: contact.name || null,
         email: contact.email || null,
         phone: contact.phone || null,
@@ -238,10 +240,11 @@ const ContactUploader: React.FC<ContactUploaderProps> = ({ onUploadComplete, typ
       }
 
       // Call completion callback
-      onUploadComplete(preview, category || undefined);
+      onUploadComplete(allContacts, category || undefined);
       
       // Reset form
       setPreview([]);
+      setAllContacts([]);
       setCategory('');
       setUploading(false);
 
@@ -318,7 +321,7 @@ const ContactUploader: React.FC<ContactUploaderProps> = ({ onUploadComplete, typ
         <div className="border rounded-lg p-4 bg-gray-50">
           <div className="flex items-center justify-between mb-3">
             <h3 className="font-semibold text-gray-900">
-              Preview ({preview.length} contacts)
+              Preview ({allContacts.length} total contacts, showing first {preview.length})
             </h3>
             <button
               onClick={handleConfirm}
