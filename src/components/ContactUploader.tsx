@@ -27,14 +27,19 @@ const ContactUploader: React.FC<ContactUploaderProps> = ({ onUploadComplete, typ
   const validateContact = (contact: any, index: number): Contact | null => {
     const validated: Contact = {};
 
-    // Name (optional)
+    // Name (optional) - prioritize "Name" column, ignore "First Name" and "Last Name"
     if (contact.name) validated.name = String(contact.name).trim();
     if (contact.Name) validated.name = String(contact.Name).trim();
     if (contact.NAME) validated.name = String(contact.NAME).trim();
+    // Don't combine First Name + Last Name, just use Name column
 
     // Email (required for email type, optional for SMS)
-    if (contact.email || contact.Email || contact.EMAIL) {
-      const email = String(contact.email || contact.Email || contact.EMAIL).trim().toLowerCase();
+    // Check for "Email 1", "Email", etc.
+    const emailValue = contact['Email 1'] || contact['email 1'] || contact['EMAIL 1'] ||
+                       contact.email || contact.Email || contact.EMAIL;
+    
+    if (emailValue) {
+      const email = String(emailValue).trim().toLowerCase();
       if (email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
         validated.email = email;
       } else if (type === 'email' && !validated.email) {
@@ -47,11 +52,16 @@ const ContactUploader: React.FC<ContactUploaderProps> = ({ onUploadComplete, typ
     }
 
     // Phone (required for SMS type, optional for email)
-    if (contact.phone || contact.Phone || contact.PHONE || contact.number || contact.Number || contact.NUMBER) {
-      const phone = String(
-        contact.phone || contact.Phone || contact.PHONE || 
-        contact.number || contact.Number || contact.NUMBER
-      ).trim();
+    // Check for "Phone 1", "Phone 2", "Phone 3", "Phone 4" and pick the first available one
+    const phoneValue = contact['Phone 1'] || contact['phone 1'] || contact['PHONE 1'] ||
+                       contact['Phone 2'] || contact['phone 2'] || contact['PHONE 2'] ||
+                       contact['Phone 3'] || contact['phone 3'] || contact['PHONE 3'] ||
+                       contact['Phone 4'] || contact['phone 4'] || contact['PHONE 4'] ||
+                       contact.phone || contact.Phone || contact.PHONE || 
+                       contact.number || contact.Number || contact.NUMBER;
+    
+    if (phoneValue) {
+      const phone = String(phoneValue).trim();
       // Basic phone validation (at least 10 digits)
       const digitsOnly = phone.replace(/\D/g, '');
       if (digitsOnly.length >= 10) {
@@ -259,7 +269,7 @@ const ContactUploader: React.FC<ContactUploaderProps> = ({ onUploadComplete, typ
       setError(err.message || 'Failed to save contacts');
       setUploading(false);
     }
-  }, [preview, category, onUploadComplete]);
+  }, [allContacts, category, onUploadComplete]);
 
   return (
     <div className="space-y-4">
