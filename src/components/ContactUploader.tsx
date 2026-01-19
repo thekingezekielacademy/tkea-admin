@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
+import { supabase } from '../lib/supabase';
 
 interface Contact {
   name?: string;
@@ -196,17 +197,60 @@ const ContactUploader: React.FC<ContactUploaderProps> = ({ onUploadComplete, typ
     }
   }, [handleFile]);
 
-  const handleConfirm = useCallback(() => {
+  const handleConfirm = useCallback(async () => {
     if (preview.length === 0) {
       setError('No contacts to upload');
       return;
     }
 
-    // Get all contacts (not just preview)
-    // For now, we'll use preview. In production, you'd want to store all contacts
-    onUploadComplete(preview, category || undefined);
-    setPreview([]);
-    setCategory('');
+    try {
+      setUploading(true);
+      setError('');
+
+      // Generate upload batch ID
+      const uploadBatchId = crypto.randomUUID();
+
+      // Prepare contacts for insertion
+      const contactsToInsert = preview.map(contact => ({
+        name: contact.name || null,
+        email: contact.email || null,
+        phone: contact.phone || null,
+        category: category || contact.category || null,
+        source: 'upload',
+        upload_batch_id: uploadBatchId,
+        metadata: {}
+      }));
+
+      // Insert in batches (Supabase limit is 1000 rows)
+      const batchSize = 1000;
+      let insertedCount = 0;
+
+      for (let i = 0; i < contactsToInsert.length; i += batchSize) {
+        const batch = contactsToInsert.slice(i, i + batchSize);
+        const { error: insertError } = await supabase
+          .from('broadcast_contacts')
+          .insert(batch);
+
+        if (insertError) {
+          throw new Error(`Failed to save batch: ${insertError.message}`);
+        }
+        insertedCount += batch.length;
+      }
+
+      // Call completion callback
+      onUploadComplete(preview, category || undefined);
+      
+      // Reset form
+      setPreview([]);
+      setCategory('');
+      setUploading(false);
+
+      // Show success (you might want to use a toast notification instead)
+      alert(`✅ Successfully saved ${insertedCount} contacts!`);
+    } catch (err: any) {
+      setError(err.message || 'Failed to save contacts');
+      setUploading(false);
+    }
   }, [preview, category, onUploadComplete]);
 
   return (
