@@ -28,10 +28,21 @@ const BulkBroadcast: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'sms' | 'email'>('email');
   const [selectedGroup, setSelectedGroup] = useState<UserGroup | ''>('');
   const [emailSubject, setEmailSubject] = useState('');
-  const [emailBody, setEmailBody] = useState('');
+  const [emailFirstSentence, setEmailFirstSentence] = useState('');
+  const [emailSecondSentence, setEmailSecondSentence] = useState('');
+  const [emailSoftLink, setEmailSoftLink] = useState('');
+  const [emailSoftLinkText, setEmailSoftLinkText] = useState('');
+  const [emailSupportLine, setEmailSupportLine] = useState('');
+  const [emailButtonText, setEmailButtonText] = useState('');
+  const [emailButtonLink, setEmailButtonLink] = useState('');
   const [smsBody, setSmsBody] = useState('');
   const [sendEmail, setSendEmail] = useState(true);
   const [sendSMS, setSendSMS] = useState(false);
+  const [sendTelegram, setSendTelegram] = useState(false);
+  const [telegramTitle, setTelegramTitle] = useState('');
+  const [telegramDescription, setTelegramDescription] = useState('');
+  const [telegramButtonText, setTelegramButtonText] = useState('');
+  const [telegramButtonLink, setTelegramButtonLink] = useState('');
   
   // New state for enhanced features
   const [uploadedContacts, setUploadedContacts] = useState<Contact[]>([]);
@@ -419,10 +430,52 @@ const BulkBroadcast: React.FC = () => {
     }
   }, [selectedGroup, fetchUsersByGroup]);
 
+  // Generate inbox-safe email template
+  const generateEmailHTML = useCallback((userName: string, userEmail: string): string => {
+    const brandName = 'The King Ezekiel Academy';
+    
+    let html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333333; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #ffffff;">
+  <div style="padding: 0;">
+    <p style="font-size: 16px; color: #333333; margin: 0 0 16px 0;">Hi ${userName},</p>
+    
+    ${emailFirstSentence ? `<p style="font-size: 16px; color: #333333; margin: 0 0 16px 0;">${emailFirstSentence}</p>` : ''}
+    
+    ${emailSecondSentence ? `<p style="font-size: 16px; color: #333333; margin: 0 0 16px 0;">${emailSecondSentence}</p>` : ''}
+    
+    ${emailSoftLink && emailSoftLinkText ? `<p style="font-size: 16px; color: #333333; margin: 0 0 16px 0;"><a href="${emailSoftLink}" style="color: #0066cc; text-decoration: underline;">${emailSoftLinkText}</a></p>` : ''}
+    
+    ${emailSupportLine ? `<p style="font-size: 16px; color: #333333; margin: 0 0 24px 0;">${emailSupportLine}</p>` : ''}
+    
+    ${emailButtonText && emailButtonLink ? `
+    <div style="text-align: center; margin: 24px 0;">
+      <a href="${emailButtonLink}" style="background-color: #0066cc; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block; font-size: 16px; font-weight: 500;">${emailButtonText}</a>
+    </div>
+    ` : ''}
+    
+    <p style="font-size: 14px; color: #666666; margin: 24px 0 0 0; border-top: 1px solid #eeeeee; padding-top: 16px;">
+      — ${brandName}
+    </p>
+  </div>
+</body>
+</html>
+    `.trim();
+    
+    return html;
+  }, [emailFirstSentence, emailSecondSentence, emailSoftLink, emailSoftLinkText, emailSupportLine, emailButtonText, emailButtonLink]);
+
   // Send email to a user
   const sendEmailToUser = useCallback(async (userEmail: string, userName: string): Promise<boolean> => {
     try {
       const apiUrl = `${window.location.origin}/api/send-email`;
+      
+      const html = generateEmailHTML(userName, userEmail);
       
       const response = await fetch(apiUrl, {
         method: 'POST',
@@ -432,7 +485,7 @@ const BulkBroadcast: React.FC = () => {
         body: JSON.stringify({
           to: userEmail,
           subject: emailSubject,
-          html: emailBody.replace(/\{name\}/g, userName).replace(/\{email\}/g, userEmail),
+          html: html,
         }),
       });
 
@@ -442,7 +495,7 @@ const BulkBroadcast: React.FC = () => {
       console.error('Error sending email:', err);
       return false;
     }
-  }, [emailSubject, emailBody]);
+  }, [emailSubject, generateEmailHTML]);
 
   // Send SMS to a user
   const sendSMSToUser = useCallback(async (userPhone: string, userName: string): Promise<boolean> => {
@@ -470,6 +523,32 @@ const BulkBroadcast: React.FC = () => {
     }
   }, [smsBody]);
 
+  // Send Telegram broadcast
+  const sendTelegramBroadcast = useCallback(async (): Promise<boolean> => {
+    try {
+      const apiUrl = `${window.location.origin}/api/send-telegram`;
+      
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: telegramTitle,
+          description: telegramDescription,
+          buttonText: telegramButtonText || undefined,
+          buttonLink: telegramButtonLink || undefined,
+        }),
+      });
+
+      const data = await response.json();
+      return data.success === true;
+    } catch (err) {
+      console.error('Error sending Telegram:', err);
+      return false;
+    }
+  }, [telegramTitle, telegramDescription, telegramButtonText, telegramButtonLink]);
+
   // Send broadcast
   const handleSendBroadcast = useCallback(async () => {
     // Validate selection
@@ -478,18 +557,23 @@ const BulkBroadcast: React.FC = () => {
       return;
     }
 
-    if (!sendEmail && !sendSMS) {
-      setError('Please select at least one delivery method (Email or SMS)');
+    if (!sendEmail && !sendSMS && !sendTelegram) {
+      setError('Please select at least one delivery method (Email, SMS, or Telegram)');
       return;
     }
 
-    if (sendEmail && (!emailSubject || !emailBody)) {
-      setError('Email subject and body are required');
+    if (sendEmail && (!emailSubject || !emailFirstSentence || !emailSecondSentence)) {
+      setError('Email subject, first sentence, and second sentence are required');
       return;
     }
 
     if (sendSMS && !smsBody) {
       setError('SMS message is required');
+      return;
+    }
+
+    if (sendTelegram && (!telegramTitle || !telegramDescription)) {
+      setError('Telegram title and description are required');
       return;
     }
 
@@ -559,12 +643,18 @@ const BulkBroadcast: React.FC = () => {
         return;
       }
 
+      // Send Telegram broadcast first (sends to groups, not individual users)
+      let telegramSuccess = true;
+      if (sendTelegram) {
+        telegramSuccess = await sendTelegramBroadcast();
+      }
+
       setProgress({ sent: 0, total: users.length, failed: 0 });
 
       let sentCount = 0;
       let failedCount = 0;
 
-      // Send to each user
+      // Send to each user (Email and SMS)
       for (const user of users) {
         try {
           let emailSuccess = true;
@@ -592,16 +682,25 @@ const BulkBroadcast: React.FC = () => {
         }
       }
 
+      // Build result message
+      const parts = [];
+      if (sendTelegram) {
+        parts.push(`Telegram: ${telegramSuccess ? '✅ Sent' : '❌ Failed'}`);
+      }
+      if (sendEmail || sendSMS) {
+        parts.push(`Email/SMS: ${sentCount} sent, ${failedCount} failed out of ${users.length} users`);
+      }
+
       setResults({
-        success: failedCount === 0,
-        message: `Broadcast completed! Sent: ${sentCount}, Failed: ${failedCount} out of ${users.length} users.`,
+        success: failedCount === 0 && telegramSuccess,
+        message: `Broadcast completed! ${parts.join(' | ')}`,
       });
     } catch (err: any) {
       setError(err.message || 'Failed to send broadcast');
     } finally {
       setSending(false);
     }
-  }, [selectedGroup, sendEmail, sendSMS, emailSubject, emailBody, smsBody, fetchUsersByGroup, sendEmailToUser, sendSMSToUser]);
+  }, [selectedGroup, sendEmail, sendSMS, sendTelegram, emailSubject, emailFirstSentence, emailSecondSentence, emailSoftLink, emailSoftLinkText, emailSupportLine, emailButtonText, emailButtonLink, smsBody, telegramTitle, telegramDescription, telegramButtonText, telegramButtonLink, fetchUsersByGroup, sendEmailToUser, sendSMSToUser, sendTelegramBroadcast, useTimeBasedGrouping, useUploadedContacts, selectedLeads, activeTab, uploadedContacts, selectedCategories]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 pt-24 pb-8">
@@ -959,6 +1058,19 @@ const BulkBroadcast: React.FC = () => {
                   <p className="text-sm text-gray-600">Send SMS messages to users (requires phone number)</p>
                 </div>
               </label>
+
+              <label className="flex items-center p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
+                <input
+                  type="checkbox"
+                  checked={sendTelegram}
+                  onChange={(e) => setSendTelegram(e.target.checked)}
+                  className="mr-3"
+                />
+                <div className="flex-1">
+                  <p className="font-medium text-gray-900">Send Telegram</p>
+                  <p className="text-sm text-gray-600">Send Telegram messages to configured groups/channels</p>
+                </div>
+              </label>
             </div>
           </div>
 
@@ -969,27 +1081,109 @@ const BulkBroadcast: React.FC = () => {
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Email Subject
+                    Subject <span className="text-red-500">*</span>
+                    <span className="text-xs text-gray-500 ml-2">(Short. Neutral. Informational.)</span>
                   </label>
                   <input
                     type="text"
                     value={emailSubject}
                     onChange={(e) => setEmailSubject(e.target.value)}
-                    placeholder="Enter email subject"
+                    placeholder="e.g., Important Update"
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Email Body (HTML supported, use {'{name}'} for user name, {'{email}'} for email)
+                    First Sentence <span className="text-red-500">*</span>
                   </label>
-                  <textarea
-                    value={emailBody}
-                    onChange={(e) => setEmailBody(e.target.value)}
-                    placeholder="Enter email body..."
-                    rows={8}
+                  <input
+                    type="text"
+                    value={emailFirstSentence}
+                    onChange={(e) => setEmailFirstSentence(e.target.value)}
+                    placeholder="One clear sentence."
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                   />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Second Sentence <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={emailSecondSentence}
+                    onChange={(e) => setEmailSecondSentence(e.target.value)}
+                    placeholder="Another helpful sentence."
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Soft Link Text (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      value={emailSoftLinkText}
+                      onChange={(e) => setEmailSoftLinkText(e.target.value)}
+                      placeholder="e.g., Learn more"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Soft Link URL (Optional - not payment)
+                    </label>
+                    <input
+                      type="url"
+                      value={emailSoftLink}
+                      onChange={(e) => setEmailSoftLink(e.target.value)}
+                      placeholder="https://example.com"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Support / Contact Line (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={emailSupportLine}
+                    onChange={(e) => setEmailSupportLine(e.target.value)}
+                    placeholder="e.g., Need help? Contact us at support@example.com"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Button Text (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      value={emailButtonText}
+                      onChange={(e) => setEmailButtonText(e.target.value)}
+                      placeholder="e.g., Get Started"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Button Link (Optional)
+                    </label>
+                    <input
+                      type="url"
+                      value={emailButtonLink}
+                      onChange={(e) => setEmailButtonLink(e.target.value)}
+                      placeholder="https://example.com"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    />
+                  </div>
+                </div>
+                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-sm text-blue-900">
+                    <strong>Template Format:</strong> Subject → Hi {`{name}`}, → First Sentence → Second Sentence → Optional Soft Link → Support Line → Button → — Brand
+                  </p>
                 </div>
               </div>
             </div>
@@ -1014,6 +1208,72 @@ const BulkBroadcast: React.FC = () => {
                 <p className="mt-2 text-sm text-gray-500">
                   {smsBody.length}/160 characters
                 </p>
+              </div>
+            </div>
+          )}
+
+          {/* Telegram Composition */}
+          {sendTelegram && (
+            <div className="mb-8">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">Step 5: Compose Telegram Message</h2>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Title <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={telegramTitle}
+                    onChange={(e) => setTelegramTitle(e.target.value)}
+                    placeholder="Enter message title (will be bold)"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  />
+                  <p className="mt-1 text-xs text-gray-500">This will appear as bold text at the top</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Description <span className="text-red-500">*</span>
+                  </label>
+                  <textarea
+                    value={telegramDescription}
+                    onChange={(e) => setTelegramDescription(e.target.value)}
+                    placeholder="Enter message description..."
+                    rows={6}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  />
+                  <p className="mt-1 text-xs text-gray-500">Supports Markdown formatting (bold, italic, links)</p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Button Text (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      value={telegramButtonText}
+                      onChange={(e) => setTelegramButtonText(e.target.value)}
+                      placeholder="e.g., Learn More"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Button Link (Optional)
+                    </label>
+                    <input
+                      type="url"
+                      value={telegramButtonLink}
+                      onChange={(e) => setTelegramButtonLink(e.target.value)}
+                      placeholder="https://example.com"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    />
+                  </div>
+                </div>
+                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-sm text-blue-900">
+                    <strong>Note:</strong> Telegram messages will be sent to all configured Telegram groups/channels (set via <code className="bg-blue-100 px-1 rounded">TELEGRAM_GROUP_ID</code> environment variable).
+                  </p>
+                </div>
               </div>
             </div>
           )}
@@ -1043,7 +1303,7 @@ const BulkBroadcast: React.FC = () => {
           <div className="flex gap-4">
             <button
               onClick={handleSendBroadcast}
-              disabled={sending || !selectedGroup || (!sendEmail && !sendSMS)}
+              disabled={sending || (!selectedGroup && !useTimeBasedGrouping && !useUploadedContacts) || (!sendEmail && !sendSMS && !sendTelegram)}
               className="flex-1 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
             >
               {sending ? 'Sending...' : 'Send Broadcast'}
