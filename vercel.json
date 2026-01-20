@@ -25,6 +25,10 @@
     {
       "path": "/api/cron/batch-class-notifications",
       "schedule": "* * * * *"
+    },
+    {
+      "path": "/api/cron/live-booth-reminders",
+      "schedule": "*/5 * * * *"
     }
   ]
 }
