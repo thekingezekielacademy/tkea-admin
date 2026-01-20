@@ -62,8 +62,8 @@ export default async function handler(req, res) {
       'start': 0                           // class_start
     };
 
-    // Get upcoming sessions in the next 25 hours
-    const futureTime = new Date(now.getTime() + 25 * 60 * 60 * 1000);
+    // Get upcoming sessions in the next 48 hours (since cron runs hourly, check wider window)
+    const futureTime = new Date(now.getTime() + 48 * 60 * 60 * 1000);
     
     const { data: upcomingSessions, error: sessionsError } = await supabaseAdmin
       .from('class_sessions')
