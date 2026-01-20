@@ -12,6 +12,20 @@
       "source": "/(.*)",
       "destination": "/index.html"
     }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/create-batch",
+      "schedule": "0 0 * * 1-5"
+    },
+    {
+      "path": "/api/cron/generate-batch-sessions",
+      "schedule": "0 0 * * *"
+    },
+    {
+      "path": "/api/cron/batch-class-notifications",
+      "schedule": "* * * * *"
+    }
   ]
 }
 
