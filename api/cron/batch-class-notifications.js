@@ -122,30 +122,39 @@ export default async function handler(req, res) {
       const sessionTime = new Date(session.scheduled_datetime);
       const timeUntilSession = sessionTime.getTime() - now.getTime();
 
+      // Check if session is today or in the future
+      const sessionIsToday = new Date(session.scheduled_datetime).toDateString() === today.toDateString();
+      const sessionIsFuture = timeUntilSession > 0;
+      const sessionCreatedToday = session.created_at && 
+        new Date(session.created_at).toDateString() === today.toDateString();
+
       // Check which notifications should be sent
       for (const [notificationType, msBefore] of Object.entries(notificationTimings)) {
         // Check if it's time to send this notification (within a 5-minute window)
         const windowStart = msBefore - 5 * 60 * 1000; // 5 minutes before target time
         const windowEnd = msBefore + 5 * 60 * 1000; // 5 minutes after target time
-
-        // Special handling: If session was created today and notification time has passed,
-        // send immediate notification (for sessions created today, send all notifications immediately)
-        const sessionCreatedToday = session.created_at && 
-          new Date(session.created_at).toDateString() === today.toDateString();
-        const sessionIsToday = new Date(session.scheduled_datetime).toDateString() === today.toDateString();
         const notificationTimeHasPassed = timeUntilSession < windowStart;
-        
-        // Send if:
-        // 1. Normal timing window (within 5 min of target time)
-        // 2. OR session created today and notification time passed (send immediately)
-        // 3. OR session is today and we're within 3 hours (send 3h and 30m notifications)
-        const isNormalTiming = timeUntilSession >= windowStart && timeUntilSession <= windowEnd;
-        const isLateNotification = sessionCreatedToday && notificationTimeHasPassed && timeUntilSession > 0;
-        const isTodaySession = sessionIsToday && timeUntilSession > 0 && 
-          ((notificationType === '3_hours' && timeUntilSession <= 3 * 60 * 60 * 1000) ||
-           (notificationType === '30_minutes' && timeUntilSession <= 30 * 60 * 1000));
 
-        if (isNormalTiming || isLateNotification || isTodaySession) {
+        // Determine if notification should be sent:
+        // 1. Normal timing: within 5-minute window of target time
+        // 2. Session created today: send ALL notifications immediately (even if timing passed)
+        // 3. Session is today: send remaining notifications (3h, 30m) if session hasn't started
+        const isNormalTiming = timeUntilSession >= windowStart && timeUntilSession <= windowEnd;
+        
+        // CRITICAL: If session was created today, send ALL notifications immediately
+        // This handles the case where sessions are created on the same day they start
+        const shouldSendImmediately = sessionCreatedToday && 
+          sessionIsFuture && // Session hasn't started yet
+          !isNormalTiming; // Don't double-send if already in normal window
+
+        // For today's sessions: send 3h and 30m notifications if we're within the time window
+        const shouldSendTodayNotifications = sessionIsToday && 
+          sessionIsFuture &&
+          ((notificationType === '3_hours' && timeUntilSession <= 3 * 60 * 60 * 1000 && timeUntilSession > 0) ||
+           (notificationType === '30_minutes' && timeUntilSession <= 30 * 60 * 1000 && timeUntilSession > 0));
+
+        // Send notification if any condition is met
+        if (isNormalTiming || shouldSendImmediately || shouldSendTodayNotifications) {
           // Check if notification already sent
           const { data: existingNotification } = await supabaseAdmin
             .from('batch_class_notifications')
