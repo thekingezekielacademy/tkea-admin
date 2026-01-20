@@ -184,9 +184,10 @@ export default async function handler(req, res) {
           const courseTitle = session.live_classes?.courses?.title || 'Live Class';
           const lessonName = session.course_videos?.name || 'Class Session';
           
-          // Build class URL (adjust domain as needed)
+          // Build class URL - direct link to the specific session
           const appUrl = process.env.APP_URL || process.env.REACT_APP_URL || 'https://app.thekingezekielacademy.com';
-          const classUrl = `${appUrl}/live-classes/session/${session.id}`;
+          const liveClassId = session.live_class_id;
+          const classUrl = `${appUrl}/live-classes/${liveClassId}/session/${session.id}`;
           const telegramChannel = process.env.TELEGRAM_CHANNEL || '@LIVECLASSREMINDER';
           
           // Support multiple groups/channels: comma-separated IDs or single ID
