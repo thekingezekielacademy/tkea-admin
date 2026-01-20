@@ -81,7 +81,10 @@ export default async function handler(req, res) {
     };
 
     // Get upcoming sessions in the next 6 days (to catch 5-day notifications)
+    // Also include sessions from today (in case they were just created)
     const futureTime = new Date(now.getTime() + 6 * 24 * 60 * 60 * 1000);
+    const todayStart = new Date(now);
+    todayStart.setHours(0, 0, 0, 0);
     
     const { data: upcomingSessions, error: sessionsError } = await supabaseAdmin
       .from('batch_class_sessions')
@@ -93,10 +96,11 @@ export default async function handler(req, res) {
         session_title,
         scheduled_datetime,
         session_type,
+        created_at,
         batches!inner(batch_number, start_date)
       `)
       .eq('status', 'scheduled')
-      .gte('scheduled_datetime', now.toISOString())
+      .gte('scheduled_datetime', todayStart.toISOString()) // Include today's sessions
       .lte('scheduled_datetime', futureTime.toISOString())
       .order('scheduled_datetime', { ascending: true });
 
@@ -124,7 +128,24 @@ export default async function handler(req, res) {
         const windowStart = msBefore - 5 * 60 * 1000; // 5 minutes before target time
         const windowEnd = msBefore + 5 * 60 * 1000; // 5 minutes after target time
 
-        if (timeUntilSession >= windowStart && timeUntilSession <= windowEnd) {
+        // Special handling: If session was created today and notification time has passed,
+        // send immediate notification (for sessions created today, send all notifications immediately)
+        const sessionCreatedToday = session.created_at && 
+          new Date(session.created_at).toDateString() === today.toDateString();
+        const sessionIsToday = new Date(session.scheduled_datetime).toDateString() === today.toDateString();
+        const notificationTimeHasPassed = timeUntilSession < windowStart;
+        
+        // Send if:
+        // 1. Normal timing window (within 5 min of target time)
+        // 2. OR session created today and notification time passed (send immediately)
+        // 3. OR session is today and we're within 3 hours (send 3h and 30m notifications)
+        const isNormalTiming = timeUntilSession >= windowStart && timeUntilSession <= windowEnd;
+        const isLateNotification = sessionCreatedToday && notificationTimeHasPassed && timeUntilSession > 0;
+        const isTodaySession = sessionIsToday && timeUntilSession > 0 && 
+          ((notificationType === '3_hours' && timeUntilSession <= 3 * 60 * 60 * 1000) ||
+           (notificationType === '30_minutes' && timeUntilSession <= 30 * 60 * 1000));
+
+        if (isNormalTiming || isLateNotification || isTodaySession) {
           // Check if notification already sent
           const { data: existingNotification } = await supabaseAdmin
             .from('batch_class_notifications')
