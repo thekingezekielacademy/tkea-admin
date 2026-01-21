@@ -188,7 +188,23 @@ export default async function handler(req, res) {
         const shouldSendForVerySoonSessions = sessionIsVerySoon && sessionIsFuture;
         
         // Send notification if any condition is met
-        if (isNormalTiming || shouldSendImmediately || shouldSendForSoonSessions || shouldSendForVerySoonSessions) {
+        // SIMPLIFIED: For sessions happening in next 24 hours, send notifications
+        // This ensures notifications are sent even if timing windows are missed
+        const sessionIsWithin24Hours = timeUntilSession > 0 && timeUntilSession <= 24 * 60 * 60 * 1000;
+        const shouldSendForUpcomingSessions = sessionIsWithin24Hours && 
+          (notificationType === '3_hours' || notificationType === '30_minutes' || notificationType === '24_hours');
+        
+        // Send notification if any condition is met
+        // Main condition: send if timing matches OR session is happening soon
+        const sessionIsInNext24Hours = timeUntilSession > 0 && timeUntilSession <= 24 * 60 * 60 * 1000;
+        const notificationMatchesTime = 
+          (notificationType === '30_minutes' && timeUntilSession <= 30 * 60 * 1000) ||
+          (notificationType === '3_hours' && timeUntilSession <= 3 * 60 * 60 * 1000) ||
+          (notificationType === '24_hours' && timeUntilSession <= 24 * 60 * 60 * 1000);
+        
+        const shouldSendSimple = sessionIsInNext24Hours && notificationMatchesTime;
+        
+        if (isNormalTiming || shouldSendImmediately || shouldSendForSoonSessions || shouldSendForVerySoonSessions || shouldSendForUpcomingSessions || shouldSendSimple) {
           // Check if notification already sent
           const { data: existingNotification } = await supabaseAdmin
             .from('batch_class_notifications')
@@ -197,8 +213,30 @@ export default async function handler(req, res) {
             .eq('notification_type', notificationType)
             .single();
 
+          // Check if notification already sent
+          const { data: existingNotification } = await supabaseAdmin
+            .from('batch_class_notifications')
+            .select('id, sent_at')
+            .eq('session_id', session.id)
+            .eq('notification_type', notificationType)
+            .single();
+
+          // Skip if already sent UNLESS session is happening very soon (within 3 hours)
+          // This allows re-sending for urgent sessions
           if (existingNotification) {
-            continue; // Already sent
+            const sessionIsVerySoon = timeUntilSession > 0 && timeUntilSession <= 3 * 60 * 60 * 1000;
+            if (!sessionIsVerySoon) {
+              continue; // Already sent and not urgent
+            }
+            // For urgent sessions, allow re-sending (but only once per hour)
+            if (existingNotification.sent_at) {
+              const sentTime = new Date(existingNotification.sent_at);
+              const timeSinceSent = now.getTime() - sentTime.getTime();
+              if (timeSinceSent < 60 * 60 * 1000) { // Less than 1 hour ago
+                continue; // Don't spam - wait at least 1 hour between sends
+              }
+            }
+          }
           }
 
           // Format date and time for notification
