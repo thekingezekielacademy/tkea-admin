@@ -183,7 +183,12 @@ export default async function handler(req, res) {
         const shouldSendImmediately = sessionCreatedToday && sessionIsFuture;
 
         // Send notification if any condition is met
-        if (isNormalTiming || shouldSendImmediately || shouldSendForSoonSessions) {
+                // EMERGENCY: If session is happening in next 3 hours, send notification NOW
+        const sessionIsVerySoon = timeUntilSession > 0 && timeUntilSession <= 3 * 60 * 60 * 1000;
+        const shouldSendForVerySoonSessions = sessionIsVerySoon && sessionIsFuture;
+        
+        // Send notification if any condition is met
+        if (isNormalTiming || shouldSendImmediately || shouldSendForSoonSessions || shouldSendForVerySoonSessions) {
           // Check if notification already sent
           const { data: existingNotification } = await supabaseAdmin
             .from('batch_class_notifications')
