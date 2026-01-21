@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../lib/supabase';
 
 interface BatchClass {
   id: string;
@@ -44,15 +45,7 @@ const BatchClassesStatus: React.FC = () => {
       setLoading(true);
       setError('');
 
-      const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
-      const supabaseKey = process.env.REACT_APP_SUPABASE_ANON_KEY;
-      
-      if (!supabaseUrl || !supabaseKey) {
-        throw new Error('Supabase configuration missing. Please check environment variables.');
-      }
-
-      const { createClient } = await import('@supabase/supabase-js');
-      const supabase = createClient(supabaseUrl, supabaseKey);
+      // Use centralized Supabase client from lib/supabase.ts
 
       // Get batch classes
       const { data: batchClasses, error: batchClassesError } = await supabase
@@ -152,10 +145,6 @@ const BatchClassesStatus: React.FC = () => {
       setError('');
 
       // Get auth token from Supabase session
-      const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
-      const supabaseKey = process.env.REACT_APP_SUPABASE_ANON_KEY;
-      const { createClient } = await import('@supabase/supabase-js');
-      const supabase = createClient(supabaseUrl!, supabaseKey!);
       const { data: { session } } = await supabase.auth.getSession();
 
       const response = await fetch('/api/admin/batch-classes/kickstart', {
@@ -192,10 +181,6 @@ const BatchClassesStatus: React.FC = () => {
       setError('');
 
       // Get auth token from Supabase session
-      const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
-      const supabaseKey = process.env.REACT_APP_SUPABASE_ANON_KEY;
-      const { createClient } = await import('@supabase/supabase-js');
-      const supabase = createClient(supabaseUrl!, supabaseKey!);
       const { data: { session } } = await supabase.auth.getSession();
 
       const response = await fetch('/api/cron/generate-batch-sessions', {
