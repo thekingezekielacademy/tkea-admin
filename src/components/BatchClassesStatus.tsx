@@ -148,14 +148,30 @@ const BatchClassesStatus: React.FC = () => {
       const { data: { session } } = await supabase.auth.getSession();
 
       // Use Express server API URL for local development
-      const apiBaseUrl = process.env.REACT_APP_API_URL || 'http://localhost:5001';
-      const response = await fetch(`${apiBaseUrl}/api/admin/batch-classes/kickstart`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session?.access_token || ''}`
+      // Use relative URL in production, or explicit URL in development
+      const apiBaseUrl = process.env.REACT_APP_API_URL || 
+        (window.location.hostname === 'localhost' ? 'http://localhost:5001' : '');
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
+      
+      let response;
+      try {
+        response = await fetch(`${apiBaseUrl}/api/admin/batch-classes/kickstart`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session?.access_token || ''}`
+          },
+          signal: controller.signal
+        });
+      } catch (err) {
+        clearTimeout(timeoutId);
+        if (err.name === 'AbortError') {
+          throw new Error('Request timed out after 60 seconds. Please check server logs.');
         }
-      });
+        throw err;
+      }
+      clearTimeout(timeoutId);
 
       const result = await response.json();
 
@@ -186,7 +202,9 @@ const BatchClassesStatus: React.FC = () => {
       const { data: { session } } = await supabase.auth.getSession();
 
       // Use Express server API URL for local development
-      const apiBaseUrl = process.env.REACT_APP_API_URL || 'http://localhost:5001';
+      // Use relative URL in production, or explicit URL in development
+      const apiBaseUrl = process.env.REACT_APP_API_URL || 
+        (window.location.hostname === 'localhost' ? 'http://localhost:5001' : '');
       const response = await fetch(`${apiBaseUrl}/api/cron/generate-batch-sessions`, {
         method: 'POST',
         headers: {

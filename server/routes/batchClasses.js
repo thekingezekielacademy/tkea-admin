@@ -198,15 +198,7 @@ router.post("/kickstart", async (req, res) => {
     // Get all active batches with live_class info
     const { data: activeBatches } = await supabaseAdmin
       .from('batches')
-      .select(`
-        id, 
-        live_class_id,
-        class_name, 
-        start_date, 
-        start_day_of_week, 
-        batch_number,
-        live_classes!inner(course_id, title)
-      `)
+      .select('*')
       .eq('status', 'active');
 
     if (activeBatches && activeBatches.length > 0) {
@@ -252,7 +244,7 @@ router.post("/kickstart", async (req, res) => {
         }
 
         // Use course_id from live_class if available, otherwise from classConfig
-        const courseId = batch.live_classes?.course_id || classConfig?.course_id;
+        const courseId = null || classConfig?.course_id;
 
         // Get videos
         let videoId = null;
