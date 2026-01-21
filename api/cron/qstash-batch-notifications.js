@@ -90,28 +90,12 @@ export default async function handler(req, res) {
     const now = new Date();
     const today = new Date();
     const notificationsSent = {
-      '5_days': 0,
-      '48_hours': 0,
       '24_hours': 0,
-      '3_hours': 0,
-      '30_minutes': 0,
       errors: 0
     };
 
-    // Define notification timings (in milliseconds before class)
-    const notificationTimings = {
-      '5_days': 5 * 24 * 60 * 60 * 1000,      // 5 days
-      '48_hours': 48 * 60 * 60 * 1000,         // 48 hours
-      '24_hours': 24 * 60 * 60 * 1000,         // 24 hours
-      '3_hours': 3 * 60 * 60 * 1000,           // 3 hours
-      '30_minutes': 30 * 60 * 1000             // 30 minutes
-    };
-
-    // Get upcoming sessions in the next 6 days (to catch 5-day notifications)
-    // Also include sessions from today (in case they were just created)
-    const futureTime = new Date(now.getTime() + 6 * 24 * 60 * 60 * 1000);
-    const todayStart = new Date(now);
-    todayStart.setHours(0, 0, 0, 0);
+    // Get upcoming sessions in the next 7 days (matching manual script)
+    const futureTime = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
     
     const { data: upcomingSessions, error: sessionsError } = await supabaseAdmin
       .from('batch_class_sessions')
@@ -124,10 +108,10 @@ export default async function handler(req, res) {
         scheduled_datetime,
         session_type,
         created_at,
-        batches!inner(batch_number, start_date)
+        batches!inner(batch_number, start_date, live_class_id)
       `)
-      .eq('status', 'scheduled')
-      .gte('scheduled_datetime', todayStart.toISOString()) // Include today's sessions
+      .in('status', ['scheduled', 'in_progress'])
+      .gte('scheduled_datetime', now.toISOString())
       .lte('scheduled_datetime', futureTime.toISOString())
       .order('scheduled_datetime', { ascending: true });
 
@@ -144,180 +128,117 @@ export default async function handler(req, res) {
       });
     }
 
-    // Process each session
+    // SIMPLIFIED: Process each session - send ONE notification per session (like manual script)
+    // This matches the working manual script behavior
     for (const session of upcomingSessions) {
       const sessionTime = new Date(session.scheduled_datetime);
       const timeUntilSession = sessionTime.getTime() - now.getTime();
+      
+      // Only send for future sessions
+      if (timeUntilSession <= 0) {
+        continue; // Session already started or passed
+      }
 
-      // Check if session is today or in the future
-      const sessionIsToday = new Date(session.scheduled_datetime).toDateString() === today.toDateString();
-      const sessionIsFuture = timeUntilSession > 0;
-      const sessionCreatedToday = session.created_at && 
-        new Date(session.created_at).toDateString() === today.toDateString();
+      // Check if notification already sent for this session
+      // Use '24_hours' as the notification type (database constraint requires one of: 5_days, 48_hours, 24_hours, 3_hours, 30_minutes)
+      const notificationType = '24_hours'; // Single notification type per session
+      const { data: existingNotification } = await supabaseAdmin
+        .from('batch_class_notifications')
+        .select('id, sent_at')
+        .eq('session_id', session.id)
+        .eq('notification_type', notificationType)
+        .single();
 
-      // Check which notifications should be sent
-      for (const [notificationType, msBefore] of Object.entries(notificationTimings)) {
-        // Check if it's time to send this notification (within a 5-minute window)
-        const windowStart = msBefore - 5 * 60 * 1000; // 5 minutes before target time
-        const windowEnd = msBefore + 5 * 60 * 1000; // 5 minutes after target time
-        const notificationTimeHasPassed = timeUntilSession < windowStart;
-
-        // Determine if notification should be sent:
-        // 1. Normal timing: within 5-minute window of target time
-        // 2. Session created today: send ALL notifications immediately (even if timing passed)
-        // 3. Session is today: send remaining notifications (3h, 30m) if session hasn't started
-        const isNormalTiming = timeUntilSession >= windowStart && timeUntilSession <= windowEnd;
-        
-        // CRITICAL: If session was created today, send ALL notifications immediately
-        // This handles the case where sessions are created on the same day they start
-        // CRITICAL: Send notifications for sessions happening soon
-        // For sessions happening today or within next 24 hours: send remaining notifications
-        const sessionIsSoon = timeUntilSession > 0 && timeUntilSession <= 24 * 60 * 60 * 1000;
-        const shouldSendForSoonSessions = (sessionIsToday || sessionIsSoon) && 
-          sessionIsFuture &&
-          ((notificationType === '3_hours' && timeUntilSession <= 3 * 60 * 60 * 1000 && timeUntilSession > 0) ||
-           (notificationType === '30_minutes' && timeUntilSession <= 30 * 60 * 1000 && timeUntilSession > 0) ||
-           (notificationType === '24_hours' && timeUntilSession <= 24 * 60 * 60 * 1000 && timeUntilSession > 0));
-
-        // If session was created today, send ALL notifications immediately
-        const shouldSendImmediately = sessionCreatedToday && sessionIsFuture;
-
-        // Send notification if any condition is met
-                // EMERGENCY: If session is happening in next 3 hours, send notification NOW
-        const sessionIsVerySoon = timeUntilSession > 0 && timeUntilSession <= 3 * 60 * 60 * 1000;
-        const shouldSendForVerySoonSessions = sessionIsVerySoon && sessionIsFuture;
-        
-        // Send notification if any condition is met
-        // SIMPLIFIED: For sessions happening in next 24 hours, send notifications
-        // This ensures notifications are sent even if timing windows are missed
-        const sessionIsWithin24Hours = timeUntilSession > 0 && timeUntilSession <= 24 * 60 * 60 * 1000;
-        const shouldSendForUpcomingSessions = sessionIsWithin24Hours && 
-          (notificationType === '3_hours' || notificationType === '30_minutes' || notificationType === '24_hours');
-        
-        // SIMPLIFIED LOGIC: If session is in next 24 hours, send relevant notifications
-        // This ensures notifications are sent even if timing windows are missed
-        const sessionIsInNext24Hours = timeUntilSession > 0 && timeUntilSession <= 24 * 60 * 60 * 1000;
-        const shouldSendForUpcoming = sessionIsInNext24Hours && (
-          (notificationType === '30_minutes' && timeUntilSession <= 30 * 60 * 1000) ||
-          (notificationType === '3_hours' && timeUntilSession <= 3 * 60 * 60 * 1000) ||
-          (notificationType === '24_hours' && timeUntilSession <= 24 * 60 * 60 * 1000)
-        );
-        
-        // Send notification if any condition is met
-        if (isNormalTiming || shouldSendImmediately || shouldSendForSoonSessions || shouldSendForVerySoonSessions || shouldSendForUpcomingSessions || shouldSendForUpcoming) {
-          // Check if notification already sent
-          const { data: existingNotification } = await supabaseAdmin
-            .from('batch_class_notifications')
-            .select('id, sent_at')
-            .eq('session_id', session.id)
-            .eq('notification_type', notificationType)
-            .single();
-
-          // For sessions happening soon (within 24 hours), be more lenient
-          // Only skip if notification was sent very recently (within last 30 minutes)
-          if (existingNotification && existingNotification.sent_at) {
-            const sentTime = new Date(existingNotification.sent_at);
-            const timeSinceSent = now.getTime() - sentTime.getTime();
-            
-            // If session is very soon (within 3 hours), allow re-sending after 30 minutes
-            // Otherwise, skip if sent within last 30 minutes
-            const sessionIsVerySoon = timeUntilSession > 0 && timeUntilSession <= 3 * 60 * 60 * 1000;
-            const minWaitTime = sessionIsVerySoon ? 30 * 60 * 1000 : 30 * 60 * 1000; // 30 minutes for both
-            
-            if (timeSinceSent < minWaitTime) {
-              continue; // Don't spam - wait at least 30 minutes between sends
-            }
-          } else if (existingNotification && !existingNotification.sent_at) {
-            // Notification record exists but wasn't sent (failed) - allow retry
-            // Continue to send
-          }
-
-          // Format date and time for notification
-          const sessionDate = new Date(session.scheduled_datetime);
-          const dateStr = sessionDate.toLocaleDateString('en-US', { 
-            weekday: 'long', 
-            year: 'numeric', 
-            month: 'long', 
-            day: 'numeric' 
-          });
-          
-          const timeStr = sessionDate.toLocaleTimeString('en-US', { 
-            hour: 'numeric', 
-            minute: '2-digit',
-            hour12: true 
-          });
-
-          // Format session type
-          const sessionTypeFormatted = session.session_type.charAt(0).toUpperCase() + session.session_type.slice(1);
-
-          // Create notification message
-          const notificationMessage = `📅 Enrolment Update: A new session for ${session.class_name} is officially scheduled for ${dateStr} at ${timeStr} (${sessionTypeFormatted} session). Perfect for all new members!
-
-📚 Class ${session.session_number}: ${session.session_title}
-👥 Batch ${session.batches.batch_number}
-
-Join us and don't miss out! 🚀`;
-
-          // Send to all Telegram groups
-          let successCount = 0;
-          let failCount = 0;
-          const sentGroupIds = [];
-
-          for (const groupId of groupIds) {
-            try {
-              const telegramResponse = await fetch(`https://api.telegram.org/bot${telegramToken}/sendMessage`, {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                  chat_id: groupId,
-                  text: notificationMessage,
-                  parse_mode: 'Markdown',
-                  disable_web_page_preview: false
-                })
-              });
-
-              const telegramData = await telegramResponse.json();
-
-              if (telegramResponse.ok && telegramData.ok) {
-                successCount++;
-                sentGroupIds.push(groupId);
-                console.log(`✅ Telegram notification sent to group ${groupId} for session ${session.id} (${notificationType})`);
-              } else {
-                failCount++;
-                console.error(`❌ Telegram API error for group ${groupId}:`, telegramData.description || 'Unknown error');
-              }
-            } catch (error) {
-              failCount++;
-              console.error(`❌ Error sending to group ${groupId}:`, error.message);
-            }
-          }
-
-          // Record notification in database
-          const notificationStatus = successCount > 0 ? 'sent' : 'failed';
-          const errorMsg = failCount > 0 ? `Failed to send to ${failCount} group(s)` : null;
-
-          await supabaseAdmin
-            .from('batch_class_notifications')
-            .insert({
-              session_id: session.id,
-              notification_type: notificationType,
-              scheduled_send_time: new Date(now.getTime() + msBefore).toISOString(),
-              sent_at: notificationStatus === 'sent' ? new Date().toISOString() : null,
-              status: notificationStatus,
-              telegram_group_ids: sentGroupIds.join(','),
-              error_message: errorMsg
-            });
-
-          if (notificationStatus === 'sent') {
-            notificationsSent[notificationType]++;
-            console.log(`📤 Sent ${notificationType} notification for ${session.class_name} Class ${session.session_number} to ${successCount} group(s)`);
-          } else {
-            notificationsSent.errors++;
-            console.error(`❌ Failed to send ${notificationType} notification for session ${session.id}`);
-          }
+      // Skip if notification was sent within last 6 hours (to prevent spam)
+      if (existingNotification && existingNotification.sent_at) {
+        const sentTime = new Date(existingNotification.sent_at);
+        const timeSinceSent = now.getTime() - sentTime.getTime();
+        if (timeSinceSent < 6 * 60 * 60 * 1000) { // Less than 6 hours ago
+          continue; // Already sent recently
         }
+      }
+
+      // Calculate time until session
+      const hoursUntil = Math.floor(timeUntilSession / (1000 * 60 * 60));
+      const minutesUntil = Math.floor((timeUntilSession % (1000 * 60 * 60)) / (1000 * 60));
+      
+      const timeStr = hoursUntil > 0 
+        ? `Starts in ${hoursUntil} hour(s) ${minutesUntil} minute(s)`
+        : minutesUntil > 0 
+          ? `Starts in ${minutesUntil} minute(s)`
+          : 'Starting now!';
+
+      // Create notification message (matching manual script format)
+      const notificationMessage = `📚 **${session.class_name}**\n\n🎓 **Class ${session.session_number}**: ${session.session_title}\n\n⏰ **${sessionTime.toLocaleString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true })}**\n\n${timeStr}\n\n🔗 **Join Now**: https://app.thekingezekielacademy.com/live-classes/${session.batches?.live_class_id || 'batch'}/session/${session.id}`;
+
+      // Send to all Telegram groups
+      let successCount = 0;
+      let failCount = 0;
+      const sentGroupIds = [];
+
+      for (const groupId of groupIds) {
+        try {
+          const telegramResponse = await fetch(`https://api.telegram.org/bot${telegramToken}/sendMessage`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              chat_id: groupId,
+              text: notificationMessage,
+              parse_mode: 'Markdown',
+              disable_web_page_preview: false
+            })
+          });
+
+          const telegramData = await telegramResponse.json();
+
+          if (telegramResponse.ok && telegramData.ok) {
+            successCount++;
+            sentGroupIds.push(groupId);
+            console.log(`✅ Telegram notification sent to group ${groupId} for session ${session.id}`);
+          } else {
+            failCount++;
+            console.error(`❌ Telegram API error for group ${groupId}:`, telegramData.description || 'Unknown error');
+          }
+        } catch (error) {
+          failCount++;
+          console.error(`❌ Error sending to group ${groupId}:`, error.message);
+        }
+      }
+
+      // Record notification in database using UPSERT (handles UNIQUE constraint)
+      const notificationStatus = successCount > 0 ? 'sent' : 'failed';
+      const errorMsg = failCount > 0 ? `Failed to send to ${failCount} group(s)` : null;
+
+      try {
+        const { error: dbError } = await supabaseAdmin
+          .from('batch_class_notifications')
+          .upsert({
+            session_id: session.id,
+            notification_type: notificationType,
+            scheduled_send_time: sessionTime.toISOString(),
+            sent_at: notificationStatus === 'sent' ? new Date().toISOString() : null,
+            status: notificationStatus,
+            telegram_group_ids: sentGroupIds.join(','),
+            error_message: errorMsg
+          }, {
+            onConflict: 'session_id,notification_type'
+          });
+
+        if (dbError) {
+          console.error(`❌ Database error recording notification for session ${session.id}:`, dbError);
+        }
+      } catch (dbError) {
+        console.error(`❌ Error recording notification in database:`, dbError);
+      }
+
+      if (notificationStatus === 'sent') {
+        notificationsSent['24_hours']++;
+        console.log(`📤 Sent notification for ${session.class_name} Class ${session.session_number} to ${successCount} group(s)`);
+      } else {
+        notificationsSent.errors++;
+        console.error(`❌ Failed to send notification for session ${session.id}`);
       }
     }
 
