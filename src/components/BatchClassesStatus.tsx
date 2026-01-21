@@ -164,9 +164,9 @@ const BatchClassesStatus: React.FC = () => {
           },
           signal: controller.signal
         });
-      } catch (err) {
+      } catch (err: any) {
         clearTimeout(timeoutId);
-        if (err.name === 'AbortError') {
+        if (err?.name === 'AbortError') {
           throw new Error('Request timed out after 60 seconds. Please check server logs.');
         }
         throw err;
