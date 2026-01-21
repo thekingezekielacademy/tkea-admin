@@ -22,7 +22,7 @@ interface Session {
   id: string;
   batch_id: string;
   session_number: number;
-  session_date: string;
+  scheduled_date: string;
   session_type: string;
   scheduled_datetime: string;
 }
@@ -75,7 +75,7 @@ const BatchClassesStatus: React.FC = () => {
       const { data: todaySessions, error: todaySessionsError } = await supabase
         .from('batch_class_sessions')
         .select('*')
-        .eq('session_date', today)
+        .eq('scheduled_date', today)
         .order('scheduled_datetime', { ascending: true });
 
       if (todaySessionsError) {
@@ -89,8 +89,8 @@ const BatchClassesStatus: React.FC = () => {
       const { data: upcomingSessions, error: upcomingSessionsError } = await supabase
         .from('batch_class_sessions')
         .select('*')
-        .gte('session_date', today)
-        .lte('session_date', nextWeek.toISOString().split('T')[0])
+        .gte('scheduled_date', today)
+        .lte('scheduled_date', nextWeek.toISOString().split('T')[0])
         .order('scheduled_datetime', { ascending: true })
         .limit(20);
 
