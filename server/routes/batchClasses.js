@@ -244,7 +244,20 @@ router.post("/kickstart", async (req, res) => {
         }
 
         // Use course_id from live_class if available, otherwise from classConfig
-        const courseId = null || classConfig?.course_id;
+        // Fetch course_id from classConfig or live_classes
+        let courseId = classConfig?.course_id;
+        if (!courseId) {
+          // Try to get from live_classes
+          const { data: liveClass } = await supabaseAdmin
+            .from('live_classes')
+            .select('course_id')
+            .eq('title', batch.class_name)
+            .eq('is_active', true)
+            .single();
+          if (liveClass) {
+            courseId = liveClass.course_id;
+          }
+        }
 
         // Get videos
         let videoId = null;
