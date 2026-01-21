@@ -21,6 +21,7 @@ const lessonRoutes = require('./routes/lessons');
 const paymentRoutes = require('./routes/payments');
 const flutterwaveRoutes = require('./routes/flutterwave');
 const liveBoothRoutes = require('./routes/liveBooth');
+const batchClassesRoutes = require('./routes/batchClasses');
 const cronRoutes = require('./routes/cron');
 const emailRoutes = require('./routes/emails');
 // const paystackRoutes = require('./routes/paystack'); // Disabled - using Flutterwave instead
@@ -122,6 +123,7 @@ app.use('/api/lessons', lessonRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/flutterwave', flutterwaveRoutes);
 app.use('/api/admin/live-booth', liveBoothRoutes);
+app.use('/api/admin/batch-classes', batchClassesRoutes);
 app.use('/api/cron', cronRoutes);
 app.use('/api/emails', emailRoutes);
 // app.use('/api/paystack', paystackRoutes); // Disabled - using Flutterwave instead
