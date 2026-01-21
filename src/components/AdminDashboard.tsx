@@ -523,6 +523,20 @@ const AdminDashboard: React.FC = () => {
                 <p className="text-sm text-gray-600">Manage scheduled live classes</p>
               </div>
             </button>
+            <button
+              onClick={() => navigate('/admin/batch-classes-status')}
+              className="flex items-center space-x-3 p-4 border border-gray-200 rounded-lg hover:bg-teal-50 hover:border-teal-300 transition-colors text-left"
+            >
+              <div className="bg-teal-100 rounded-lg p-2">
+                <svg className="h-6 w-6 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                </svg>
+              </div>
+              <div>
+                <p className="font-medium text-gray-900">Batch Classes Status</p>
+                <p className="text-sm text-gray-600">Monitor and manage batch class system</p>
+              </div>
+            </button>
           </div>
         </div>
       </div>
