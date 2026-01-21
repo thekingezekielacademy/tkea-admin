@@ -194,25 +194,17 @@ export default async function handler(req, res) {
         const shouldSendForUpcomingSessions = sessionIsWithin24Hours && 
           (notificationType === '3_hours' || notificationType === '30_minutes' || notificationType === '24_hours');
         
-        // Send notification if any condition is met
-        // Main condition: send if timing matches OR session is happening soon
+        // SIMPLIFIED LOGIC: If session is in next 24 hours, send relevant notifications
+        // This ensures notifications are sent even if timing windows are missed
         const sessionIsInNext24Hours = timeUntilSession > 0 && timeUntilSession <= 24 * 60 * 60 * 1000;
-        const notificationMatchesTime = 
+        const shouldSendForUpcoming = sessionIsInNext24Hours && (
           (notificationType === '30_minutes' && timeUntilSession <= 30 * 60 * 1000) ||
           (notificationType === '3_hours' && timeUntilSession <= 3 * 60 * 60 * 1000) ||
-          (notificationType === '24_hours' && timeUntilSession <= 24 * 60 * 60 * 1000);
+          (notificationType === '24_hours' && timeUntilSession <= 24 * 60 * 60 * 1000)
+        );
         
-        const shouldSendSimple = sessionIsInNext24Hours && notificationMatchesTime;
-        
-        if (isNormalTiming || shouldSendImmediately || shouldSendForSoonSessions || shouldSendForVerySoonSessions || shouldSendForUpcomingSessions || shouldSendSimple) {
-          // Check if notification already sent
-          const { data: existingNotification } = await supabaseAdmin
-            .from('batch_class_notifications')
-            .select('id')
-            .eq('session_id', session.id)
-            .eq('notification_type', notificationType)
-            .single();
-
+        // Send notification if any condition is met
+        if (isNormalTiming || shouldSendImmediately || shouldSendForSoonSessions || shouldSendForVerySoonSessions || shouldSendForUpcomingSessions || shouldSendForUpcoming) {
           // Check if notification already sent
           const { data: existingNotification } = await supabaseAdmin
             .from('batch_class_notifications')
@@ -221,22 +213,23 @@ export default async function handler(req, res) {
             .eq('notification_type', notificationType)
             .single();
 
-          // Skip if already sent UNLESS session is happening very soon (within 3 hours)
-          // This allows re-sending for urgent sessions
-          if (existingNotification) {
+          // For sessions happening soon (within 24 hours), be more lenient
+          // Only skip if notification was sent very recently (within last 30 minutes)
+          if (existingNotification && existingNotification.sent_at) {
+            const sentTime = new Date(existingNotification.sent_at);
+            const timeSinceSent = now.getTime() - sentTime.getTime();
+            
+            // If session is very soon (within 3 hours), allow re-sending after 30 minutes
+            // Otherwise, skip if sent within last 30 minutes
             const sessionIsVerySoon = timeUntilSession > 0 && timeUntilSession <= 3 * 60 * 60 * 1000;
-            if (!sessionIsVerySoon) {
-              continue; // Already sent and not urgent
+            const minWaitTime = sessionIsVerySoon ? 30 * 60 * 1000 : 30 * 60 * 1000; // 30 minutes for both
+            
+            if (timeSinceSent < minWaitTime) {
+              continue; // Don't spam - wait at least 30 minutes between sends
             }
-            // For urgent sessions, allow re-sending (but only once per hour)
-            if (existingNotification.sent_at) {
-              const sentTime = new Date(existingNotification.sent_at);
-              const timeSinceSent = now.getTime() - sentTime.getTime();
-              if (timeSinceSent < 60 * 60 * 1000) { // Less than 1 hour ago
-                continue; // Don't spam - wait at least 1 hour between sends
-              }
-            }
-          }
+          } else if (existingNotification && !existingNotification.sent_at) {
+            // Notification record exists but wasn't sent (failed) - allow retry
+            // Continue to send
           }
 
           // Format date and time for notification
