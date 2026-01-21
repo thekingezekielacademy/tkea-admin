@@ -150,45 +150,45 @@ export default async function handler(req, res) {
             new Map(usersToNotify.map(u => [u.user_id, u])).values()
           );
 
-          // Map timing to reminder_type based on user's schema
-          const reminderType = 
-            timing === 'start' ? 'class_start' :
-            timing === '24h_before' ? 'email' :
-            timing === '2h_before' ? 'email' :
-            timing === '1h_before' ? 'countdown_1hr' :
-            timing === '30m_before' ? 'countdown_30min' :
-            timing === '2m_before' ? 'countdown_2min' : 'email';
+              // Map timing to reminder_type based on user's schema
+              const reminderType = 
+                timing === 'start' ? 'class_start' :
+                timing === '24h_before' ? 'email' :
+                timing === '2h_before' ? 'email' :
+                timing === '1h_before' ? 'countdown_1hr' :
+                timing === '30m_before' ? 'countdown_30min' :
+                timing === '2m_before' ? 'countdown_2min' : 'email';
+              
+              // Format session time
+              const sessionDate = new Date(session.scheduled_datetime);
+              const formattedDate = sessionDate.toLocaleDateString('en-US', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+              });
+              const formattedTime = sessionDate.toLocaleTimeString('en-US', { 
+                hour: 'numeric', 
+                minute: '2-digit',
+                hour12: true 
+              });
 
-          // Format session time
-          const sessionDate = new Date(session.scheduled_datetime);
-          const formattedDate = sessionDate.toLocaleDateString('en-US', { 
-            weekday: 'long', 
-            year: 'numeric', 
-            month: 'long', 
-            day: 'numeric' 
-          });
-          const formattedTime = sessionDate.toLocaleTimeString('en-US', { 
-            hour: 'numeric', 
-            minute: '2-digit',
-            hour12: true 
-          });
+              // Get session type emoji
+              const sessionTypeEmoji = {
+                morning: '🌅',
+                afternoon: '☀️',
+                evening: '🌙'
+              }[session.session_type] || '📚';
 
-          // Get session type emoji
-          const sessionTypeEmoji = {
-            morning: '🌅',
-            afternoon: '☀️',
-            evening: '🌙'
-          }[session.session_type] || '📚';
-
-          const sessionTypeLabel = session.session_type.charAt(0).toUpperCase() + session.session_type.slice(1);
-          const courseTitle = session.live_classes?.courses?.title || 'Live Class';
-          const lessonName = session.course_videos?.name || 'Class Session';
-          
+              const sessionTypeLabel = session.session_type.charAt(0).toUpperCase() + session.session_type.slice(1);
+              const courseTitle = session.live_classes?.courses?.title || 'Live Class';
+              const lessonName = session.course_videos?.name || 'Class Session';
+              
           // Build class URL - direct link to the specific session
-          const appUrl = process.env.APP_URL || process.env.REACT_APP_URL || 'https://app.thekingezekielacademy.com';
+              const appUrl = process.env.APP_URL || process.env.REACT_APP_URL || 'https://app.thekingezekielacademy.com';
           const liveClassId = session.live_class_id;
           const classUrl = `${appUrl}/live-classes/${liveClassId}/session/${session.id}`;
-          const telegramChannel = process.env.TELEGRAM_CHANNEL || '@LIVECLASSREMINDER';
+              const telegramChannel = process.env.TELEGRAM_CHANNEL || '@LIVECLASSREMINDER';
           
           // Support multiple groups/channels: comma-separated IDs or single ID
           // Groups and channels can be mixed - bot will send to all
@@ -197,17 +197,17 @@ export default async function handler(req, res) {
             ? telegramGroupIdsRaw.split(',').map(id => id.trim()).filter(id => id)
             : [];
 
-          // Send Telegram reminders for countdown and start
+              // Send Telegram reminders for countdown and start
           // IMPORTANT: Send group notification ONCE when class starts, not per user
-          if (['1h_before', '30m_before', '2m_before', 'start'].includes(timing)) {
-            try {
-              const telegramToken = process.env.TELEGRAM_BOT_TOKEN || '8447617613:AAH0QHB57N9APWnX-MAHH_JsJqzfB8p4vJo';
+              if (['1h_before', '30m_before', '2m_before', 'start'].includes(timing)) {
+                try {
+                  const telegramToken = process.env.TELEGRAM_BOT_TOKEN || '8447617613:AAH0QHB57N9APWnX-MAHH_JsJqzfB8p4vJo';
+                  
+                  // Format reminder message based on timing
+                  let telegramMessage = '';
               
-              // Format reminder message based on timing
-              let telegramMessage = '';
-              
-              if (timing === 'start') {
-                telegramMessage = `🎉 **Class Starting Now!**
+                  if (timing === 'start') {
+                    telegramMessage = `🎉 **Class Starting Now!**
 
 📚 **${courseTitle}**
 📖 ${lessonName}
@@ -217,14 +217,14 @@ ${sessionTypeEmoji} **${sessionTypeLabel} Session**
 👉 [Join Class Now](${classUrl})
 
 Don't miss out! Join now to participate in the live session.`;
-              } else {
+                  } else {
                 // For countdown reminders, send to channel
-                const timeLabel = 
-                  timing === '1h_before' ? '1 hour' :
-                  timing === '30m_before' ? '30 minutes' :
-                  timing === '2m_before' ? '2 minutes' : '';
-                
-                telegramMessage = `⏰ **Reminder: Class in ${timeLabel}!**
+                    const timeLabel = 
+                      timing === '1h_before' ? '1 hour' :
+                      timing === '30m_before' ? '30 minutes' :
+                      timing === '2m_before' ? '2 minutes' : '';
+                    
+                    telegramMessage = `⏰ **Reminder: Class in ${timeLabel}!**
 
 📚 **${courseTitle}**
 📖 ${lessonName}
@@ -235,7 +235,7 @@ ${sessionTypeEmoji} **${sessionTypeLabel} Session**
 👉 [Join Class](${classUrl})
 
 See you there! 🎓`;
-              }
+                  }
 
               if (timing === 'start') {
                 // When class starts, send to ALL groups
@@ -309,56 +309,56 @@ See you there! 🎓`;
                 // For countdown reminders, send to channel
                 const targetChatId = process.env.TELEGRAM_CHANNEL_ID || telegramChannel;
                 
-                const telegramResponse = await fetch(`https://api.telegram.org/bot${telegramToken}/sendMessage`, {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                  },
-                  body: JSON.stringify({
+                  const telegramResponse = await fetch(`https://api.telegram.org/bot${telegramToken}/sendMessage`, {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
                     chat_id: targetChatId,
-                    text: telegramMessage,
-                    parse_mode: 'Markdown',
-                    disable_web_page_preview: false
-                  })
-                });
+                      text: telegramMessage,
+                      parse_mode: 'Markdown',
+                      disable_web_page_preview: false
+                    })
+                  });
 
-                if (telegramResponse.ok) {
-                  const telegramData = await telegramResponse.json();
+                  if (telegramResponse.ok) {
+                    const telegramData = await telegramResponse.json();
                   console.log(`✅ Telegram channel reminder sent for session ${session.id} (${timing})`);
-                  
-                  // Record Telegram reminder
+                    
+                    // Record Telegram reminder
+                    await supabaseAdmin
+                      .from('class_reminders')
+                      .insert({
+                        class_session_id: session.id,
+                        reminder_type: reminderType,
+                      recipient_email: null,
+                      recipient_telegram_id: targetChatId,
+                        status: 'sent'
+                      });
+                    
+                    remindersSent.telegram++;
+                  } else {
+                    const errorData = await telegramResponse.json();
+                    console.error(`❌ Telegram API error:`, errorData);
+                    throw new Error(`Telegram API error: ${errorData.description || 'Unknown error'}`);
+                }
+                  }
+                } catch (telegramError) {
+                  console.error(`Error sending Telegram reminder:`, telegramError);
+                  // Record as failed
                   await supabaseAdmin
                     .from('class_reminders')
                     .insert({
                       class_session_id: session.id,
                       reminder_type: reminderType,
-                      recipient_email: null,
-                      recipient_telegram_id: targetChatId,
-                      status: 'sent'
+                  recipient_email: null,
+                      status: 'failed',
+                      error_message: telegramError.message
                     });
-                  
-                  remindersSent.telegram++;
-                } else {
-                  const errorData = await telegramResponse.json();
-                  console.error(`❌ Telegram API error:`, errorData);
-                  throw new Error(`Telegram API error: ${errorData.description || 'Unknown error'}`);
+                  remindersSent.errors++;
                 }
               }
-            } catch (telegramError) {
-              console.error(`Error sending Telegram reminder:`, telegramError);
-              // Record as failed
-              await supabaseAdmin
-                .from('class_reminders')
-                .insert({
-                  class_session_id: session.id,
-                  reminder_type: reminderType,
-                  recipient_email: null,
-                  status: 'failed',
-                  error_message: telegramError.message
-                });
-              remindersSent.errors++;
-            }
-          }
 
           // Send reminders (Telegram and Email)
           for (const userAccess of uniqueUsers) {

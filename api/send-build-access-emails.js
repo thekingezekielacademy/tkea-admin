@@ -179,7 +179,7 @@ export default async function handler(req, res) {
       </div>
       
       <div style="text-align: center;">
-        <a href="${APP_URL}/access/courses" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 16px 40px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold; font-size: 16px; box-shadow: 0 4px 6px rgba(245, 87, 108, 0.3);">Start Career Path Discovery →</a>
+        <a href="${careerPathLink || 'https://app.thekingezekielacademy.com/skill-path'}" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 16px 40px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold; font-size: 16px; box-shadow: 0 4px 6px rgba(245, 87, 108, 0.3);">Start Career Path Discovery →</a>
       </div>
       
       <p style="color: #744242; margin-top: 15px; font-size: 13px; text-align: center; font-style: italic;">
@@ -296,7 +296,7 @@ We recommend completing our Career Path Discovery (takes just 3 minutes) to:
 3. Make an informed decision before selecting your free skill course
 4. Understand which skill path is best suited for your career journey
 
-Start Career Path Discovery: ${APP_URL}/access/courses
+Start Career Path Discovery: ${careerPathLink || 'https://app.thekingezekielacademy.com/skill-path'}
 This is completely FREE and takes only 3 minutes!
 
 STEP 2: Choose Your Skill (FREE COURSE)
