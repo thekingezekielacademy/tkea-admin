@@ -121,7 +121,7 @@ If tables don't exist or are empty:
 ### Step 3: Kickstart the System
 
 1. **Login as Admin**
-2. **Go to:** `/admin/batch-classes-status`
+2. **Go to:** `https://tkeaadmin.vercel.app/admin/batch-classes-status`
 3. **Click:** "🚀 Kickstart System"
 4. **Wait:** 10-30 seconds
 5. **Done!** ✅
@@ -177,7 +177,7 @@ Like live booth reminders, use QStash for real-time batch class notifications:
 - ⚠️ Add frontend route for student enrollment (optional)
 
 **Next Steps:**
-1. Go to `/admin/batch-classes-status`
+1. Go to `https://tkeaadmin.vercel.app/admin/batch-classes-status`
 2. Click "🚀 Kickstart System"
 3. Verify it worked
 4. System runs automatically after that!
