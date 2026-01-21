@@ -147,7 +147,9 @@ const BatchClassesStatus: React.FC = () => {
       // Get auth token from Supabase session
       const { data: { session } } = await supabase.auth.getSession();
 
-      const response = await fetch('/api/admin/batch-classes/kickstart', {
+      // Use Express server API URL for local development
+      const apiBaseUrl = process.env.REACT_APP_API_URL || 'http://localhost:5001';
+      const response = await fetch(`${apiBaseUrl}/api/admin/batch-classes/kickstart`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -183,7 +185,9 @@ const BatchClassesStatus: React.FC = () => {
       // Get auth token from Supabase session
       const { data: { session } } = await supabase.auth.getSession();
 
-      const response = await fetch('/api/cron/generate-batch-sessions', {
+      // Use Express server API URL for local development
+      const apiBaseUrl = process.env.REACT_APP_API_URL || 'http://localhost:5001';
+      const response = await fetch(`${apiBaseUrl}/api/cron/generate-batch-sessions`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
