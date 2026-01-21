@@ -88,6 +88,7 @@ export default async function handler(req, res) {
     }
 
     const now = new Date();
+    const today = new Date();
     const notificationsSent = {
       '5_days': 0,
       '48_hours': 0,
@@ -169,18 +170,20 @@ export default async function handler(req, res) {
         
         // CRITICAL: If session was created today, send ALL notifications immediately
         // This handles the case where sessions are created on the same day they start
-        const shouldSendImmediately = sessionCreatedToday && 
-          sessionIsFuture && // Session hasn't started yet
-          !isNormalTiming; // Don't double-send if already in normal window
-
-        // For today's sessions: send 3h and 30m notifications if we're within the time window
-        const shouldSendTodayNotifications = sessionIsToday && 
+        // CRITICAL: Send notifications for sessions happening soon
+        // For sessions happening today or within next 24 hours: send remaining notifications
+        const sessionIsSoon = timeUntilSession > 0 && timeUntilSession <= 24 * 60 * 60 * 1000;
+        const shouldSendForSoonSessions = (sessionIsToday || sessionIsSoon) && 
           sessionIsFuture &&
           ((notificationType === '3_hours' && timeUntilSession <= 3 * 60 * 60 * 1000 && timeUntilSession > 0) ||
-           (notificationType === '30_minutes' && timeUntilSession <= 30 * 60 * 1000 && timeUntilSession > 0));
+           (notificationType === '30_minutes' && timeUntilSession <= 30 * 60 * 1000 && timeUntilSession > 0) ||
+           (notificationType === '24_hours' && timeUntilSession <= 24 * 60 * 60 * 1000 && timeUntilSession > 0));
+
+        // If session was created today, send ALL notifications immediately
+        const shouldSendImmediately = sessionCreatedToday && sessionIsFuture;
 
         // Send notification if any condition is met
-        if (isNormalTiming || shouldSendImmediately || shouldSendTodayNotifications) {
+        if (isNormalTiming || shouldSendImmediately || shouldSendForSoonSessions) {
           // Check if notification already sent
           const { data: existingNotification } = await supabaseAdmin
             .from('batch_class_notifications')
