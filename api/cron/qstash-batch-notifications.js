@@ -1,11 +1,15 @@
 const { createClient } = require('@supabase/supabase-js');
+const { verifySignature } = require('@upstash/qstash');
+
+
+
 
 export default async function handler(req, res) {
   // Set CORS headers
   res.setHeader('Access-Control-Allow-Credentials', true);
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
-  res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization, x-vercel-cron');
+  res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization, x-vercel-cron, upstash-signature');
 
   // Handle preflight requests
   if (req.method === 'OPTIONS') {
@@ -19,18 +23,39 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Check for cron authentication
-    const cronSecret = process.env.CRON_SECRET;
-    const vercelCron = req.headers['x-vercel-cron'];
-    const authHeader = req.headers.authorization;
+    // Verify QStash signature for security
+    const qstashCurrentKey = process.env.QSTASH_CURRENT_SIGNING_KEY;
+    const qstashNextKey = process.env.QSTASH_NEXT_SIGNING_KEY;
 
-    const isAuthorized = 
-      (cronSecret && authHeader === `Bearer ${cronSecret}`) ||
-      vercelCron === '1' ||
-      !cronSecret;
-
-    if (!isAuthorized) {
-      return res.status(401).json({ success: false, message: 'Unauthorized' });
+    if (qstashCurrentKey || qstashNextKey) {
+      try {
+        const signature = req.headers['upstash-signature'];
+        
+        if (!signature) {
+          console.warn('⚠️ No QStash signature found - allowing request');
+        } else {
+          // For Vercel functions, reconstruct body as string
+          const body = typeof req.body === 'string' ? req.body : JSON.stringify(req.body || {});
+          const url = req.url || '/api/cron/qstash-batch-notifications';
+          
+          try {
+            await verifySignature({
+              signature,
+              body,
+              url,
+              currentSigningKey: qstashCurrentKey,
+              nextSigningKey: qstashNextKey
+            });
+            console.log('✅ QStash signature verified');
+          } catch (verifyError) {
+            console.error('❌ QStash signature verification failed:', verifyError);
+            return res.status(401).json({ success: false, message: 'Invalid QStash signature' });
+          }
+        }
+      } catch (error) {
+        console.error('Error verifying QStash signature:', error);
+        return res.status(401).json({ success: false, message: 'Signature verification error' });
+      }
     }
 
     // Initialize Supabase admin client
