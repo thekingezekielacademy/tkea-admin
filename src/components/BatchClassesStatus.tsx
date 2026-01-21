@@ -46,40 +46,85 @@ const BatchClassesStatus: React.FC = () => {
 
       const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
       const supabaseKey = process.env.REACT_APP_SUPABASE_ANON_KEY;
+      
+      if (!supabaseUrl || !supabaseKey) {
+        throw new Error('Supabase configuration missing. Please check environment variables.');
+      }
+
       const { createClient } = await import('@supabase/supabase-js');
-      const supabase = createClient(supabaseUrl!, supabaseKey!);
+      const supabase = createClient(supabaseUrl, supabaseKey);
 
       // Get batch classes
-      const { data: batchClasses } = await supabase
+      const { data: batchClasses, error: batchClassesError } = await supabase
         .from('batch_classes')
         .select('*')
         .eq('is_active', true);
 
+      if (batchClassesError) {
+        console.error('Error fetching batch classes:', batchClassesError);
+        // Don't throw - continue with empty array
+      }
+
       // Get active batches
-      const { data: batches } = await supabase
+      const { data: batches, error: batchesError } = await supabase
         .from('batches')
         .select('*')
         .eq('status', 'active')
         .order('start_date', { ascending: false });
 
+      if (batchesError) {
+        console.error('Error fetching batches:', batchesError);
+        // Don't throw - continue with empty array
+      }
+
       // Get today's sessions
       const today = new Date().toISOString().split('T')[0];
-      const { data: todaySessions } = await supabase
+      const { data: todaySessions, error: todaySessionsError } = await supabase
         .from('batch_class_sessions')
         .select('*')
         .eq('session_date', today)
         .order('scheduled_datetime', { ascending: true });
 
+      if (todaySessionsError) {
+        console.error('Error fetching today sessions:', todaySessionsError);
+        // Don't throw - continue with empty array
+      }
+
       // Get upcoming sessions (next 7 days)
       const nextWeek = new Date();
       nextWeek.setDate(nextWeek.getDate() + 7);
-      const { data: upcomingSessions } = await supabase
+      const { data: upcomingSessions, error: upcomingSessionsError } = await supabase
         .from('batch_class_sessions')
         .select('*')
         .gte('session_date', today)
         .lte('session_date', nextWeek.toISOString().split('T')[0])
         .order('scheduled_datetime', { ascending: true })
         .limit(20);
+
+      if (upcomingSessionsError) {
+        console.error('Error fetching upcoming sessions:', upcomingSessionsError);
+        // Don't throw - continue with empty array
+      }
+
+      // Check if any critical errors occurred
+      const errors = [
+        batchClassesError,
+        batchesError,
+        todaySessionsError,
+        upcomingSessionsError
+      ].filter(Boolean);
+
+      if (errors.length > 0) {
+        const errorMessages = errors.map(e => e?.message || 'Unknown error').join(', ');
+        const firstError = errors[0];
+        
+        // If it's a "relation does not exist" error, provide helpful message
+        if (firstError?.message?.includes('relation') || firstError?.message?.includes('does not exist')) {
+          setError('⚠️ Database tables not found. Please run the batch class migrations in Supabase first.');
+        } else {
+          setError(`⚠️ Some data could not be loaded: ${errorMessages}. The page will still work with available data.`);
+        }
+      }
 
       setStatus({
         batchClasses: batchClasses || [],
@@ -89,7 +134,13 @@ const BatchClassesStatus: React.FC = () => {
       });
     } catch (err: any) {
       console.error('Error fetching status:', err);
-      setError(err.message || 'Failed to fetch status');
+      setError(err.message || 'Failed to fetch status. Please check your connection and try again.');
+      setStatus({
+        batchClasses: [],
+        batches: [],
+        todaySessions: [],
+        upcomingSessions: []
+      });
     } finally {
       setLoading(false);
     }
@@ -100,16 +151,26 @@ const BatchClassesStatus: React.FC = () => {
       setKicking(true);
       setError('');
 
-      const token = localStorage.getItem('supabase.auth.token');
+      // Get auth token from Supabase session
+      const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
+      const supabaseKey = process.env.REACT_APP_SUPABASE_ANON_KEY;
+      const { createClient } = await import('@supabase/supabase-js');
+      const supabase = createClient(supabaseUrl!, supabaseKey!);
+      const { data: { session } } = await supabase.auth.getSession();
+
       const response = await fetch('/api/admin/batch-classes/kickstart', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${session?.access_token || ''}`
         }
       });
 
       const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.message || `HTTP ${response.status}: ${response.statusText}`);
+      }
 
       if (result.success) {
         alert('✅ System kickstarted successfully!');
@@ -119,7 +180,7 @@ const BatchClassesStatus: React.FC = () => {
       }
     } catch (err: any) {
       console.error('Kickstart error:', err);
-      setError(err.message || 'Failed to kickstart system');
+      setError(err.message || 'Failed to kickstart system. Please check the console for details.');
     } finally {
       setKicking(false);
     }
@@ -130,17 +191,27 @@ const BatchClassesStatus: React.FC = () => {
       setGenerating(true);
       setError('');
 
-      const token = localStorage.getItem('supabase.auth.token');
+      // Get auth token from Supabase session
+      const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
+      const supabaseKey = process.env.REACT_APP_SUPABASE_ANON_KEY;
+      const { createClient } = await import('@supabase/supabase-js');
+      const supabase = createClient(supabaseUrl!, supabaseKey!);
+      const { data: { session } } = await supabase.auth.getSession();
+
       const response = await fetch('/api/cron/generate-batch-sessions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Bearer ${session?.access_token || ''}`,
           'x-vercel-cron': '1'
         }
       });
 
       const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.message || `HTTP ${response.status}: ${response.statusText}`);
+      }
 
       if (result.success) {
         alert('✅ Sessions generated successfully!');
@@ -150,7 +221,7 @@ const BatchClassesStatus: React.FC = () => {
       }
     } catch (err: any) {
       console.error('Generate sessions error:', err);
-      setError(err.message || 'Failed to generate sessions');
+      setError(err.message || 'Failed to generate sessions. Please check the console for details.');
     } finally {
       setGenerating(false);
     }
@@ -189,8 +260,18 @@ const BatchClassesStatus: React.FC = () => {
           </div>
 
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
-              {error}
+            <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded mb-4">
+              <div className="font-semibold mb-1">⚠️ Notice</div>
+              <div>{error}</div>
+              {error.includes('migrations') && (
+                <div className="mt-2 text-sm">
+                  <p>To fix this, run these SQL migrations in Supabase:</p>
+                  <ul className="list-disc list-inside mt-1">
+                    <li><code>supabase/migrations/20250117_001_create_batch_class_system.sql</code></li>
+                    <li><code>supabase/migrations/20250117_002_setup_batch_class_live_classes.sql</code></li>
+                  </ul>
+                </div>
+              )}
             </div>
           )}
 
@@ -236,17 +317,21 @@ const BatchClassesStatus: React.FC = () => {
           <div className="mb-6">
             <h2 className="text-xl font-semibold mb-4">Batch Classes</h2>
             <div className="space-y-2">
-              {status?.batchClasses?.map((bc: BatchClass) => (
-                <div key={bc.id} className="bg-gray-50 p-3 rounded flex justify-between items-center">
-                  <div>
-                    <div className="font-medium">{bc.class_name}</div>
-                    <div className="text-sm text-gray-600">Starts: {getDayName(bc.start_day_of_week)}</div>
+              {status?.batchClasses && status.batchClasses.length > 0 ? (
+                status.batchClasses.map((bc: BatchClass) => (
+                  <div key={bc.id} className="bg-gray-50 p-3 rounded flex justify-between items-center">
+                    <div>
+                      <div className="font-medium">{bc.class_name}</div>
+                      <div className="text-sm text-gray-600">Starts: {getDayName(bc.start_day_of_week)}</div>
+                    </div>
+                    <span className={`px-2 py-1 rounded text-xs ${bc.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                      {bc.is_active ? 'Active' : 'Inactive'}
+                    </span>
                   </div>
-                  <span className={`px-2 py-1 rounded text-xs ${bc.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-                    {bc.is_active ? 'Active' : 'Inactive'}
-                  </span>
-                </div>
-              ))}
+                ))
+              ) : (
+                <p className="text-gray-500">No batch classes found. Please run the database migrations first.</p>
+              )}
             </div>
           </div>
 
@@ -254,7 +339,7 @@ const BatchClassesStatus: React.FC = () => {
           <div className="mb-6">
             <h2 className="text-xl font-semibold mb-4">Active Batches</h2>
             <div className="space-y-2">
-              {status?.batches?.length > 0 ? (
+              {status?.batches && status.batches.length > 0 ? (
                 status.batches.map((batch: Batch) => (
                   <div key={batch.id} className="bg-gray-50 p-3 rounded">
                     <div className="font-medium">{batch.class_name}</div>
@@ -271,7 +356,7 @@ const BatchClassesStatus: React.FC = () => {
           <div className="mb-6">
             <h2 className="text-xl font-semibold mb-4">Today's Sessions</h2>
             <div className="space-y-2">
-              {status?.todaySessions?.length > 0 ? (
+              {status?.todaySessions && status.todaySessions.length > 0 ? (
                 status.todaySessions.map((session: Session) => (
                   <div key={session.id} className="bg-gray-50 p-3 rounded">
                     <div className="font-medium">{session.session_type.charAt(0).toUpperCase() + session.session_type.slice(1)} Session</div>
@@ -290,7 +375,7 @@ const BatchClassesStatus: React.FC = () => {
           <div>
             <h2 className="text-xl font-semibold mb-4">Upcoming Sessions (Next 7 Days)</h2>
             <div className="space-y-2">
-              {status?.upcomingSessions?.length > 0 ? (
+              {status?.upcomingSessions && status.upcomingSessions.length > 0 ? (
                 status.upcomingSessions.map((session: Session) => (
                   <div key={session.id} className="bg-gray-50 p-3 rounded">
                     <div className="font-medium">{session.session_type.charAt(0).toUpperCase() + session.session_type.slice(1)} Session</div>
