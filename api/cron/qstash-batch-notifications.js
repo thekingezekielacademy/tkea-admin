@@ -155,18 +155,25 @@ export default async function handler(req, res) {
       // Check if notification already sent for this session
       // Use '24_hours' as the notification type (database constraint requires one of: 5_days, 48_hours, 24_hours, 3_hours, 30_minutes)
       const notificationType = '24_hours'; // Single notification type per session
-      const { data: existingNotification } = await supabaseAdmin
+      const { data: existingNotification, error: notificationCheckError } = await supabaseAdmin
         .from('batch_class_notifications')
         .select('id, sent_at')
         .eq('session_id', session.id)
         .eq('notification_type', notificationType)
-        .single();
+        .maybeSingle(); // Use maybeSingle() instead of single() to avoid errors when no record exists
+
+      // Handle notification check error
+      if (notificationCheckError && notificationCheckError.code !== 'PGRST116') { // PGRST116 = no rows found (expected)
+        console.error(`❌ Error checking notification for session ${session.id}:`, notificationCheckError);
+        // Continue anyway - don't block on check errors
+      }
 
       // Skip if notification was sent within last 6 hours (to prevent spam)
       if (existingNotification && existingNotification.sent_at) {
         const sentTime = new Date(existingNotification.sent_at);
         const timeSinceSent = now.getTime() - sentTime.getTime();
         if (timeSinceSent < 6 * 60 * 60 * 1000) { // Less than 6 hours ago
+          console.log(`⏭️  Skipping session ${session.id} - notification sent ${Math.round(timeSinceSent / (60 * 60 * 1000))} hours ago`);
           continue; // Already sent recently
         }
       }
