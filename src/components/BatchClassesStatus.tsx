@@ -156,7 +156,7 @@ const BatchClassesStatus: React.FC = () => {
       
       let response;
       try {
-        response = await fetch(`${apiBaseUrl}/api/admin/batch-classes/kickstart`, {
+        response = await fetch(`${apiBaseUrl}/api/kickstart-batch-classes`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
