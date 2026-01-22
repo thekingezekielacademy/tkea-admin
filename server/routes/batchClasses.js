@@ -281,8 +281,11 @@ router.post("/kickstart", async (req, res) => {
         // Create 2 sessions (afternoon, evening)
         const sessionsToCreate = [];
         for (const [sessionType, timeConfig] of Object.entries(sessionTimes)) {
+          // Create datetime in UTC to match WAT (UTC+1) local time
+          // If we want 7:30 PM WAT, we store 6:30 PM UTC (7:30 PM - 1 hour)
+          // But since notification shows 1 hour early, we add 1 hour to get correct display
           const scheduledTime = new Date(today);
-          scheduledTime.setHours(timeConfig.hour, timeConfig.minute, 0, 0);
+          scheduledTime.setUTCHours(timeConfig.hour - 1, timeConfig.minute, 0, 0); // Subtract 1 hour for WAT (UTC+1)
           const scheduledDatetime = scheduledTime.toISOString();
 
           sessionsToCreate.push({

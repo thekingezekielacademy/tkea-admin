@@ -24,9 +24,11 @@ const BulkBroadcast: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  // State
-  const [activeTab, setActiveTab] = useState<'sms' | 'email'>('email');
-  const [selectedGroup, setSelectedGroup] = useState<UserGroup | ''>('');
+  // State - Tab management
+  const [activeTab, setActiveTab] = useState<'email' | 'sms' | 'telegram'>('email');
+  
+  // Email Broadcast State
+  const [emailSelectedGroup, setEmailSelectedGroup] = useState<UserGroup | ''>('');
   const [emailSubject, setEmailSubject] = useState('');
   const [emailFirstSentence, setEmailFirstSentence] = useState('');
   const [emailSecondSentence, setEmailSecondSentence] = useState('');
@@ -35,22 +37,37 @@ const BulkBroadcast: React.FC = () => {
   const [emailSupportLine, setEmailSupportLine] = useState('');
   const [emailButtonText, setEmailButtonText] = useState('');
   const [emailButtonLink, setEmailButtonLink] = useState('');
+  const [emailUploadedContacts, setEmailUploadedContacts] = useState<Contact[]>([]);
+  const [emailSelectedCategories, setEmailSelectedCategories] = useState<string[]>([]);
+  const [emailSelectedLeads, setEmailSelectedLeads] = useState<Array<{id: string; name: string; email: string; phone: string | null; created_at: string}>>([]);
+  const [emailUseTimeBasedGrouping, setEmailUseTimeBasedGrouping] = useState(false);
+  const [emailUseUploadedContacts, setEmailUseUploadedContacts] = useState(false);
+  const [emailSending, setEmailSending] = useState(false);
+  const [emailProgress, setEmailProgress] = useState({ sent: 0, total: 0, failed: 0 });
+  const [emailResults, setEmailResults] = useState<{ success: boolean; message: string } | null>(null);
+  const [emailError, setEmailError] = useState('');
+  
+  // SMS Broadcast State
+  const [smsSelectedGroup, setSmsSelectedGroup] = useState<UserGroup | ''>('');
   const [smsBody, setSmsBody] = useState('');
-  const [sendEmail, setSendEmail] = useState(true);
-  const [sendSMS, setSendSMS] = useState(false);
-  const [sendTelegram, setSendTelegram] = useState(false);
+  const [smsUploadedContacts, setSmsUploadedContacts] = useState<Contact[]>([]);
+  const [smsSelectedCategories, setSmsSelectedCategories] = useState<string[]>([]);
+  const [smsUseUploadedContacts, setSmsUseUploadedContacts] = useState(false);
+  const [smsSending, setSmsSending] = useState(false);
+  const [smsProgress, setSmsProgress] = useState({ sent: 0, total: 0, failed: 0 });
+  const [smsResults, setSmsResults] = useState<{ success: boolean; message: string } | null>(null);
+  const [smsError, setSmsError] = useState('');
+  
+  // Telegram Broadcast State
   const [telegramTitle, setTelegramTitle] = useState('');
   const [telegramDescription, setTelegramDescription] = useState('');
   const [telegramButtonText, setTelegramButtonText] = useState('');
   const [telegramButtonLink, setTelegramButtonLink] = useState('');
+  const [telegramSending, setTelegramSending] = useState(false);
+  const [telegramResults, setTelegramResults] = useState<{ success: boolean; message: string } | null>(null);
+  const [telegramError, setTelegramError] = useState('');
   
-  // New state for enhanced features
-  const [uploadedContacts, setUploadedContacts] = useState<Contact[]>([]);
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const [selectedLeads, setSelectedLeads] = useState<Array<{id: string; name: string; email: string; phone: string | null; created_at: string}>>([]);
-  const [useTimeBasedGrouping, setUseTimeBasedGrouping] = useState(false);
-  const [useUploadedContacts, setUseUploadedContacts] = useState(false);
-  
+  // Shared state for user groups
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [userCount, setUserCount] = useState<number | null>(null);
   const [groupCounts, setGroupCounts] = useState<{ [key in UserGroup]: number | null }>({
@@ -60,10 +77,6 @@ const BulkBroadcast: React.FC = () => {
     hasnt_bought_course: null,
   });
   const [loadingCounts, setLoadingCounts] = useState(false);
-  const [sending, setSending] = useState(false);
-  const [progress, setProgress] = useState({ sent: 0, total: 0, failed: 0 });
-  const [results, setResults] = useState<{ success: boolean; message: string } | null>(null);
-  const [error, setError] = useState('');
 
   // Admin check
   if (!user || user.role !== 'admin') {

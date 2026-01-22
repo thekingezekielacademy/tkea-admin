@@ -272,8 +272,11 @@ export default async function handler(req, res) {
         // Create 2 sessions (afternoon, evening)
         const sessionsToCreate = [];
         for (const [sessionType, timeConfig] of Object.entries(sessionTimes)) {
+          // Create datetime in UTC to match WAT (UTC+1) local time
+          // If we want 7:30 PM WAT, we store 6:30 PM UTC (7:30 PM - 1 hour)
+          // If we want 1:00 PM WAT, we store 12:00 PM UTC (1:00 PM - 1 hour)
           const scheduledTime = new Date(today);
-          scheduledTime.setHours(timeConfig.hour, timeConfig.minute, 0, 0);
+          scheduledTime.setUTCHours(timeConfig.hour - 1, timeConfig.minute, 0, 0); // Subtract 1 hour for WAT (UTC+1)
           const scheduledDatetime = scheduledTime.toISOString();
 
           sessionsToCreate.push({

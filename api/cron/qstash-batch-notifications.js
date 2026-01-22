@@ -105,6 +105,7 @@ export default async function handler(req, res) {
         class_name,
         session_number,
         session_title,
+        course_video_id,
         scheduled_datetime,
         session_type,
         created_at,
@@ -141,7 +142,7 @@ export default async function handler(req, res) {
       // Determine which notification to send (if any)
       let notificationType = null;
       let shouldSend = false;
-      
+
       // 1 hour before (within 5-minute window: 55-65 minutes before)
       if (timeUntilSessionMinutes >= 55 && timeUntilSessionMinutes <= 65) {
         notificationType = '1_hour';
@@ -160,10 +161,10 @@ export default async function handler(req, res) {
 
       // Check if this specific notification type already sent
       const { data: existingNotification, error: notificationCheckError } = await supabaseAdmin
-        .from('batch_class_notifications')
+            .from('batch_class_notifications')
         .select('id, sent_at, status')
-        .eq('session_id', session.id)
-        .eq('notification_type', notificationType)
+            .eq('session_id', session.id)
+            .eq('notification_type', notificationType)
         .maybeSingle();
 
       if (notificationCheckError && notificationCheckError.code !== 'PGRST116') {
@@ -179,7 +180,7 @@ export default async function handler(req, res) {
       // CRITICAL: Create notification record FIRST (before sending) to prevent duplicate sends
       // This acts as a lock - if QStash calls again, it will see this record and skip
       const { data: lockRecord, error: lockError } = await supabaseAdmin
-        .from('batch_class_notifications')
+            .from('batch_class_notifications')
         .upsert({
           session_id: session.id,
           notification_type: notificationType,
@@ -192,7 +193,7 @@ export default async function handler(req, res) {
           onConflict: 'session_id,notification_type'
         })
         .select()
-        .single();
+            .single();
 
       // If lock record already exists and was just created (not by us), skip
       if (lockError && lockError.code !== '23505') { // 23505 = unique violation (expected if record exists)
@@ -202,67 +203,103 @@ export default async function handler(req, res) {
         // Another process already sent this - skip
         console.log(`⏭️  Skipping ${notificationType} notification for session ${session.id} - already sent by another process`);
         continue;
-      }
-
-      // Create notification message based on timing
-      let timeStr = '';
-      if (notificationType === '1_hour') {
-        timeStr = '⏰ **Starts in 1 hour!**';
-      } else if (notificationType === 'class_starts') {
-        timeStr = '🚀 **Class is starting now!**';
-      }
-
-      // Create notification message
-      const notificationMessage = `📚 **${session.class_name}**\n\n🎓 **Class ${session.session_number}**: ${session.session_title}\n\n⏰ **${sessionTime.toLocaleString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true })}**\n\n${timeStr}\n\n🔗 **Join Now**: https://app.thekingezekielacademy.com/live-classes/${session.batches?.live_class_id || 'batch'}/session/${session.id}`;
-
-      // Send to all Telegram groups
-      let successCount = 0;
-      let failCount = 0;
-      const sentGroupIds = [];
-
-      for (const groupId of groupIds) {
-        try {
-          const telegramResponse = await fetch(`https://api.telegram.org/bot${telegramToken}/sendMessage`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              chat_id: groupId,
-              text: notificationMessage,
-              parse_mode: 'Markdown',
-              disable_web_page_preview: false
-            })
-          });
-
-          const telegramData = await telegramResponse.json();
-
-          if (telegramResponse.ok && telegramData.ok) {
-            successCount++;
-            sentGroupIds.push(groupId);
-            console.log(`✅ Telegram notification sent to group ${groupId} for session ${session.id}`);
-          } else {
-            failCount++;
-            console.error(`❌ Telegram API error for group ${groupId}:`, telegramData.description || 'Unknown error');
           }
-        } catch (error) {
-          failCount++;
-          console.error(`❌ Error sending to group ${groupId}:`, error.message);
+
+      // Try to get actual video name if session_title is just "Class X"
+      let displayTitle = session.session_title;
+      if (!displayTitle || displayTitle.match(/^Class\s+\d+$/i)) {
+        // Try to fetch video name from course_videos
+        if (session.course_video_id) {
+          const { data: video } = await supabaseAdmin
+            .from('course_videos')
+            .select('name')
+            .eq('id', session.course_video_id)
+            .maybeSingle();
+          
+          if (video && video.name) {
+            displayTitle = video.name;
+          }
+        }
+        // If still no good title, use a more descriptive default
+        if (!displayTitle || displayTitle.match(/^Class\s+\d+$/i)) {
+          displayTitle = `Session ${session.session_number}`;
         }
       }
 
+      // Create notification message based on timing
+      // Display in WAT (UTC+1) timezone - sessionTime is already in UTC from database
+      const formattedDate = sessionTime.toLocaleString('en-US', { 
+            weekday: 'long', 
+            year: 'numeric', 
+            month: 'long', 
+        day: 'numeric',
+        timeZone: 'Africa/Lagos' // WAT timezone (UTC+1)
+          });
+      const formattedTime = sessionTime.toLocaleString('en-US', { 
+            hour: 'numeric', 
+            minute: '2-digit',
+        hour12: true,
+        timeZone: 'Africa/Lagos' // WAT timezone (UTC+1)
+      });
+      
+      let timeStr = '';
+      if (notificationType === '1_hour') {
+        timeStr = `⏰ **Class starts at ${formattedTime} (in 1 hour!)**`;
+      } else if (notificationType === 'class_starts') {
+        timeStr = `🚀 **Class is starting now at ${formattedTime}!**`;
+      }
+
+          // Create notification message
+      const notificationMessage = `📚 **${session.class_name}**\n\n🎓 **Class ${session.session_number}**: ${displayTitle}\n\n⏰ **${formattedDate} at ${formattedTime}**\n\n${timeStr}\n\n🔗 **Join Now**: https://app.thekingezekielacademy.com/live-classes/${session.batches?.live_class_id || 'batch'}/session/${session.id}`;
+
+          // Send to all Telegram groups
+          let successCount = 0;
+          let failCount = 0;
+          const sentGroupIds = [];
+
+          for (const groupId of groupIds) {
+            try {
+              const telegramResponse = await fetch(`https://api.telegram.org/bot${telegramToken}/sendMessage`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  chat_id: groupId,
+                  text: notificationMessage,
+                  parse_mode: 'Markdown',
+                  disable_web_page_preview: false
+                })
+              });
+
+              const telegramData = await telegramResponse.json();
+
+              if (telegramResponse.ok && telegramData.ok) {
+                successCount++;
+                sentGroupIds.push(groupId);
+            console.log(`✅ Telegram notification sent to group ${groupId} for session ${session.id}`);
+              } else {
+                failCount++;
+                console.error(`❌ Telegram API error for group ${groupId}:`, telegramData.description || 'Unknown error');
+              }
+            } catch (error) {
+              failCount++;
+              console.error(`❌ Error sending to group ${groupId}:`, error.message);
+            }
+          }
+
       // Update notification record with send results (lock record already exists)
-      const notificationStatus = successCount > 0 ? 'sent' : 'failed';
-      const errorMsg = failCount > 0 ? `Failed to send to ${failCount} group(s)` : null;
+          const notificationStatus = successCount > 0 ? 'sent' : 'failed';
+          const errorMsg = failCount > 0 ? `Failed to send to ${failCount} group(s)` : null;
 
       try {
         const { error: dbError } = await supabaseAdmin
-          .from('batch_class_notifications')
+            .from('batch_class_notifications')
           .update({
-            sent_at: notificationStatus === 'sent' ? new Date().toISOString() : null,
-            status: notificationStatus,
-            telegram_group_ids: sentGroupIds.join(','),
-            error_message: errorMsg
+              sent_at: notificationStatus === 'sent' ? new Date().toISOString() : null,
+              status: notificationStatus,
+              telegram_group_ids: sentGroupIds.join(','),
+              error_message: errorMsg
           })
           .eq('session_id', session.id)
           .eq('notification_type', notificationType);
@@ -274,12 +311,12 @@ export default async function handler(req, res) {
         console.error(`❌ Error updating notification in database:`, dbError);
       }
 
-      if (notificationStatus === 'sent') {
-        notificationsSent[notificationType]++;
-        console.log(`📤 Sent ${notificationType} notification for ${session.class_name} Class ${session.session_number} to ${successCount} group(s)`);
-      } else {
-        notificationsSent.errors++;
-        console.error(`❌ Failed to send ${notificationType} notification for session ${session.id}`);
+          if (notificationStatus === 'sent') {
+            notificationsSent[notificationType]++;
+            console.log(`📤 Sent ${notificationType} notification for ${session.class_name} Class ${session.session_number} to ${successCount} group(s)`);
+          } else {
+            notificationsSent.errors++;
+            console.error(`❌ Failed to send ${notificationType} notification for session ${session.id}`);
       }
     }
 
