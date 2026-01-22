@@ -1,14 +1,10 @@
 const { createClient } = require('@supabase/supabase-js');
 const { verifySignature } = require('@upstash/qstash');
 
-
-
-
 export default async function handler(req, res) {
   // Log that endpoint was called
   console.log('🔔 QStash batch notifications endpoint called at', new Date().toISOString());
   console.log('📥 Method:', req.method);
-  console.log('📥 Headers:', JSON.stringify(req.headers, null, 2));
 
   // Set CORS headers
   res.setHeader('Access-Control-Allow-Credentials', true);
@@ -29,20 +25,15 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Verify QStash signature for security (lenient - allow if verification fails)
+    // Verify QStash signature (lenient - allow if verification fails)
     const qstashCurrentKey = process.env.QSTASH_CURRENT_SIGNING_KEY;
     const qstashNextKey = process.env.QSTASH_NEXT_SIGNING_KEY;
 
     if (qstashCurrentKey || qstashNextKey) {
       try {
         const signature = req.headers['upstash-signature'];
-        
-        if (!signature) {
-          console.warn('⚠️ No QStash signature found - allowing request');
-        } else {
-          // For Vercel functions, reconstruct body as string
+        if (signature) {
           const body = typeof req.body === 'string' ? req.body : JSON.stringify(req.body || {});
-          // Use the full URL path for signature verification
           const url = req.url || '/api/cron/qstash-batch-notifications';
           
           try {
@@ -56,16 +47,11 @@ export default async function handler(req, res) {
             console.log('✅ QStash signature verified');
           } catch (verifyError) {
             console.warn('⚠️ QStash signature verification failed:', verifyError.message);
-            // Allow for now - enable strict verification in production if needed
-            // This matches the behavior of the working reminders endpoint
           }
         }
       } catch (verifyError) {
         console.warn('⚠️ QStash signature verification error:', verifyError.message);
-        // Allow to continue - don't block the request
       }
-    } else {
-      console.warn('⚠️ QStash signing keys not configured - skipping signature verification');
     }
 
     // Initialize Supabase admin client
@@ -73,40 +59,43 @@ export default async function handler(req, res) {
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
     if (!supabaseUrl || !supabaseServiceKey) {
+      console.error('❌ Missing Supabase configuration');
       return res.status(500).json({ success: false, message: 'Server configuration error' });
     }
 
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
     // Get Telegram bot token and group IDs
-    // Support both TELEGRAM_GROUP_ID and TELEGRAM_GROUP_IDS (for consistency with live booth reminders)
     const telegramToken = process.env.TELEGRAM_BOT_TOKEN;
     const telegramGroupIdsRaw = process.env.TELEGRAM_GROUP_ID || process.env.TELEGRAM_GROUP_IDS;
 
     if (!telegramToken) {
+      console.error('❌ Telegram bot token not configured');
       return res.status(500).json({ success: false, message: 'Telegram bot token not configured' });
     }
 
     if (!telegramGroupIdsRaw) {
+      console.error('❌ Telegram group IDs not configured');
       return res.status(500).json({ success: false, message: 'Telegram group IDs not configured' });
     }
 
     const groupIds = telegramGroupIdsRaw.split(',').map(id => id.trim()).filter(id => id);
 
     if (groupIds.length === 0) {
+      console.error('❌ No Telegram group IDs found');
       return res.status(500).json({ success: false, message: 'No Telegram group IDs found' });
     }
 
     const now = new Date();
-    const today = new Date();
     const notificationsSent = {
       '24_hours': 0,
       errors: 0
     };
 
-    // Get upcoming sessions in the next 7 days (matching manual script)
+    // Get upcoming sessions in the next 7 days
     const futureTime = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
     
+    console.log('📊 Fetching upcoming sessions...');
     const { data: upcomingSessions, error: sessionsError } = await supabaseAdmin
       .from('batch_class_sessions')
       .select(`
@@ -133,48 +122,45 @@ export default async function handler(req, res) {
     console.log(`📊 Found ${upcomingSessions?.length || 0} upcoming sessions`);
 
     if (!upcomingSessions || upcomingSessions.length === 0) {
-      console.log('ℹ️ No upcoming sessions found - returning early');
+      console.log('ℹ️ No upcoming sessions found');
       return res.status(200).json({ 
         success: true, 
         message: 'No upcoming sessions found',
-        notificationsSent: 0
+        notificationsSent: 0,
+        timestamp: new Date().toISOString()
       });
     }
 
-    // SIMPLIFIED: Process each session - send ONE notification per session (like manual script)
-    // This matches the working manual script behavior
+    // Process each session - send ONE notification per session
     for (const session of upcomingSessions) {
       const sessionTime = new Date(session.scheduled_datetime);
       const timeUntilSession = sessionTime.getTime() - now.getTime();
       
       // Only send for future sessions
       if (timeUntilSession <= 0) {
-        continue; // Session already started or passed
+        continue;
       }
 
-      // Check if notification already sent for this session
-      // Use '24_hours' as the notification type (database constraint requires one of: 5_days, 48_hours, 24_hours, 3_hours, 30_minutes)
-      const notificationType = '24_hours'; // Single notification type per session
+      // Check if notification already sent
+      const notificationType = '24_hours';
       const { data: existingNotification, error: notificationCheckError } = await supabaseAdmin
         .from('batch_class_notifications')
         .select('id, sent_at')
         .eq('session_id', session.id)
         .eq('notification_type', notificationType)
-        .maybeSingle(); // Use maybeSingle() instead of single() to avoid errors when no record exists
+        .maybeSingle();
 
-      // Handle notification check error
-      if (notificationCheckError && notificationCheckError.code !== 'PGRST116') { // PGRST116 = no rows found (expected)
+      if (notificationCheckError && notificationCheckError.code !== 'PGRST116') {
         console.error(`❌ Error checking notification for session ${session.id}:`, notificationCheckError);
-        // Continue anyway - don't block on check errors
       }
 
-      // Skip if notification was sent within last 6 hours (to prevent spam)
+      // Skip if notification was sent within last 6 hours
       if (existingNotification && existingNotification.sent_at) {
         const sentTime = new Date(existingNotification.sent_at);
         const timeSinceSent = now.getTime() - sentTime.getTime();
-        if (timeSinceSent < 6 * 60 * 60 * 1000) { // Less than 6 hours ago
+        if (timeSinceSent < 6 * 60 * 60 * 1000) {
           console.log(`⏭️  Skipping session ${session.id} - notification sent ${Math.round(timeSinceSent / (60 * 60 * 1000))} hours ago`);
-          continue; // Already sent recently
+          continue;
         }
       }
 
@@ -188,7 +174,7 @@ export default async function handler(req, res) {
           ? `Starts in ${minutesUntil} minute(s)`
           : 'Starting now!';
 
-      // Create notification message (matching manual script format)
+      // Create notification message
       const notificationMessage = `📚 **${session.class_name}**\n\n🎓 **Class ${session.session_number}**: ${session.session_title}\n\n⏰ **${sessionTime.toLocaleString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true })}**\n\n${timeStr}\n\n🔗 **Join Now**: https://app.thekingezekielacademy.com/live-classes/${session.batches?.live_class_id || 'batch'}/session/${session.id}`;
 
       // Send to all Telegram groups
@@ -227,7 +213,7 @@ export default async function handler(req, res) {
         }
       }
 
-      // Record notification in database using UPSERT (handles UNIQUE constraint)
+      // Record notification in database using UPSERT
       const notificationStatus = successCount > 0 ? 'sent' : 'failed';
       const errorMsg = failCount > 0 ? `Failed to send to ${failCount} group(s)` : null;
 
@@ -275,24 +261,19 @@ export default async function handler(req, res) {
       timestamp: new Date().toISOString()
     };
     
-    console.log('✅ Sending response:', JSON.stringify(response));
-    clearTimeout(timeout);
+    console.log('✅ Processing complete:', JSON.stringify(response));
     return res.status(200).json(response);
 
   } catch (error) {
     console.error('❌ Error in batch-class-notifications cron:', error);
     console.error('❌ Error stack:', error.stack);
-    clearTimeout(timeout);
     
     // ALWAYS return a response - never let it hang
-    if (!res.headersSent) {
-      return res.status(500).json({
-        success: false,
-        message: 'Internal server error',
-        error: error.message,
-        timestamp: new Date().toISOString(),
-        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
-      });
-    }
+    return res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
   }
 }
