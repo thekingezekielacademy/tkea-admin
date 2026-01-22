@@ -12,6 +12,14 @@ api/cron/generate-batch-sessions.js
 api/cron/live-booth-reminders.js
 api/cron/qstash-reminders.js
 api/cron/send-immediate-batch-notifications.js
+api/cron/qstash-batch-notifications.js.backup
+api/batch-sessions/
+api/batches/
+api/kickstart-batch-classes/
+api/kickstart-batch-classes.js
+api/save-broadcast-contacts.js
+api/send-sms.js
+api/send-telegram.js
 api/flutterwave/
 api/test-verification.js
 api/health.js
