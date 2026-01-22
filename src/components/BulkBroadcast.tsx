@@ -389,7 +389,6 @@ const BulkBroadcast: React.FC = () => {
   const loadAllGroupCounts = useCallback(async () => {
     try {
       setLoadingCounts(true);
-      setError('');
 
       const groups: UserGroup[] = ['hasnt_paid_build', 'paid_build', 'bought_course', 'hasnt_bought_course'];
       const counts: { [key in UserGroup]: number } = {
@@ -422,26 +421,6 @@ const BulkBroadcast: React.FC = () => {
   useEffect(() => {
     loadAllGroupCounts();
   }, [loadAllGroupCounts]);
-
-  // Count users in selected group
-  const handleCountUsers = useCallback(async () => {
-    if (!selectedGroup) {
-      setError('Please select a user group first');
-      return;
-    }
-
-    try {
-      setLoadingUsers(true);
-      setError('');
-      const users = await fetchUsersByGroup(selectedGroup as UserGroup);
-      setUserCount(users.length);
-    } catch (err: any) {
-      setError(err.message || 'Failed to count users');
-      setUserCount(null);
-    } finally {
-      setLoadingUsers(false);
-    }
-  }, [selectedGroup, fetchUsersByGroup]);
 
   // Generate inbox-safe email template
   const generateEmailHTML = useCallback((userName: string, userEmail: string): string => {
@@ -562,59 +541,44 @@ const BulkBroadcast: React.FC = () => {
     }
   }, [telegramTitle, telegramDescription, telegramButtonText, telegramButtonLink]);
 
-  // Send broadcast
-  const handleSendBroadcast = useCallback(async () => {
+  // Send Email Broadcast
+  const handleSendEmailBroadcast = useCallback(async () => {
     // Validate selection
-    if (!useTimeBasedGrouping && !useUploadedContacts && !selectedGroup) {
-      setError('Please select a user group, upload contacts, or select leads by date');
+    if (!emailUseTimeBasedGrouping && !emailUseUploadedContacts && !emailSelectedGroup) {
+      setEmailError('Please select a user group, upload contacts, or select leads by date');
       return;
     }
 
-    if (!sendEmail && !sendSMS && !sendTelegram) {
-      setError('Please select at least one delivery method (Email, SMS, or Telegram)');
-      return;
-    }
-
-    if (sendEmail && (!emailSubject || !emailFirstSentence || !emailSecondSentence)) {
-      setError('Email subject, first sentence, and second sentence are required');
-      return;
-    }
-
-    if (sendSMS && !smsBody) {
-      setError('SMS message is required');
-      return;
-    }
-
-    if (sendTelegram && (!telegramTitle || !telegramDescription)) {
-      setError('Telegram title and description are required');
+    if (!emailSubject || !emailFirstSentence || !emailSecondSentence) {
+      setEmailError('Email subject, first sentence, and second sentence are required');
       return;
     }
 
     try {
-      setSending(true);
-      setError('');
-      setResults(null);
-      setProgress({ sent: 0, total: 0, failed: 0 });
+      setEmailSending(true);
+      setEmailError('');
+      setEmailResults(null);
+      setEmailProgress({ sent: 0, total: 0, failed: 0 });
 
       // Get users based on selection method
       let users: User[] = [];
       
-      if (useTimeBasedGrouping) {
+      if (emailUseTimeBasedGrouping) {
         // Use selected leads from time-based grouping
-        users = selectedLeads.map(lead => ({
+        users = emailSelectedLeads.map(lead => ({
           id: lead.id || '',
           email: lead.email,
           name: lead.name || lead.email.split('@')[0],
           phone: lead.phone || null
         }));
-      } else if (useUploadedContacts) {
+      } else if (emailUseUploadedContacts) {
         // Use uploaded contacts (filtered by selected categories)
-        if (selectedCategories.length > 0) {
+        if (emailSelectedCategories.length > 0) {
           // Fetch contacts from selected categories
           const { data: contacts, error } = await supabase
             .from('broadcast_contacts')
             .select('name, email, phone')
-            .in('category', selectedCategories);
+            .in('category', emailSelectedCategories);
 
           if (error) {
             throw new Error('Failed to fetch contacts: ' + error.message);
@@ -625,95 +589,188 @@ const BulkBroadcast: React.FC = () => {
             email: contact.email || '',
             name: contact.name || contact.email?.split('@')[0] || '',
             phone: contact.phone || null
-          })).filter(u => {
-            // Filter based on active tab
-            if (activeTab === 'email') return u.email;
-            if (activeTab === 'sms') return u.phone;
-            return true;
-          });
+          })).filter(u => u.email);
         } else {
           // Use in-memory uploaded contacts
-          users = uploadedContacts.map(contact => ({
+          users = emailUploadedContacts.map(contact => ({
             id: '',
             email: contact.email || '',
             name: contact.name || contact.email?.split('@')[0] || '',
             phone: contact.phone || null
-          })).filter(u => {
-            // Filter based on active tab
-            if (activeTab === 'email') return u.email;
-            if (activeTab === 'sms') return u.phone;
-            return true;
-          });
+          })).filter(u => u.email);
         }
       } else {
         // Use predefined groups
-        users = await fetchUsersByGroup(selectedGroup as UserGroup);
+        users = await fetchUsersByGroup(emailSelectedGroup as UserGroup);
       }
       
       if (users.length === 0) {
-        setError('No users found in the selected group');
-        setSending(false);
+        setEmailError('No users found in the selected group');
+        setEmailSending(false);
         return;
       }
 
-      // Send Telegram broadcast first (sends to groups, not individual users)
-      let telegramSuccess = true;
-      if (sendTelegram) {
-        telegramSuccess = await sendTelegramBroadcast();
-      }
-
-      setProgress({ sent: 0, total: users.length, failed: 0 });
+      setEmailProgress({ sent: 0, total: users.length, failed: 0 });
 
       let sentCount = 0;
       let failedCount = 0;
 
-      // Send to each user (Email and SMS)
+      // Send to each user
       for (const user of users) {
         try {
-          let emailSuccess = true;
-          let smsSuccess = true;
-
-          if (sendEmail && user.email) {
-            emailSuccess = await sendEmailToUser(user.email, user.name || user.email.split('@')[0]);
-          }
-
-          if (sendSMS && user.phone) {
-            smsSuccess = await sendSMSToUser(user.phone, user.name || user.email.split('@')[0]);
-          }
-
-          if (emailSuccess && smsSuccess) {
-            sentCount++;
+          if (user.email) {
+            const success = await sendEmailToUser(user.email, user.name || user.email.split('@')[0]);
+            if (success) {
+              sentCount++;
+            } else {
+              failedCount++;
+            }
           } else {
             failedCount++;
           }
 
-          setProgress({ sent: sentCount, total: users.length, failed: failedCount });
+          setEmailProgress({ sent: sentCount, total: users.length, failed: failedCount });
         } catch (err) {
           console.error(`Error sending to ${user.email}:`, err);
           failedCount++;
-          setProgress({ sent: sentCount, total: users.length, failed: failedCount });
+          setEmailProgress({ sent: sentCount, total: users.length, failed: failedCount });
         }
       }
 
-      // Build result message
-      const parts = [];
-      if (sendTelegram) {
-        parts.push(`Telegram: ${telegramSuccess ? '✅ Sent' : '❌ Failed'}`);
-      }
-      if (sendEmail || sendSMS) {
-        parts.push(`Email/SMS: ${sentCount} sent, ${failedCount} failed out of ${users.length} users`);
-      }
-
-      setResults({
-        success: failedCount === 0 && telegramSuccess,
-        message: `Broadcast completed! ${parts.join(' | ')}`,
+      setEmailResults({
+        success: failedCount === 0,
+        message: `Email broadcast completed! ${sentCount} sent, ${failedCount} failed out of ${users.length} users`,
       });
     } catch (err: any) {
-      setError(err.message || 'Failed to send broadcast');
+      setEmailError(err.message || 'Failed to send email broadcast');
     } finally {
-      setSending(false);
+      setEmailSending(false);
     }
-  }, [selectedGroup, sendEmail, sendSMS, sendTelegram, emailSubject, emailFirstSentence, emailSecondSentence, emailSoftLink, emailSoftLinkText, emailSupportLine, emailButtonText, emailButtonLink, smsBody, telegramTitle, telegramDescription, telegramButtonText, telegramButtonLink, fetchUsersByGroup, sendEmailToUser, sendSMSToUser, sendTelegramBroadcast, useTimeBasedGrouping, useUploadedContacts, selectedLeads, activeTab, uploadedContacts, selectedCategories]);
+  }, [emailSelectedGroup, emailSubject, emailFirstSentence, emailSecondSentence, emailSoftLink, emailSoftLinkText, emailSupportLine, emailButtonText, emailButtonLink, fetchUsersByGroup, sendEmailToUser, emailUseTimeBasedGrouping, emailUseUploadedContacts, emailSelectedLeads, emailUploadedContacts, emailSelectedCategories]);
+
+  // Send SMS Broadcast
+  const handleSendSMSBroadcast = useCallback(async () => {
+    // Validate selection
+    if (!smsUseUploadedContacts && !smsSelectedGroup) {
+      setSmsError('Please select a user group or upload contacts');
+      return;
+    }
+
+    if (!smsBody) {
+      setSmsError('SMS message is required');
+      return;
+    }
+
+    try {
+      setSmsSending(true);
+      setSmsError('');
+      setSmsResults(null);
+      setSmsProgress({ sent: 0, total: 0, failed: 0 });
+
+      // Get users based on selection method
+      let users: User[] = [];
+      
+      if (smsUseUploadedContacts) {
+        // Use uploaded contacts (filtered by selected categories)
+        if (smsSelectedCategories.length > 0) {
+          // Fetch contacts from selected categories
+          const { data: contacts, error } = await supabase
+            .from('broadcast_contacts')
+            .select('name, email, phone')
+            .in('category', smsSelectedCategories);
+
+          if (error) {
+            throw new Error('Failed to fetch contacts: ' + error.message);
+          }
+
+          users = (contacts || []).map(contact => ({
+            id: '',
+            email: contact.email || '',
+            name: contact.name || contact.email?.split('@')[0] || '',
+            phone: contact.phone || null
+          })).filter(u => u.phone);
+        } else {
+          // Use in-memory uploaded contacts
+          users = smsUploadedContacts.map(contact => ({
+            id: '',
+            email: contact.email || '',
+            name: contact.name || contact.email?.split('@')[0] || '',
+            phone: contact.phone || null
+          })).filter(u => u.phone);
+        }
+      } else {
+        // Use predefined groups
+        users = await fetchUsersByGroup(smsSelectedGroup as UserGroup);
+      }
+      
+      if (users.length === 0) {
+        setSmsError('No users with phone numbers found in the selected group');
+        setSmsSending(false);
+        return;
+      }
+
+      setSmsProgress({ sent: 0, total: users.length, failed: 0 });
+
+      let sentCount = 0;
+      let failedCount = 0;
+
+      // Send to each user
+      for (const user of users) {
+        try {
+          if (user.phone) {
+            const success = await sendSMSToUser(user.phone, user.name || user.email.split('@')[0]);
+            if (success) {
+              sentCount++;
+            } else {
+              failedCount++;
+            }
+          } else {
+            failedCount++;
+          }
+
+          setSmsProgress({ sent: sentCount, total: users.length, failed: failedCount });
+        } catch (err) {
+          console.error(`Error sending to ${user.phone}:`, err);
+          failedCount++;
+          setSmsProgress({ sent: sentCount, total: users.length, failed: failedCount });
+        }
+      }
+
+      setSmsResults({
+        success: failedCount === 0,
+        message: `SMS broadcast completed! ${sentCount} sent, ${failedCount} failed out of ${users.length} users`,
+      });
+    } catch (err: any) {
+      setSmsError(err.message || 'Failed to send SMS broadcast');
+    } finally {
+      setSmsSending(false);
+    }
+  }, [smsSelectedGroup, smsBody, fetchUsersByGroup, sendSMSToUser, smsUseUploadedContacts, smsUploadedContacts, smsSelectedCategories]);
+
+  // Send Telegram Broadcast
+  const handleSendTelegramBroadcast = useCallback(async () => {
+    if (!telegramTitle || !telegramDescription) {
+      setTelegramError('Telegram title and description are required');
+      return;
+    }
+
+    try {
+      setTelegramSending(true);
+      setTelegramError('');
+      setTelegramResults(null);
+
+      const success = await sendTelegramBroadcast();
+
+      setTelegramResults({
+        success: success,
+        message: success ? '✅ Telegram broadcast sent successfully!' : '❌ Failed to send Telegram broadcast',
+      });
+    } catch (err: any) {
+      setTelegramError(err.message || 'Failed to send Telegram broadcast');
+    } finally {
+      setTelegramSending(false);
+    }
+  }, [telegramTitle, telegramDescription, telegramButtonText, telegramButtonLink, sendTelegramBroadcast]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 pt-24 pb-8">
@@ -731,597 +788,948 @@ const BulkBroadcast: React.FC = () => {
               Back to Admin
             </button>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Bulk Broadcast</h1>
-            <p className="text-gray-600">Send emails and SMS to user groups</p>
+            <p className="text-gray-600">Send emails, SMS, or Telegram messages to your audience</p>
           </div>
 
-          {/* Error Message */}
-          {error && (
-            <div className="mb-6 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg">
-              {error}
-            </div>
-          )}
-
-          {/* Success Message */}
-          {results && (
-            <div className={`mb-6 border px-4 py-3 rounded-lg ${results.success ? 'bg-green-50 border-green-200 text-green-600' : 'bg-yellow-50 border-yellow-200 text-yellow-600'}`}>
-              {results.message}
-            </div>
-          )}
-
-          {/* Contact Upload Section */}
-          <div className="mb-8 p-6 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">
-              📤 Upload Contacts (Optional)
-            </h2>
-            <p className="text-sm text-gray-600 mb-4">
-              Upload a CSV or Excel file with contacts. They will be automatically categorized.
-            </p>
-            <ContactUploader
-              type={activeTab}
-              onUploadComplete={async (contacts, category) => {
-                try {
-                  // Save to database
-                  const apiUrl = `${window.location.origin}/api/save-broadcast-contacts`;
-                  const response = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      contacts,
-                      category: category || `Upload Batch - ${new Date().toLocaleDateString()}`,
-                      source: 'upload'
-                    })
-                  });
-
-                  const result = await response.json();
-                  if (result.success) {
-                    setUploadedContacts(prev => [...prev, ...contacts]);
-                    setUseUploadedContacts(true);
-                    setError('');
-                    alert(`✅ Successfully uploaded ${result.data.inserted} contacts!`);
-                  } else {
-                    setError(result.error || 'Failed to save contacts');
-                  }
-                } catch (err: any) {
-                  setError('Failed to save contacts: ' + err.message);
-                }
-              }}
-            />
-          </div>
-
-          {/* Selection Method Toggle (Email only) */}
-          {activeTab === 'email' && (
-            <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <h3 className="font-semibold text-blue-900 mb-3">Choose Contact Source:</h3>
-              <div className="space-y-2">
-                <label className="flex items-center">
-                  <input
-                    type="radio"
-                    name="contactSource"
-                    checked={useTimeBasedGrouping}
-                    onChange={() => {
-                      setUseTimeBasedGrouping(true);
-                      setUseUploadedContacts(false);
-                      setSelectedGroup('');
-                    }}
-                    className="mr-2"
-                  />
-                  <span>Use Leads from Database (Time-Based Grouping)</span>
-                </label>
-                <label className="flex items-center">
-                  <input
-                    type="radio"
-                    name="contactSource"
-                    checked={useUploadedContacts}
-                    onChange={() => {
-                      setUseUploadedContacts(true);
-                      setUseTimeBasedGrouping(false);
-                      setSelectedGroup('');
-                    }}
-                    className="mr-2"
-                  />
-                  <span>Use Uploaded Contacts</span>
-                </label>
-                <label className="flex items-center">
-                  <input
-                    type="radio"
-                    name="contactSource"
-                    checked={!useTimeBasedGrouping && !useUploadedContacts}
-                    onChange={() => {
-                      setUseTimeBasedGrouping(false);
-                      setUseUploadedContacts(false);
-                    }}
-                    className="mr-2"
-                  />
-                  <span>Use Predefined User Groups</span>
-                </label>
-              </div>
-            </div>
-          )}
-
-          {/* Time-Based Grouping (Email only) */}
-          {activeTab === 'email' && useTimeBasedGrouping && (
-            <div className="mb-8">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                📅 Select Leads by Date
-              </h2>
-              <TimeBasedGrouping
-                onSelectGroups={(leads) => {
-                  setSelectedLeads(leads);
-                  setUserCount(leads.length);
-                }}
-                selectedLeads={selectedLeads}
-              />
-            </div>
-          )}
-
-          {/* User Group Selection */}
-          {(!useTimeBasedGrouping && !useUploadedContacts) && (
-          <div className="mb-8">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-gray-900">Step 1: Select User Group</h2>
-              {loadingCounts && (
-                <span className="text-sm text-gray-500">Loading counts...</span>
-              )}
-              {!loadingCounts && (
-                <button
-                  onClick={loadAllGroupCounts}
-                  className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
-                >
-                  Refresh Counts
-                </button>
-              )}
-            </div>
-            <div className="space-y-3">
-              <label className="flex items-center p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
-                <input
-                  type="radio"
-                  name="userGroup"
-                  value="hasnt_paid_build"
-                  checked={selectedGroup === 'hasnt_paid_build'}
-                  onChange={(e) => {
-                    setSelectedGroup(e.target.value as UserGroup);
-                    setUserCount(null);
-                  }}
-                  className="mr-3"
-                />
-                <div className="flex-1">
-                  <div className="flex items-center justify-between">
-                    <p className="font-medium text-gray-900">Hasn't Paid for BUILD</p>
-                    {groupCounts.hasnt_paid_build !== null && (
-                      <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm font-semibold">
-                        {groupCounts.hasnt_paid_build.toLocaleString()} users
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-sm text-gray-600">Users who haven't purchased BUILD COMMUNITY</p>
-                </div>
-              </label>
-
-              <label className="flex items-center p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
-                <input
-                  type="radio"
-                  name="userGroup"
-                  value="paid_build"
-                  checked={selectedGroup === 'paid_build'}
-                  onChange={(e) => {
-                    setSelectedGroup(e.target.value as UserGroup);
-                    setUserCount(null);
-                  }}
-                  className="mr-3"
-                />
-                <div className="flex-1">
-                  <div className="flex items-center justify-between">
-                    <p className="font-medium text-gray-900">Paid for BUILD</p>
-                    {groupCounts.paid_build !== null && (
-                      <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-semibold">
-                        {groupCounts.paid_build.toLocaleString()} users
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-sm text-gray-600">Users who have purchased BUILD COMMUNITY</p>
-                </div>
-              </label>
-
-              <label className="flex items-center p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
-                <input
-                  type="radio"
-                  name="userGroup"
-                  value="bought_course"
-                  checked={selectedGroup === 'bought_course'}
-                  onChange={(e) => {
-                    setSelectedGroup(e.target.value as UserGroup);
-                    setUserCount(null);
-                  }}
-                  className="mr-3"
-                />
-                <div className="flex-1">
-                  <div className="flex items-center justify-between">
-                    <p className="font-medium text-gray-900">Bought a Course</p>
-                    {groupCounts.bought_course !== null && (
-                      <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-semibold">
-                        {groupCounts.bought_course.toLocaleString()} users
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-sm text-gray-600">Users who have purchased at least one course</p>
-                </div>
-              </label>
-
-              <label className="flex items-center p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
-                <input
-                  type="radio"
-                  name="userGroup"
-                  value="hasnt_bought_course"
-                  checked={selectedGroup === 'hasnt_bought_course'}
-                  onChange={(e) => {
-                    setSelectedGroup(e.target.value as UserGroup);
-                    setUserCount(null);
-                  }}
-                  className="mr-3"
-                />
-                <div className="flex-1">
-                  <div className="flex items-center justify-between">
-                    <p className="font-medium text-gray-900">Hasn't Bought a Course</p>
-                    {groupCounts.hasnt_bought_course !== null && (
-                      <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm font-semibold">
-                        {groupCounts.hasnt_bought_course.toLocaleString()} users
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-sm text-gray-600">Users who haven't purchased any course</p>
-                </div>
-              </label>
-            </div>
-
-            {selectedGroup && (
+          {/* Tabs */}
+          <div className="mb-8 border-b border-gray-200">
+            <nav className="-mb-px flex space-x-8">
               <button
-                onClick={handleCountUsers}
-                disabled={loadingUsers}
-                className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={() => setActiveTab('email')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === 'email'
+                    ? 'border-indigo-500 text-indigo-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
               >
-                {loadingUsers ? 'Counting...' : 'Count Users'}
+                📧 Email Broadcast
               </button>
-            )}
+              <button
+                onClick={() => setActiveTab('sms')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === 'sms'
+                    ? 'border-indigo-500 text-indigo-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                💬 SMS Broadcast
+              </button>
+              <button
+                onClick={() => setActiveTab('telegram')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === 'telegram'
+                    ? 'border-indigo-500 text-indigo-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                📱 Telegram Broadcast
+              </button>
+            </nav>
+          </div>
 
-            {userCount !== null && (
-              <div className="mt-4 p-4 bg-indigo-50 border border-indigo-200 rounded-lg">
-                <p className="text-indigo-900 font-semibold">
-                  {userCount} {userCount === 1 ? 'user' : 'users'} found in this group
+          {/* Email Broadcast Tab */}
+          {activeTab === 'email' && (
+            <div>
+              {/* Error Message */}
+              {emailError && (
+                <div className="mb-6 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg">
+                  {emailError}
+                </div>
+              )}
+
+              {/* Success Message */}
+              {emailResults && (
+                <div className={`mb-6 border px-4 py-3 rounded-lg ${emailResults.success ? 'bg-green-50 border-green-200 text-green-600' : 'bg-yellow-50 border-yellow-200 text-yellow-600'}`}>
+                  {emailResults.message}
+                </div>
+              )}
+
+              {/* Contact Upload Section */}
+              <div className="mb-8 p-6 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+                <h2 className="text-xl font-semibold text-gray-900 mb-4">
+                  📤 Upload Contacts (Optional)
+                </h2>
+                <p className="text-sm text-gray-600 mb-4">
+                  Upload a CSV or Excel file with contacts. They will be automatically categorized.
                 </p>
-              </div>
-            )}
-          </div>
-          )}
-
-          {/* Category Selection (for uploaded contacts) */}
-          {useUploadedContacts && (
-            <div className="mb-8">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                📁 Select Categories
-              </h2>
-              <CategoryManager
-                type={activeTab}
-                selectedCategories={selectedCategories}
-                onSelectCategories={async (categoryNames) => {
-                  setSelectedCategories(categoryNames);
-                  
-                  // Fetch contacts from selected categories
-                  if (categoryNames.length > 0) {
-                    const { data: contacts, error } = await supabase
-                      .from('broadcast_contacts')
-                      .select('name, email, phone, category')
-                      .in('category', categoryNames);
-
-                    if (!error && contacts) {
-                      const filteredContacts = contacts.filter(c => {
-                        if (activeTab === 'email') return c.email;
-                        if (activeTab === 'sms') return c.phone;
-                        return true;
+                <ContactUploader
+                  type="email"
+                  onUploadComplete={async (contacts, category) => {
+                    try {
+                      const apiUrl = `${window.location.origin}/api/save-broadcast-contacts`;
+                      const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          contacts,
+                          category: category || `Upload Batch - ${new Date().toLocaleDateString()}`,
+                          source: 'upload'
+                        })
                       });
-                      setUploadedContacts(filteredContacts);
-                      setUserCount(filteredContacts.length);
+
+                      const result = await response.json();
+                      if (result.success) {
+                        setEmailUploadedContacts(prev => [...prev, ...contacts]);
+                        setEmailUseUploadedContacts(true);
+                        setEmailError('');
+                        alert(`✅ Successfully uploaded ${result.data.inserted} contacts!`);
+                      } else {
+                        setEmailError(result.error || 'Failed to save contacts');
+                      }
+                    } catch (err: any) {
+                      setEmailError('Failed to save contacts: ' + err.message);
                     }
-                  } else {
-                    setUploadedContacts([]);
-                    setUserCount(0);
-                  }
-                }}
-              />
-            </div>
-          )}
-
-          {/* Uploaded Contacts Summary */}
-          {useUploadedContacts && uploadedContacts.length > 0 && (
-            <div className="mb-8 p-4 bg-green-50 border border-green-200 rounded-lg">
-              <h3 className="font-semibold text-green-900 mb-2">
-                ✅ {uploadedContacts.length} contacts ready from {selectedCategories.length} categor{selectedCategories.length === 1 ? 'y' : 'ies'}
-              </h3>
-              <p className="text-sm text-green-700">
-                Ready to send {activeTab === 'email' ? 'emails' : 'SMS'} to these contacts
-              </p>
-            </div>
-          )}
-
-          {/* Delivery Methods */}
-          <div className="mb-8">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Step 2: Select Delivery Methods</h2>
-            <div className="space-y-3">
-              <label className="flex items-center p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
-                <input
-                  type="checkbox"
-                  checked={sendEmail}
-                  onChange={(e) => setSendEmail(e.target.checked)}
-                  className="mr-3"
+                  }}
                 />
-                <div className="flex-1">
-                  <p className="font-medium text-gray-900">Send Email</p>
-                  <p className="text-sm text-gray-600">Send email messages to users</p>
-                </div>
-              </label>
+              </div>
 
-              <label className="flex items-center p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
-                <input
-                  type="checkbox"
-                  checked={sendSMS}
-                  onChange={(e) => setSendSMS(e.target.checked)}
-                  className="mr-3"
-                />
-                <div className="flex-1">
-                  <p className="font-medium text-gray-900">Send SMS</p>
-                  <p className="text-sm text-gray-600">Send SMS messages to users (requires phone number)</p>
+              {/* Selection Method Toggle */}
+              <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <h3 className="font-semibold text-blue-900 mb-3">Choose Contact Source:</h3>
+                <div className="space-y-2">
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      name="emailContactSource"
+                      checked={emailUseTimeBasedGrouping}
+                      onChange={() => {
+                        setEmailUseTimeBasedGrouping(true);
+                        setEmailUseUploadedContacts(false);
+                        setEmailSelectedGroup('');
+                      }}
+                      className="mr-2"
+                    />
+                    <span>Use Leads from Database (Time-Based Grouping)</span>
+                  </label>
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      name="emailContactSource"
+                      checked={emailUseUploadedContacts}
+                      onChange={() => {
+                        setEmailUseUploadedContacts(true);
+                        setEmailUseTimeBasedGrouping(false);
+                        setEmailSelectedGroup('');
+                      }}
+                      className="mr-2"
+                    />
+                    <span>Use Uploaded Contacts</span>
+                  </label>
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      name="emailContactSource"
+                      checked={!emailUseTimeBasedGrouping && !emailUseUploadedContacts}
+                      onChange={() => {
+                        setEmailUseTimeBasedGrouping(false);
+                        setEmailUseUploadedContacts(false);
+                      }}
+                      className="mr-2"
+                    />
+                    <span>Use Predefined User Groups</span>
+                  </label>
                 </div>
-              </label>
+              </div>
 
-              <label className="flex items-center p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
-                <input
-                  type="checkbox"
-                  checked={sendTelegram}
-                  onChange={(e) => setSendTelegram(e.target.checked)}
-                  className="mr-3"
-                />
-                <div className="flex-1">
-                  <p className="font-medium text-gray-900">Send Telegram</p>
-                  <p className="text-sm text-gray-600">Send Telegram messages to configured groups/channels</p>
+              {/* Time-Based Grouping */}
+              {emailUseTimeBasedGrouping && (
+                <div className="mb-8">
+                  <h2 className="text-xl font-semibold text-gray-900 mb-4">
+                    📅 Select Leads by Date
+                  </h2>
+                  <TimeBasedGrouping
+                    onSelectGroups={(leads) => {
+                      setEmailSelectedLeads(leads);
+                      setUserCount(leads.length);
+                    }}
+                    selectedLeads={emailSelectedLeads}
+                  />
                 </div>
-              </label>
-            </div>
-          </div>
+              )}
 
-          {/* Email Composition */}
-          {sendEmail && (
-            <div className="mb-8">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Step 3: Compose Email</h2>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Subject <span className="text-red-500">*</span>
-                    <span className="text-xs text-gray-500 ml-2">(Short. Neutral. Informational.)</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={emailSubject}
-                    onChange={(e) => setEmailSubject(e.target.value)}
-                    placeholder="e.g., Important Update"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              {/* User Group Selection */}
+              {(!emailUseTimeBasedGrouping && !emailUseUploadedContacts) && (
+                <div className="mb-8">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-xl font-semibold text-gray-900">Select User Group</h2>
+                    {loadingCounts && (
+                      <span className="text-sm text-gray-500">Loading counts...</span>
+                    )}
+                    {!loadingCounts && (
+                      <button
+                        onClick={loadAllGroupCounts}
+                        className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
+                      >
+                        Refresh Counts
+                      </button>
+                    )}
+                  </div>
+                  <div className="space-y-3">
+                    <label className="flex items-center p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
+                      <input
+                        type="radio"
+                        name="emailUserGroup"
+                        value="hasnt_paid_build"
+                        checked={emailSelectedGroup === 'hasnt_paid_build'}
+                        onChange={(e) => {
+                          setEmailSelectedGroup(e.target.value as UserGroup);
+                          setUserCount(null);
+                        }}
+                        className="mr-3"
+                      />
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between">
+                          <p className="font-medium text-gray-900">Hasn't Paid for BUILD</p>
+                          {groupCounts.hasnt_paid_build !== null && (
+                            <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm font-semibold">
+                              {groupCounts.hasnt_paid_build.toLocaleString()} users
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-600">Users who haven't purchased BUILD COMMUNITY</p>
+                      </div>
+                    </label>
+
+                    <label className="flex items-center p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
+                      <input
+                        type="radio"
+                        name="emailUserGroup"
+                        value="paid_build"
+                        checked={emailSelectedGroup === 'paid_build'}
+                        onChange={(e) => {
+                          setEmailSelectedGroup(e.target.value as UserGroup);
+                          setUserCount(null);
+                        }}
+                        className="mr-3"
+                      />
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between">
+                          <p className="font-medium text-gray-900">Paid for BUILD</p>
+                          {groupCounts.paid_build !== null && (
+                            <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-semibold">
+                              {groupCounts.paid_build.toLocaleString()} users
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-600">Users who have purchased BUILD COMMUNITY</p>
+                      </div>
+                    </label>
+
+                    <label className="flex items-center p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
+                      <input
+                        type="radio"
+                        name="emailUserGroup"
+                        value="bought_course"
+                        checked={emailSelectedGroup === 'bought_course'}
+                        onChange={(e) => {
+                          setEmailSelectedGroup(e.target.value as UserGroup);
+                          setUserCount(null);
+                        }}
+                        className="mr-3"
+                      />
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between">
+                          <p className="font-medium text-gray-900">Bought a Course</p>
+                          {groupCounts.bought_course !== null && (
+                            <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-semibold">
+                              {groupCounts.bought_course.toLocaleString()} users
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-600">Users who have purchased at least one course</p>
+                      </div>
+                    </label>
+
+                    <label className="flex items-center p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
+                      <input
+                        type="radio"
+                        name="emailUserGroup"
+                        value="hasnt_bought_course"
+                        checked={emailSelectedGroup === 'hasnt_bought_course'}
+                        onChange={(e) => {
+                          setEmailSelectedGroup(e.target.value as UserGroup);
+                          setUserCount(null);
+                        }}
+                        className="mr-3"
+                      />
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between">
+                          <p className="font-medium text-gray-900">Hasn't Bought a Course</p>
+                          {groupCounts.hasnt_bought_course !== null && (
+                            <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm font-semibold">
+                              {groupCounts.hasnt_bought_course.toLocaleString()} users
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-600">Users who haven't purchased any course</p>
+                      </div>
+                    </label>
+                  </div>
+
+                  {emailSelectedGroup && (
+                    <button
+                      onClick={async () => {
+                        if (!emailSelectedGroup) {
+                          setEmailError('Please select a user group first');
+                          return;
+                        }
+                        try {
+                          setLoadingUsers(true);
+                          setEmailError('');
+                          const users = await fetchUsersByGroup(emailSelectedGroup as UserGroup);
+                          setUserCount(users.length);
+                        } catch (err: any) {
+                          setEmailError(err.message || 'Failed to count users');
+                          setUserCount(null);
+                        } finally {
+                          setLoadingUsers(false);
+                        }
+                      }}
+                      disabled={loadingUsers}
+                      className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {loadingUsers ? 'Counting...' : 'Count Users'}
+                    </button>
+                  )}
+
+                  {userCount !== null && (
+                    <div className="mt-4 p-4 bg-indigo-50 border border-indigo-200 rounded-lg">
+                      <p className="text-indigo-900 font-semibold">
+                        {userCount} {userCount === 1 ? 'user' : 'users'} found in this group
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Category Selection (for uploaded contacts) */}
+              {emailUseUploadedContacts && (
+                <div className="mb-8">
+                  <h2 className="text-xl font-semibold text-gray-900 mb-4">
+                    📁 Select Categories
+                  </h2>
+                  <CategoryManager
+                    type="email"
+                    selectedCategories={emailSelectedCategories}
+                    onSelectCategories={async (categoryNames) => {
+                      setEmailSelectedCategories(categoryNames);
+                      
+                      if (categoryNames.length > 0) {
+                        const { data: contacts, error } = await supabase
+                          .from('broadcast_contacts')
+                          .select('name, email, phone, category')
+                          .in('category', categoryNames);
+
+                        if (!error && contacts) {
+                          const filteredContacts = contacts.filter(c => c.email);
+                          setEmailUploadedContacts(filteredContacts);
+                          setUserCount(filteredContacts.length);
+                        }
+                      } else {
+                        setEmailUploadedContacts([]);
+                        setUserCount(0);
+                      }
+                    }}
                   />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    First Sentence <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={emailFirstSentence}
-                    onChange={(e) => setEmailFirstSentence(e.target.value)}
-                    placeholder="One clear sentence."
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Second Sentence <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={emailSecondSentence}
-                    onChange={(e) => setEmailSecondSentence(e.target.value)}
-                    placeholder="Another helpful sentence."
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                  />
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Soft Link Text (Optional)
-                    </label>
-                    <input
-                      type="text"
-                      value={emailSoftLinkText}
-                      onChange={(e) => setEmailSoftLinkText(e.target.value)}
-                      placeholder="e.g., Learn more"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Soft Link URL (Optional - not payment)
-                    </label>
-                    <input
-                      type="url"
-                      value={emailSoftLink}
-                      onChange={(e) => setEmailSoftLink(e.target.value)}
-                      placeholder="https://example.com"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Support / Contact Line (Optional)
-                  </label>
-                  <input
-                    type="text"
-                    value={emailSupportLine}
-                    onChange={(e) => setEmailSupportLine(e.target.value)}
-                    placeholder="e.g., Need help? Contact us at support@example.com"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                  />
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Button Text (Optional)
-                    </label>
-                    <input
-                      type="text"
-                      value={emailButtonText}
-                      onChange={(e) => setEmailButtonText(e.target.value)}
-                      placeholder="e.g., Get Started"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Button Link (Optional)
-                    </label>
-                    <input
-                      type="url"
-                      value={emailButtonLink}
-                      onChange={(e) => setEmailButtonLink(e.target.value)}
-                      placeholder="https://example.com"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                    />
-                  </div>
-                </div>
-                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                  <p className="text-sm text-blue-900">
-                    <strong>Template Format:</strong> Subject → Hi {`{name}`}, → First Sentence → Second Sentence → Optional Soft Link → Support Line → Button → — Brand
+              )}
+
+              {/* Uploaded Contacts Summary */}
+              {emailUseUploadedContacts && emailUploadedContacts.length > 0 && (
+                <div className="mb-8 p-4 bg-green-50 border border-green-200 rounded-lg">
+                  <h3 className="font-semibold text-green-900 mb-2">
+                    ✅ {emailUploadedContacts.length} contacts ready from {emailSelectedCategories.length} categor{emailSelectedCategories.length === 1 ? 'y' : 'ies'}
+                  </h3>
+                  <p className="text-sm text-green-700">
+                    Ready to send emails to these contacts
                   </p>
                 </div>
-              </div>
-            </div>
-          )}
+              )}
 
-          {/* SMS Composition */}
-          {sendSMS && (
-            <div className="mb-8">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Step 4: Compose SMS</h2>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  SMS Message (use {'{name}'} for user name)
-                </label>
-                <textarea
-                  value={smsBody}
-                  onChange={(e) => setSmsBody(e.target.value)}
-                  placeholder="Enter SMS message..."
-                  rows={4}
-                  maxLength={160}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                />
-                <p className="mt-2 text-sm text-gray-500">
-                  {smsBody.length}/160 characters
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* Telegram Composition */}
-          {sendTelegram && (
-            <div className="mb-8">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Step 5: Compose Telegram Message</h2>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Title <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={telegramTitle}
-                    onChange={(e) => setTelegramTitle(e.target.value)}
-                    placeholder="Enter message title (will be bold)"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                  />
-                  <p className="mt-1 text-xs text-gray-500">This will appear as bold text at the top</p>
+              {/* Email Composition */}
+              <div className="mb-8">
+                <h2 className="text-xl font-semibold text-gray-900 mb-4">Compose Email</h2>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Subject <span className="text-red-500">*</span>
+                      <span className="text-xs text-gray-500 ml-2">(Short. Neutral. Informational.)</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={emailSubject}
+                      onChange={(e) => setEmailSubject(e.target.value)}
+                      placeholder="e.g., Important Update"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      First Sentence <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={emailFirstSentence}
+                      onChange={(e) => setEmailFirstSentence(e.target.value)}
+                      placeholder="One clear sentence."
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Second Sentence <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={emailSecondSentence}
+                      onChange={(e) => setEmailSecondSentence(e.target.value)}
+                      placeholder="Another helpful sentence."
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Soft Link Text (Optional)
+                      </label>
+                      <input
+                        type="text"
+                        value={emailSoftLinkText}
+                        onChange={(e) => setEmailSoftLinkText(e.target.value)}
+                        placeholder="e.g., Learn more"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Soft Link URL (Optional - not payment)
+                      </label>
+                      <input
+                        type="url"
+                        value={emailSoftLink}
+                        onChange={(e) => setEmailSoftLink(e.target.value)}
+                        placeholder="https://example.com"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Support / Contact Line (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      value={emailSupportLine}
+                      onChange={(e) => setEmailSupportLine(e.target.value)}
+                      placeholder="e.g., Need help? Contact us at support@example.com"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Button Text (Optional)
+                      </label>
+                      <input
+                        type="text"
+                        value={emailButtonText}
+                        onChange={(e) => setEmailButtonText(e.target.value)}
+                        placeholder="e.g., Get Started"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Button Link (Optional)
+                      </label>
+                      <input
+                        type="url"
+                        value={emailButtonLink}
+                        onChange={(e) => setEmailButtonLink(e.target.value)}
+                        placeholder="https://example.com"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                      />
+                    </div>
+                  </div>
+                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p className="text-sm text-blue-900">
+                      <strong>Template Format:</strong> Subject → Hi {`{name}`}, → First Sentence → Second Sentence → Optional Soft Link → Support Line → Button → — Brand
+                    </p>
+                  </div>
                 </div>
+              </div>
+
+              {/* Progress */}
+              {emailSending && emailProgress.total > 0 && (
+                <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-sm font-medium text-blue-900">Sending emails...</p>
+                    <p className="text-sm text-blue-700">
+                      {emailProgress.sent + emailProgress.failed} / {emailProgress.total}
+                    </p>
+                  </div>
+                  <div className="w-full bg-blue-200 rounded-full h-2">
+                    <div
+                      className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                      style={{ width: `${((emailProgress.sent + emailProgress.failed) / emailProgress.total) * 100}%` }}
+                    />
+                  </div>
+                  <p className="mt-2 text-xs text-blue-700">
+                    Sent: {emailProgress.sent} | Failed: {emailProgress.failed}
+                  </p>
+                </div>
+              )}
+
+              {/* Send Button */}
+              <button
+                onClick={handleSendEmailBroadcast}
+                disabled={emailSending || (!emailSelectedGroup && !emailUseTimeBasedGrouping && !emailUseUploadedContacts)}
+                className="w-full px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+              >
+                {emailSending ? 'Sending...' : 'Send Email Broadcast'}
+              </button>
+            </div>
+          )}
+
+          {/* SMS Broadcast Tab */}
+          {activeTab === 'sms' && (
+            <div>
+              {/* Error Message */}
+              {smsError && (
+                <div className="mb-6 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg">
+                  {smsError}
+                </div>
+              )}
+
+              {/* Success Message */}
+              {smsResults && (
+                <div className={`mb-6 border px-4 py-3 rounded-lg ${smsResults.success ? 'bg-green-50 border-green-200 text-green-600' : 'bg-yellow-50 border-yellow-200 text-yellow-600'}`}>
+                  {smsResults.message}
+                </div>
+              )}
+
+              {/* Contact Upload Section */}
+              <div className="mb-8 p-6 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+                <h2 className="text-xl font-semibold text-gray-900 mb-4">
+                  📤 Upload Contacts (Optional)
+                </h2>
+                <p className="text-sm text-gray-600 mb-4">
+                  Upload a CSV or Excel file with contacts. They will be automatically categorized.
+                </p>
+                <ContactUploader
+                  type="sms"
+                  onUploadComplete={async (contacts, category) => {
+                    try {
+                      const apiUrl = `${window.location.origin}/api/save-broadcast-contacts`;
+                      const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          contacts,
+                          category: category || `Upload Batch - ${new Date().toLocaleDateString()}`,
+                          source: 'upload'
+                        })
+                      });
+
+                      const result = await response.json();
+                      if (result.success) {
+                        setSmsUploadedContacts(prev => [...prev, ...contacts]);
+                        setSmsUseUploadedContacts(true);
+                        setSmsError('');
+                        alert(`✅ Successfully uploaded ${result.data.inserted} contacts!`);
+                      } else {
+                        setSmsError(result.error || 'Failed to save contacts');
+                      }
+                    } catch (err: any) {
+                      setSmsError('Failed to save contacts: ' + err.message);
+                    }
+                  }}
+                />
+              </div>
+
+              {/* Selection Method Toggle */}
+              <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <h3 className="font-semibold text-blue-900 mb-3">Choose Contact Source:</h3>
+                <div className="space-y-2">
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      name="smsContactSource"
+                      checked={smsUseUploadedContacts}
+                      onChange={() => {
+                        setSmsUseUploadedContacts(true);
+                        setSmsSelectedGroup('');
+                      }}
+                      className="mr-2"
+                    />
+                    <span>Use Uploaded Contacts</span>
+                  </label>
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      name="smsContactSource"
+                      checked={!smsUseUploadedContacts}
+                      onChange={() => {
+                        setSmsUseUploadedContacts(false);
+                      }}
+                      className="mr-2"
+                    />
+                    <span>Use Predefined User Groups</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* User Group Selection */}
+              {!smsUseUploadedContacts && (
+                <div className="mb-8">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-xl font-semibold text-gray-900">Select User Group</h2>
+                    {loadingCounts && (
+                      <span className="text-sm text-gray-500">Loading counts...</span>
+                    )}
+                    {!loadingCounts && (
+                      <button
+                        onClick={loadAllGroupCounts}
+                        className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
+                      >
+                        Refresh Counts
+                      </button>
+                    )}
+                  </div>
+                  <div className="space-y-3">
+                    <label className="flex items-center p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
+                      <input
+                        type="radio"
+                        name="smsUserGroup"
+                        value="hasnt_paid_build"
+                        checked={smsSelectedGroup === 'hasnt_paid_build'}
+                        onChange={(e) => {
+                          setSmsSelectedGroup(e.target.value as UserGroup);
+                          setUserCount(null);
+                        }}
+                        className="mr-3"
+                      />
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between">
+                          <p className="font-medium text-gray-900">Hasn't Paid for BUILD</p>
+                          {groupCounts.hasnt_paid_build !== null && (
+                            <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm font-semibold">
+                              {groupCounts.hasnt_paid_build.toLocaleString()} users
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-600">Users who haven't purchased BUILD COMMUNITY</p>
+                      </div>
+                    </label>
+
+                    <label className="flex items-center p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
+                      <input
+                        type="radio"
+                        name="smsUserGroup"
+                        value="paid_build"
+                        checked={smsSelectedGroup === 'paid_build'}
+                        onChange={(e) => {
+                          setSmsSelectedGroup(e.target.value as UserGroup);
+                          setUserCount(null);
+                        }}
+                        className="mr-3"
+                      />
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between">
+                          <p className="font-medium text-gray-900">Paid for BUILD</p>
+                          {groupCounts.paid_build !== null && (
+                            <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-semibold">
+                              {groupCounts.paid_build.toLocaleString()} users
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-600">Users who have purchased BUILD COMMUNITY</p>
+                      </div>
+                    </label>
+
+                    <label className="flex items-center p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
+                      <input
+                        type="radio"
+                        name="smsUserGroup"
+                        value="bought_course"
+                        checked={smsSelectedGroup === 'bought_course'}
+                        onChange={(e) => {
+                          setSmsSelectedGroup(e.target.value as UserGroup);
+                          setUserCount(null);
+                        }}
+                        className="mr-3"
+                      />
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between">
+                          <p className="font-medium text-gray-900">Bought a Course</p>
+                          {groupCounts.bought_course !== null && (
+                            <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-semibold">
+                              {groupCounts.bought_course.toLocaleString()} users
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-600">Users who have purchased at least one course</p>
+                      </div>
+                    </label>
+
+                    <label className="flex items-center p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
+                      <input
+                        type="radio"
+                        name="smsUserGroup"
+                        value="hasnt_bought_course"
+                        checked={smsSelectedGroup === 'hasnt_bought_course'}
+                        onChange={(e) => {
+                          setSmsSelectedGroup(e.target.value as UserGroup);
+                          setUserCount(null);
+                        }}
+                        className="mr-3"
+                      />
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between">
+                          <p className="font-medium text-gray-900">Hasn't Bought a Course</p>
+                          {groupCounts.hasnt_bought_course !== null && (
+                            <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm font-semibold">
+                              {groupCounts.hasnt_bought_course.toLocaleString()} users
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-600">Users who haven't purchased any course</p>
+                      </div>
+                    </label>
+                  </div>
+
+                  {smsSelectedGroup && (
+                    <button
+                      onClick={async () => {
+                        if (!smsSelectedGroup) {
+                          setSmsError('Please select a user group first');
+                          return;
+                        }
+                        try {
+                          setLoadingUsers(true);
+                          setSmsError('');
+                          const users = await fetchUsersByGroup(smsSelectedGroup as UserGroup);
+                          setUserCount(users.filter(u => u.phone).length);
+                        } catch (err: any) {
+                          setSmsError(err.message || 'Failed to count users');
+                          setUserCount(null);
+                        } finally {
+                          setLoadingUsers(false);
+                        }
+                      }}
+                      disabled={loadingUsers}
+                      className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {loadingUsers ? 'Counting...' : 'Count Users'}
+                    </button>
+                  )}
+
+                  {userCount !== null && (
+                    <div className="mt-4 p-4 bg-indigo-50 border border-indigo-200 rounded-lg">
+                      <p className="text-indigo-900 font-semibold">
+                        {userCount} {userCount === 1 ? 'user' : 'users'} with phone numbers found in this group
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Category Selection (for uploaded contacts) */}
+              {smsUseUploadedContacts && (
+                <div className="mb-8">
+                  <h2 className="text-xl font-semibold text-gray-900 mb-4">
+                    📁 Select Categories
+                  </h2>
+                  <CategoryManager
+                    type="sms"
+                    selectedCategories={smsSelectedCategories}
+                    onSelectCategories={async (categoryNames) => {
+                      setSmsSelectedCategories(categoryNames);
+                      
+                      if (categoryNames.length > 0) {
+                        const { data: contacts, error } = await supabase
+                          .from('broadcast_contacts')
+                          .select('name, email, phone, category')
+                          .in('category', categoryNames);
+
+                        if (!error && contacts) {
+                          const filteredContacts = contacts.filter(c => c.phone);
+                          setSmsUploadedContacts(filteredContacts);
+                          setUserCount(filteredContacts.length);
+                        }
+                      } else {
+                        setSmsUploadedContacts([]);
+                        setUserCount(0);
+                      }
+                    }}
+                  />
+                </div>
+              )}
+
+              {/* Uploaded Contacts Summary */}
+              {smsUseUploadedContacts && smsUploadedContacts.length > 0 && (
+                <div className="mb-8 p-4 bg-green-50 border border-green-200 rounded-lg">
+                  <h3 className="font-semibold text-green-900 mb-2">
+                    ✅ {smsUploadedContacts.length} contacts ready from {smsSelectedCategories.length} categor{smsSelectedCategories.length === 1 ? 'y' : 'ies'}
+                  </h3>
+                  <p className="text-sm text-green-700">
+                    Ready to send SMS to these contacts
+                  </p>
+                </div>
+              )}
+
+              {/* SMS Composition */}
+              <div className="mb-8">
+                <h2 className="text-xl font-semibold text-gray-900 mb-4">Compose SMS</h2>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Description <span className="text-red-500">*</span>
+                    SMS Message (use {'{name}'} for user name)
                   </label>
                   <textarea
-                    value={telegramDescription}
-                    onChange={(e) => setTelegramDescription(e.target.value)}
-                    placeholder="Enter message description..."
-                    rows={6}
+                    value={smsBody}
+                    onChange={(e) => setSmsBody(e.target.value)}
+                    placeholder="Enter SMS message..."
+                    rows={4}
+                    maxLength={160}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                   />
-                  <p className="mt-1 text-xs text-gray-500">Supports Markdown formatting (bold, italic, links)</p>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Button Text (Optional)
-                    </label>
-                    <input
-                      type="text"
-                      value={telegramButtonText}
-                      onChange={(e) => setTelegramButtonText(e.target.value)}
-                      placeholder="e.g., Learn More"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Button Link (Optional)
-                    </label>
-                    <input
-                      type="url"
-                      value={telegramButtonLink}
-                      onChange={(e) => setTelegramButtonLink(e.target.value)}
-                      placeholder="https://example.com"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                    />
-                  </div>
-                </div>
-                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                  <p className="text-sm text-blue-900">
-                    <strong>Note:</strong> Telegram messages will be sent to all configured Telegram groups/channels (set via <code className="bg-blue-100 px-1 rounded">TELEGRAM_GROUP_ID</code> environment variable).
+                  <p className="mt-2 text-sm text-gray-500">
+                    {smsBody.length}/160 characters
                   </p>
                 </div>
               </div>
+
+              {/* Progress */}
+              {smsSending && smsProgress.total > 0 && (
+                <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-sm font-medium text-blue-900">Sending SMS...</p>
+                    <p className="text-sm text-blue-700">
+                      {smsProgress.sent + smsProgress.failed} / {smsProgress.total}
+                    </p>
+                  </div>
+                  <div className="w-full bg-blue-200 rounded-full h-2">
+                    <div
+                      className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                      style={{ width: `${((smsProgress.sent + smsProgress.failed) / smsProgress.total) * 100}%` }}
+                    />
+                  </div>
+                  <p className="mt-2 text-xs text-blue-700">
+                    Sent: {smsProgress.sent} | Failed: {smsProgress.failed}
+                  </p>
+                </div>
+              )}
+
+              {/* Send Button */}
+              <button
+                onClick={handleSendSMSBroadcast}
+                disabled={smsSending || (!smsSelectedGroup && !smsUseUploadedContacts)}
+                className="w-full px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+              >
+                {smsSending ? 'Sending...' : 'Send SMS Broadcast'}
+              </button>
             </div>
           )}
 
-          {/* Progress */}
-          {sending && progress.total > 0 && (
-            <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-sm font-medium text-blue-900">Sending messages...</p>
+          {/* Telegram Broadcast Tab */}
+          {activeTab === 'telegram' && (
+            <div>
+              {/* Error Message */}
+              {telegramError && (
+                <div className="mb-6 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg">
+                  {telegramError}
+                </div>
+              )}
+
+              {/* Success Message */}
+              {telegramResults && (
+                <div className={`mb-6 border px-4 py-3 rounded-lg ${telegramResults.success ? 'bg-green-50 border-green-200 text-green-600' : 'bg-yellow-50 border-yellow-200 text-yellow-600'}`}>
+                  {telegramResults.message}
+                </div>
+              )}
+
+              {/* Info Box */}
+              <div className="mb-8 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <h3 className="font-semibold text-blue-900 mb-2">📱 Telegram Broadcast</h3>
                 <p className="text-sm text-blue-700">
-                  {progress.sent + progress.failed} / {progress.total}
+                  Send a message to all configured Telegram groups/channels. This does not require selecting user groups - it broadcasts directly to your Telegram groups.
                 </p>
               </div>
-              <div className="w-full bg-blue-200 rounded-full h-2">
-                <div
-                  className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                  style={{ width: `${((progress.sent + progress.failed) / progress.total) * 100}%` }}
-                />
+
+              {/* Telegram Composition */}
+              <div className="mb-8">
+                <h2 className="text-xl font-semibold text-gray-900 mb-4">Compose Telegram Message</h2>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Title <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={telegramTitle}
+                      onChange={(e) => setTelegramTitle(e.target.value)}
+                      placeholder="Enter message title (will be bold)"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    />
+                    <p className="mt-1 text-xs text-gray-500">This will appear as bold text at the top</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Description <span className="text-red-500">*</span>
+                    </label>
+                    <textarea
+                      value={telegramDescription}
+                      onChange={(e) => setTelegramDescription(e.target.value)}
+                      placeholder="Enter message description..."
+                      rows={6}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    />
+                    <p className="mt-1 text-xs text-gray-500">Supports Markdown formatting (bold, italic, links)</p>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Button Text (Optional)
+                      </label>
+                      <input
+                        type="text"
+                        value={telegramButtonText}
+                        onChange={(e) => setTelegramButtonText(e.target.value)}
+                        placeholder="e.g., Learn More"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Button Link (Optional)
+                      </label>
+                      <input
+                        type="url"
+                        value={telegramButtonLink}
+                        onChange={(e) => setTelegramButtonLink(e.target.value)}
+                        placeholder="https://example.com"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                      />
+                    </div>
+                  </div>
+                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p className="text-sm text-blue-900">
+                      <strong>Note:</strong> Telegram messages will be sent to all configured Telegram groups/channels (set via <code className="bg-blue-100 px-1 rounded">TELEGRAM_GROUP_ID</code> environment variable).
+                    </p>
+                  </div>
+                </div>
               </div>
-              <p className="mt-2 text-xs text-blue-700">
-                Sent: {progress.sent} | Failed: {progress.failed}
-              </p>
+
+              {/* Send Button */}
+              <button
+                onClick={handleSendTelegramBroadcast}
+                disabled={telegramSending || !telegramTitle || !telegramDescription}
+                className="w-full px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+              >
+                {telegramSending ? 'Sending...' : 'Send Telegram Broadcast'}
+              </button>
             </div>
           )}
-
-          {/* Send Button */}
-          <div className="flex gap-4">
-            <button
-              onClick={handleSendBroadcast}
-              disabled={sending || (!selectedGroup && !useTimeBasedGrouping && !useUploadedContacts) || (!sendEmail && !sendSMS && !sendTelegram)}
-              className="flex-1 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
-            >
-              {sending ? 'Sending...' : 'Send Broadcast'}
-            </button>
-          </div>
         </div>
       </div>
     </div>
