@@ -7,10 +7,6 @@ verify_*.sql
 api/admin/
 api/cron/auto-schedule-live-booth.js
 api/cron/batch-class-notifications.js
-api/cron/create-batch.js
-api/cron/generate-batch-sessions.js
-api/cron/live-booth-reminders.js
-api/cron/qstash-reminders.js
 api/cron/send-immediate-batch-notifications.js
 api/cron/qstash-batch-notifications.js.backup
 api/batch-sessions/
