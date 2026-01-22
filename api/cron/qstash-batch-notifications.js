@@ -88,7 +88,8 @@ export default async function handler(req, res) {
 
     const now = new Date();
     const notificationsSent = {
-      '24_hours': 0,
+      '1_hour': 0,
+      'class_starts': 0,
       errors: 0
     };
 
@@ -131,18 +132,33 @@ export default async function handler(req, res) {
       });
     }
 
-    // Process each session - send ONE notification per session
+    // Process each session - send notifications at 1 hour before and when class starts
     for (const session of upcomingSessions) {
       const sessionTime = new Date(session.scheduled_datetime);
       const timeUntilSession = sessionTime.getTime() - now.getTime();
+      const timeUntilSessionMinutes = Math.floor(timeUntilSession / (1000 * 60));
       
-      // Only send for future sessions
-      if (timeUntilSession <= 0) {
+      // Determine which notification to send (if any)
+      let notificationType = null;
+      let shouldSend = false;
+      
+      // 1 hour before (within 5-minute window: 55-65 minutes before)
+      if (timeUntilSessionMinutes >= 55 && timeUntilSessionMinutes <= 65) {
+        notificationType = '1_hour';
+        shouldSend = true;
+      }
+      // When class starts (within 5 minutes: -5 to +5 minutes)
+      else if (timeUntilSessionMinutes >= -5 && timeUntilSessionMinutes <= 5) {
+        notificationType = 'class_starts';
+        shouldSend = true;
+      }
+      
+      // Skip if not time to send
+      if (!shouldSend || !notificationType) {
         continue;
       }
 
-      // Check if notification already sent
-      const notificationType = '24_hours';
+      // Check if this specific notification type already sent
       const { data: existingNotification, error: notificationCheckError } = await supabaseAdmin
         .from('batch_class_notifications')
         .select('id, sent_at')
@@ -154,25 +170,19 @@ export default async function handler(req, res) {
         console.error(`❌ Error checking notification for session ${session.id}:`, notificationCheckError);
       }
 
-      // Skip if notification was sent within last 6 hours
+      // Skip if this notification type was already sent
       if (existingNotification && existingNotification.sent_at) {
-        const sentTime = new Date(existingNotification.sent_at);
-        const timeSinceSent = now.getTime() - sentTime.getTime();
-        if (timeSinceSent < 6 * 60 * 60 * 1000) {
-          console.log(`⏭️  Skipping session ${session.id} - notification sent ${Math.round(timeSinceSent / (60 * 60 * 1000))} hours ago`);
-          continue;
-        }
+        console.log(`⏭️  Skipping ${notificationType} notification for session ${session.id} - already sent`);
+        continue;
       }
 
-      // Calculate time until session
-      const hoursUntil = Math.floor(timeUntilSession / (1000 * 60 * 60));
-      const minutesUntil = Math.floor((timeUntilSession % (1000 * 60 * 60)) / (1000 * 60));
-      
-      const timeStr = hoursUntil > 0 
-        ? `Starts in ${hoursUntil} hour(s) ${minutesUntil} minute(s)`
-        : minutesUntil > 0 
-          ? `Starts in ${minutesUntil} minute(s)`
-          : 'Starting now!';
+      // Create notification message based on timing
+      let timeStr = '';
+      if (notificationType === '1_hour') {
+        timeStr = '⏰ **Starts in 1 hour!**';
+      } else if (notificationType === 'class_starts') {
+        timeStr = '🚀 **Class is starting now!**';
+      }
 
       // Create notification message
       const notificationMessage = `📚 **${session.class_name}**\n\n🎓 **Class ${session.session_number}**: ${session.session_title}\n\n⏰ **${sessionTime.toLocaleString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true })}**\n\n${timeStr}\n\n🔗 **Join Now**: https://app.thekingezekielacademy.com/live-classes/${session.batches?.live_class_id || 'batch'}/session/${session.id}`;
@@ -240,11 +250,11 @@ export default async function handler(req, res) {
       }
 
       if (notificationStatus === 'sent') {
-        notificationsSent['24_hours']++;
-        console.log(`📤 Sent notification for ${session.class_name} Class ${session.session_number} to ${successCount} group(s)`);
+        notificationsSent[notificationType]++;
+        console.log(`📤 Sent ${notificationType} notification for ${session.class_name} Class ${session.session_number} to ${successCount} group(s)`);
       } else {
         notificationsSent.errors++;
-        console.error(`❌ Failed to send notification for session ${session.id}`);
+        console.error(`❌ Failed to send ${notificationType} notification for session ${session.id}`);
       }
     }
 
