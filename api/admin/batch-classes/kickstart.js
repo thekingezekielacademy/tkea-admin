@@ -269,7 +269,7 @@ export default async function handler(req, res) {
           }
         }
 
-        // Create 3 sessions
+        // Create 2 sessions (afternoon, evening)
         const sessionsToCreate = [];
         for (const [sessionType, timeConfig] of Object.entries(sessionTimes)) {
           const scheduledTime = new Date(today);
