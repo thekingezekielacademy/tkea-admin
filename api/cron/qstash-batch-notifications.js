@@ -264,24 +264,35 @@ export default async function handler(req, res) {
 
     const totalSent = Object.values(notificationsSent).reduce((sum, count) => sum + (typeof count === 'number' ? count : 0), 0) - notificationsSent.errors;
 
-    return res.status(200).json({
+    const response = {
       success: true,
       message: 'Notification processing complete',
       notificationsSent: {
         total: totalSent,
         byType: notificationsSent,
         errors: notificationsSent.errors
-      }
-    });
+      },
+      timestamp: new Date().toISOString()
+    };
+    
+    console.log('✅ Sending response:', JSON.stringify(response));
+    clearTimeout(timeout);
+    return res.status(200).json(response);
 
   } catch (error) {
     console.error('❌ Error in batch-class-notifications cron:', error);
     console.error('❌ Error stack:', error.stack);
-    return res.status(500).json({
-      success: false,
-      message: 'Internal server error',
-      error: error.message,
-      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
-    });
+    clearTimeout(timeout);
+    
+    // ALWAYS return a response - never let it hang
+    if (!res.headersSent) {
+      return res.status(500).json({
+        success: false,
+        message: 'Internal server error',
+        error: error.message,
+        timestamp: new Date().toISOString(),
+        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      });
+    }
   }
 }
