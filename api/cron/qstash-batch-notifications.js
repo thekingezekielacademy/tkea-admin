@@ -161,7 +161,7 @@ export default async function handler(req, res) {
       // Check if this specific notification type already sent
       const { data: existingNotification, error: notificationCheckError } = await supabaseAdmin
         .from('batch_class_notifications')
-        .select('id, sent_at')
+        .select('id, sent_at, status')
         .eq('session_id', session.id)
         .eq('notification_type', notificationType)
         .maybeSingle();
@@ -170,9 +170,37 @@ export default async function handler(req, res) {
         console.error(`❌ Error checking notification for session ${session.id}:`, notificationCheckError);
       }
 
-      // Skip if this notification type was already sent
-      if (existingNotification && existingNotification.sent_at) {
+      // Skip if this notification type was already sent successfully
+      if (existingNotification && existingNotification.sent_at && existingNotification.status === 'sent') {
         console.log(`⏭️  Skipping ${notificationType} notification for session ${session.id} - already sent`);
+        continue;
+      }
+
+      // CRITICAL: Create notification record FIRST (before sending) to prevent duplicate sends
+      // This acts as a lock - if QStash calls again, it will see this record and skip
+      const { data: lockRecord, error: lockError } = await supabaseAdmin
+        .from('batch_class_notifications')
+        .upsert({
+          session_id: session.id,
+          notification_type: notificationType,
+          scheduled_send_time: sessionTime.toISOString(),
+          sent_at: null, // Will be updated after successful send
+          status: 'pending', // Lock status
+          telegram_group_ids: null,
+          error_message: null
+        }, {
+          onConflict: 'session_id,notification_type'
+        })
+        .select()
+        .single();
+
+      // If lock record already exists and was just created (not by us), skip
+      if (lockError && lockError.code !== '23505') { // 23505 = unique violation (expected if record exists)
+        console.error(`❌ Error creating lock record for session ${session.id}:`, lockError);
+        // Continue anyway - try to send
+      } else if (lockRecord && lockRecord.status === 'sent' && lockRecord.sent_at) {
+        // Another process already sent this - skip
+        console.log(`⏭️  Skipping ${notificationType} notification for session ${session.id} - already sent by another process`);
         continue;
       }
 
@@ -223,30 +251,27 @@ export default async function handler(req, res) {
         }
       }
 
-      // Record notification in database using UPSERT
+      // Update notification record with send results (lock record already exists)
       const notificationStatus = successCount > 0 ? 'sent' : 'failed';
       const errorMsg = failCount > 0 ? `Failed to send to ${failCount} group(s)` : null;
 
       try {
         const { error: dbError } = await supabaseAdmin
           .from('batch_class_notifications')
-          .upsert({
-            session_id: session.id,
-            notification_type: notificationType,
-            scheduled_send_time: sessionTime.toISOString(),
+          .update({
             sent_at: notificationStatus === 'sent' ? new Date().toISOString() : null,
             status: notificationStatus,
             telegram_group_ids: sentGroupIds.join(','),
             error_message: errorMsg
-          }, {
-            onConflict: 'session_id,notification_type'
-          });
+          })
+          .eq('session_id', session.id)
+          .eq('notification_type', notificationType);
 
         if (dbError) {
-          console.error(`❌ Database error recording notification for session ${session.id}:`, dbError);
+          console.error(`❌ Database error updating notification for session ${session.id}:`, dbError);
         }
       } catch (dbError) {
-        console.error(`❌ Error recording notification in database:`, dbError);
+        console.error(`❌ Error updating notification in database:`, dbError);
       }
 
       if (notificationStatus === 'sent') {
