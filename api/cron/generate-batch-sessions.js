@@ -76,7 +76,6 @@ export default async function handler(req, res) {
 
     let totalSessionsCreated = 0;
     const sessionTimes = {
-      morning: { hour: 6, minute: 30, time: '06:30:00' },
       afternoon: { hour: 13, minute: 0, time: '13:00:00' },
       evening: { hour: 19, minute: 30, time: '19:30:00' }
     };
@@ -166,7 +165,7 @@ export default async function handler(req, res) {
         }
       }
 
-      // Create 3 sessions for today (morning, afternoon, evening)
+      // Create 2 sessions for today (afternoon, evening)
       const sessionsToCreate = [];
 
       for (const [sessionType, timeConfig] of Object.entries(sessionTimes)) {
@@ -188,7 +187,7 @@ export default async function handler(req, res) {
         });
       }
 
-      // Insert all 3 sessions
+      // Insert all 2 sessions
       const { error: insertError } = await supabaseAdmin
         .from('batch_class_sessions')
         .insert(sessionsToCreate);

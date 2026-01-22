@@ -203,7 +203,6 @@ router.post("/kickstart", async (req, res) => {
 
     if (activeBatches && activeBatches.length > 0) {
       const sessionTimes = {
-        morning: { hour: 6, minute: 30, time: '06:30:00' },
         afternoon: { hour: 13, minute: 0, time: '13:00:00' },
         evening: { hour: 19, minute: 30, time: '19:30:00' }
       };
