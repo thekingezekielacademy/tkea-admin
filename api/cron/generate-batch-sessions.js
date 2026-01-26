@@ -94,7 +94,7 @@ export default async function handler(req, res) {
         continue; // Batch hasn't started yet
       }
 
-      // Get class configuration to check total sessions
+      // Get class configuration to get course_id
       const { data: classConfig } = await supabaseAdmin
         .from('batch_classes')
         .select('total_sessions, course_id')
@@ -104,15 +104,8 @@ export default async function handler(req, res) {
       // Use course_id from live_class if available, otherwise from classConfig
       const courseId = batch.live_classes?.course_id || classConfig?.course_id;
 
-      // Skip if curriculum has ended (if total_sessions is set and we've exceeded it)
-      if (classConfig && classConfig.total_sessions > 0 && sessionNumber > classConfig.total_sessions) {
-        // Mark batch as completed
-        await supabaseAdmin
-          .from('batches')
-          .update({ status: 'completed' })
-          .eq('id', batch.id);
-        continue;
-      }
+      // NOTE: Batches run INDEFINITELY - we cycle through videos repeatedly
+      // The total_sessions field is informational only, not a hard limit
 
       // Check if sessions already exist for today
       const { data: existingSessions } = await supabaseAdmin
@@ -140,28 +133,20 @@ export default async function handler(req, res) {
         }
       }
 
-      // Get video for this session number (sequential, not cyclical)
+      // Get video for this session number (cyclical - loops indefinitely)
       let videoId = null;
       let sessionTitle = `Class ${sessionNumber}`;
 
       if (videos.length > 0) {
-        // Sequential: use video at index (sessionNumber - 1)
-        const videoIndex = sessionNumber - 1;
-        if (videoIndex < videos.length) {
-          videoId = videos[videoIndex].id;
-          sessionTitle = videos[videoIndex].name || `Class ${sessionNumber}`;
-        } else {
-          // If we've run out of videos, use the last one or mark batch as completed
-          console.log(`No more videos for ${batch.class_name} Batch ${batch.batch_number} at session ${sessionNumber}`);
-          // Optionally mark batch as completed
-          if (classConfig && classConfig.total_sessions === 0) {
-            // Auto-set total_sessions if not set
-            await supabaseAdmin
-              .from('batch_classes')
-              .update({ total_sessions: videos.length })
-              .eq('class_name', batch.class_name);
-          }
-          continue;
+        // Cyclical: use modulo to loop through videos indefinitely
+        const videoIndex = (sessionNumber - 1) % videos.length;
+        videoId = videos[videoIndex].id;
+        sessionTitle = videos[videoIndex].name || `Class ${sessionNumber}`;
+        
+        // Log when we start a new cycle
+        if (sessionNumber > videos.length) {
+          const cycleNumber = Math.floor((sessionNumber - 1) / videos.length) + 1;
+          console.log(`${batch.class_name} Batch ${batch.batch_number}: Session ${sessionNumber} (Cycle ${cycleNumber}, Video ${videoIndex + 1}/${videos.length})`);
         }
       }
 

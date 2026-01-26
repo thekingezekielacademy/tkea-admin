@@ -219,8 +219,10 @@ export default async function handler(req, res) {
               const telegramToken = process.env.TELEGRAM_BOT_TOKEN || '8447617613:AAH0QHB57N9APWnX-MAHH_JsJqzfB8p4vJo';
               
               let telegramMessage = '';
+              let replyMarkup = null; // For inline keyboard button
               
               if (timing === 'start') {
+                // NO LINK in text - use button instead
                 telegramMessage = `🎉 **Class Starting Now!**
 
 📚 **${courseTitle}**
@@ -228,10 +230,19 @@ export default async function handler(req, res) {
 ${sessionTypeEmoji} **${sessionTypeLabel} Session**
 🕐 ${formattedTime}
 
-👉 [Join Class Now](${classUrl})
-
 Don't miss out! Join now to participate in the live session.`;
+                
+                // Create inline keyboard button with "Join Now"
+                replyMarkup = {
+                  inline_keyboard: [[
+                    {
+                      text: '🚀 Join Now',
+                      url: classUrl
+                    }
+                  ]]
+                };
               } else {
+                // For countdown reminders - NO LINK
                 const timeLabel = 
                   timing === '1h_before' ? '1 hour' :
                   timing === '30m_before' ? '30 minutes' :
@@ -245,9 +256,8 @@ ${sessionTypeEmoji} **${sessionTypeLabel} Session**
 📅 ${formattedDate}
 🕐 ${formattedTime}
 
-👉 [Join Class](${classUrl})
-
 See you there! 🎓`;
+                // replyMarkup remains null for pre-class reminders
               }
 
               if (timing === 'start') {
@@ -269,7 +279,8 @@ See you there! 🎓`;
                           chat_id: groupId,
                           text: telegramMessage,
                           parse_mode: 'Markdown',
-                          disable_web_page_preview: false
+                          disable_web_page_preview: false,
+                          reply_markup: replyMarkup // null for pre-class, button for start
                         })
                       });
 
@@ -317,7 +328,8 @@ See you there! 🎓`;
                     chat_id: targetChatId,
                     text: telegramMessage,
                     parse_mode: 'Markdown',
-                    disable_web_page_preview: false
+                    disable_web_page_preview: false,
+                    reply_markup: replyMarkup // null for pre-class reminders
                   })
                 });
 
