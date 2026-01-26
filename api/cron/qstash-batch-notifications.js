@@ -243,14 +243,29 @@ export default async function handler(req, res) {
       });
       
       let timeStr = '';
+      let notificationMessage = '';
+      let replyMarkup = null; // For inline keyboard button
+
       if (notificationType === '1_hour') {
         timeStr = `⏰ **Class starts at ${formattedTime} (in 1 hour!)**`;
+        // NO LINK in pre-class notification
+        notificationMessage = `📚 **${session.class_name}**\n\n🎓 **Class ${session.session_number}**: ${displayTitle}\n\n⏰ **${formattedDate} at ${formattedTime}**\n\n${timeStr}`;
       } else if (notificationType === 'class_starts') {
         timeStr = `🚀 **Class is starting now at ${formattedTime}!**`;
+        // NO LINK in text - use button instead
+        notificationMessage = `📚 **${session.class_name}**\n\n🎓 **Class ${session.session_number}**: ${displayTitle}\n\n⏰ **${formattedDate} at ${formattedTime}**\n\n${timeStr}`;
+        
+        // Create inline keyboard button with "Join Now"
+        const sessionUrl = `https://app.thekingezekielacademy.com/live-classes/${session.batches?.live_class_id || 'batch'}/session/${session.id}`;
+        replyMarkup = {
+          inline_keyboard: [[
+            {
+              text: '🚀 Join Now',
+              url: sessionUrl
+            }
+          ]]
+        };
       }
-
-          // Create notification message
-      const notificationMessage = `📚 **${session.class_name}**\n\n🎓 **Class ${session.session_number}**: ${displayTitle}\n\n⏰ **${formattedDate} at ${formattedTime}**\n\n${timeStr}\n\n🔗 **Join Now**: https://app.thekingezekielacademy.com/live-classes/${session.batches?.live_class_id || 'batch'}/session/${session.id}`;
 
           // Send to all Telegram groups
           let successCount = 0;
@@ -268,7 +283,8 @@ export default async function handler(req, res) {
                   chat_id: groupId,
                   text: notificationMessage,
                   parse_mode: 'Markdown',
-                  disable_web_page_preview: false
+                  disable_web_page_preview: false,
+                  reply_markup: replyMarkup // Will be null for 1_hour, button for class_starts
                 })
               });
 
