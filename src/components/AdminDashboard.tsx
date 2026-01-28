@@ -15,6 +15,8 @@ const AdminDashboard: React.FC = () => {
     totalUsers: 0,
     skillPathCompletions: 0,
     skillPathCompletionRate: 0,
+    totalLeads: 0,
+    leadsLast24Hours: 0,
     loading: true,
   });
 
@@ -200,6 +202,33 @@ const AdminDashboard: React.FC = () => {
         // Continue with 0 values if table doesn't exist yet
       }
 
+      // Fetch leads statistics
+      let totalLeads = 0;
+      let leadsLast24Hours = 0;
+      
+      try {
+        // Fetch total leads count
+        const { count: leadsCount } = await supabase
+          .from('leads')
+          .select('*', { count: 'exact', head: true });
+        
+        totalLeads = leadsCount || 0;
+
+        // Fetch leads from last 24 hours
+        const twentyFourHoursAgo = new Date();
+        twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
+        
+        const { count: leads24HoursCount } = await supabase
+          .from('leads')
+          .select('*', { count: 'exact', head: true })
+          .gte('created_at', twentyFourHoursAgo.toISOString());
+        
+        leadsLast24Hours = leads24HoursCount || 0;
+      } catch (error) {
+        console.error('Error fetching leads statistics:', error);
+        // Continue with 0 values if table doesn't exist or there's an error
+      }
+
       setStats({
         totalCourses: coursesCount || 0,
         totalLearningPaths: learningPathsCount || 0,
@@ -209,6 +238,8 @@ const AdminDashboard: React.FC = () => {
         totalUsers: usersCount || 0,
         skillPathCompletions: skillPathCompletions,
         skillPathCompletionRate: skillPathCompletionRate,
+        totalLeads: totalLeads,
+        leadsLast24Hours: leadsLast24Hours,
         loading: false,
       });
     } catch (error) {
@@ -304,7 +335,7 @@ const AdminDashboard: React.FC = () => {
         </div>
 
         {/* Additional Stats Row */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <div className="bg-white rounded-lg shadow-lg p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -349,6 +380,21 @@ const AdminDashboard: React.FC = () => {
               <div className="bg-teal-100 rounded-full p-3">
                 <svg className="h-8 w-8 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow-lg p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Leads</p>
+                <p className="text-3xl font-bold text-gray-900 mt-2">{stats.totalLeads}</p>
+                <p className="text-xs text-gray-500 mt-1">Last 24 hours: {stats.leadsLast24Hours}</p>
+              </div>
+              <div className="bg-rose-100 rounded-full p-3">
+                <svg className="h-8 w-8 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>
               </div>
             </div>
