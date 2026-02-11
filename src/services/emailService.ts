@@ -347,19 +347,19 @@ const getPurchaseAccessEmailTemplate = ({
     <div style="background: #d1ecf1; padding: 20px; border-radius: 8px; margin: 30px 0; border-left: 4px solid #0c5460;">
       <p style="font-size: 15px; color: #0c5460; margin: 0 0 10px 0; font-weight: bold;">💰 Resale Rights Included!</p>
       <p style="font-size: 14px; color: #0c5460; margin: 0 0 15px 0;">
-        <strong>Great news!</strong> You have full resale rights to this course. You can resell it and keep 100% of the profits!
+        <strong>Great news!</strong> You have full resale rights to this course. Resell using your reseller link and keep 50% of the profits!
       </p>
       <div style="background: #ffffff; padding: 15px; border-radius: 6px; margin-top: 15px;">
         <p style="font-size: 13px; color: #0c5460; margin: 0 0 10px 0; font-weight: bold;">How to Resell:</p>
         <ol style="font-size: 13px; color: #0c5460; margin: 0; padding-left: 20px;">
-          <li style="margin-bottom: 8px;">Share your unique access link with your customers</li>
-          <li style="margin-bottom: 8px;">Set your own price - you keep 100% of the profit</li>
+          <li style="margin-bottom: 8px;">Share your reseller link with your customers</li>
+          <li style="margin-bottom: 8px;">Resell using your reseller link - you keep 50% of the profit</li>
           <li style="margin-bottom: 8px;">Your customers get lifetime access to the course</li>
           <li>You can resell unlimited times - no restrictions!</li>
         </ol>
       </div>
       <p style="font-size: 13px; color: #0c5460; margin: 15px 0 0 0; font-style: italic;">
-        💡 Tip: Use your access link above to share with customers. Each purchase gets their own unique access link.
+        💡 Tip: Use your reseller link to share with customers. Each sale through your link earns you 50%.
       </p>
     </div>
     
